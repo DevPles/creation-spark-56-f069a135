@@ -621,8 +621,9 @@ const RelatoriosPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
             <div className="kpi-card space-y-4">
-              <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
-                <FileText className="w-5 h-5" /> Gerar relatório
+              <h2 className="font-display font-semibold text-foreground">
+                Gerar relatório
+              </h2>
               </h2>
               <div className="space-y-2">
                 <Label>Tipo de relatório</Label>
