@@ -14,9 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect, useRef } from "react";
-import { Camera, KeyRound } from "lucide-react";
+import { Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
