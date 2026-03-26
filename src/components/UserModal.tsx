@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect, useRef } from "react";
-import { Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
