@@ -612,24 +612,28 @@ const RelatoriosPage = () => {
 
   useEffect(() => { setCurrentSlide(0); }, [selectedContractId, typeFilter, statusFilter, compareMode]);
 
-  const handleGenerate = () => {
-    const blob = generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails);
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  const handleGenerate = async () => {
+    const reportLabel = REPORT_TYPES.find(t => t.id === selectedType)?.label || selectedType;
+    toast.info("Gerando PDF...");
+    const blob = await generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails, contract, chartRef);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const reportLabel = REPORT_TYPES.find(t => t.id === selectedType)?.label || selectedType;
-    const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
+    const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
     a.href = url; a.download = fileName;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setReports(prev => [{ id: crypto.randomUUID(), name: `${reportLabel} — ${contract.unit}`, date: new Date().toLocaleDateString("pt-BR"), type: selectedType, size: `${(blob.size / 1024).toFixed(0)} KB` }, ...prev]);
-    toast.success("Relatório gerado e baixado!", { description: fileName });
+    toast.success("Relatório PDF gerado!", { description: fileName });
   };
 
-  const handleDownloadReport = (report: typeof GENERATED_REPORTS[0]) => {
-    const blob = generatePdfBlob(filteredGoals, contract.name, report.type, true, true);
+  const handleDownloadReport = async (report: typeof GENERATED_REPORTS[0]) => {
+    toast.info("Gerando PDF...");
+    const blob = await generatePdfBlob(filteredGoals, contract.name, report.type, true, true, contract, chartRef);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.txt`;
+    a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.pdf`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success("Download iniciado");
