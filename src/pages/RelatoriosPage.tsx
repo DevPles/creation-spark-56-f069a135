@@ -315,7 +315,7 @@ const RelatoriosPage = () => {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setReports(prev => [{ id: crypto.randomUUID(), name: `${reportLabel} — ${contract.unit}`, date: new Date().toLocaleDateString("pt-BR"), type: selectedType, size: `${(blob.size / 1024).toFixed(0)} KB` }, ...prev]);
-    toast.success("PDF gerado e baixado!", { description: fileName });
+    toast.success("Relatório gerado e baixado!", { description: fileName });
   };
 
   const handleDownloadReport = (report: typeof GENERATED_REPORTS[0]) => {
