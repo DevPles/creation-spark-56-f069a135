@@ -10,7 +10,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect, useRef } from "react";
-import { Camera, KeyRound, Shield, Users } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
