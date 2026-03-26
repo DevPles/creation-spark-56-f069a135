@@ -34,6 +34,7 @@ const AdminPage = () => {
 
   const handleUserClick = (user: User) => {
     if (user.role === "Administrador") {
+      setSelectedUser(user);
       setAdminModalOpen(true);
       return;
     }
@@ -46,7 +47,7 @@ const AdminPage = () => {
     if (isNewUser) setUsers(prev => [...prev, user]);
     else setUsers(prev => prev.map(u => u.id === user.id ? user : u));
   };
-  const handleAdminSaveUser = (user: User) => {
+  const handleAdminSave = (user: User) => {
     setUsers(prev => prev.map(u => u.id === user.id ? user : u));
   };
 
