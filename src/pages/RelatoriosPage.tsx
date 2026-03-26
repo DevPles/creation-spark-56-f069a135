@@ -310,7 +310,7 @@ const RelatoriosPage = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const reportLabel = REPORT_TYPES.find(t => t.id === selectedType)?.label || selectedType;
-    const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
     a.href = url; a.download = fileName;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
