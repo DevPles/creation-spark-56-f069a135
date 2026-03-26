@@ -9,6 +9,8 @@ import MetasPage from "./pages/MetasPage";
 import ContratosPage from "./pages/ContratosPage";
 import RiscoPage from "./pages/RiscoPage";
 import AdminPage from "./pages/AdminPage";
+import EvidenciasPage from "./pages/EvidenciasPage";
+import RelatoriosPage from "./pages/RelatoriosPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/contratos" element={<ContratosPage />} />
           <Route path="/risco" element={<RiscoPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/evidencias" element={<EvidenciasPage />} />
+          <Route path="/relatorios" element={<RelatoriosPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

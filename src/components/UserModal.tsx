@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface User {
   id: string;
@@ -30,18 +30,48 @@ interface UserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isNew?: boolean;
+  onSave?: (user: User) => void;
 }
 
 const ROLES = ["Administrador", "Gestor", "Analista", "Clínico"];
 const UNITS_LIST = ["Hospital Geral", "UPA Norte", "UBS Centro", "Todas"];
 const STATUSES = ["Ativo", "Suspenso", "Bloqueado"];
 
-const UserModal = ({ user, open, onOpenChange, isNew = false }: UserModalProps) => {
-  const [name, setName] = useState(user?.name || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [role, setRole] = useState(user?.role || "Clínico");
-  const [unit, setUnit] = useState(user?.unit || "Hospital Geral");
-  const [status, setStatus] = useState(user?.status || "Ativo");
+const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModalProps) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("Clínico");
+  const [unit, setUnit] = useState("Hospital Geral");
+  const [status, setStatus] = useState("Ativo");
+
+  useEffect(() => {
+    if (user && !isNew) {
+      setName(user.name);
+      setEmail(user.email);
+      setRole(user.role);
+      setUnit(user.unit);
+      setStatus(user.status);
+    } else if (isNew) {
+      setName("");
+      setEmail("");
+      setRole("Clínico");
+      setUnit("Hospital Geral");
+      setStatus("Ativo");
+    }
+  }, [user, isNew, open]);
+
+  const handleSave = () => {
+    const data: User = {
+      id: user?.id || crypto.randomUUID(),
+      name,
+      email,
+      role,
+      unit,
+      status,
+    };
+    onSave?.(data);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,7 +142,7 @@ const UserModal = ({ user, open, onOpenChange, isNew = false }: UserModalProps) 
           )}
 
           <div className="flex gap-2 pt-2">
-            <Button className="flex-1">
+            <Button className="flex-1" onClick={handleSave}>
               {isNew ? "Cadastrar e enviar convite" : "Salvar alterações"}
             </Button>
             {!isNew && (
