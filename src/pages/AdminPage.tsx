@@ -100,7 +100,7 @@ const AdminPage = () => {
         </div>
       </main>
       <UserModal user={selectedUser} open={modalOpen} onOpenChange={setModalOpen} isNew={isNewUser} onSave={handleSave} />
-      <AdminModal users={users} open={adminModalOpen} onOpenChange={setAdminModalOpen} onSaveUser={handleAdminSaveUser} />
+      <AdminModal user={selectedUser} users={users} open={adminModalOpen} onOpenChange={setAdminModalOpen} onSave={handleAdminSave} onSaveOtherUser={handleAdminSave} />
     </div>
   );
 };
