@@ -585,7 +585,6 @@ const RelatoriosPage = () => {
           <div className="flex items-center gap-2 ml-auto border-l border-border pl-4">
             <Label className="text-xs text-muted-foreground cursor-pointer" htmlFor="compare-toggle">⇄ Comparar</Label>
             <Switch id="compare-toggle" checked={compareMode} onCheckedChange={setCompareMode} />
-            <Switch id="compare-toggle" checked={compareMode} onCheckedChange={setCompareMode} />
             {compareMode && (
               <Select value={compareContractId} onValueChange={setCompareContractId}>
                 <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
