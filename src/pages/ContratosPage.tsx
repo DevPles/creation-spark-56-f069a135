@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import TopBar from "@/components/TopBar";
+import ContractModal from "@/components/ContractModal";
 import { motion } from "framer-motion";
 
 const PERIODS = [
@@ -23,6 +24,13 @@ const ContratosPage = () => {
   const navigate = useNavigate();
   const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState(UNITS[0]);
+  const [selectedContract, setSelectedContract] = useState<typeof CONTRACTS[0] | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleClick = (contract: typeof CONTRACTS[0]) => {
+    setSelectedContract(contract);
+    setModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,7 +42,7 @@ const ContratosPage = () => {
         </button>
 
         <h1 className="font-display text-xl font-bold text-foreground mb-1">Contratos de gestão</h1>
-        <p className="text-sm text-muted-foreground mb-6">Contratos vigentes e valores pactuados</p>
+        <p className="text-sm text-muted-foreground mb-6">Clique em um contrato para ver detalhes, metas vinculadas e glosas</p>
 
         <div className="space-y-4">
           {CONTRACTS.map((contract, i) => (
@@ -43,7 +51,8 @@ const ContratosPage = () => {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="kpi-card"
+              onClick={() => handleClick(contract)}
+              className="kpi-card cursor-pointer"
             >
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>
@@ -73,6 +82,8 @@ const ContratosPage = () => {
           ))}
         </div>
       </main>
+
+      <ContractModal contract={selectedContract} open={modalOpen} onOpenChange={setModalOpen} />
     </div>
   );
 };

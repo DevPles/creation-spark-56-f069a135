@@ -11,7 +11,7 @@ interface Goal {
   trend: "up" | "down" | "stable";
 }
 
-const GoalRow = ({ goal, index }: { goal: Goal; index: number }) => {
+const GoalRow = ({ goal, index, onClick }: { goal: Goal; index: number; onClick?: () => void }) => {
   const attainment = goal.type === "DOC"
     ? (goal.current >= goal.target ? 100 : 0)
     : Math.min(100, Math.round((goal.current / goal.target) * 100));
@@ -30,6 +30,7 @@ const GoalRow = ({ goal, index }: { goal: Goal; index: number }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: index * 0.03 }}
+      onClick={onClick}
       className="px-5 py-3 grid grid-cols-12 items-center text-sm hover:bg-muted/30 transition-colors cursor-pointer"
     >
       <div className="col-span-4 sm:col-span-5">
