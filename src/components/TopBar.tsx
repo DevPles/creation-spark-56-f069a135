@@ -25,30 +25,29 @@ const TopBar = () => {
             </span>
           </button>
 
-          <div className="flex items-center gap-2">
-            {/* Menu button */}
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="gap-1.5">
+          {/* Menu button centered */}
+          <div className="flex-1 flex justify-center">
+            <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} className="rounded-full w-10 h-10">
               <Menu className="w-4 h-4" />
-              Menu
             </Button>
-
-            {/* Profile avatar */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors shrink-0">
-                  AS
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="px-2 py-2 border-b border-border">
-                  <p className="text-sm font-medium text-foreground">Ana Silva</p>
-                  <p className="text-xs text-muted-foreground">ana.silva@hospital.gov.br</p>
-                </div>
-                <DropdownMenuItem onClick={() => navigate("/admin")}>Meu perfil</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/")}>Sair</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
+
+          {/* Profile avatar */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors shrink-0">
+                AS
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <div className="px-2 py-2 border-b border-border">
+                <p className="text-sm font-medium text-foreground">Ana Silva</p>
+                <p className="text-xs text-muted-foreground">ana.silva@hospital.gov.br</p>
+              </div>
+              <DropdownMenuItem onClick={() => navigate("/admin")}>Meu perfil</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/")}>Sair</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
