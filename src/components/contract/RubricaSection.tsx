@@ -89,7 +89,7 @@ const RubricaSection = ({ rubricas, onChange, totalValue }: RubricaSectionProps)
       </div>
 
       <Button variant="outline" size="sm" onClick={addRubrica} className="w-full">
-        <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar rubrica
+        + Adicionar rubrica
       </Button>
 
       {/* Summary by type */}

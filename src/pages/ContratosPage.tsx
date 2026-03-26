@@ -78,7 +78,7 @@ const ContratosPage = () => {
                   <span className={`status-badge ${contract.status === "Vigente" ? "status-success" : "status-warning"}`}>{contract.status}</span>
                   <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEdit(contract); }}>Editar</Button>
                   <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={(e) => { e.stopPropagation(); setDeleteTarget(contract); }}>
-                    <Trash2 className="w-4 h-4" />
+                    Excluir
                   </Button>
                 </div>
               </div>
