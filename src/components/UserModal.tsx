@@ -14,7 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useEffect, useRef } from "react";
+import { Camera, KeyRound } from "lucide-react";
+import { toast } from "sonner";
 
 interface User {
   id: string;
@@ -23,6 +26,8 @@ interface User {
   role: string;
   unit: string;
   status: string;
+  photo?: string;
+  visibleCards?: string[];
 }
 
 interface UserModalProps {
@@ -37,12 +42,24 @@ const ROLES = ["Administrador", "Gestor", "Analista", "Clínico"];
 const UNITS_LIST = ["Hospital Geral", "UPA Norte", "UBS Centro", "Todas"];
 const STATUSES = ["Ativo", "Suspenso", "Bloqueado"];
 
+const ALL_CARDS = [
+  { id: "metas", label: "Metas" },
+  { id: "contratos", label: "Contratos" },
+  { id: "riscos", label: "Riscos" },
+  { id: "evidencias", label: "Evidências" },
+  { id: "relatorios", label: "Relatórios" },
+  { id: "admin", label: "Administração" },
+];
+
 const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModalProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("Clínico");
   const [unit, setUnit] = useState("Hospital Geral");
   const [status, setStatus] = useState("Ativo");
+  const [photo, setPhoto] = useState<string | undefined>(undefined);
+  const [visibleCards, setVisibleCards] = useState<string[]>(ALL_CARDS.map(c => c.id));
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user && !isNew) {
@@ -51,43 +68,105 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
       setRole(user.role);
       setUnit(user.unit);
       setStatus(user.status);
+      setPhoto(user.photo);
+      setVisibleCards(user.visibleCards || ALL_CARDS.map(c => c.id));
     } else if (isNew) {
       setName("");
       setEmail("");
       setRole("Clínico");
       setUnit("Hospital Geral");
       setStatus("Ativo");
+      setPhoto(undefined);
+      setVisibleCards(ALL_CARDS.map(c => c.id));
     }
   }, [user, isNew, open]);
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Arquivo muito grande", { description: "O tamanho máximo é 2MB." });
+      return;
+    }
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      toast.error("Formato inválido", { description: "Use JPG ou PNG." });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setPhoto(ev.target?.result as string);
+      toast.success("Foto carregada com sucesso");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleToggleCard = (cardId: string) => {
+    setVisibleCards(prev =>
+      prev.includes(cardId) ? prev.filter(c => c !== cardId) : [...prev, cardId]
+    );
+  };
+
+  const handleResetPassword = () => {
+    toast.success("Senha resetada", {
+      description: `Um e-mail de redefinição foi enviado para ${email}.`,
+    });
+  };
+
   const handleSave = () => {
+    if (!name || !email) {
+      toast.error("Preencha nome e e-mail");
+      return;
+    }
     const data: User = {
       id: user?.id || crypto.randomUUID(),
-      name,
-      email,
-      role,
-      unit,
-      status,
+      name, email, role, unit, status, photo, visibleCards,
     };
     onSave?.(data);
     onOpenChange(false);
+    toast.success(isNew ? "Usuário cadastrado" : "Alterações salvas");
   };
+
+  const initials = name
+    ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
+    : "?";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display">{isNew ? "Novo usuário" : "Editar usuário"}</DialogTitle>
+          <DialogTitle className="font-display">
+            {isNew ? "Novo usuário" : "Editar usuário"}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Photo upload */}
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-lg font-semibold text-muted-foreground shrink-0">
-              {name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
-            </div>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden group shrink-0 border-2 border-border hover:border-primary transition-colors"
+            >
+              {photo ? (
+                <img src={photo} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-lg font-semibold text-muted-foreground">{initials}</span>
+              )}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="w-5 h-5 text-white" />
+              </div>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png"
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
             <div>
-              <Button variant="outline" size="sm">Enviar foto</Button>
+              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                Enviar foto
+              </Button>
               <p className="text-[10px] text-muted-foreground mt-1">JPG ou PNG, até 2MB</p>
             </div>
           </div>
@@ -141,12 +220,38 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
             </div>
           )}
 
+          {/* Card visibility management */}
+          <div className="space-y-3 border border-border rounded-lg p-4 bg-muted/20">
+            <Label className="text-sm font-semibold">Cards visíveis para este perfil</Label>
+            <p className="text-[10px] text-muted-foreground -mt-1">
+              Selecione quais módulos este usuário poderá acessar no dashboard.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {ALL_CARDS.map((card) => (
+                <div key={card.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`card-${card.id}`}
+                    checked={visibleCards.includes(card.id)}
+                    onCheckedChange={() => handleToggleCard(card.id)}
+                  />
+                  <label htmlFor={`card-${card.id}`} className="text-sm cursor-pointer text-foreground">
+                    {card.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Actions */}
           <div className="flex gap-2 pt-2">
             <Button className="flex-1" onClick={handleSave}>
               {isNew ? "Cadastrar e enviar convite" : "Salvar alterações"}
             </Button>
             {!isNew && (
-              <Button variant="outline">Resetar senha</Button>
+              <Button variant="outline" onClick={handleResetPassword}>
+                <KeyRound className="w-4 h-4 mr-1" />
+                Resetar senha
+              </Button>
             )}
           </div>
 
