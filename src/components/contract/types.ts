@@ -15,6 +15,7 @@ export interface ContractData {
   unit: string;
   pdfName?: string;
   rubricas?: Rubrica[];
+  notificationEmail?: string;
 }
 
 export interface ContractFormModalProps {

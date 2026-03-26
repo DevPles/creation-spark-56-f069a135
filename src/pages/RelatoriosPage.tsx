@@ -589,7 +589,7 @@ const RelatoriosPage = () => {
               <Select value={compareContractId} onValueChange={setCompareContractId}>
                 <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CONTRACTS.filter(c => c.id !== selectedContractId).map(c => <SelectItem key={c.id} value={c.id}>{c.name.split("—")[0].trim()}</SelectItem>)}
+                  {CONTRACTS.filter(c => c.id !== selectedContractId).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             )}
