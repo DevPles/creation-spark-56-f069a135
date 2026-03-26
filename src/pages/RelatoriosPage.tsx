@@ -104,7 +104,7 @@ const CONTRACTS: ContractData[] = [
     ],
   },
   {
-    id: "c3", name: "Contrato 003/2024 — UBS Centro", unit: "UBS Centro", valorGlobal: 680000,
+    id: "c3", name: "Contrato de Gestão — UBS Centro", unit: "UBS Centro", valorGlobal: 680000,
     rubricas: [
       { name: "RH", pct: 65, valor: 442000 },
       { name: "Insumos", pct: 15, valor: 102000 },
