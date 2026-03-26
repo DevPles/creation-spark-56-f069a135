@@ -550,7 +550,7 @@ const RelatoriosPage = () => {
             <Select value={selectedContractId} onValueChange={setSelectedContractId}>
               <SelectTrigger className="w-[240px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.name.split("—")[0].trim()}</SelectItem>)}
+                {CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
