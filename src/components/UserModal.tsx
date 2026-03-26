@@ -194,39 +194,11 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
             </div>
           )}
 
-          {/* Card visibility management */}
-          <div className="space-y-3 border border-border rounded-lg p-4 bg-muted/20">
-            <Label className="text-sm font-semibold">Cards visíveis para este perfil</Label>
-            <p className="text-[10px] text-muted-foreground -mt-1">
-              Selecione quais módulos este usuário poderá acessar no dashboard.
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {ALL_CARDS.map((card) => (
-                <div key={card.id} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`card-${card.id}`}
-                    checked={visibleCards.includes(card.id)}
-                    onCheckedChange={() => handleToggleCard(card.id)}
-                  />
-                  <label htmlFor={`card-${card.id}`} className="text-sm cursor-pointer text-foreground">
-                    {card.label}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Actions */}
           <div className="flex gap-2 pt-2">
             <Button className="flex-1" onClick={handleSave}>
               {isNew ? "Cadastrar e enviar convite" : "Salvar alterações"}
             </Button>
-            {!isNew && (
-              <Button variant="outline" onClick={handleResetPassword}>
-                <KeyRound className="w-4 h-4 mr-1" />
-                Resetar senha
-              </Button>
-            )}
           </div>
 
           {isNew && (
