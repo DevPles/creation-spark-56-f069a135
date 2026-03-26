@@ -1,0 +1,99 @@
+interface GoalDetail {
+  id: string;
+  name: string;
+  target: number;
+  current: number;
+  unit: string;
+  type: string;
+  risk: number;
+  weight: number;
+  scoring: { min: number; label: string; points: number }[];
+  history: number[];
+}
+
+const GoalDetailCard = ({ goal }: { goal: GoalDetail }) => {
+  const attainment = goal.type === "DOC"
+    ? (goal.current >= goal.target ? 100 : 0)
+    : Math.min(100, Math.round((goal.current / goal.target) * 100));
+
+  const getStatus = () => {
+    if (attainment >= 90) return "success";
+    if (attainment >= 70) return "warning";
+    return "critical";
+  };
+  const status = getStatus();
+
+  const maxHistory = Math.max(...goal.history, goal.target);
+
+  return (
+    <div className="kpi-card">
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="font-display font-semibold text-foreground text-sm">{goal.name}</h3>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`status-badge ${goal.type === "QNT" ? "bg-accent text-accent-foreground" : goal.type === "QLT" ? "status-success" : "status-warning"}`}>
+              {goal.type}
+            </span>
+            <span className="text-xs text-muted-foreground">Peso: {(goal.weight * 100).toFixed(0)}%</span>
+          </div>
+        </div>
+        <span className={`status-badge ${status === "success" ? "status-success" : status === "warning" ? "status-warning" : "status-critical"}`}>
+          {attainment}%
+        </span>
+      </div>
+
+      {/* Mini bar chart */}
+      <div className="flex items-end gap-1 h-12 mt-4">
+        {goal.history.map((val, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center">
+            <div
+              className={`w-full rounded-sm transition-all ${status === "success" ? "bg-success/60" : status === "warning" ? "bg-warning/60" : "bg-risk/60"}`}
+              style={{ height: `${(val / maxHistory) * 100}%` }}
+            />
+          </div>
+        ))}
+        <div className="flex-1 flex flex-col items-center">
+          <div
+            className="w-full rounded-sm bg-primary/80"
+            style={{ height: `${(goal.current / maxHistory) * 100}%` }}
+          />
+        </div>
+      </div>
+      <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+        <span>Q1</span><span>Q2</span><span>Q3</span><span>Q4</span><span>Atual</span>
+      </div>
+
+      {/* Values */}
+      <div className="grid grid-cols-3 gap-3 mt-4 pt-3 border-t border-border">
+        <div>
+          <p className="text-[10px] text-muted-foreground">Realizado</p>
+          <p className="font-display font-bold text-foreground text-sm">{goal.current}{goal.unit}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-muted-foreground">Meta</p>
+          <p className="font-display font-bold text-foreground text-sm">{goal.target}{goal.unit}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-muted-foreground">R$ em risco</p>
+          <p className="font-display font-bold text-risk text-sm">
+            {goal.risk > 0 ? `R$ ${(goal.risk / 1000).toFixed(1)}k` : "—"}
+          </p>
+        </div>
+      </div>
+
+      {/* Scoring rules */}
+      <div className="mt-3 pt-3 border-t border-border">
+        <p className="text-[10px] text-muted-foreground mb-1.5">Faixas de pontuação</p>
+        <div className="flex gap-1">
+          {goal.scoring.map((s, i) => (
+            <span key={i} className="text-[10px] bg-secondary text-secondary-foreground rounded px-1.5 py-0.5">
+              ≥{s.min}% → {s.label} ({s.points}pt)
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default GoalDetailCard;
