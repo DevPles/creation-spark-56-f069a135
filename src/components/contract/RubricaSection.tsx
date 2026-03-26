@@ -81,7 +81,7 @@ const RubricaSection = ({ rubricas, onChange, totalValue }: RubricaSectionProps)
                 className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                 onClick={() => removeRubrica(r.id)}
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                ✕
               </Button>
             </div>
           );
