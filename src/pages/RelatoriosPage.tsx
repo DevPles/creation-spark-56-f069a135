@@ -624,7 +624,6 @@ const RelatoriosPage = () => {
               <h2 className="font-display font-semibold text-foreground">
                 Gerar relatório
               </h2>
-              </h2>
               <div className="space-y-2">
                 <Label>Tipo de relatório</Label>
                 <Select value={selectedType} onValueChange={setSelectedType}>
