@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
@@ -182,73 +182,380 @@ function computeStats(goals: GoalItem[]) {
   return { totalRisk, atingidas, parciais, criticas, avg, total: goals.length };
 }
 
-/* ── PDF generation ── */
-function generatePdfBlob(goals: GoalItem[], contractName: string, type: string, includeCharts: boolean, includeDetails: boolean) {
+/* ── PDF generation with jsPDF ── */
+async function generatePdfBlob(
+  goals: GoalItem[],
+  contractName: string,
+  type: string,
+  includeCharts: boolean,
+  includeDetails: boolean,
+  contract: ContractData,
+  chartCanvasRef: React.RefObject<HTMLDivElement | null>
+): Promise<Blob> {
+  const { default: jsPDF } = await import("jspdf");
+  await import("jspdf-autotable");
+
   const reportLabel = REPORT_TYPES.find(t => t.id === type)?.label || type;
   const now = new Date().toLocaleDateString("pt-BR");
   const stats = computeStats(goals);
 
-  const lines: string[] = [];
-  lines.push(`════════════════════════════════════════════════════`);
-  lines.push(`  SisLu — Sistema de Acompanhamento de Metas`);
-  lines.push(`════════════════════════════════════════════════════`);
-  lines.push(``);
-  lines.push(`  Relatório: ${reportLabel}`);
-  lines.push(`  Contrato: ${contractName}`);
-  lines.push(`  Data de geração: ${now}`);
-  lines.push(``);
-  lines.push(`────────────────────────────────────────────────────`);
-  lines.push(`  RESUMO EXECUTIVO`);
-  lines.push(`────────────────────────────────────────────────────`);
-  lines.push(``);
-  lines.push(`  Total de metas avaliadas: ${stats.total}`);
-  lines.push(`  Atingidas (≥90%):        ${stats.atingidas}`);
-  lines.push(`  Parciais (60-89%):       ${stats.parciais}`);
-  lines.push(`  Críticas (<60%):         ${stats.criticas}`);
-  lines.push(`  Atingimento médio:       ${stats.avg}%`);
-  lines.push(`  Risco financeiro total:  ${formatFullCurrency(stats.totalRisk)}`);
-  lines.push(``);
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  let y = margin;
 
-  if (includeDetails) {
-    lines.push(`────────────────────────────────────────────────────`);
-    lines.push(`  DETALHAMENTO POR META`);
-    lines.push(`────────────────────────────────────────────────────`);
-    lines.push(``);
-    goals.forEach((g, i) => {
-      const pct = getGoalPct(g).toFixed(1);
-      lines.push(`  ${i + 1}. ${g.name}`);
-      lines.push(`     Tipo: ${g.type} | Rubrica: ${g.rubrica}`);
-      lines.push(`     Meta: ${g.target}${g.unit} | Realizado: ${g.current}${g.unit} | Atingimento: ${pct}%`);
-      lines.push(`     Risco: ${formatFullCurrency(g.risk)} | Peso financeiro: ${g.pesoFinanceiro}%`);
-      lines.push(``);
-    });
-  }
+  const PRIMARY = [20, 100, 140];
+  const DARK = [30, 40, 50];
+  const MUTED = [120, 130, 140];
+  const RED = [220, 60, 60];
+  const GREEN = [40, 160, 90];
+  const AMBER = [230, 160, 30];
+  const WHITE = [255, 255, 255];
+  const LIGHT_BG = [245, 247, 250];
 
+  /* ── Helper functions ── */
+  const addNewPageIfNeeded = (needed: number) => {
+    if (y + needed > H - 20) { doc.addPage(); y = margin; drawHeader(); }
+  };
+
+  const drawHeader = () => {
+    doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+    doc.rect(0, 0, W, 12, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("SisLu — Sistema de Acompanhamento de Metas", margin, 8);
+    doc.text(now, W - margin, 8, { align: "right" });
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    y = 18;
+  };
+
+  const drawFooter = (pageNum: number, totalPages: number) => {
+    doc.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
+    doc.rect(0, H - 10, W, 10, "F");
+    doc.setFontSize(7);
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text("Gerado automaticamente pelo SisLu", margin, H - 4);
+    doc.text(`Página ${pageNum} de ${totalPages}`, W - margin, H - 4, { align: "right" });
+  };
+
+  const drawBar = (x: number, yPos: number, w: number, h: number, pct: number, color: number[]) => {
+    doc.setFillColor(230, 232, 236);
+    doc.roundedRect(x, yPos, w, h, 2, 2, "F");
+    const fillW = Math.max(0, (pct / 100) * w);
+    if (fillW > 0) {
+      doc.setFillColor(color[0], color[1], color[2]);
+      doc.roundedRect(x, yPos, fillW, h, 2, 2, "F");
+    }
+  };
+
+  const drawPieSlice = (cx: number, cy: number, r: number, startAngle: number, endAngle: number, color: number[]) => {
+    doc.setFillColor(color[0], color[1], color[2]);
+    const steps = 40;
+    const points: number[][] = [[cx, cy]];
+    for (let i = 0; i <= steps; i++) {
+      const a = startAngle + (endAngle - startAngle) * (i / steps);
+      points.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+    }
+    // Draw as filled polygon using lines
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.5);
+    const xs = points.map(p => p[0]);
+    const ys = points.map(p => p[1]);
+    // Use triangle fan approach
+    for (let i = 1; i < points.length - 1; i++) {
+      doc.triangle(
+        points[0][0], points[0][1],
+        points[i][0], points[i][1],
+        points[i+1][0], points[i+1][1],
+        "F"
+      );
+    }
+  };
+
+  /* ═══ PAGE 1: Cover & Summary ═══ */
+  // Header bar
+  doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+  doc.rect(0, 0, W, 45, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22);
+  doc.setFont("helvetica", "bold");
+  doc.text("SisLu", margin, 20);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text("Sistema de Acompanhamento de Metas", margin, 28);
+  doc.setFontSize(9);
+  doc.text(`${reportLabel}  |  ${now}`, margin, 38);
+  y = 55;
+
+  // Contract info card
+  doc.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
+  doc.roundedRect(margin, y, W - 2 * margin, 18, 3, 3, "F");
+  doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text(contractName, margin + 5, y + 7);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  doc.text(`Valor global: ${formatFullCurrency(contract.valorGlobal)}/mês  •  ${goals.length} metas avaliadas`, margin + 5, y + 14);
+  y += 25;
+
+  // KPI cards row
+  const cardW = (W - 2 * margin - 9) / 4;
+  const kpis = [
+    { label: "Risco financeiro", value: formatCurrency(stats.totalRisk), color: RED, sub: `${((stats.totalRisk / contract.valorGlobal) * 100).toFixed(1)}% do contrato` },
+    { label: "Atingimento médio", value: `${stats.avg}%`, color: stats.avg >= 90 ? GREEN : stats.avg >= 70 ? AMBER : RED, sub: `${stats.atingidas} de ${stats.total} atingidas` },
+    { label: "Em alerta", value: `${stats.parciais}`, color: AMBER, sub: "Entre 60% e 89%" },
+    { label: "Críticas", value: `${stats.criticas}`, color: RED, sub: "Abaixo de 60%" },
+  ];
+
+  kpis.forEach((kpi, i) => {
+    const x = margin + i * (cardW + 3);
+    doc.setFillColor(WHITE[0], WHITE[1], WHITE[2]);
+    doc.setDrawColor(220, 222, 226);
+    doc.roundedRect(x, y, cardW, 28, 2, 2, "FD");
+    doc.setFontSize(7);
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(kpi.label, x + 4, y + 7);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.value, x + 4, y + 18);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(kpi.sub, x + 4, y + 24);
+  });
+  y += 36;
+
+  /* ═══ Charts section ═══ */
   if (includeCharts) {
-    lines.push(`────────────────────────────────────────────────────`);
-    lines.push(`  DISTRIBUIÇÃO POR TIPO`);
-    lines.push(`────────────────────────────────────────────────────`);
-    lines.push(``);
-    lines.push(`  Quantitativas: ${goals.filter(g => g.type === "QNT").length} metas`);
-    lines.push(`  Qualitativas:  ${goals.filter(g => g.type === "QLT").length} metas`);
-    lines.push(`  Documentais:   ${goals.filter(g => g.type === "DOC").length} metas`);
-    lines.push(``);
-    lines.push(`────────────────────────────────────────────────────`);
-    lines.push(`  METAS COM MAIOR RISCO`);
-    lines.push(`────────────────────────────────────────────────────`);
-    lines.push(``);
-    [...goals].sort((a, b) => b.risk - a.risk).slice(0, 5).forEach((g, i) => {
-      lines.push(`  ${i + 1}. ${g.name} — Risco: ${formatFullCurrency(g.risk)} (${getGoalPct(g).toFixed(0)}% atingido)`);
+    // Distribution by type - horizontal bars
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text("Distribuição por tipo de meta", margin, y);
+    y += 6;
+
+    const qnt = goals.filter(g => g.type === "QNT").length;
+    const qlt = goals.filter(g => g.type === "QLT").length;
+    const docType = goals.filter(g => g.type === "DOC").length;
+    const maxGoals = Math.max(qnt, qlt, docType, 1);
+    const barWidth = W - 2 * margin - 35;
+
+    [{ label: "Quantitativas", val: qnt, color: PRIMARY },
+     { label: "Qualitativas", val: qlt, color: AMBER },
+     { label: "Documentais", val: docType, color: MUTED }].forEach(item => {
+      doc.setFontSize(7);
+      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      doc.text(item.label, margin, y + 4);
+      drawBar(margin + 32, y, barWidth, 5, (item.val / maxGoals) * 100, item.color);
+      doc.setFontSize(7);
+      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      doc.text(`${item.val}`, margin + 34 + barWidth, y + 4);
+      y += 8;
     });
-    lines.push(``);
+    y += 4;
+
+    // Pie chart - status distribution
+    addNewPageIfNeeded(60);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text("Status das metas", margin, y);
+    y += 5;
+
+    const pieData = [
+      { label: "Atingidas (≥90%)", val: stats.atingidas, color: GREEN },
+      { label: "Parciais (60-89%)", val: stats.parciais, color: AMBER },
+      { label: "Críticas (<60%)", val: stats.criticas, color: RED },
+    ].filter(d => d.val > 0);
+
+    const pieR = 18;
+    const pieCx = margin + pieR + 5;
+    const pieCy = y + pieR + 2;
+    let startA = -Math.PI / 2;
+
+    pieData.forEach(slice => {
+      const sliceAngle = (slice.val / stats.total) * Math.PI * 2;
+      drawPieSlice(pieCx, pieCy, pieR, startA, startA + sliceAngle, slice.color);
+      startA += sliceAngle;
+    });
+
+    // Legend for pie
+    let legendY = y + 4;
+    pieData.forEach(item => {
+      doc.setFillColor(item.color[0], item.color[1], item.color[2]);
+      doc.rect(margin + pieR * 2 + 18, legendY, 4, 4, "F");
+      doc.setFontSize(8);
+      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      doc.text(`${item.label}: ${item.val} (${((item.val / stats.total) * 100).toFixed(0)}%)`, margin + pieR * 2 + 25, legendY + 3.5);
+      legendY += 7;
+    });
+    y += pieR * 2 + 10;
+
+    // Risk bar chart by goal
+    addNewPageIfNeeded(60);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text("Top riscos financeiros", margin, y);
+    y += 6;
+
+    const topRisks = [...goals].sort((a, b) => b.risk - a.risk).slice(0, 5);
+    const maxRisk = Math.max(...topRisks.map(g => g.risk), 1);
+    const riskBarW = W - 2 * margin - 65;
+
+    topRisks.forEach((g, i) => {
+      const pct = getGoalPct(g);
+      const color = pct >= 90 ? GREEN : pct >= 60 ? AMBER : RED;
+      doc.setFontSize(7);
+      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      const truncName = g.name.length > 25 ? g.name.substring(0, 25) + "..." : g.name;
+      doc.text(truncName, margin, y + 4);
+      drawBar(margin + 52, y, riskBarW, 5, (g.risk / maxRisk) * 100, color);
+      doc.setFontSize(7);
+      doc.setTextColor(RED[0], RED[1], RED[2]);
+      doc.text(formatCurrency(g.risk), margin + 54 + riskBarW, y + 4);
+      y += 8;
+    });
+    y += 6;
+
+    // Rubrica allocation chart
+    addNewPageIfNeeded(55);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text("Alocação por rubrica", margin, y);
+    y += 6;
+
+    const rubColors = [PRIMARY, GREEN, AMBER, [150, 100, 200], RED];
+    contract.rubricas.forEach((r, i) => {
+      const color = rubColors[i % rubColors.length];
+      doc.setFontSize(7);
+      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      const rLabel = r.name.length > 20 ? r.name.substring(0, 20) + "..." : r.name;
+      doc.text(rLabel, margin, y + 4);
+      drawBar(margin + 40, y, W - 2 * margin - 65, 5, r.pct, color);
+      doc.setFontSize(7);
+      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      doc.text(`${r.pct}%  (${formatCurrency(r.valor)})`, W - margin - 22, y + 4);
+      y += 8;
+    });
+    y += 4;
   }
 
-  lines.push(`════════════════════════════════════════════════════`);
-  lines.push(`  Gerado automaticamente pelo SisLu`);
-  lines.push(`  ${now}`);
-  lines.push(`════════════════════════════════════════════════════`);
+  /* ═══ Goals detail table ═══ */
+  if (includeDetails) {
+    addNewPageIfNeeded(30);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text("Detalhamento por meta", margin, y);
+    y += 4;
 
-  return new Blob([lines.join("\n")], { type: "text/plain" });
+    const tableData = goals.map((g, i) => {
+      const pct = getGoalPct(g).toFixed(0);
+      return [
+        `${i + 1}`,
+        g.name,
+        g.type,
+        `${g.target}${g.unit}`,
+        `${g.current}${g.unit}`,
+        `${pct}%`,
+        formatCurrency(g.risk),
+        `${g.pesoFinanceiro}%`,
+      ];
+    });
+
+    (doc as any).autoTable({
+      startY: y,
+      head: [["#", "Meta", "Tipo", "Alvo", "Real", "Ating.", "Risco", "Peso"]],
+      body: tableData,
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 7, cellPadding: 2, lineColor: [220, 222, 226], lineWidth: 0.2 },
+      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 7 },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+      columnStyles: {
+        0: { cellWidth: 8, halign: "center" },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 12, halign: "center" },
+        3: { cellWidth: 20, halign: "right" },
+        4: { cellWidth: 20, halign: "right" },
+        5: { cellWidth: 15, halign: "center" },
+        6: { cellWidth: 22, halign: "right" },
+        7: { cellWidth: 15, halign: "center" },
+      },
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.column.index === 5) {
+          const val = parseFloat(data.cell.raw);
+          if (val >= 90) data.cell.styles.textColor = GREEN;
+          else if (val >= 60) data.cell.styles.textColor = AMBER;
+          else data.cell.styles.textColor = RED;
+          data.cell.styles.fontStyle = "bold";
+        }
+        if (data.section === "body" && data.column.index === 6) {
+          const riskText = data.cell.raw as string;
+          if (riskText !== "R$ 0k") data.cell.styles.textColor = RED;
+        }
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+  }
+
+  // Performance trend table
+  addNewPageIfNeeded(30);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.text("Evolução mensal de desempenho", margin, y);
+  y += 4;
+
+  (doc as any).autoTable({
+    startY: y,
+    head: [["Mês", "Atingidas %", "Parciais %", "Não atingidas %"]],
+    body: contract.performance.map(p => [p.month, `${p.atingidas}%`, `${p.parciais}%`, `${p.naoAtingidas}%`]),
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+    headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [248, 249, 252] },
+    columnStyles: { 0: { fontStyle: "bold" } },
+  });
+  y = (doc as any).lastAutoTable.finalY + 8;
+
+  // Risk trend table
+  addNewPageIfNeeded(30);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.text("Tendência de risco e glosa", margin, y);
+  y += 4;
+
+  (doc as any).autoTable({
+    startY: y,
+    head: [["Mês", "Risco (R$)", "Glosa (R$)"]],
+    body: contract.riskTrend.map(r => [r.month, formatFullCurrency(r.risco), formatFullCurrency(r.glosa)]),
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+    headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [248, 249, 252] },
+    didParseCell: (data: any) => {
+      if (data.section === "body" && data.column.index === 1) {
+        data.cell.styles.textColor = RED;
+      }
+    },
+  });
+
+  // Add footers to all pages
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    drawFooter(i, totalPages);
+  }
+
+  return doc.output("blob");
 }
 
 /* ══════════════════════════════════════════════
@@ -305,24 +612,28 @@ const RelatoriosPage = () => {
 
   useEffect(() => { setCurrentSlide(0); }, [selectedContractId, typeFilter, statusFilter, compareMode]);
 
-  const handleGenerate = () => {
-    const blob = generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails);
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  const handleGenerate = async () => {
+    const reportLabel = REPORT_TYPES.find(t => t.id === selectedType)?.label || selectedType;
+    toast.info("Gerando PDF...");
+    const blob = await generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails, contract, chartRef);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const reportLabel = REPORT_TYPES.find(t => t.id === selectedType)?.label || selectedType;
-    const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
+    const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
     a.href = url; a.download = fileName;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setReports(prev => [{ id: crypto.randomUUID(), name: `${reportLabel} — ${contract.unit}`, date: new Date().toLocaleDateString("pt-BR"), type: selectedType, size: `${(blob.size / 1024).toFixed(0)} KB` }, ...prev]);
-    toast.success("Relatório gerado e baixado!", { description: fileName });
+    toast.success("Relatório PDF gerado!", { description: fileName });
   };
 
-  const handleDownloadReport = (report: typeof GENERATED_REPORTS[0]) => {
-    const blob = generatePdfBlob(filteredGoals, contract.name, report.type, true, true);
+  const handleDownloadReport = async (report: typeof GENERATED_REPORTS[0]) => {
+    toast.info("Gerando PDF...");
+    const blob = await generatePdfBlob(filteredGoals, contract.name, report.type, true, true, contract, chartRef);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.txt`;
+    a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.pdf`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success("Download iniciado");
