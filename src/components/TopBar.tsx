@@ -26,8 +26,8 @@ const TopBar = () => {
 
           {/* Menu button centered */}
           <div className="flex-1 flex justify-center">
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full px-4">
-              ≡ Menu
+            <Button size="sm" onClick={() => navigate("/dashboard")} className="rounded-full px-4">
+              Menu
             </Button>
           </div>
 
