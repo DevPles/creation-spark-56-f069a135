@@ -31,6 +31,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   const [goalsCount, setGoalsCount] = useState("0");
   const [pdfName, setPdfName] = useState("");
   const [rubricas, setRubricas] = useState<Rubrica[]>(DEFAULT_RUBRICAS);
+  const [notificationEmail, setNotificationEmail] = useState("");
 
   useEffect(() => {
     if (contract && !isNew) {
