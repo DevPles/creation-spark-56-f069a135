@@ -157,6 +157,14 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
           </div>
 
           <div className="space-y-2">
+            <Label>E-mail para notificações semanais de metas baixas</Label>
+            <Input type="email" value={notificationEmail} onChange={(e) => setNotificationEmail(e.target.value)} placeholder="gestor@hospital.gov.br" />
+            <p className="text-[10px] text-muted-foreground">
+              Recebe alertas semanais quando o atingimento médio das metas ficar abaixo da fração semanal esperada. O cálculo divide a meta mensal por 4 semanas e compara com o realizado acumulado.
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label>PDF do contrato</Label>
             <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
               {pdfName ? (
