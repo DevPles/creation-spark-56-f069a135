@@ -647,7 +647,7 @@ const RelatoriosPage = () => {
                 </div>
               </div>
               <Button className="w-full" onClick={handleGenerate}>
-                <Download className="w-4 h-4 mr-2" /> Gerar e baixar PDF
+                Gerar e baixar PDF
               </Button>
             </div>
           </div>
