@@ -189,35 +189,66 @@ function generatePdfBlob(goals: GoalItem[], contractName: string, type: string, 
   const stats = computeStats(goals);
 
   const lines: string[] = [];
-  lines.push(`SisLu - Sistema de Acompanhamento`);
-  lines.push(`Relatorio: ${reportLabel}`);
-  lines.push(`Contrato: ${contractName}`);
-  lines.push(`Data: ${now}`);
+  lines.push(`════════════════════════════════════════════════════`);
+  lines.push(`  SisLu — Sistema de Acompanhamento de Metas`);
+  lines.push(`════════════════════════════════════════════════════`);
   lines.push(``);
-  lines.push(`RESUMO EXECUTIVO`);
-  lines.push(`Total de metas: ${stats.total}`);
-  lines.push(`Atingidas: ${stats.atingidas} | Parciais: ${stats.parciais} | Criticas: ${stats.criticas}`);
-  lines.push(`Atingimento medio: ${stats.avg}%`);
-  lines.push(`Risco financeiro total: ${formatFullCurrency(stats.totalRisk)}`);
+  lines.push(`  Relatório: ${reportLabel}`);
+  lines.push(`  Contrato: ${contractName}`);
+  lines.push(`  Data de geração: ${now}`);
+  lines.push(``);
+  lines.push(`────────────────────────────────────────────────────`);
+  lines.push(`  RESUMO EXECUTIVO`);
+  lines.push(`────────────────────────────────────────────────────`);
+  lines.push(``);
+  lines.push(`  Total de metas avaliadas: ${stats.total}`);
+  lines.push(`  Atingidas (≥90%):        ${stats.atingidas}`);
+  lines.push(`  Parciais (60-89%):       ${stats.parciais}`);
+  lines.push(`  Críticas (<60%):         ${stats.criticas}`);
+  lines.push(`  Atingimento médio:       ${stats.avg}%`);
+  lines.push(`  Risco financeiro total:  ${formatFullCurrency(stats.totalRisk)}`);
   lines.push(``);
 
   if (includeDetails) {
-    lines.push(`DETALHAMENTO POR META`);
-    goals.forEach(g => {
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(`  DETALHAMENTO POR META`);
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(``);
+    goals.forEach((g, i) => {
       const pct = getGoalPct(g).toFixed(1);
-      lines.push(`- ${g.name}: ${pct}% (Meta: ${g.target}${g.unit} | Real: ${g.current}${g.unit} | Risco: ${formatFullCurrency(g.risk)} | Peso: ${g.pesoFinanceiro}%)`);
+      lines.push(`  ${i + 1}. ${g.name}`);
+      lines.push(`     Tipo: ${g.type} | Rubrica: ${g.rubrica}`);
+      lines.push(`     Meta: ${g.target}${g.unit} | Realizado: ${g.current}${g.unit} | Atingimento: ${pct}%`);
+      lines.push(`     Risco: ${formatFullCurrency(g.risk)} | Peso financeiro: ${g.pesoFinanceiro}%`);
+      lines.push(``);
+    });
+  }
+
+  if (includeCharts) {
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(`  DISTRIBUIÇÃO POR TIPO`);
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(``);
+    lines.push(`  Quantitativas: ${goals.filter(g => g.type === "QNT").length} metas`);
+    lines.push(`  Qualitativas:  ${goals.filter(g => g.type === "QLT").length} metas`);
+    lines.push(`  Documentais:   ${goals.filter(g => g.type === "DOC").length} metas`);
+    lines.push(``);
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(`  METAS COM MAIOR RISCO`);
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(``);
+    [...goals].sort((a, b) => b.risk - a.risk).slice(0, 5).forEach((g, i) => {
+      lines.push(`  ${i + 1}. ${g.name} — Risco: ${formatFullCurrency(g.risk)} (${getGoalPct(g).toFixed(0)}% atingido)`);
     });
     lines.push(``);
   }
 
-  if (includeCharts) {
-    lines.push(`DISTRIBUICAO POR RUBRICA`);
-    lines.push(`  Metas Quantitativas: ${goals.filter(g => g.type === "QNT").length} metas`);
-    lines.push(`  Metas Qualitativas: ${goals.filter(g => g.type === "QLT").length} metas`);
-    lines.push(`  Documentais: ${goals.filter(g => g.type === "DOC").length} metas`);
-  }
+  lines.push(`════════════════════════════════════════════════════`);
+  lines.push(`  Gerado automaticamente pelo SisLu`);
+  lines.push(`  ${now}`);
+  lines.push(`════════════════════════════════════════════════════`);
 
-  return new Blob([lines.join("\n")], { type: "application/pdf" });
+  return new Blob([lines.join("\n")], { type: "text/plain" });
 }
 
 /* ══════════════════════════════════════════════
