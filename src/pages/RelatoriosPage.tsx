@@ -578,14 +578,14 @@ const RelatoriosPage = () => {
               <span className="text-[10px] text-muted-foreground ml-2">{currentSlide + 1}/{TOTAL_SLIDES}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsPaused(!isPaused)}>
-                {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+              <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={() => setIsPaused(!isPaused)}>
+                {isPaused ? "▶" : "⏸"}
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={prevSlide}>
-                <ChevronLeft className="w-4 h-4" />
+              <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={prevSlide}>
+                ←
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={nextSlide}>
-                <ChevronRight className="w-4 h-4" />
+              <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={nextSlide}>
+                →
               </Button>
             </div>
           </div>
