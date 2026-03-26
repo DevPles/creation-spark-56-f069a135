@@ -180,8 +180,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
           <Separator />
 
           {/* ── MANAGE OTHER USERS ── */}
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
+          <div>
             <h3 className="font-display font-semibold text-foreground">Gerenciar usuários</h3>
           </div>
 
