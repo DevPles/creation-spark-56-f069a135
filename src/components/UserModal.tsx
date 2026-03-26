@@ -57,7 +57,6 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
       setUnit(user.unit);
       setStatus(user.status);
       setPhoto(user.photo);
-      setVisibleCards(user.visibleCards || ALL_CARDS.map(c => c.id));
     } else if (isNew) {
       setName("");
       setEmail("");
@@ -65,7 +64,6 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
       setUnit("Hospital Geral");
       setStatus("Ativo");
       setPhoto(undefined);
-      setVisibleCards(ALL_CARDS.map(c => c.id));
     }
   }, [user, isNew, open]);
 
