@@ -552,7 +552,7 @@ const RelatoriosPage = () => {
           </div>
 
           <div className="flex items-center gap-2 ml-auto border-l border-border pl-4">
-            <GitCompareArrows className="w-4 h-4 text-muted-foreground" />
+            <Label className="text-xs text-muted-foreground cursor-pointer" htmlFor="compare-toggle">⇄ Comparar</Label>
             <Label className="text-xs text-muted-foreground cursor-pointer" htmlFor="compare-toggle">Comparar</Label>
             <Switch id="compare-toggle" checked={compareMode} onCheckedChange={setCompareMode} />
             {compareMode && (
