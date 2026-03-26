@@ -42,6 +42,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setUnit(contract.unit || "Hospital Geral");
       setGoalsCount(String(contract.goals));
       setPdfName(contract.pdfName || "");
+      setNotificationEmail(contract.notificationEmail || "");
       setRubricas(contract.rubricas?.length ? contract.rubricas : DEFAULT_RUBRICAS);
       const parts = contract.period.split("-");
       if (parts.length === 2) {
