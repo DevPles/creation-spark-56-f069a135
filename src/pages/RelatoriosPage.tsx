@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Pause, Play, ChevronRight, Download, FileText, GitCompareArrows } from "lucide-react";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import GoalRow from "@/components/GoalRow";
@@ -190,35 +189,66 @@ function generatePdfBlob(goals: GoalItem[], contractName: string, type: string, 
   const stats = computeStats(goals);
 
   const lines: string[] = [];
-  lines.push(`SisLu - Sistema de Acompanhamento`);
-  lines.push(`Relatorio: ${reportLabel}`);
-  lines.push(`Contrato: ${contractName}`);
-  lines.push(`Data: ${now}`);
+  lines.push(`════════════════════════════════════════════════════`);
+  lines.push(`  SisLu — Sistema de Acompanhamento de Metas`);
+  lines.push(`════════════════════════════════════════════════════`);
   lines.push(``);
-  lines.push(`RESUMO EXECUTIVO`);
-  lines.push(`Total de metas: ${stats.total}`);
-  lines.push(`Atingidas: ${stats.atingidas} | Parciais: ${stats.parciais} | Criticas: ${stats.criticas}`);
-  lines.push(`Atingimento medio: ${stats.avg}%`);
-  lines.push(`Risco financeiro total: ${formatFullCurrency(stats.totalRisk)}`);
+  lines.push(`  Relatório: ${reportLabel}`);
+  lines.push(`  Contrato: ${contractName}`);
+  lines.push(`  Data de geração: ${now}`);
+  lines.push(``);
+  lines.push(`────────────────────────────────────────────────────`);
+  lines.push(`  RESUMO EXECUTIVO`);
+  lines.push(`────────────────────────────────────────────────────`);
+  lines.push(``);
+  lines.push(`  Total de metas avaliadas: ${stats.total}`);
+  lines.push(`  Atingidas (≥90%):        ${stats.atingidas}`);
+  lines.push(`  Parciais (60-89%):       ${stats.parciais}`);
+  lines.push(`  Críticas (<60%):         ${stats.criticas}`);
+  lines.push(`  Atingimento médio:       ${stats.avg}%`);
+  lines.push(`  Risco financeiro total:  ${formatFullCurrency(stats.totalRisk)}`);
   lines.push(``);
 
   if (includeDetails) {
-    lines.push(`DETALHAMENTO POR META`);
-    goals.forEach(g => {
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(`  DETALHAMENTO POR META`);
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(``);
+    goals.forEach((g, i) => {
       const pct = getGoalPct(g).toFixed(1);
-      lines.push(`- ${g.name}: ${pct}% (Meta: ${g.target}${g.unit} | Real: ${g.current}${g.unit} | Risco: ${formatFullCurrency(g.risk)} | Peso: ${g.pesoFinanceiro}%)`);
+      lines.push(`  ${i + 1}. ${g.name}`);
+      lines.push(`     Tipo: ${g.type} | Rubrica: ${g.rubrica}`);
+      lines.push(`     Meta: ${g.target}${g.unit} | Realizado: ${g.current}${g.unit} | Atingimento: ${pct}%`);
+      lines.push(`     Risco: ${formatFullCurrency(g.risk)} | Peso financeiro: ${g.pesoFinanceiro}%`);
+      lines.push(``);
+    });
+  }
+
+  if (includeCharts) {
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(`  DISTRIBUIÇÃO POR TIPO`);
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(``);
+    lines.push(`  Quantitativas: ${goals.filter(g => g.type === "QNT").length} metas`);
+    lines.push(`  Qualitativas:  ${goals.filter(g => g.type === "QLT").length} metas`);
+    lines.push(`  Documentais:   ${goals.filter(g => g.type === "DOC").length} metas`);
+    lines.push(``);
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(`  METAS COM MAIOR RISCO`);
+    lines.push(`────────────────────────────────────────────────────`);
+    lines.push(``);
+    [...goals].sort((a, b) => b.risk - a.risk).slice(0, 5).forEach((g, i) => {
+      lines.push(`  ${i + 1}. ${g.name} — Risco: ${formatFullCurrency(g.risk)} (${getGoalPct(g).toFixed(0)}% atingido)`);
     });
     lines.push(``);
   }
 
-  if (includeCharts) {
-    lines.push(`DISTRIBUICAO POR RUBRICA`);
-    lines.push(`  Metas Quantitativas: ${goals.filter(g => g.type === "QNT").length} metas`);
-    lines.push(`  Metas Qualitativas: ${goals.filter(g => g.type === "QLT").length} metas`);
-    lines.push(`  Documentais: ${goals.filter(g => g.type === "DOC").length} metas`);
-  }
+  lines.push(`════════════════════════════════════════════════════`);
+  lines.push(`  Gerado automaticamente pelo SisLu`);
+  lines.push(`  ${now}`);
+  lines.push(`════════════════════════════════════════════════════`);
 
-  return new Blob([lines.join("\n")], { type: "application/pdf" });
+  return new Blob([lines.join("\n")], { type: "text/plain" });
 }
 
 /* ══════════════════════════════════════════════
@@ -280,19 +310,19 @@ const RelatoriosPage = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const reportLabel = REPORT_TYPES.find(t => t.id === selectedType)?.label || selectedType;
-    const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.txt`;
     a.href = url; a.download = fileName;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setReports(prev => [{ id: crypto.randomUUID(), name: `${reportLabel} — ${contract.unit}`, date: new Date().toLocaleDateString("pt-BR"), type: selectedType, size: `${(blob.size / 1024).toFixed(0)} KB` }, ...prev]);
-    toast.success("PDF gerado e baixado!", { description: fileName });
+    toast.success("Relatório gerado e baixado!", { description: fileName });
   };
 
   const handleDownloadReport = (report: typeof GENERATED_REPORTS[0]) => {
     const blob = generatePdfBlob(filteredGoals, contract.name, report.type, true, true);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.pdf`;
+    a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.txt`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success("Download iniciado");
@@ -502,8 +532,8 @@ const RelatoriosPage = () => {
     <div className="min-h-screen bg-background">
       <TopBar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} className="rounded-full mb-4">
-          <ChevronLeft className="w-4 h-4" />
+        <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full mb-4">
+          ← Voltar
         </Button>
 
         <PageHeader
@@ -553,8 +583,7 @@ const RelatoriosPage = () => {
           </div>
 
           <div className="flex items-center gap-2 ml-auto border-l border-border pl-4">
-            <GitCompareArrows className="w-4 h-4 text-muted-foreground" />
-            <Label className="text-xs text-muted-foreground cursor-pointer" htmlFor="compare-toggle">Comparar</Label>
+            <Label className="text-xs text-muted-foreground cursor-pointer" htmlFor="compare-toggle">⇄ Comparar</Label>
             <Switch id="compare-toggle" checked={compareMode} onCheckedChange={setCompareMode} />
             {compareMode && (
               <Select value={compareContractId} onValueChange={setCompareContractId}>
@@ -579,14 +608,14 @@ const RelatoriosPage = () => {
               <span className="text-[10px] text-muted-foreground ml-2">{currentSlide + 1}/{TOTAL_SLIDES}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsPaused(!isPaused)}>
-                {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+              <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={() => setIsPaused(!isPaused)}>
+                {isPaused ? "▶" : "⏸"}
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={prevSlide}>
-                <ChevronLeft className="w-4 h-4" />
+              <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={prevSlide}>
+                ←
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={nextSlide}>
-                <ChevronRight className="w-4 h-4" />
+              <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={nextSlide}>
+                →
               </Button>
             </div>
           </div>
@@ -622,8 +651,8 @@ const RelatoriosPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
             <div className="kpi-card space-y-4">
-              <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
-                <FileText className="w-5 h-5" /> Gerar relatório
+              <h2 className="font-display font-semibold text-foreground">
+                Gerar relatório
               </h2>
               <div className="space-y-2">
                 <Label>Tipo de relatório</Label>
@@ -647,7 +676,7 @@ const RelatoriosPage = () => {
                 </div>
               </div>
               <Button className="w-full" onClick={handleGenerate}>
-                <Download className="w-4 h-4 mr-2" /> Gerar e baixar PDF
+                Gerar e baixar PDF
               </Button>
             </div>
           </div>
@@ -666,7 +695,7 @@ const RelatoriosPage = () => {
                   <span className="col-span-1 text-muted-foreground">{report.size}</span>
                   <span className="col-span-2 text-right">
                     <Button variant="outline" size="sm" onClick={() => handleDownloadReport(report)}>
-                      <Download className="w-3 h-3 mr-1" /> PDF
+                      Baixar PDF
                     </Button>
                   </span>
                 </motion.div>

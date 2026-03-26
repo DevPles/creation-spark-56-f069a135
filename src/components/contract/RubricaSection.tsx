@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Trash2 } from "lucide-react";
 import { Rubrica } from "./types";
 
 interface RubricaSectionProps {
@@ -82,7 +81,7 @@ const RubricaSection = ({ rubricas, onChange, totalValue }: RubricaSectionProps)
                 className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                 onClick={() => removeRubrica(r.id)}
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                ✕
               </Button>
             </div>
           );
@@ -90,7 +89,7 @@ const RubricaSection = ({ rubricas, onChange, totalValue }: RubricaSectionProps)
       </div>
 
       <Button variant="outline" size="sm" onClick={addRubrica} className="w-full">
-        <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar rubrica
+        + Adicionar rubrica
       </Button>
 
       {/* Summary by type */}

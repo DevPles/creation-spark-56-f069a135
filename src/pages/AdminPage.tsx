@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Shield } from "lucide-react";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import UserModal from "@/components/UserModal";
@@ -55,8 +54,8 @@ const AdminPage = () => {
     <div className="min-h-screen bg-background">
       <TopBar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} className="rounded-full mb-4">
-          <ChevronLeft className="w-4 h-4" />
+        <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full mb-4">
+          ← Voltar
         </Button>
 
         <PageHeader
@@ -67,7 +66,7 @@ const AdminPage = () => {
           action={
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setAdminModalOpen(true)}>
-                <Shield className="w-4 h-4 mr-2" /> Painel Admin
+                Painel Admin
               </Button>
               <Button onClick={handleNewUser}>Novo usuário</Button>
             </div>

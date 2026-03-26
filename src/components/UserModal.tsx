@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect, useRef } from "react";
-import { Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
@@ -127,7 +126,7 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
                 <span className="text-lg font-semibold text-muted-foreground">{initials}</span>
               )}
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-5 h-5 text-white" />
+                <span className="text-white text-xs font-medium">Foto</span>
               </div>
             </button>
             <input

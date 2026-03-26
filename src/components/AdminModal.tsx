@@ -10,7 +10,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect, useRef } from "react";
-import { Camera, KeyRound, Shield, Users } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
@@ -121,8 +120,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary" />
+          <DialogTitle className="font-display">
             Painel do Administrador
           </DialogTitle>
         </DialogHeader>
@@ -134,7 +132,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
               className="relative w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden group shrink-0 border-2 border-border hover:border-primary transition-colors">
               {photo ? <img src={photo} alt="Avatar" className="w-full h-full object-cover" /> : <span className="text-lg font-semibold text-muted-foreground">{initials}</span>}
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-5 h-5 text-white" />
+                <span className="text-white text-xs font-medium">Foto</span>
               </div>
             </button>
             <input ref={fileInputRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={handlePhotoUpload} />
@@ -182,8 +180,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
           <Separator />
 
           {/* ── MANAGE OTHER USERS ── */}
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
+          <div>
             <h3 className="font-display font-semibold text-foreground">Gerenciar usuários</h3>
           </div>
 
@@ -230,7 +227,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
                 <Label className="text-sm font-semibold">Segurança</Label>
                 <p className="text-[10px] text-muted-foreground -mt-1">Enviar e-mail de redefinição para {selectedOtherUser.email}</p>
                 <Button variant="outline" className="w-full" onClick={handleResetPassword}>
-                  <KeyRound className="w-4 h-4 mr-2" /> Resetar senha de {selectedOtherUser.name.split(" ")[0]}
+                  Resetar senha de {selectedOtherUser.name.split(" ")[0]}
                 </Button>
               </div>
             </>
