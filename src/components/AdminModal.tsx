@@ -227,7 +227,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
                 <Label className="text-sm font-semibold">Segurança</Label>
                 <p className="text-[10px] text-muted-foreground -mt-1">Enviar e-mail de redefinição para {selectedOtherUser.email}</p>
                 <Button variant="outline" className="w-full" onClick={handleResetPassword}>
-                  <KeyRound className="w-4 h-4 mr-2" /> Resetar senha de {selectedOtherUser.name.split(" ")[0]}
+                  Resetar senha de {selectedOtherUser.name.split(" ")[0]}
                 </Button>
               </div>
             </>

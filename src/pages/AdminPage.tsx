@@ -66,7 +66,7 @@ const AdminPage = () => {
           action={
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setAdminModalOpen(true)}>
-                <Shield className="w-4 h-4 mr-2" /> Painel Admin
+                Painel Admin
               </Button>
               <Button onClick={handleNewUser}>Novo usuário</Button>
             </div>
