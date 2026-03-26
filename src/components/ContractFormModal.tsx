@@ -31,6 +31,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   const [goalsCount, setGoalsCount] = useState("0");
   const [pdfName, setPdfName] = useState("");
   const [rubricas, setRubricas] = useState<Rubrica[]>(DEFAULT_RUBRICAS);
+  const [notificationEmail, setNotificationEmail] = useState("");
 
   useEffect(() => {
     if (contract && !isNew) {
@@ -41,6 +42,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setUnit(contract.unit || "Hospital Geral");
       setGoalsCount(String(contract.goals));
       setPdfName(contract.pdfName || "");
+      setNotificationEmail(contract.notificationEmail || "");
       setRubricas(contract.rubricas?.length ? contract.rubricas : DEFAULT_RUBRICAS);
       const parts = contract.period.split("-");
       if (parts.length === 2) {
@@ -55,6 +57,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setUnit("Hospital Geral");
       setGoalsCount("0");
       setPdfName("");
+      setNotificationEmail("");
       setPeriodStart("2024");
       setPeriodEnd("2025");
       setRubricas(DEFAULT_RUBRICAS.map((r) => ({ ...r })));
@@ -72,6 +75,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       period: `${periodStart}-${periodEnd}`,
       unit,
       pdfName,
+      notificationEmail,
       rubricas: rubricas.filter((r) => r.percent > 0),
     };
     onSave(data);
@@ -150,6 +154,14 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
           <div className="space-y-2">
             <Label>Nº de metas vinculadas</Label>
             <Input type="number" value={goalsCount} onChange={(e) => setGoalsCount(e.target.value)} placeholder="8" />
+          </div>
+
+          <div className="space-y-2">
+            <Label>E-mail para notificações semanais de metas baixas</Label>
+            <Input type="email" value={notificationEmail} onChange={(e) => setNotificationEmail(e.target.value)} placeholder="gestor@hospital.gov.br" />
+            <p className="text-[10px] text-muted-foreground">
+              Recebe alertas semanais quando o atingimento médio das metas ficar abaixo da fração semanal esperada. O cálculo divide a meta mensal por 4 semanas e compara com o realizado acumulado.
+            </p>
           </div>
 
           <div className="space-y-2">

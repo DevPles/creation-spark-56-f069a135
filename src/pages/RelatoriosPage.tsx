@@ -42,7 +42,7 @@ interface GoalItem {
 
 const CONTRACTS: ContractData[] = [
   {
-    id: "c1", name: "Contrato 001/2024 — Hospital Geral", unit: "Hospital Geral", valorGlobal: 2800000,
+    id: "c1", name: "Contrato de Gestão — Hospital Geral", unit: "Hospital Geral", valorGlobal: 2800000,
     rubricas: [
       { name: "RH", pct: 55, valor: 1540000 },
       { name: "Insumos", pct: 20, valor: 560000 },
@@ -74,7 +74,7 @@ const CONTRACTS: ContractData[] = [
     ],
   },
   {
-    id: "c2", name: "Contrato 002/2024 — UPA Norte", unit: "UPA Norte", valorGlobal: 1200000,
+    id: "c2", name: "Contrato de Gestão — UPA Norte", unit: "UPA Norte", valorGlobal: 1200000,
     rubricas: [
       { name: "RH", pct: 60, valor: 720000 },
       { name: "Insumos", pct: 18, valor: 216000 },
@@ -104,7 +104,7 @@ const CONTRACTS: ContractData[] = [
     ],
   },
   {
-    id: "c3", name: "Contrato 003/2024 — UBS Centro", unit: "UBS Centro", valorGlobal: 680000,
+    id: "c3", name: "Contrato de Gestão — UBS Centro", unit: "UBS Centro", valorGlobal: 680000,
     rubricas: [
       { name: "RH", pct: 65, valor: 442000 },
       { name: "Insumos", pct: 15, valor: 102000 },
@@ -550,7 +550,7 @@ const RelatoriosPage = () => {
             <Select value={selectedContractId} onValueChange={setSelectedContractId}>
               <SelectTrigger className="w-[240px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.name.split("—")[0].trim()}</SelectItem>)}
+                {CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -589,7 +589,7 @@ const RelatoriosPage = () => {
               <Select value={compareContractId} onValueChange={setCompareContractId}>
                 <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CONTRACTS.filter(c => c.id !== selectedContractId).map(c => <SelectItem key={c.id} value={c.id}>{c.name.split("—")[0].trim()}</SelectItem>)}
+                  {CONTRACTS.filter(c => c.id !== selectedContractId).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             )}
