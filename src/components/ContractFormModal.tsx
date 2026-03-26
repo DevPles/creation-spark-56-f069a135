@@ -57,6 +57,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setUnit("Hospital Geral");
       setGoalsCount("0");
       setPdfName("");
+      setNotificationEmail("");
       setPeriodStart("2024");
       setPeriodEnd("2025");
       setRubricas(DEFAULT_RUBRICAS.map((r) => ({ ...r })));
