@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Shield } from "lucide-react";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import UserModal from "@/components/UserModal";
+import AdminModal from "@/components/AdminModal";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
-interface User { id: string; name: string; email: string; role: string; unit: string; status: string; }
+interface User { id: string; name: string; email: string; role: string; unit: string; status: string; photo?: string; visibleCards?: string[]; }
 
 const INITIAL_USERS: User[] = [
   { id: "1", name: "Ana Silva", email: "ana.silva@hospital.gov.br", role: "Gestor", unit: "Hospital Geral", status: "Ativo" },
@@ -29,12 +30,24 @@ const AdminPage = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
 
-  const handleUserClick = (user: User) => { setSelectedUser(user); setIsNewUser(false); setModalOpen(true); };
+  const handleUserClick = (user: User) => {
+    if (user.role === "Administrador") {
+      setAdminModalOpen(true);
+      return;
+    }
+    setSelectedUser(user);
+    setIsNewUser(false);
+    setModalOpen(true);
+  };
   const handleNewUser = () => { setSelectedUser(null); setIsNewUser(true); setModalOpen(true); };
   const handleSave = (user: User) => {
-    if (isNewUser) setUsers((prev) => [...prev, user]);
-    else setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u)));
+    if (isNewUser) setUsers(prev => [...prev, user]);
+    else setUsers(prev => prev.map(u => u.id === user.id ? user : u));
+  };
+  const handleAdminSaveUser = (user: User) => {
+    setUsers(prev => prev.map(u => u.id === user.id ? user : u));
   };
 
   return (
@@ -50,7 +63,14 @@ const AdminPage = () => {
           subtitle="Clique em um usuário para editar ou criar novo"
           period={period} onPeriodChange={setPeriod}
           selectedUnit={selectedUnit} onUnitChange={setSelectedUnit}
-          action={<Button onClick={handleNewUser}>Novo usuário</Button>}
+          action={
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setAdminModalOpen(true)}>
+                <Shield className="w-4 h-4 mr-2" /> Painel Admin
+              </Button>
+              <Button onClick={handleNewUser}>Novo usuário</Button>
+            </div>
+          }
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -79,6 +99,7 @@ const AdminPage = () => {
         </div>
       </main>
       <UserModal user={selectedUser} open={modalOpen} onOpenChange={setModalOpen} isNew={isNewUser} onSave={handleSave} />
+      <AdminModal users={users} open={adminModalOpen} onOpenChange={setAdminModalOpen} onSaveUser={handleAdminSaveUser} />
     </div>
   );
 };
