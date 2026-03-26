@@ -150,15 +150,4 @@
     color: hsl(var(--success));
   }
 
-  .period-chip {
-    @apply px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors;
-  }
-
-  .period-chip-active {
-    @apply bg-primary text-primary-foreground;
-  }
-
-  .period-chip-inactive {
-    @apply bg-secondary text-muted-foreground hover:bg-muted;
-  }
 }

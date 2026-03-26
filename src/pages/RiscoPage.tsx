@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import TopBar from "@/components/TopBar";
+import RiskModal from "@/components/RiskModal";
 import { motion } from "framer-motion";
 
 const PERIODS = [
@@ -26,8 +27,15 @@ const RiscoPage = () => {
   const navigate = useNavigate();
   const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState(UNITS[0]);
+  const [selectedRisk, setSelectedRisk] = useState<typeof RISK_DATA[0] | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const totalRisk = RISK_DATA.reduce((s, r) => s + r.risk, 0);
+
+  const handleClick = (item: typeof RISK_DATA[0]) => {
+    setSelectedRisk(item);
+    setModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,7 +47,7 @@ const RiscoPage = () => {
         </button>
 
         <h1 className="font-display text-xl font-bold text-foreground mb-1">Projeção de risco financeiro</h1>
-        <p className="text-sm text-muted-foreground mb-6">Estimativa de perda contratual — {PERIODS.find(p => p.key === period)?.label}</p>
+        <p className="text-sm text-muted-foreground mb-6">Clique em uma meta para ver cenários e detalhes</p>
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="kpi-card mb-6">
           <p className="text-sm text-muted-foreground">Risco total estimado</p>
@@ -60,7 +68,8 @@ const RiscoPage = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: i * 0.05 }}
-              className="px-5 py-3 grid grid-cols-12 items-center text-sm border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+              onClick={() => handleClick(item)}
+              className="px-5 py-3 grid grid-cols-12 items-center text-sm border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
             >
               <span className="col-span-4 font-medium text-foreground">{item.goal}</span>
               <span className="col-span-2 text-right font-display font-bold text-risk">
@@ -76,6 +85,8 @@ const RiscoPage = () => {
           ))}
         </div>
       </main>
+
+      <RiskModal item={selectedRisk} open={modalOpen} onOpenChange={setModalOpen} />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import TopBar from "@/components/TopBar";
+import UserModal from "@/components/UserModal";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
@@ -33,6 +34,21 @@ const AdminPage = () => {
   const navigate = useNavigate();
   const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState(UNITS[0]);
+  const [selectedUser, setSelectedUser] = useState<typeof USERS[0] | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
+
+  const handleUserClick = (user: typeof USERS[0]) => {
+    setSelectedUser(user);
+    setIsNewUser(false);
+    setModalOpen(true);
+  };
+
+  const handleNewUser = () => {
+    setSelectedUser(null);
+    setIsNewUser(true);
+    setModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,9 +62,9 @@ const AdminPage = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-display text-xl font-bold text-foreground">Administração</h1>
-            <p className="text-sm text-muted-foreground">Gerenciamento de usuários e permissões</p>
+            <p className="text-sm text-muted-foreground">Clique em um usuário para editar ou criar novo</p>
           </div>
-          <Button>Novo usuário</Button>
+          <Button onClick={handleNewUser}>Novo usuário</Button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -84,10 +100,16 @@ const AdminPage = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: i * 0.04 }}
+              onClick={() => handleUserClick(user)}
               className="px-5 py-3 grid grid-cols-12 items-center text-sm border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
             >
-              <span className="col-span-3 font-medium text-foreground">{user.name}</span>
-              <span className="col-span-3 text-muted-foreground">{user.email}</span>
+              <div className="col-span-3 flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground shrink-0">
+                  {user.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                </div>
+                <span className="font-medium text-foreground truncate">{user.name}</span>
+              </div>
+              <span className="col-span-3 text-muted-foreground truncate">{user.email}</span>
               <span className="col-span-2">
                 <span className={`status-badge ${ROLE_COLORS[user.role] || ""}`}>{user.role}</span>
               </span>
@@ -101,6 +123,8 @@ const AdminPage = () => {
           ))}
         </div>
       </main>
+
+      <UserModal user={selectedUser} open={modalOpen} onOpenChange={setModalOpen} isNew={isNewUser} />
     </div>
   );
 };

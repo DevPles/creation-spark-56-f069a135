@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import KpiCard from "@/components/KpiCard";
 import GoalRow from "@/components/GoalRow";
+import GoalModal from "@/components/GoalModal";
 import { motion } from "framer-motion";
 
 const PERIODS = [
@@ -30,6 +31,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState(UNITS[0]);
+  const [selectedGoal, setSelectedGoal] = useState<typeof MOCK_GOALS[0] | null>(null);
+  const [goalModalOpen, setGoalModalOpen] = useState(false);
 
   const totalRisk = MOCK_GOALS.reduce((s, g) => s + g.risk, 0);
   const goalsAtRisk = MOCK_GOALS.filter((g) => g.risk > 0).length;
@@ -40,6 +43,11 @@ const Dashboard = () => {
     }, 0) / MOCK_GOALS.length
   );
   const pendingEvidence = MOCK_GOALS.filter((g) => g.type === "DOC" && g.current < g.target).length;
+
+  const handleGoalClick = (goal: typeof MOCK_GOALS[0]) => {
+    setSelectedGoal(goal);
+    setGoalModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,36 +64,16 @@ const Dashboard = () => {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-            <KpiCard
-              label="R$ em risco"
-              value={`R$ ${(totalRisk / 1000).toFixed(1)}k`}
-              status="critical"
-              subtitle="Contrato vigente"
-            />
+            <KpiCard label="R$ em risco" value={`R$ ${(totalRisk / 1000).toFixed(1)}k`} status="critical" subtitle="Contrato vigente" />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <KpiCard
-              label="Metas em risco"
-              value={`${goalsAtRisk} de ${MOCK_GOALS.length}`}
-              status="warning"
-              subtitle="Abaixo do pactuado"
-            />
+            <KpiCard label="Metas em risco" value={`${goalsAtRisk} de ${MOCK_GOALS.length}`} status="warning" subtitle="Abaixo do pactuado" />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <KpiCard
-              label="Atingimento médio"
-              value={`${avgAttainment}%`}
-              status={avgAttainment >= 90 ? "success" : avgAttainment >= 70 ? "warning" : "critical"}
-              subtitle="Todas as metas"
-            />
+            <KpiCard label="Atingimento médio" value={`${avgAttainment}%`} status={avgAttainment >= 90 ? "success" : avgAttainment >= 70 ? "warning" : "critical"} subtitle="Todas as metas" />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <KpiCard
-              label="Evidências pendentes"
-              value={String(pendingEvidence)}
-              status={pendingEvidence > 0 ? "warning" : "success"}
-              subtitle="Documentos a enviar"
-            />
+            <KpiCard label="Evidências pendentes" value={String(pendingEvidence)} status={pendingEvidence > 0 ? "warning" : "success"} subtitle="Documentos a enviar" />
           </motion.div>
         </div>
 
@@ -114,11 +102,13 @@ const Dashboard = () => {
           </div>
           <div className="divide-y divide-border">
             {MOCK_GOALS.map((goal, i) => (
-              <GoalRow key={goal.id} goal={goal} index={i} />
+              <GoalRow key={goal.id} goal={goal} index={i} onClick={() => handleGoalClick(goal)} />
             ))}
           </div>
         </motion.div>
       </main>
+
+      <GoalModal goal={selectedGoal} open={goalModalOpen} onOpenChange={setGoalModalOpen} />
     </div>
   );
 };
