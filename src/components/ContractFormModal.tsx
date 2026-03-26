@@ -15,29 +15,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
+import { ContractData, ContractFormModalProps, Rubrica, STATUSES, UNITS_LIST, DEFAULT_RUBRICAS } from "./contract/types";
+import RubricaSection from "./contract/RubricaSection";
 
-export interface ContractData {
-  id: string;
-  name: string;
-  value: number;
-  variable: number;
-  goals: number;
-  status: string;
-  period: string;
-  unit: string;
-  pdfName?: string;
-}
-
-interface ContractFormModalProps {
-  contract: ContractData | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSave: (contract: ContractData) => void;
-  isNew?: boolean;
-}
-
-const STATUSES = ["Vigente", "Em renovação", "Encerrado"];
-const UNITS_LIST = ["Hospital Geral", "UPA Norte", "UBS Centro"];
+export type { ContractData } from "./contract/types";
 
 const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false }: ContractFormModalProps) => {
   const [name, setName] = useState("");
@@ -49,6 +30,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   const [unit, setUnit] = useState("Hospital Geral");
   const [goalsCount, setGoalsCount] = useState("0");
   const [pdfName, setPdfName] = useState("");
+  const [rubricas, setRubricas] = useState<Rubrica[]>(DEFAULT_RUBRICAS);
 
   useEffect(() => {
     if (contract && !isNew) {
@@ -59,6 +41,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setUnit(contract.unit || "Hospital Geral");
       setGoalsCount(String(contract.goals));
       setPdfName(contract.pdfName || "");
+      setRubricas(contract.rubricas?.length ? contract.rubricas : DEFAULT_RUBRICAS);
       const parts = contract.period.split("-");
       if (parts.length === 2) {
         setPeriodStart(parts[0]);
@@ -74,6 +57,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setPdfName("");
       setPeriodStart("2024");
       setPeriodEnd("2025");
+      setRubricas(DEFAULT_RUBRICAS.map((r) => ({ ...r })));
     }
   }, [contract, isNew, open]);
 
@@ -88,14 +72,17 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       period: `${periodStart}-${periodEnd}`,
       unit,
       pdfName,
+      rubricas: rubricas.filter((r) => r.percent > 0),
     };
     onSave(data);
     onOpenChange(false);
   };
 
+  const totalValue = Number(value) || 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">
             {isNew ? "Novo contrato" : "Editar contrato"}
@@ -135,7 +122,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Valor total (R$)</Label>
+              <Label>Valor global mensal (R$)</Label>
               <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder="12000000" />
             </div>
             <div className="space-y-2">
@@ -143,6 +130,11 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
               <Input type="number" value={variable} onChange={(e) => setVariable(e.target.value)} placeholder="10" min="0" max="100" />
             </div>
           </div>
+
+          {/* Rubrica breakdown - appears when value is set */}
+          {totalValue > 0 && (
+            <RubricaSection rubricas={rubricas} onChange={setRubricas} totalValue={totalValue} />
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -160,7 +152,6 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
             <Input type="number" value={goalsCount} onChange={(e) => setGoalsCount(e.target.value)} placeholder="8" />
           </div>
 
-          {/* PDF upload area */}
           <div className="space-y-2">
             <Label>PDF do contrato</Label>
             <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
@@ -180,14 +171,14 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
             </div>
           </div>
 
-          {/* Financial summary preview */}
-          {Number(value) > 0 && (
+          {/* Financial summary */}
+          {totalValue > 0 && (
             <div className="bg-secondary rounded-lg p-3">
               <p className="text-xs font-medium text-foreground mb-2">Resumo financeiro</p>
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div>
-                  <p className="text-muted-foreground">Valor total</p>
-                  <p className="font-display font-bold text-foreground">R$ {(Number(value) / 1000000).toFixed(1)}M</p>
+                  <p className="text-muted-foreground">Valor global</p>
+                  <p className="font-display font-bold text-foreground">R$ {(totalValue / 1000000).toFixed(1)}M</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Parte variável</p>
@@ -195,7 +186,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
                 </div>
                 <div>
                   <p className="text-muted-foreground">R$ variável</p>
-                  <p className="font-display font-bold text-risk">R$ {((Number(value) * (Number(variable) / 100)) / 1000).toFixed(0)}k</p>
+                  <p className="font-display font-bold text-risk">R$ {((totalValue * (Number(variable) / 100)) / 1000).toFixed(0)}k</p>
                 </div>
               </div>
             </div>
