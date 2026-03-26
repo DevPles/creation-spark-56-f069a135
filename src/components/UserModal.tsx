@@ -93,7 +93,7 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
     }
     const data: User = {
       id: user?.id || crypto.randomUUID(),
-      name, email, role, unit, status, photo, visibleCards,
+      name, email, role, unit, status, photo,
     };
     onSave?.(data);
     onOpenChange(false);
