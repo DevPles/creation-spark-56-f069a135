@@ -74,7 +74,7 @@ const CONTRACTS: ContractData[] = [
     ],
   },
   {
-    id: "c2", name: "Contrato 002/2024 — UPA Norte", unit: "UPA Norte", valorGlobal: 1200000,
+    id: "c2", name: "Contrato de Gestão — UPA Norte", unit: "UPA Norte", valorGlobal: 1200000,
     rubricas: [
       { name: "RH", pct: 60, valor: 720000 },
       { name: "Insumos", pct: 18, valor: 216000 },
