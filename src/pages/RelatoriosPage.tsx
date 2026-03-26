@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Pause, Play, ChevronRight, Download, FileText, GitCompareArrows } from "lucide-react";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import GoalRow from "@/components/GoalRow";
