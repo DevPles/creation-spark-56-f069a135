@@ -26,7 +26,6 @@ interface User {
   unit: string;
   status: string;
   photo?: string;
-  visibleCards?: string[];
 }
 
 interface UserModalProps {
