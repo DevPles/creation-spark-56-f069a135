@@ -40,15 +40,6 @@ const ROLES = ["Administrador", "Gestor", "Analista", "Clínico"];
 const UNITS_LIST = ["Hospital Geral", "UPA Norte", "UBS Centro", "Todas"];
 const STATUSES = ["Ativo", "Suspenso", "Bloqueado"];
 
-const ALL_CARDS = [
-  { id: "metas", label: "Metas" },
-  { id: "contratos", label: "Contratos" },
-  { id: "riscos", label: "Riscos" },
-  { id: "evidencias", label: "Evidências" },
-  { id: "relatorios", label: "Relatórios" },
-  { id: "admin", label: "Administração" },
-];
-
 const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModalProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
