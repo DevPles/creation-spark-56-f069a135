@@ -47,7 +47,6 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
   const [unit, setUnit] = useState("Hospital Geral");
   const [status, setStatus] = useState("Ativo");
   const [photo, setPhoto] = useState<string | undefined>(undefined);
-  const [visibleCards, setVisibleCards] = useState<string[]>(ALL_CARDS.map(c => c.id));
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
