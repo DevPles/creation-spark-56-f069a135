@@ -42,7 +42,7 @@ interface GoalItem {
 
 const CONTRACTS: ContractData[] = [
   {
-    id: "c1", name: "Contrato 001/2024 — Hospital Geral", unit: "Hospital Geral", valorGlobal: 2800000,
+    id: "c1", name: "Contrato de Gestão — Hospital Geral", unit: "Hospital Geral", valorGlobal: 2800000,
     rubricas: [
       { name: "RH", pct: 55, valor: 1540000 },
       { name: "Insumos", pct: 20, valor: 560000 },
