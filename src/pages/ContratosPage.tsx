@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Trash2 } from "lucide-react";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import ContractModal from "@/components/ContractModal";
