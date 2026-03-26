@@ -322,7 +322,7 @@ const RelatoriosPage = () => {
     const blob = generatePdfBlob(filteredGoals, contract.name, report.type, true, true);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.pdf`;
+    a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.txt`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success("Download iniciado");
