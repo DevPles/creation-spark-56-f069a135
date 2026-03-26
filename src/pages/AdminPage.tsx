@@ -15,7 +15,16 @@ const PERIODS = [
 ];
 const UNITS = ["Todas as unidades", "Hospital Geral", "UPA Norte", "UBS Centro"];
 
-const USERS = [
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  unit: string;
+  status: string;
+}
+
+const INITIAL_USERS: User[] = [
   { id: "1", name: "Ana Silva", email: "ana.silva@hospital.gov.br", role: "Gestor", unit: "Hospital Geral", status: "Ativo" },
   { id: "2", name: "Carlos Mendes", email: "carlos.mendes@hospital.gov.br", role: "Analista", unit: "Hospital Geral", status: "Ativo" },
   { id: "3", name: "Maria Santos", email: "maria.santos@upa.gov.br", role: "Clínico", unit: "UPA Norte", status: "Ativo" },
@@ -34,11 +43,12 @@ const AdminPage = () => {
   const navigate = useNavigate();
   const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState(UNITS[0]);
-  const [selectedUser, setSelectedUser] = useState<typeof USERS[0] | null>(null);
+  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
 
-  const handleUserClick = (user: typeof USERS[0]) => {
+  const handleUserClick = (user: User) => {
     setSelectedUser(user);
     setIsNewUser(false);
     setModalOpen(true);
@@ -48,6 +58,14 @@ const AdminPage = () => {
     setSelectedUser(null);
     setIsNewUser(true);
     setModalOpen(true);
+  };
+
+  const handleSave = (user: User) => {
+    if (isNewUser) {
+      setUsers((prev) => [...prev, user]);
+    } else {
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u)));
+    }
   };
 
   return (
@@ -70,11 +88,11 @@ const AdminPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="kpi-card">
             <p className="text-xs text-muted-foreground">Total de usuários</p>
-            <p className="kpi-value">{USERS.length}</p>
+            <p className="kpi-value">{users.length}</p>
           </div>
           <div className="kpi-card">
             <p className="text-xs text-muted-foreground">Ativos</p>
-            <p className="kpi-value">{USERS.filter(u => u.status === "Ativo").length}</p>
+            <p className="kpi-value">{users.filter(u => u.status === "Ativo").length}</p>
           </div>
           <div className="kpi-card">
             <p className="text-xs text-muted-foreground">Perfis</p>
@@ -94,7 +112,7 @@ const AdminPage = () => {
             <span className="col-span-2">Unidade</span>
             <span className="col-span-2">Status</span>
           </div>
-          {USERS.map((user, i) => (
+          {users.map((user, i) => (
             <motion.div
               key={user.id}
               initial={{ opacity: 0 }}
@@ -124,7 +142,7 @@ const AdminPage = () => {
         </div>
       </main>
 
-      <UserModal user={selectedUser} open={modalOpen} onOpenChange={setModalOpen} isNew={isNewUser} />
+      <UserModal user={selectedUser} open={modalOpen} onOpenChange={setModalOpen} isNew={isNewUser} onSave={handleSave} />
     </div>
   );
 };
