@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import RiskModal from "@/components/RiskModal";
