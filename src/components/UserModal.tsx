@@ -86,18 +86,6 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
     reader.readAsDataURL(file);
   };
 
-  const handleToggleCard = (cardId: string) => {
-    setVisibleCards(prev =>
-      prev.includes(cardId) ? prev.filter(c => c !== cardId) : [...prev, cardId]
-    );
-  };
-
-  const handleResetPassword = () => {
-    toast.success("Senha resetada", {
-      description: `Um e-mail de redefinição foi enviado para ${email}.`,
-    });
-  };
-
   const handleSave = () => {
     if (!name || !email) {
       toast.error("Preencha nome e e-mail");
