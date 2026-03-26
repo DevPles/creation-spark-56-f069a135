@@ -666,7 +666,7 @@ const RelatoriosPage = () => {
                   <span className="col-span-1 text-muted-foreground">{report.size}</span>
                   <span className="col-span-2 text-right">
                     <Button variant="outline" size="sm" onClick={() => handleDownloadReport(report)}>
-                      <Download className="w-3 h-3 mr-1" /> PDF
+                      Baixar PDF
                     </Button>
                   </span>
                 </motion.div>
