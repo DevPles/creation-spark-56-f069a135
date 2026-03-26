@@ -120,8 +120,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary" />
+          <DialogTitle className="font-display">
             Painel do Administrador
           </DialogTitle>
         </DialogHeader>

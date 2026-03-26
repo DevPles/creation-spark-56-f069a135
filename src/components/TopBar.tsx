@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -27,8 +26,8 @@ const TopBar = () => {
 
           {/* Menu button centered */}
           <div className="flex-1 flex justify-center">
-            <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} className="rounded-full w-10 h-10">
-              <Menu className="w-4 h-4" />
+            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full px-4">
+              ≡ Menu
             </Button>
           </div>
 
