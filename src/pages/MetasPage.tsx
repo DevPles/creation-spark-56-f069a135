@@ -2,20 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import TopBar from "@/components/TopBar";
+import PageHeader from "@/components/PageHeader";
 import GoalDetailCard from "@/components/GoalDetailCard";
 import GoalModal from "@/components/GoalModal";
 import GoalFormModal, { GoalData } from "@/components/GoalFormModal";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-
-const PERIODS = [
-  { key: "S", label: "Semana" },
-  { key: "M", label: "Mês" },
-  { key: "Q", label: "Trimestre" },
-  { key: "4M", label: "Quadrimestre" },
-  { key: "Y", label: "Anual" },
-];
-const UNITS = ["Todas as unidades", "Hospital Geral", "UPA Norte", "UBS Centro"];
 
 const INITIAL_GOALS: GoalData[] = [
   { id: "1", name: "Taxa de ocupação de leitos", target: 85, current: 78, unit: "%", type: "QNT", risk: 12400, weight: 0.15, trend: "down", scoring: [{ min: 90, label: "Máximo", points: 1 }, { min: 70, label: "Parcial", points: 0.5 }, { min: 0, label: "Insuficiente", points: 0 }], history: [72, 74, 76, 78], glosaPct: 0.05 },
@@ -29,59 +21,37 @@ const INITIAL_GOALS: GoalData[] = [
 const MetasPage = () => {
   const navigate = useNavigate();
   const [period, setPeriod] = useState("4M");
-  const [selectedUnit, setSelectedUnit] = useState(UNITS[0]);
+  const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
   const [goals, setGoals] = useState<GoalData[]>(INITIAL_GOALS);
-
-  // View modal
   const [selectedGoal, setSelectedGoal] = useState<GoalData | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
-
-  // Form modal
   const [editGoal, setEditGoal] = useState<GoalData | null>(null);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
 
-  const handleView = (goal: GoalData) => {
-    setSelectedGoal(goal);
-    setViewModalOpen(true);
-  };
-
-  const handleNew = () => {
-    setEditGoal(null);
-    setIsNew(true);
-    setFormModalOpen(true);
-  };
-
-  const handleEdit = (goal: GoalData) => {
-    setEditGoal(goal);
-    setIsNew(false);
-    setFormModalOpen(true);
-  };
-
+  const handleView = (goal: GoalData) => { setSelectedGoal(goal); setViewModalOpen(true); };
+  const handleNew = () => { setEditGoal(null); setIsNew(true); setFormModalOpen(true); };
+  const handleEdit = (goal: GoalData) => { setEditGoal(goal); setIsNew(false); setFormModalOpen(true); };
   const handleSave = (goal: GoalData) => {
-    if (isNew) {
-      setGoals((prev) => [...prev, goal]);
-    } else {
-      setGoals((prev) => prev.map((g) => (g.id === goal.id ? goal : g)));
-    }
+    if (isNew) setGoals((prev) => [...prev, goal]);
+    else setGoals((prev) => prev.map((g) => (g.id === goal.id ? goal : g)));
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <TopBar periods={PERIODS} activePeriod={period} onPeriodChange={setPeriod} units={UNITS} selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} />
-
+      <TopBar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <button onClick={() => navigate("/dashboard")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors mb-4">
           <ChevronLeft className="w-4 h-4" /> Voltar ao painel
         </button>
 
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">Metas e indicadores</h1>
-            <p className="text-sm text-muted-foreground">Clique para ver detalhes ou use o botão para cadastrar — {PERIODS.find(p => p.key === period)?.label}</p>
-          </div>
-          <Button onClick={handleNew}>Nova meta</Button>
-        </div>
+        <PageHeader
+          title="Metas e indicadores"
+          subtitle="Clique para ver detalhes ou use o botão para cadastrar"
+          period={period} onPeriodChange={setPeriod}
+          selectedUnit={selectedUnit} onUnitChange={setSelectedUnit}
+          action={<Button onClick={handleNew}>Nova meta</Button>}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {goals.map((goal, i) => (
@@ -90,12 +60,7 @@ const MetasPage = () => {
                 <div className="cursor-pointer" onClick={() => handleView(goal)}>
                   <GoalDetailCard goal={goal} />
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => { e.stopPropagation(); handleEdit(goal); }}
-                >
+                <Button variant="outline" size="sm" className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); handleEdit(goal); }}>
                   Editar
                 </Button>
               </div>
@@ -104,13 +69,7 @@ const MetasPage = () => {
         </div>
       </main>
 
-      {selectedGoal && (
-        <GoalModal
-          goal={{ ...selectedGoal, trend: selectedGoal.trend }}
-          open={viewModalOpen}
-          onOpenChange={setViewModalOpen}
-        />
-      )}
+      {selectedGoal && <GoalModal goal={{ ...selectedGoal, trend: selectedGoal.trend }} open={viewModalOpen} onOpenChange={setViewModalOpen} />}
       <GoalFormModal goal={editGoal} open={formModalOpen} onOpenChange={setFormModalOpen} onSave={handleSave} isNew={isNew} />
     </div>
   );

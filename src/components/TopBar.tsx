@@ -1,22 +1,14 @@
 import { useNavigate } from "react-router-dom";
+import { Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-interface TopBarProps {
-  periods: { key: string; label: string }[];
-  activePeriod: string;
-  onPeriodChange: (key: string) => void;
-  units: string[];
-  selectedUnit: string;
-  onUnitChange: (unit: string) => void;
-}
-
-const TopBar = ({ periods, activePeriod, onPeriodChange, units, selectedUnit, onUnitChange }: TopBarProps) => {
+const TopBar = () => {
   const navigate = useNavigate();
 
   return (
@@ -26,45 +18,37 @@ const TopBar = ({ periods, activePeriod, onPeriodChange, units, selectedUnit, on
           {/* Logo */}
           <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2.5 shrink-0">
             <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-primary-foreground font-display font-bold text-xs">MC</span>
+              <span className="text-primary-foreground font-display font-bold text-xs">SL</span>
             </div>
             <span className="font-display font-semibold text-foreground text-sm hidden sm:block">
-              Metas Contratuais
+              SisLu
             </span>
           </button>
 
-          {/* Filters */}
           <div className="flex items-center gap-2">
-            <Select value={activePeriod} onValueChange={onPeriodChange}>
-              <SelectTrigger className="w-[150px] h-9 text-sm">
-                <SelectValue placeholder="Período" />
-              </SelectTrigger>
-              <SelectContent>
-                {periods.map((p) => (
-                  <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Menu button */}
+            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="gap-1.5">
+              <Menu className="w-4 h-4" />
+              Menu
+            </Button>
 
-            <Select value={selectedUnit} onValueChange={onUnitChange}>
-              <SelectTrigger className="w-[180px] h-9 text-sm hidden md:flex">
-                <SelectValue placeholder="Unidade" />
-              </SelectTrigger>
-              <SelectContent>
-                {units.map((u) => (
-                  <SelectItem key={u} value={u}>{u}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Profile avatar */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors shrink-0">
+                  AS
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-2 border-b border-border">
+                  <p className="text-sm font-medium text-foreground">Ana Silva</p>
+                  <p className="text-xs text-muted-foreground">ana.silva@hospital.gov.br</p>
+                </div>
+                <DropdownMenuItem onClick={() => navigate("/admin")}>Meu perfil</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/")}>Sair</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-
-          {/* Profile */}
-          <button
-            onClick={() => navigate("/")}
-            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors shrink-0"
-          >
-            AS
-          </button>
         </div>
       </div>
     </header>
