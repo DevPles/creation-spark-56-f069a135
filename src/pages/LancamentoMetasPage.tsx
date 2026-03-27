@@ -120,10 +120,16 @@ const LancamentoMetasPage = () => {
           ← Voltar
         </Button>
 
-        <PageHeader
-          title="Lançamento de metas"
-          subtitle={`Unidade: ${profile?.facility_unit || "Carregando..."} — Lance os valores realizados das metas`}
-        />
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+          <div>
+            <h1 className="font-display text-xl font-bold text-foreground">Lançamento de metas</h1>
+            <p className="text-sm text-muted-foreground">Lance os valores realizados das metas</p>
+          </div>
+          <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
+            <p className="text-xs text-muted-foreground">Sua unidade</p>
+            <p className="font-display font-semibold text-foreground text-sm">{profile?.facility_unit || "Carregando..."}</p>
+          </div>
+        </div>
 
         {loading ? (
           <p className="text-muted-foreground text-center py-12">Carregando metas...</p>
