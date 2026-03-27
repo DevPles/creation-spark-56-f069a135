@@ -26,6 +26,7 @@ export interface EvidenceData {
   dueDate: string;
   submittedAt?: string;
   notes: string;
+  facilityUnit?: string;
 }
 
 interface EvidenceFormModalProps {
