@@ -514,7 +514,7 @@ async function generatePdfBlob(
   doc.text("Evolução mensal de desempenho", margin, y);
   y += 4;
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     startY: y,
     head: [["Mês", "Atingidas %", "Parciais %", "Não atingidas %"]],
     body: contract.performance.map(p => [p.month, `${p.atingidas}%`, `${p.parciais}%`, `${p.naoAtingidas}%`]),
