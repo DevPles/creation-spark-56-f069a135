@@ -471,7 +471,7 @@ async function generatePdfBlob(
       ];
     });
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: y,
       head: [["#", "Meta", "Tipo", "Alvo", "Real", "Ating.", "Risco", "Peso"]],
       body: tableData,
