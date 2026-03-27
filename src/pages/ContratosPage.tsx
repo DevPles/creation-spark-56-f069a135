@@ -79,7 +79,7 @@ const ContratosPage = () => {
         </div>
 
         <div className="space-y-4">
-          {contracts.map((contract, i) => (
+          {filteredContracts.map((contract, i) => (
             <motion.div key={contract.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="cursor-pointer flex-1" onClick={() => handleView(contract)}>
