@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
-import PageHeader from "@/components/PageHeader";
 import ContractModal from "@/components/ContractModal";
 import ContractFormModal, { ContractData } from "@/components/ContractFormModal";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import {
   AlertDialog,
@@ -25,9 +25,12 @@ const INITIAL_CONTRACTS: ContractData[] = [
 
 const ContratosPage = () => {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState("4M");
-  const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
+  const [searchTerm, setSearchTerm] = useState("");
   const [contracts, setContracts] = useState<ContractData[]>(INITIAL_CONTRACTS);
+
+  const filteredContracts = contracts.filter((c) =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const [selectedContract, setSelectedContract] = useState<ContractData | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -58,16 +61,24 @@ const ContratosPage = () => {
           ← Voltar
         </Button>
 
-        <PageHeader
-          title="Contratos de gestão"
-          subtitle="Clique para ver detalhes ou use o botão para cadastrar"
-          period={period} onPeriodChange={setPeriod}
-          selectedUnit={selectedUnit} onUnitChange={setSelectedUnit}
-          action={<Button onClick={handleNew}>Novo contrato</Button>}
-        />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="font-display text-xl font-bold text-foreground">Contratos de gestão</h1>
+            <p className="text-sm text-muted-foreground">Clique para ver detalhes ou use o botão para cadastrar</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Buscar contrato por nome..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-[260px] h-9 text-sm"
+            />
+            <Button onClick={handleNew}>Novo contrato</Button>
+          </div>
+        </div>
 
         <div className="space-y-4">
-          {contracts.map((contract, i) => (
+          {filteredContracts.map((contract, i) => (
             <motion.div key={contract.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="cursor-pointer flex-1" onClick={() => handleView(contract)}>
