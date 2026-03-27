@@ -62,13 +62,21 @@ const ContratosPage = () => {
           ← Voltar
         </Button>
 
-        <PageHeader
-          title="Contratos de gestão"
-          subtitle="Clique para ver detalhes ou use o botão para cadastrar"
-          period={period} onPeriodChange={setPeriod}
-          selectedUnit={selectedUnit} onUnitChange={setSelectedUnit}
-          action={<Button onClick={handleNew}>Novo contrato</Button>}
-        />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="font-display text-xl font-bold text-foreground">Contratos de gestão</h1>
+            <p className="text-sm text-muted-foreground">Clique para ver detalhes ou use o botão para cadastrar</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Buscar contrato por nome..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-[260px] h-9 text-sm"
+            />
+            <Button onClick={handleNew}>Novo contrato</Button>
+          </div>
+        </div>
 
         <div className="space-y-4">
           {contracts.map((contract, i) => (
