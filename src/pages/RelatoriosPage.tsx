@@ -847,12 +847,10 @@ const RelatoriosPage = () => {
           ← Voltar
         </Button>
 
-        <PageHeader
-          title="Relatórios & Dashboard"
-          subtitle="Acompanhamento em tempo real de metas, riscos e desempenho"
-          period={period} onPeriodChange={setPeriod}
-          selectedUnit={selectedUnit} onUnitChange={setSelectedUnit}
-        />
+        <div className="mb-6">
+          <h1 className="font-display text-xl font-bold text-foreground">Relatórios & Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Acompanhamento em tempo real de metas, riscos e desempenho</p>
+        </div>
 
         {/* ─── FILTERS BAR ─── */}
         <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-card rounded-lg border border-border">
