@@ -617,15 +617,20 @@ const RelatoriosPage = () => {
   const handleGenerate = async () => {
     const reportLabel = REPORT_TYPES.find(t => t.id === selectedType)?.label || selectedType;
     toast.info("Gerando PDF...");
-    const blob = await generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails, contract, chartRef);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
-    a.href = url; a.download = fileName;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setReports(prev => [{ id: crypto.randomUUID(), name: `${reportLabel} — ${contract.unit}`, date: new Date().toLocaleDateString("pt-BR"), type: selectedType, size: `${(blob.size / 1024).toFixed(0)} KB` }, ...prev]);
-    toast.success("Relatório PDF gerado!", { description: fileName });
+    try {
+      const blob = await generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails, contract, chartRef);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setReports(prev => [{ id: crypto.randomUUID(), name: `${reportLabel} — ${contract.unit}`, date: new Date().toLocaleDateString("pt-BR"), type: selectedType, size: `${(blob.size / 1024).toFixed(0)} KB` }, ...prev]);
+      toast.success("Relatório PDF gerado!", { description: fileName });
+    } catch (err) {
+      console.error("PDF generation error:", err);
+      toast.error("Erro ao gerar PDF: " + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   const handleDownloadReport = async (report: typeof GENERATED_REPORTS[0]) => {
