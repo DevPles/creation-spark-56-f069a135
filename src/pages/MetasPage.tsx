@@ -53,7 +53,9 @@ const MetasPage = () => {
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {goals.map((goal, i) => (
+          {goals
+            .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+            .map((goal, i) => (
             <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <div className="relative group">
                 <div className="cursor-pointer" onClick={() => handleView(goal)}>
