@@ -5,6 +5,7 @@ import PageHeader from "@/components/PageHeader";
 import ContractModal from "@/components/ContractModal";
 import ContractFormModal, { ContractData } from "@/components/ContractFormModal";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import {
   AlertDialog,
