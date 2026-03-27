@@ -34,7 +34,6 @@ const STATUS_STYLES: Record<string, string> = { Pendente: "status-warning", Envi
 
 const EvidenciasPage = () => {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
   const [evidences, setEvidences] = useState<EvidenceData[]>(INITIAL_EVIDENCE);
   const [selectedEvidence, setSelectedEvidence] = useState<EvidenceData | null>(null);
@@ -90,8 +89,6 @@ const EvidenciasPage = () => {
         <PageHeader
           title="Evidências"
           subtitle="Upload e validação de documentos comprobatórios"
-          period={period}
-          onPeriodChange={setPeriod}
           selectedUnit={selectedUnit}
           onUnitChange={setSelectedUnit}
           action={<Button onClick={handleNew}>Nova evidência</Button>}

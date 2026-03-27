@@ -17,7 +17,6 @@ const RISK_DATA = [
 
 const RiscoPage = () => {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
   const [selectedRisk, setSelectedRisk] = useState<typeof RISK_DATA[0] | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -45,8 +44,6 @@ const RiscoPage = () => {
         <PageHeader
           title="Projeção de risco financeiro"
           subtitle="Clique em uma meta para ver cenários e detalhes"
-          period={period}
-          onPeriodChange={setPeriod}
           selectedUnit={selectedUnit}
           onUnitChange={setSelectedUnit}
         />
