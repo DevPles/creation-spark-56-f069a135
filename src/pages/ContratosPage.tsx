@@ -26,9 +26,12 @@ const INITIAL_CONTRACTS: ContractData[] = [
 
 const ContratosPage = () => {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState("4M");
-  const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
+  const [searchTerm, setSearchTerm] = useState("");
   const [contracts, setContracts] = useState<ContractData[]>(INITIAL_CONTRACTS);
+
+  const filteredContracts = contracts.filter((c) =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const [selectedContract, setSelectedContract] = useState<ContractData | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
