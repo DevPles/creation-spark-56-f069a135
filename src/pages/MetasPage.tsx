@@ -19,7 +19,6 @@ const INITIAL_GOALS: GoalData[] = [
 
 const MetasPage = () => {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
   const [goals, setGoals] = useState<GoalData[]>(INITIAL_GOALS);
   const [selectedGoal, setSelectedGoal] = useState<GoalData | null>(null);
@@ -47,8 +46,8 @@ const MetasPage = () => {
         <PageHeader
           title="Metas e indicadores"
           subtitle="Clique para ver detalhes ou use o botão para cadastrar"
-          period={period} onPeriodChange={setPeriod}
-          selectedUnit={selectedUnit} onUnitChange={setSelectedUnit}
+          selectedUnit={selectedUnit}
+          onUnitChange={setSelectedUnit}
           action={<Button onClick={handleNew}>Nova meta</Button>}
         />
 
