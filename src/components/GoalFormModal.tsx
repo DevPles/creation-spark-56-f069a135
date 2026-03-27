@@ -29,6 +29,7 @@ export interface GoalData {
   scoring: { min: number; label: string; points: number }[];
   history: number[];
   glosaPct: number;
+  facilityUnit?: string;
 }
 
 interface GoalFormModalProps {
