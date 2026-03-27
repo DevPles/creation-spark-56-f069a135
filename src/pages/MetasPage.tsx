@@ -56,11 +56,11 @@ const MetasPage = () => {
             .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
             .map((goal, i) => (
             <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <div className="relative group">
-                <div className="cursor-pointer" onClick={() => handleView(goal)}>
-                  <GoalDetailCard goal={goal} />
-                </div>
-                <Button variant="outline" size="sm" className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); handleEdit(goal); }}>
+              <div className="cursor-pointer" onClick={() => handleView(goal)}>
+                <GoalDetailCard goal={goal} />
+              </div>
+              <div className="flex justify-end mt-2">
+                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEdit(goal); }}>
                   Editar
                 </Button>
               </div>
