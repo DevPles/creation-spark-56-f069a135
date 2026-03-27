@@ -635,13 +635,18 @@ const RelatoriosPage = () => {
 
   const handleDownloadReport = async (report: typeof GENERATED_REPORTS[0]) => {
     toast.info("Gerando PDF...");
-    const blob = await generatePdfBlob(filteredGoals, contract.name, report.type, true, true, contract, chartRef);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.pdf`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Download iniciado");
+    try {
+      const blob = await generatePdfBlob(filteredGoals, contract.name, report.type, true, true, contract, chartRef);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.pdf`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Download iniciado");
+    } catch (err) {
+      console.error("PDF download error:", err);
+      toast.error("Erro ao gerar PDF: " + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   /* ── Build type distribution from filtered goals ── */
