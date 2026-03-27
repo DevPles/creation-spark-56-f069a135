@@ -52,7 +52,7 @@ const LancamentoMetasPage = () => {
     const { data, error } = await supabase
       .from("goals")
       .select("*")
-      .eq("facility_unit", profile.facility_unit);
+      .eq("facility_unit", profile.facility_unit as any);
 
     if (error) {
       toast.error("Erro ao carregar metas");
