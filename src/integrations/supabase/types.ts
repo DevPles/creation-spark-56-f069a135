@@ -14,7 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      goal_entries: {
+        Row: {
+          created_at: string
+          goal_id: string
+          id: string
+          notes: string | null
+          period: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          id?: string
+          notes?: string | null
+          period: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          id?: string
+          notes?: string | null
+          period?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_entries_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          created_at: string
+          facility_unit: Database["public"]["Enums"]["facility_unit"]
+          id: string
+          name: string
+          risk: number
+          scoring: Json
+          target: number
+          type: string
+          unit: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          facility_unit: Database["public"]["Enums"]["facility_unit"]
+          id?: string
+          name: string
+          risk?: number
+          scoring?: Json
+          target: number
+          type?: string
+          unit?: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          facility_unit?: Database["public"]["Enums"]["facility_unit"]
+          id?: string
+          name?: string
+          risk?: number
+          scoring?: Json
+          target?: number
+          type?: string
+          unit?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          cargo: string | null
+          created_at: string
+          facility_unit: Database["public"]["Enums"]["facility_unit"]
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          cargo?: string | null
+          created_at?: string
+          facility_unit: Database["public"]["Enums"]["facility_unit"]
+          id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          cargo?: string | null
+          created_at?: string
+          facility_unit?: Database["public"]["Enums"]["facility_unit"]
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +132,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      facility_unit: "Hospital Geral" | "UPA Norte" | "UBS Centro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +259,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      facility_unit: ["Hospital Geral", "UPA Norte", "UBS Centro"],
+    },
   },
 } as const
