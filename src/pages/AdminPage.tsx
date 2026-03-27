@@ -31,6 +31,11 @@ const AdminPage = () => {
   const [isNewUser, setIsNewUser] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
 
+  const filteredUsers =
+    selectedUnit === "Todas as unidades"
+      ? users
+      : users.filter((user) => user.unit === selectedUnit);
+
   const handleUserClick = (user: User) => {
     if (user.role === "Administrador") {
       setSelectedUser(user);
@@ -41,14 +46,25 @@ const AdminPage = () => {
     setIsNewUser(false);
     setModalOpen(true);
   };
-  const handleNewUser = () => { setSelectedUser(null); setIsNewUser(true); setModalOpen(true); };
+
+  const handleNewUser = () => {
+    setSelectedUser(null);
+    setIsNewUser(true);
+    setModalOpen(true);
+  };
+
   const handleSave = (user: User) => {
-    if (isNewUser) setUsers(prev => [...prev, user]);
-    else setUsers(prev => prev.map(u => u.id === user.id ? user : u));
+    if (isNewUser) setUsers((prev) => [...prev, user]);
+    else setUsers((prev) => prev.map((currentUser) => currentUser.id === user.id ? user : currentUser));
   };
+
   const handleAdminSave = (user: User) => {
-    setUsers(prev => prev.map(u => u.id === user.id ? user : u));
+    setUsers((prev) => prev.map((currentUser) => currentUser.id === user.id ? user : currentUser));
   };
+
+  const activeUsers = filteredUsers.filter((user) => user.status === "Ativo").length;
+  const profileCount = new Set(filteredUsers.map((user) => user.role)).size;
+  const unitCount = new Set(filteredUsers.map((user) => user.unit)).size;
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,8 +77,10 @@ const AdminPage = () => {
         <PageHeader
           title="Administração"
           subtitle="Clique em um usuário para editar ou criar novo"
-          period={period} onPeriodChange={setPeriod}
-          selectedUnit={selectedUnit} onUnitChange={setSelectedUnit}
+          period={period}
+          onPeriodChange={setPeriod}
+          selectedUnit={selectedUnit}
+          onUnitChange={setSelectedUnit}
           action={
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setAdminModalOpen(true)}>
@@ -74,20 +92,20 @@ const AdminPage = () => {
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="kpi-card"><p className="text-xs text-muted-foreground">Total de usuários</p><p className="kpi-value">{users.length}</p></div>
-          <div className="kpi-card"><p className="text-xs text-muted-foreground">Ativos</p><p className="kpi-value">{users.filter(u => u.status === "Ativo").length}</p></div>
-          <div className="kpi-card"><p className="text-xs text-muted-foreground">Perfis</p><p className="kpi-value">4</p></div>
-          <div className="kpi-card"><p className="text-xs text-muted-foreground">Unidades</p><p className="kpi-value">3</p></div>
+          <div className="kpi-card"><p className="text-xs text-muted-foreground">Total de usuários</p><p className="kpi-value">{filteredUsers.length}</p></div>
+          <div className="kpi-card"><p className="text-xs text-muted-foreground">Ativos</p><p className="kpi-value">{activeUsers}</p></div>
+          <div className="kpi-card"><p className="text-xs text-muted-foreground">Perfis</p><p className="kpi-value">{profileCount}</p></div>
+          <div className="kpi-card"><p className="text-xs text-muted-foreground">Unidades</p><p className="kpi-value">{unitCount}</p></div>
         </div>
 
         <div className="bg-card rounded-lg border border-border overflow-hidden">
           <div className="px-5 py-3 border-b border-border grid grid-cols-12 text-xs font-medium text-muted-foreground">
             <span className="col-span-3">Nome</span><span className="col-span-3">E-mail</span><span className="col-span-2">Perfil</span><span className="col-span-2">Unidade</span><span className="col-span-2">Status</span>
           </div>
-          {users.map((user, i) => (
+          {filteredUsers.map((user, i) => (
             <motion.div key={user.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }} onClick={() => handleUserClick(user)} className="px-5 py-3 grid grid-cols-12 items-center text-sm border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer">
               <div className="col-span-3 flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground shrink-0">{user.name.split(" ").map(n => n[0]).join("").slice(0, 2)}</div>
+                <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground shrink-0">{user.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}</div>
                 <span className="font-medium text-foreground truncate">{user.name}</span>
               </div>
               <span className="col-span-3 text-muted-foreground truncate">{user.email}</span>
@@ -99,7 +117,7 @@ const AdminPage = () => {
         </div>
       </main>
       <UserModal user={selectedUser} open={modalOpen} onOpenChange={setModalOpen} isNew={isNewUser} onSave={handleSave} />
-      <AdminModal user={selectedUser} users={users} open={adminModalOpen} onOpenChange={setAdminModalOpen} onSave={handleAdminSave} onSaveOtherUser={handleAdminSave} />
+      <AdminModal user={selectedUser} users={filteredUsers} open={adminModalOpen} onOpenChange={setAdminModalOpen} onSave={handleAdminSave} onSaveOtherUser={handleAdminSave} />
     </div>
   );
 };

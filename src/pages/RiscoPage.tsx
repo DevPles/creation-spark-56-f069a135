@@ -7,12 +7,12 @@ import RiskModal from "@/components/RiskModal";
 import { motion } from "framer-motion";
 
 const RISK_DATA = [
-  { goal: "Relatório RDQA", risk: 15000, prob: 95, trend: "critical", projected: "Não entregue" },
-  { goal: "Taxa de ocupação", risk: 12400, prob: 72, trend: "warning", projected: "78% (meta: 85%)" },
-  { goal: "Taxa de infecção", risk: 9800, prob: 68, trend: "warning", projected: "6.2% (meta: ≤5%)" },
-  { goal: "Tempo de espera", risk: 8200, prob: 60, trend: "warning", projected: "42 min (meta: 30)" },
-  { goal: "Cirurgias eletivas", risk: 7300, prob: 55, trend: "warning", projected: "98 (meta: 120)" },
-  { goal: "Satisfação NPS", risk: 5600, prob: 45, trend: "warning", projected: "71 (meta: 75)" },
+  { goal: "Relatório RDQA", risk: 15000, prob: 95, trend: "critical", projected: "Não entregue", unit: "UBS Centro" },
+  { goal: "Taxa de ocupação", risk: 12400, prob: 72, trend: "warning", projected: "78% (meta: 85%)", unit: "Hospital Geral" },
+  { goal: "Taxa de infecção", risk: 9800, prob: 68, trend: "warning", projected: "6.2% (meta: ≤5%)", unit: "UBS Centro" },
+  { goal: "Tempo de espera", risk: 8200, prob: 60, trend: "warning", projected: "42 min (meta: 30)", unit: "Hospital Geral" },
+  { goal: "Cirurgias eletivas", risk: 7300, prob: 55, trend: "warning", projected: "98 (meta: 120)", unit: "UPA Norte" },
+  { goal: "Satisfação NPS", risk: 5600, prob: 45, trend: "warning", projected: "71 (meta: 75)", unit: "UPA Norte" },
 ];
 
 const RiscoPage = () => {
@@ -22,9 +22,17 @@ const RiscoPage = () => {
   const [selectedRisk, setSelectedRisk] = useState<typeof RISK_DATA[0] | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const totalRisk = RISK_DATA.reduce((s, r) => s + r.risk, 0);
+  const filteredRisks =
+    selectedUnit === "Todas as unidades"
+      ? RISK_DATA
+      : RISK_DATA.filter((item) => item.unit === selectedUnit);
 
-  const handleClick = (item: typeof RISK_DATA[0]) => { setSelectedRisk(item); setModalOpen(true); };
+  const totalRisk = filteredRisks.reduce((sum, item) => sum + item.risk, 0);
+
+  const handleClick = (item: typeof RISK_DATA[0]) => {
+    setSelectedRisk(item);
+    setModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,8 +45,10 @@ const RiscoPage = () => {
         <PageHeader
           title="Projeção de risco financeiro"
           subtitle="Clique em uma meta para ver cenários e detalhes"
-          period={period} onPeriodChange={setPeriod}
-          selectedUnit={selectedUnit} onUnitChange={setSelectedUnit}
+          period={period}
+          onPeriodChange={setPeriod}
+          selectedUnit={selectedUnit}
+          onUnitChange={setSelectedUnit}
         />
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="kpi-card mb-6">
@@ -54,8 +64,15 @@ const RiscoPage = () => {
             <span className="col-span-2 text-right">Prob. perda</span>
             <span className="col-span-4">Projeção</span>
           </div>
-          {RISK_DATA.map((item, i) => (
-            <motion.div key={item.goal} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }} onClick={() => handleClick(item)} className="px-5 py-3 grid grid-cols-12 items-center text-sm border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer">
+          {filteredRisks.map((item, i) => (
+            <motion.div
+              key={item.goal}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: i * 0.05 }}
+              onClick={() => handleClick(item)}
+              className="px-5 py-3 grid grid-cols-12 items-center text-sm border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+            >
               <span className="col-span-4 font-medium text-foreground">{item.goal}</span>
               <span className="col-span-2 text-right font-display font-bold text-risk">R$ {(item.risk / 1000).toFixed(1)}k</span>
               <span className="col-span-2 text-right">
