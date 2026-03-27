@@ -193,7 +193,8 @@ async function generatePdfBlob(
   chartCanvasRef: React.RefObject<HTMLDivElement | null>
 ): Promise<Blob> {
   const { jsPDF } = await import("jspdf");
-  await import("jspdf-autotable");
+  const autoTableModule = await import("jspdf-autotable");
+  const autoTable = autoTableModule.default;
 
   const reportLabel = REPORT_TYPES.find(t => t.id === type)?.label || type;
   const now = new Date().toLocaleDateString("pt-BR");
