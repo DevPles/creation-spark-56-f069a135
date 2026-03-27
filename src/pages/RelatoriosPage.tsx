@@ -192,8 +192,10 @@ async function generatePdfBlob(
   contract: ContractData,
   chartCanvasRef: React.RefObject<HTMLDivElement | null>
 ): Promise<Blob> {
-  const { default: jsPDF } = await import("jspdf");
-  await import("jspdf-autotable");
+  const jsPDFModule = await import("jspdf");
+  const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
+  const autoTableModule = await import("jspdf-autotable");
+  if (autoTableModule.default) autoTableModule.default(jsPDF);
 
   const reportLabel = REPORT_TYPES.find(t => t.id === type)?.label || type;
   const now = new Date().toLocaleDateString("pt-BR");
