@@ -23,7 +23,6 @@ const ROLE_COLORS: Record<string, string> = {
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -77,8 +76,6 @@ const AdminPage = () => {
         <PageHeader
           title="Administração"
           subtitle="Clique em um usuário para editar ou criar novo"
-          period={period}
-          onPeriodChange={setPeriod}
           selectedUnit={selectedUnit}
           onUnitChange={setSelectedUnit}
           action={

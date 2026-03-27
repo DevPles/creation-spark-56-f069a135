@@ -89,8 +89,6 @@ const EvidenciasPage = () => {
         <PageHeader
           title="Evidências"
           subtitle="Upload e validação de documentos comprobatórios"
-          period={period}
-          onPeriodChange={setPeriod}
           selectedUnit={selectedUnit}
           onUnitChange={setSelectedUnit}
           action={<Button onClick={handleNew}>Nova evidência</Button>}
