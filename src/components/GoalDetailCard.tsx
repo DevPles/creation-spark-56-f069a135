@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 interface GoalDetail {
   id: string;
   name: string;
@@ -11,7 +13,7 @@ interface GoalDetail {
   history: number[];
 }
 
-const GoalDetailCard = ({ goal }: { goal: GoalDetail }) => {
+const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => void }) => {
   const attainment = goal.type === "DOC"
     ? (goal.current >= goal.target ? 100 : 0)
     : Math.min(100, Math.round((goal.current / goal.target) * 100));
@@ -92,6 +94,14 @@ const GoalDetailCard = ({ goal }: { goal: GoalDetail }) => {
           ))}
         </div>
       </div>
+
+      {onEdit && (
+        <div className="flex justify-end mt-3 pt-3 border-t border-border">
+          <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+            Editar
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

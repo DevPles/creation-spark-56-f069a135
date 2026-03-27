@@ -57,12 +57,7 @@ const MetasPage = () => {
             .map((goal, i) => (
             <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <div className="cursor-pointer" onClick={() => handleView(goal)}>
-                <GoalDetailCard goal={goal} />
-              </div>
-              <div className="flex justify-end mt-2">
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEdit(goal); }}>
-                  Editar
-                </Button>
+                <GoalDetailCard goal={goal} onEdit={() => handleEdit(goal)} />
               </div>
             </motion.div>
           ))}
