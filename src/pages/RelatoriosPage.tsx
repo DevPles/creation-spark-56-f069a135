@@ -192,8 +192,9 @@ async function generatePdfBlob(
   contract: ContractData,
   chartCanvasRef: React.RefObject<HTMLDivElement | null>
 ): Promise<Blob> {
-  const { default: jsPDF } = await import("jspdf");
-  await import("jspdf-autotable");
+  const { jsPDF } = await import("jspdf");
+  const autoTableModule = await import("jspdf-autotable");
+  const autoTable = autoTableModule.default;
 
   const reportLabel = REPORT_TYPES.find(t => t.id === type)?.label || type;
   const now = new Date().toLocaleDateString("pt-BR");
@@ -470,7 +471,7 @@ async function generatePdfBlob(
       ];
     });
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: y,
       head: [["#", "Meta", "Tipo", "Alvo", "Real", "Ating.", "Risco", "Peso"]],
       body: tableData,
@@ -513,7 +514,7 @@ async function generatePdfBlob(
   doc.text("Evolução mensal de desempenho", margin, y);
   y += 4;
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     startY: y,
     head: [["Mês", "Atingidas %", "Parciais %", "Não atingidas %"]],
     body: contract.performance.map(p => [p.month, `${p.atingidas}%`, `${p.parciais}%`, `${p.naoAtingidas}%`]),
@@ -533,7 +534,7 @@ async function generatePdfBlob(
   doc.text("Tendência de risco e glosa", margin, y);
   y += 4;
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     startY: y,
     head: [["Mês", "Risco (R$)", "Glosa (R$)"]],
     body: contract.riskTrend.map(r => [r.month, formatFullCurrency(r.risco), formatFullCurrency(r.glosa)]),
@@ -617,26 +618,36 @@ const RelatoriosPage = () => {
   const handleGenerate = async () => {
     const reportLabel = REPORT_TYPES.find(t => t.id === selectedType)?.label || selectedType;
     toast.info("Gerando PDF...");
-    const blob = await generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails, contract, chartRef);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
-    a.href = url; a.download = fileName;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setReports(prev => [{ id: crypto.randomUUID(), name: `${reportLabel} — ${contract.unit}`, date: new Date().toLocaleDateString("pt-BR"), type: selectedType, size: `${(blob.size / 1024).toFixed(0)} KB` }, ...prev]);
-    toast.success("Relatório PDF gerado!", { description: fileName });
+    try {
+      const blob = await generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails, contract, chartRef);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setReports(prev => [{ id: crypto.randomUUID(), name: `${reportLabel} — ${contract.unit}`, date: new Date().toLocaleDateString("pt-BR"), type: selectedType, size: `${(blob.size / 1024).toFixed(0)} KB` }, ...prev]);
+      toast.success("Relatório PDF gerado!", { description: fileName });
+    } catch (err) {
+      console.error("PDF generation error:", err);
+      toast.error("Erro ao gerar PDF: " + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   const handleDownloadReport = async (report: typeof GENERATED_REPORTS[0]) => {
     toast.info("Gerando PDF...");
-    const blob = await generatePdfBlob(filteredGoals, contract.name, report.type, true, true, contract, chartRef);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.pdf`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Download iniciado");
+    try {
+      const blob = await generatePdfBlob(filteredGoals, contract.name, report.type, true, true, contract, chartRef);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.pdf`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Download iniciado");
+    } catch (err) {
+      console.error("PDF download error:", err);
+      toast.error("Erro ao gerar PDF: " + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   /* ── Build type distribution from filtered goals ── */
