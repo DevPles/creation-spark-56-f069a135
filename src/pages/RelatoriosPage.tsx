@@ -534,7 +534,7 @@ async function generatePdfBlob(
   doc.text("Tendência de risco e glosa", margin, y);
   y += 4;
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     startY: y,
     head: [["Mês", "Risco (R$)", "Glosa (R$)"]],
     body: contract.riskTrend.map(r => [r.month, formatFullCurrency(r.risco), formatFullCurrency(r.glosa)]),
