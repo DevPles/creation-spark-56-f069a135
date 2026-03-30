@@ -53,7 +53,14 @@ const AdminPage = () => {
     setModalOpen(true);
   };
 
-  const handleSave = (user: User) => {
+  const handleSave = async (user: User) => {
+    // Save supervisor_id to profiles table if the user has a real DB id
+    if (user.supervisor_id !== undefined) {
+      await supabase
+        .from("profiles")
+        .update({ supervisor_id: user.supervisor_id || null } as any)
+        .eq("id", user.id);
+    }
     if (isNewUser) setUsers((prev) => [...prev, user]);
     else setUsers((prev) => prev.map((currentUser) => currentUser.id === user.id ? user : currentUser));
   };
