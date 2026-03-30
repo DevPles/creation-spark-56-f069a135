@@ -6,6 +6,7 @@ import UserModal from "@/components/UserModal";
 import AdminModal from "@/components/AdminModal";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User { id: string; name: string; email: string; role: string; unit: string; status: string; photo?: string; visibleCards?: string[]; supervisor_id?: string; supervisorName?: string; }
 
