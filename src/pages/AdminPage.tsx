@@ -6,8 +6,9 @@ import UserModal from "@/components/UserModal";
 import AdminModal from "@/components/AdminModal";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
-interface User { id: string; name: string; email: string; role: string; unit: string; status: string; photo?: string; visibleCards?: string[]; }
+interface User { id: string; name: string; email: string; role: string; unit: string; status: string; photo?: string; visibleCards?: string[]; supervisor_id?: string; supervisorName?: string; }
 
 const INITIAL_USERS: User[] = [
   { id: "1", name: "Ana Silva", email: "ana.silva@hospital.gov.br", role: "Gestor", unit: "Hospital Geral", status: "Ativo" },
@@ -52,7 +53,14 @@ const AdminPage = () => {
     setModalOpen(true);
   };
 
-  const handleSave = (user: User) => {
+  const handleSave = async (user: User) => {
+    // Save supervisor_id to profiles table if the user has a real DB id
+    if (user.supervisor_id !== undefined) {
+      await supabase
+        .from("profiles")
+        .update({ supervisor_id: user.supervisor_id || null } as any)
+        .eq("id", user.id);
+    }
     if (isNewUser) setUsers((prev) => [...prev, user]);
     else setUsers((prev) => prev.map((currentUser) => currentUser.id === user.id ? user : currentUser));
   };

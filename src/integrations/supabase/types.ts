@@ -102,6 +102,7 @@ export type Database = {
           facility_unit: Database["public"]["Enums"]["facility_unit"]
           id: string
           name: string
+          supervisor_id: string | null
           updated_at: string
         }
         Insert: {
@@ -111,6 +112,7 @@ export type Database = {
           facility_unit: Database["public"]["Enums"]["facility_unit"]
           id: string
           name: string
+          supervisor_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -120,9 +122,18 @@ export type Database = {
           facility_unit?: Database["public"]["Enums"]["facility_unit"]
           id?: string
           name?: string
+          supervisor_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
