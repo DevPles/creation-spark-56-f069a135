@@ -7,7 +7,7 @@ import AdminModal from "@/components/AdminModal";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
-interface User { id: string; name: string; email: string; role: string; unit: string; status: string; photo?: string; visibleCards?: string[]; }
+interface User { id: string; name: string; email: string; role: string; unit: string; status: string; photo?: string; visibleCards?: string[]; supervisor_id?: string; supervisorName?: string; }
 
 const INITIAL_USERS: User[] = [
   { id: "1", name: "Ana Silva", email: "ana.silva@hospital.gov.br", role: "Gestor", unit: "Hospital Geral", status: "Ativo" },
