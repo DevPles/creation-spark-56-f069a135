@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -25,6 +26,13 @@ interface User {
   unit: string;
   status: string;
   photo?: string;
+  supervisor_id?: string;
+}
+
+interface Leader {
+  id: string;
+  name: string;
+  cargo: string | null;
 }
 
 interface UserModalProps {
@@ -46,7 +54,15 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
   const [unit, setUnit] = useState("Hospital Geral");
   const [status, setStatus] = useState("Ativo");
   const [photo, setPhoto] = useState<string | undefined>(undefined);
+  const [supervisorId, setSupervisorId] = useState<string>("none");
+  const [leaders, setLeaders] = useState<Leader[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      fetchLeaders();
+    }
+  }, [open]);
 
   useEffect(() => {
     if (user && !isNew) {
@@ -56,6 +72,7 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
       setUnit(user.unit);
       setStatus(user.status);
       setPhoto(user.photo);
+      setSupervisorId(user.supervisor_id || "none");
     } else if (isNew) {
       setName("");
       setEmail("");
@@ -63,8 +80,38 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
       setUnit("Hospital Geral");
       setStatus("Ativo");
       setPhoto(undefined);
+      setSupervisorId("none");
     }
   }, [user, isNew, open]);
+
+  const fetchLeaders = async () => {
+    // Fetch profiles that have gestor or admin roles
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .in("role", ["gestor", "admin"] as any);
+
+    if (roleData && roleData.length > 0) {
+      const leaderIds = roleData.map((r) => r.user_id);
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("id, name, cargo")
+        .in("id", leaderIds);
+
+      if (profileData) {
+        // Map roles to profiles
+        const leaderList: Leader[] = profileData.map((p) => {
+          const userRole = roleData.find((r) => r.user_id === p.id);
+          return {
+            id: p.id,
+            name: p.name,
+            cargo: p.cargo || (userRole?.role === "admin" ? "Administrador" : "Gestor"),
+          };
+        });
+        setLeaders(leaderList);
+      }
+    }
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,6 +140,7 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
     const data: User = {
       id: user?.id || crypto.randomUUID(),
       name, email, role, unit, status, photo,
+      supervisor_id: supervisorId === "none" ? undefined : supervisorId,
     };
     onSave?.(data);
     onOpenChange(false);
@@ -177,6 +225,29 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Supervisor / Chefia */}
+          <div className="space-y-2">
+            <Label>Chefia / Líder direto</Label>
+            <Select value={supervisorId} onValueChange={setSupervisorId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o líder" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem chefia atribuída</SelectItem>
+                {leaders
+                  .filter((l) => l.id !== user?.id)
+                  .map((leader) => (
+                    <SelectItem key={leader.id} value={leader.id}>
+                      {leader.name} — {leader.cargo}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-muted-foreground">
+              O líder selecionado poderá visualizar e gerenciar este funcionário.
+            </p>
           </div>
 
           {!isNew && (
