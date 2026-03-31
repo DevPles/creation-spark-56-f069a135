@@ -129,8 +129,7 @@ const ControleRubricaPage = () => {
                 {MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => handleOpenRubricaModal()}>
-              <Settings2 className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="h-9" onClick={() => handleOpenRubricaModal()}>
               Gerenciar Rubricas
             </Button>
           </div>
