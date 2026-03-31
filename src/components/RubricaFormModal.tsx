@@ -96,7 +96,7 @@ const RubricaFormModal = ({ open, onOpenChange, contract, onSave }: RubricaFormM
                     {r.percent > 0 ? formatCurrency(rubricaValue) : "—"}
                   </span>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={() => removeRubrica(r.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
+                    ✕
                   </Button>
                 </div>
               );
