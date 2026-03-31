@@ -169,7 +169,7 @@ const Login = () => {
           {/* Geometric shapes that appear/disappear randomly */}
           <GeoShapes />
           <div className="relative z-10 space-y-4">
-            <h2 className="font-display text-4xl font-bold text-white tracking-tight">Moss</h2>
+            
             <AnimatePresence mode="wait">
               {isLogin ? (
                 <motion.div key="login-info" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
