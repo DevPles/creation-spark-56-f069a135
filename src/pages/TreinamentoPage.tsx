@@ -241,28 +241,29 @@ const TreinamentoPage = () => {
           ← Voltar
         </Button>
 
-        <div className="mb-6">
-          <h1 className="font-display text-xl font-bold text-foreground">Treinamento do Sistema</h1>
-          <p className="text-sm text-muted-foreground">Guia completo dos módulos — assista aos vídeos e avalie com corações</p>
-        </div>
-
-        {/* Search bar */}
-        <div className="flex items-center gap-2 mb-6">
-          <Input
-            placeholder="Buscar módulo ou pessoa..."
-            value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setSearchActive(false); }}
-            onKeyDown={(e) => { if (e.key === "Enter") setSearchActive(true); }}
-            className="flex-1"
-          />
-          <Button className="rounded-full" onClick={() => setSearchActive(true)}>
-            Buscar
-          </Button>
-          {searchQuery && (
-            <Button variant="outline" size="sm" className="rounded-full" onClick={() => { setSearchQuery(""); setSearchActive(false); }}>
-              Limpar
-            </Button>
-          )}
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div>
+            <h1 className="font-display text-xl font-bold text-foreground">Treinamento do Sistema</h1>
+            <p className="text-sm text-muted-foreground">Guia completo dos módulos — assista aos vídeos e avalie com corações</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Input
+              placeholder="Buscar módulo ou pessoa..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setSearchActive(false); }}
+              onKeyDown={(e) => { if (e.key === "Enter") setSearchActive(true); }}
+              className="w-56"
+            />
+            {searchQuery ? (
+              <Button variant="outline" size="sm" className="rounded-full" onClick={() => { setSearchQuery(""); setSearchActive(false); }}>
+                ✕
+              </Button>
+            ) : (
+              <Button className="rounded-full" size="sm" onClick={() => setSearchActive(true)}>
+                Buscar
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Search results - contacts */}
