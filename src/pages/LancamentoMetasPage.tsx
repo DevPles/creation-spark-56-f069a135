@@ -209,13 +209,39 @@ const LancamentoMetasPage = () => {
                   const existing = existingEntries[goal.id] || [];
                   return (
                     <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-display font-semibold text-foreground text-sm">{goal.name}</h3>
-                          <p className="text-xs text-muted-foreground mt-0.5">Meta: {goal.target}{goal.unit} — Peso: {(goal.weight * 100).toFixed(0)}%</p>
-                        </div>
-                        <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{goal.type}</span>
-                      </div>
+                      {/* Gauge + header */}
+                      {(() => {
+                        const currentVal = existing.reduce((sum, e) => sum + e.value, 0);
+                        const attainment = goal.type === "DOC" ? (currentVal >= goal.target ? 100 : 0) : goal.target > 0 ? Math.min(100, Math.round((currentVal / goal.target) * 100)) : 0;
+                        const remaining = Math.max(0, goal.target - currentVal);
+                        const endDate = goal.end_date ? new Date(goal.end_date) : null;
+                        const daysRemaining = endDate ? Math.max(0, Math.ceil((endDate.getTime() - new Date().getTime()) / 86400000)) : 0;
+                        const dailyGoal = daysRemaining > 0 ? remaining / daysRemaining : remaining;
+                        return (
+                          <>
+                            <div className="flex items-start justify-between mb-1">
+                              <div>
+                                <h3 className="font-display font-semibold text-foreground text-sm">{goal.name}</h3>
+                                <p className="text-xs text-muted-foreground mt-0.5">Meta: {goal.target}{goal.unit} — Peso: {(goal.weight * 100).toFixed(0)}%</p>
+                              </div>
+                              <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{goal.type}</span>
+                            </div>
+                            <div className="flex justify-center">
+                              <GoalGauge percent={attainment} size={100} />
+                            </div>
+                            <div className="bg-secondary/50 rounded-lg p-2 text-center mb-2">
+                              <p className="text-[10px] text-muted-foreground">
+                                Faltam <span className="font-semibold text-foreground">{remaining.toFixed(1)}{goal.unit}</span>
+                                {endDate && daysRemaining > 0 ? (
+                                  <> • Meta diária: <span className="font-semibold text-foreground">{dailyGoal.toFixed(2)}{goal.unit}/dia</span> ({daysRemaining}d)</>
+                                ) : endDate && daysRemaining === 0 ? (
+                                  <> • <span className="text-destructive font-medium">Prazo encerrado</span></>
+                                ) : null}
+                              </p>
+                            </div>
+                          </>
+                        );
+                      })()}
                       {existing.length > 0 && (
                         <div className="mb-3 p-2 bg-secondary/50 rounded">
                           <p className="text-[10px] text-muted-foreground mb-1">Lançamentos anteriores:</p>
