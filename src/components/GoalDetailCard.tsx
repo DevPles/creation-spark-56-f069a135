@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import GoalGauge from "./GoalGauge";
 
 interface GoalDetail {
   id: string;
@@ -11,6 +12,8 @@ interface GoalDetail {
   weight: number;
   scoring: { min: number; label: string; points: number }[];
   history: number[];
+  startDate?: string;
+  endDate?: string;
 }
 
 const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => void }) => {
@@ -24,6 +27,13 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
     return "critical";
   };
   const status = getStatus();
+
+  // Daily target calculation
+  const remaining = Math.max(0, goal.target - goal.current);
+  const today = new Date();
+  const endDate = goal.endDate ? new Date(goal.endDate) : null;
+  const daysRemaining = endDate ? Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / 86400000)) : 0;
+  const dailyGoal = daysRemaining > 0 ? remaining / daysRemaining : remaining;
 
   const maxHistory = Math.max(...goal.history, goal.target);
 
@@ -39,10 +49,30 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
             <span className="text-xs text-muted-foreground">Peso: {(goal.weight * 100).toFixed(0)}%</span>
           </div>
         </div>
-        <span className={`status-badge ${status === "success" ? "status-success" : status === "warning" ? "status-warning" : "status-critical"}`}>
-          {attainment}%
-        </span>
       </div>
+
+      {/* Gauge */}
+      <div className="mt-3">
+        <GoalGauge percent={attainment} size={120} />
+      </div>
+
+      {/* Daily target info */}
+      {goal.target > 0 && (
+        <div className="bg-secondary/50 rounded-lg p-2.5 mt-2 text-center space-y-0.5">
+          <p className="text-[10px] text-muted-foreground">
+            Faltam <span className="font-semibold text-foreground">{remaining.toFixed(1)}{goal.unit}</span> para bater a meta
+          </p>
+          {endDate && daysRemaining > 0 ? (
+            <p className="text-[10px] text-muted-foreground">
+              Meta diária: <span className="font-semibold text-foreground">{dailyGoal.toFixed(2)}{goal.unit}/dia</span> ({daysRemaining} dias restantes)
+            </p>
+          ) : endDate && daysRemaining === 0 ? (
+            <p className="text-[10px] text-destructive font-medium">Prazo encerrado</p>
+          ) : (
+            <p className="text-[10px] text-muted-foreground italic">Sem período definido</p>
+          )}
+        </div>
+      )}
 
       {/* Mini bar chart */}
       <div className="flex items-end gap-1 h-12 mt-4">

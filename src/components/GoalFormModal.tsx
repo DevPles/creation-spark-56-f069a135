@@ -30,6 +30,8 @@ export interface GoalData {
   history: number[];
   glosaPct: number;
   facilityUnit?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface GoalFormModalProps {
@@ -69,6 +71,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
   const [weight, setWeight] = useState("");
   const [trend, setTrend] = useState<"up" | "down" | "stable">("stable");
   const [glosaPct, setGlosaPct] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Scoring rules
   const [scoringRules, setScoringRules] = useState(DEFAULT_SCORING);
@@ -83,6 +87,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       setWeight(String(goal.weight * 100));
       setTrend(goal.trend);
       setGlosaPct(String((goal.glosaPct || 0.05) * 100));
+      setStartDate(goal.startDate || "");
+      setEndDate(goal.endDate || "");
       if (goal.scoring?.length) setScoringRules(goal.scoring);
     } else if (isNew) {
       setName("");
@@ -93,6 +99,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       setWeight("10");
       setTrend("stable");
       setGlosaPct("5");
+      setStartDate("");
+      setEndDate("");
       setScoringRules(DEFAULT_SCORING);
     }
   }, [goal, isNew, open]);
@@ -128,6 +136,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       scoring: scoringRules,
       history: goal?.history || [0, 0, 0, 0],
       glosaPct: glosaPctNum,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
     };
     onSave(data);
     onOpenChange(false);
@@ -206,7 +216,18 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
             </div>
           </div>
 
-          {/* Scoring rules */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Início do período</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Fim do período</Label>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </div>
+          </div>
+
+
           <div className="space-y-2">
             <Label>Faixas de pontuação contratual</Label>
             <div className="bg-secondary rounded-lg p-3 space-y-2">
