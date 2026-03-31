@@ -98,16 +98,21 @@ const LancamentoMetasPage = () => {
     const lightBg: [number, number, number] = [240, 245, 250];
     const now = new Date();
 
+    const margin = 14;
+    const contentW = pageW - margin * 2;
+
     // Header band
     doc.setFillColor(...primary);
     doc.rect(0, 0, pageW, 38, "F");
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.text("Larilu — Sistema de Gestão", 14, 18);
-    doc.setFontSize(11);
-    doc.text("Relatório de Lançamentos", 14, 28);
+    doc.setFontSize(22);
+    doc.text("MOSS", margin, 18);
     doc.setFontSize(9);
-    doc.text(`${selectedUnit} • ${format(now, "dd/MM/yyyy HH:mm")}`, pageW - 14, 28, { align: "right" });
+    doc.text("Métricas para Organizações de Serviço Social", margin, 26);
+    doc.setFontSize(11);
+    doc.text("Relatório de Lançamentos", margin, 34);
+    doc.setFontSize(8);
+    doc.text(`${selectedUnit} • ${format(now, "dd/MM/yyyy HH:mm")}`, pageW - margin, 34, { align: "right" });
 
     // Filter info
     const filterLabel = dateFilter === "todos" ? "Todos os períodos" : dateFilter === "hoje" ? "Hoje" : dateFilter === "7d" ? "Últimos 7 dias" : dateFilter === "30d" ? "Últimos 30 dias" : "Este mês";
