@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import FloatingTrainingHeart from "@/components/FloatingTrainingHeart";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MetasPage from "./pages/MetasPage";
@@ -17,6 +18,7 @@ import LancamentoMetasPage from "./pages/LancamentoMetasPage";
 import SauPage from "./pages/SauPage";
 import RelatorioAssistencialPage from "./pages/RelatorioAssistencialPage";
 import ControleRubricaPage from "./pages/ControleRubricaPage";
+import TreinamentoPage from "./pages/TreinamentoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <FloatingTrainingHeart />
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -41,6 +44,7 @@ const App = () => (
             <Route path="/sau" element={<ProtectedRoute><SauPage /></ProtectedRoute>} />
             <Route path="/relatorio-assistencial" element={<ProtectedRoute><RelatorioAssistencialPage /></ProtectedRoute>} />
             <Route path="/controle-rubrica" element={<ProtectedRoute><ControleRubricaPage /></ProtectedRoute>} />
+            <Route path="/treinamento" element={<ProtectedRoute><TreinamentoPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
