@@ -15,7 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
+import { X, Plus, FileText, Target, AlertTriangle, ClipboardList, Activity } from "lucide-react";
+
+export type EvidenceCategory = "meta" | "rubrica" | "justificativa_interna" | "relatorio_assistencial";
 
 export interface EvidenceData {
   id: string;
@@ -27,6 +31,10 @@ export interface EvidenceData {
   submittedAt?: string;
   notes: string;
   facilityUnit?: string;
+  // New fields
+  category?: EvidenceCategory;
+  activities?: string[];
+  module?: string;
 }
 
 interface EvidenceFormModalProps {
@@ -41,31 +49,64 @@ interface EvidenceFormModalProps {
 const EVIDENCE_TYPES = ["PDF", "Planilha", "Ata de reunião", "Relatório", "Checklist", "Pesquisa", "Justificativa Interna", "Outro"];
 const STATUSES: EvidenceData["status"][] = ["Pendente", "Enviada", "Validada", "Rejeitada"];
 
+const CATEGORY_OPTIONS: { value: EvidenceCategory; label: string; icon: React.ReactNode; description: string }[] = [
+  { value: "meta", label: "Meta / Indicador", icon: <Target className="h-4 w-4" />, description: "Evidência vinculada a uma meta qualitativa ou quantitativa" },
+  { value: "rubrica", label: "Rubrica orçamentária", icon: <AlertTriangle className="h-4 w-4" />, description: "Justificativa de execução orçamentária" },
+  { value: "justificativa_interna", label: "Justificativa interna", icon: <ClipboardList className="h-4 w-4" />, description: "Documentação interna para auditoria" },
+  { value: "relatorio_assistencial", label: "Relatório assistencial", icon: <Activity className="h-4 w-4" />, description: "Conteúdo para compor o relatório assistencial" },
+];
+
+const inferCategory = (evidence: EvidenceData | null): EvidenceCategory => {
+  if (!evidence) return "meta";
+  if (evidence.category) return evidence.category;
+  if (evidence.type === "Justificativa Interna" || evidence.goalName?.startsWith("Justificativa:")) return "rubrica";
+  return "meta";
+};
+
 const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false, goalNames = [] }: EvidenceFormModalProps) => {
+  const [category, setCategory] = useState<EvidenceCategory>("meta");
   const [goalName, setGoalName] = useState("");
   const [type, setType] = useState("PDF");
   const [fileName, setFileName] = useState("");
   const [status, setStatus] = useState<EvidenceData["status"]>("Pendente");
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [activities, setActivities] = useState<string[]>([]);
+  const [newActivity, setNewActivity] = useState("");
 
   useEffect(() => {
     if (evidence && !isNew) {
+      setCategory(inferCategory(evidence));
       setGoalName(evidence.goalName);
       setType(evidence.type);
       setFileName(evidence.fileName);
       setStatus(evidence.status);
       setDueDate(evidence.dueDate);
       setNotes(evidence.notes);
+      setActivities(evidence.activities || []);
     } else if (isNew) {
+      setCategory("meta");
       setGoalName(goalNames[0] || "");
       setType("PDF");
       setFileName("");
       setStatus("Pendente");
       setDueDate("");
       setNotes("");
+      setActivities([]);
     }
   }, [evidence, isNew, open]);
+
+  const handleAddActivity = () => {
+    const trimmed = newActivity.trim();
+    if (trimmed && !activities.includes(trimmed)) {
+      setActivities((prev) => [...prev, trimmed]);
+      setNewActivity("");
+    }
+  };
+
+  const handleRemoveActivity = (activity: string) => {
+    setActivities((prev) => prev.filter((a) => a !== activity));
+  };
 
   const handleSave = () => {
     const data: EvidenceData = {
@@ -77,24 +118,58 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
       dueDate,
       submittedAt: status === "Enviada" || status === "Validada" ? new Date().toLocaleDateString("pt-BR") : undefined,
       notes,
+      category,
+      activities: activities.length > 0 ? activities : undefined,
+      module: category === "relatorio_assistencial" ? "relatorio" : "evidencias",
     };
     onSave(data);
     onOpenChange(false);
   };
 
+  const selectedCat = CATEGORY_OPTIONS.find((c) => c.value === category);
+
+  const referenceLabel = category === "meta" ? "Meta vinculada" : category === "rubrica" ? "Rubrica vinculada" : category === "justificativa_interna" ? "Referência interna" : "Seção do relatório";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display">
-            {isNew ? "Enviar evidência" : "Editar evidência"}
+          <DialogTitle className="font-display flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            {isNew ? "Nova evidência" : "Editar evidência"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Category selector */}
           <div className="space-y-2">
-            <Label>Meta vinculada</Label>
-            {goalNames.length > 0 ? (
+            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categoria</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {CATEGORY_OPTIONS.map((cat) => (
+                <button
+                  key={cat.value}
+                  type="button"
+                  onClick={() => setCategory(cat.value)}
+                  className={`flex items-center gap-2 p-3 rounded-lg border text-left text-sm transition-all ${
+                    category === cat.value
+                      ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
+                      : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className={category === cat.value ? "text-primary" : "text-muted-foreground"}>{cat.icon}</span>
+                  <span className="font-medium text-xs leading-tight">{cat.label}</span>
+                </button>
+              ))}
+            </div>
+            {selectedCat && (
+              <p className="text-[11px] text-muted-foreground">{selectedCat.description}</p>
+            )}
+          </div>
+
+          {/* Reference field */}
+          <div className="space-y-2">
+            <Label>{referenceLabel}</Label>
+            {category === "meta" && goalNames.length > 0 ? (
               <Select value={goalName} onValueChange={setGoalName}>
                 <SelectTrigger><SelectValue placeholder="Selecione a meta" /></SelectTrigger>
                 <SelectContent>
@@ -104,7 +179,12 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
                 </SelectContent>
               </Select>
             ) : (
-              <Input value={goalName} onChange={(e) => setGoalName(e.target.value)} placeholder="Nome da meta" />
+              <Input value={goalName} onChange={(e) => setGoalName(e.target.value)} placeholder={
+                category === "rubrica" ? "Ex: Rubrica de RH — Hospital Geral" :
+                category === "justificativa_interna" ? "Ex: Justificativa de aquisição emergencial" :
+                category === "relatorio_assistencial" ? "Ex: Seção de indicadores assistenciais" :
+                "Nome da meta"
+              } />
             )}
           </div>
 
@@ -140,7 +220,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
 
           {/* File upload */}
           <div className="space-y-2">
-            <Label>Arquivo</Label>
+            <Label>Arquivo / Anexo</Label>
             <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
               {fileName ? (
                 <div>
@@ -157,6 +237,38 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Activities section — useful for relatório assistencial */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              Atividades realizadas
+              <span className="text-[10px] text-muted-foreground font-normal">(opcional)</span>
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                value={newActivity}
+                onChange={(e) => setNewActivity(e.target.value)}
+                placeholder="Descreva a atividade..."
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddActivity(); } }}
+                className="flex-1"
+              />
+              <Button type="button" size="sm" variant="outline" onClick={handleAddActivity} disabled={!newActivity.trim()}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {activities.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {activities.map((act, idx) => (
+                  <Badge key={idx} variant="secondary" className="text-xs flex items-center gap-1 pr-1">
+                    {act}
+                    <button type="button" onClick={() => handleRemoveActivity(act)} className="ml-0.5 hover:text-destructive">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
