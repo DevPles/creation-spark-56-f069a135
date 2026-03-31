@@ -190,17 +190,33 @@ const LancamentoMetasPage = () => {
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] text-muted-foreground">Período</label>
-                        <select
-                          value={entry.period}
-                          onChange={(e) => updateEntry(goal.id, "period", e.target.value)}
-                          className="w-full h-8 text-sm border border-border rounded px-2 bg-background"
-                        >
-                          <option value="">Selecione</option>
-                          {PERIODS.map((p) => (
-                            <option key={p} value={p}>{p}</option>
-                          ))}
-                        </select>
+                        <label className="text-[10px] text-muted-foreground">Data do lançamento</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full h-8 text-sm justify-start text-left font-normal",
+                                !entry.period && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-3 w-3" />
+                              {entry.period ? entry.period : "Selecione o dia"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={entry.period ? new Date(entry.period.split("/").reverse().join("-")) : undefined}
+                              onSelect={(date) => {
+                                if (date) updateEntry(goal.id, "period", format(date, "dd/MM/yyyy"));
+                              }}
+                              locale={ptBR}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                     <Textarea
