@@ -6,26 +6,26 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 214 52% 18%;
+    --background: 214 35% 93%;
+    --foreground: 214 52% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 214 52% 18%;
+    --card-foreground: 214 52% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 214 52% 18%;
+    --popover-foreground: 214 52% 15%;
 
-    --primary: 214 52% 32%;
+    --primary: 214 55% 30%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 8% 92%;
-    --secondary-foreground: 214 52% 18%;
+    --secondary: 220 12% 86%;
+    --secondary-foreground: 214 52% 15%;
 
-    --muted: 220 8% 94%;
-    --muted-foreground: 220 10% 40%;
+    --muted: 214 20% 88%;
+    --muted-foreground: 214 15% 42%;
 
-    --accent: 214 40% 90%;
-    --accent-foreground: 214 52% 22%;
+    --accent: 214 35% 85%;
+    --accent-foreground: 214 52% 20%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -39,19 +39,19 @@
     --risk: 0 72% 51%;
     --risk-foreground: 0 0% 100%;
 
-    --border: 220 10% 85%;
-    --input: 220 10% 85%;
-    --ring: 214 52% 32%;
+    --border: 214 18% 80%;
+    --input: 214 18% 82%;
+    --ring: 214 55% 30%;
 
     --radius: 0.625rem;
 
-    --sidebar-background: 214 52% 18%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 214 52% 32%;
+    --sidebar-background: 214 55% 22%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 214 55% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 214 40% 25%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 214 30% 28%;
+    --sidebar-accent: 214 40% 28%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 214 30% 30%;
     --sidebar-ring: 214 52% 45%;
 
     --font-display: 'DM Sans', sans-serif;
@@ -115,15 +115,15 @@
 
 @layer components {
   .topbar {
-    @apply bg-primary text-primary-foreground border-b border-primary/80 shadow-md;
+    @apply bg-primary text-primary-foreground border-b border-primary/70 shadow-lg;
   }
 
   .kpi-card {
-    @apply bg-card rounded-lg border border-border p-5 transition-all duration-200 shadow-lg shadow-black/5;
+    @apply bg-card rounded-lg border border-border p-5 transition-all duration-200 shadow-md shadow-primary/5;
   }
 
   .kpi-card:hover {
-    @apply shadow-xl shadow-black/10 border-primary/30 -translate-y-0.5;
+    @apply shadow-xl shadow-primary/15 border-primary/40 -translate-y-0.5;
   }
 
   .kpi-value {
