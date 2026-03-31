@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format, subDays, startOfMonth, endOfMonth, isWithinInterval, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, FileText } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ALL_ENTRIES, CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
 import GoalGauge from "@/components/GoalGauge";
@@ -246,8 +246,7 @@ const LancamentoMetasPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleGeneratePdf}>
-              <FileText className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="h-9" onClick={handleGeneratePdf}>
               Gerar PDF
             </Button>
           </div>

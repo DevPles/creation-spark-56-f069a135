@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { ContractData, Rubrica } from "@/components/contract/types";
-import { Plus, Trash2 } from "lucide-react";
+
 
 interface RubricaFormModalProps {
   open: boolean;
@@ -96,16 +96,15 @@ const RubricaFormModal = ({ open, onOpenChange, contract, onSave }: RubricaFormM
                     {r.percent > 0 ? formatCurrency(rubricaValue) : "—"}
                   </span>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={() => removeRubrica(r.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
+                    ✕
                   </Button>
                 </div>
               );
             })}
           </div>
 
-          <Button variant="outline" size="sm" onClick={addRubrica} className="w-full gap-1.5">
-            <Plus className="h-3.5 w-3.5" />
-            Adicionar rubrica
+          <Button variant="outline" size="sm" onClick={addRubrica} className="w-full">
+            + Adicionar rubrica
           </Button>
 
           {rubricas.some(r => r.percent > 0 && r.name) && (
