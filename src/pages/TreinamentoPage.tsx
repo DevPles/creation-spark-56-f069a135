@@ -48,6 +48,9 @@ const TreinamentoPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchActive, setSearchActive] = useState(false);
   const [contacts, setContacts] = useState<ProfileContact[]>([]);
+  const [newOpen, setNewOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
 
   useEffect(() => {
     fetchModules();
@@ -145,6 +148,22 @@ const TreinamentoPage = () => {
       .eq("id", editModule.id);
     toast.success("Módulo atualizado");
     setEditOpen(false);
+    fetchModules();
+  };
+
+  const handleCreateModule = async () => {
+    if (!newTitle.trim()) return;
+    const maxOrder = modules.length > 0 ? Math.max(...modules.map(m => m.sort_order)) + 1 : 0;
+    await supabase.from("training_modules").insert({
+      title: newTitle.trim(),
+      description: newDesc.trim(),
+      sort_order: maxOrder,
+      created_by: user?.id,
+    } as any);
+    toast.success("Módulo criado");
+    setNewOpen(false);
+    setNewTitle("");
+    setNewDesc("");
     fetchModules();
   };
 
@@ -261,6 +280,11 @@ const TreinamentoPage = () => {
             ) : (
               <Button className="rounded-full" size="sm" onClick={() => setSearchActive(true)}>
                 Buscar
+              </Button>
+            )}
+            {isAdmin && (
+              <Button className="rounded-full" size="sm" onClick={() => setNewOpen(true)}>
+                + Novo card
               </Button>
             )}
           </div>
@@ -483,6 +507,29 @@ const TreinamentoPage = () => {
               />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* New module modal */}
+      <Dialog open={newOpen} onOpenChange={setNewOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Novo card de conhecimento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Título</Label>
+              <Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Ex: Dashboard" />
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={4} placeholder="Descreva o módulo..." />
+            </div>
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={handleCreateModule} disabled={!newTitle.trim()}>Criar</Button>
+              <Button variant="outline" onClick={() => setNewOpen(false)}>Cancelar</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
