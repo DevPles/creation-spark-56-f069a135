@@ -103,9 +103,8 @@ const RubricaFormModal = ({ open, onOpenChange, contract, onSave }: RubricaFormM
             })}
           </div>
 
-          <Button variant="outline" size="sm" onClick={addRubrica} className="w-full gap-1.5">
-            <Plus className="h-3.5 w-3.5" />
-            Adicionar rubrica
+          <Button variant="outline" size="sm" onClick={addRubrica} className="w-full">
+            + Adicionar rubrica
           </Button>
 
           {rubricas.some(r => r.percent > 0 && r.name) && (
