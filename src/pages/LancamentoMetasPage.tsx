@@ -281,26 +281,6 @@ const LancamentoMetasPage = () => {
 
           {/* ── TAB: Lançamento de Rubricas ── */}
           <TabsContent value="lancamento-rubricas">
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <div>
-                <label className="text-[10px] text-muted-foreground block mb-1">Contrato</label>
-                <Select value={selectedContract} onValueChange={setSelectedContract}>
-                  <SelectTrigger className="w-[240px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.unit}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-[10px] text-muted-foreground block mb-1">Mês</label>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
             {(() => {
               const contract = CONTRACTS.find(c => c.id === selectedContract);
