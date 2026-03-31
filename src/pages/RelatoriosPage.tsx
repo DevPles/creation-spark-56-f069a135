@@ -719,6 +719,8 @@ const RelatoriosPage = () => {
   }, [contract, filteredGoals]);
 
   /* ── Render slides ── */
+  const chartH = isCarouselFullscreen ? 420 : 280;
+  const chartHSmall = isCarouselFullscreen ? 380 : 260;
   const renderSlide = (index: number) => {
     switch (index) {
       case 0: // KPIs
@@ -740,7 +742,7 @@ const RelatoriosPage = () => {
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Evolução de desempenho</h3>
             <p className="text-xs text-muted-foreground mb-4">% de metas por status — {contract.unit}</p>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={280}>
+               <ResponsiveContainer width="100%" height={chartH}>
                 <AreaChart data={contract.performance}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
@@ -761,7 +763,7 @@ const RelatoriosPage = () => {
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Risco financeiro & glosas</h3>
             <p className="text-xs text-muted-foreground mb-4">Evolução mensal — {contract.unit}</p>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={280}>
+               <ResponsiveContainer width="100%" height={chartH}>
                 <LineChart data={contract.riskTrend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
@@ -781,7 +783,7 @@ const RelatoriosPage = () => {
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Atingimento por rubrica</h3>
             <p className="text-xs text-muted-foreground mb-4">Radar de desempenho vs peso orçamentário — {contract.unit}</p>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={300}>
+               <ResponsiveContainer width="100%" height={chartH}>
                 <RadarChart data={rubricaRadar}>
                   <PolarGrid stroke="hsl(var(--border))" />
                   <PolarAngleAxis dataKey="rubrica" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
@@ -802,7 +804,7 @@ const RelatoriosPage = () => {
             <p className="text-xs text-muted-foreground mb-4">Valor alocado vs risco em R$ mil — {contract.unit}</p>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 bg-card rounded-lg border border-border p-5">
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={chartHSmall}>
                   <BarChart data={rubricaFinancial} barGap={4}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
@@ -816,7 +818,7 @@ const RelatoriosPage = () => {
               </div>
               <div className="bg-card rounded-lg border border-border p-5">
                 <p className="text-xs text-muted-foreground mb-3">Distribuição por tipo</p>
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={isCarouselFullscreen ? 300 : 220}>
                   <PieChart>
                     <Pie data={typeDist} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4}>
                       {typeDist.map((entry, i) => <Cell key={i} fill={entry.color} />)}
@@ -856,7 +858,7 @@ const RelatoriosPage = () => {
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Atingimento individual por meta</h3>
             <p className="text-xs text-muted-foreground mb-4">% realizado vs meta pactuada — {contract.unit}</p>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={Math.max(280, filteredGoals.length * 40)}>
+              <ResponsiveContainer width="100%" height={Math.max(isCarouselFullscreen ? 420 : 280, filteredGoals.length * 40)}>
                 <BarChart data={filteredGoals.map(g => ({ name: g.name.length > 25 ? g.name.slice(0, 25) + "…" : g.name, pct: Math.round(getGoalPct(g)), meta: 100 }))} layout="vertical" barGap={2}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                   <XAxis type="number" domain={[0, 110]} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}%`} />
@@ -876,7 +878,7 @@ const RelatoriosPage = () => {
             <p className="text-xs text-muted-foreground mb-4">Impacto financeiro individual — {contract.unit}</p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-card rounded-lg border border-border p-5">
-                <ResponsiveContainer width="100%" height={280}>
+                 <ResponsiveContainer width="100%" height={chartH}>
                   <PieChart>
                     <Pie data={filteredGoals.filter(g => g.risk > 0).map(g => ({ name: g.name.length > 20 ? g.name.slice(0, 20) + "…" : g.name, value: g.risk }))} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3}>
                       {filteredGoals.filter(g => g.risk > 0).map((_, i) => <Cell key={i} fill={["hsl(var(--destructive))", "hsl(38 92% 50%)", "hsl(var(--primary))", "hsl(280 70% 50%)", "hsl(190 80% 45%)", "hsl(340 75% 55%)", "hsl(160 60% 40%)", "hsl(25 85% 55%)"][i % 8]} />)}
@@ -909,7 +911,7 @@ const RelatoriosPage = () => {
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Meta vs Realizado</h3>
             <p className="text-xs text-muted-foreground mb-4">Comparação direta entre valor pactuado e alcançado — {contract.unit}</p>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={isCarouselFullscreen ? 400 : 300}>
                 <BarChart data={filteredGoals.map(g => ({ name: g.name.length > 18 ? g.name.slice(0, 18) + "…" : g.name, meta: g.target, realizado: g.current, unidade: g.unit }))} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} angle={-25} textAnchor="end" height={70} />
@@ -973,7 +975,7 @@ const RelatoriosPage = () => {
             <p className="text-xs text-muted-foreground mb-4">{contract.unit} vs {compareContract.unit}</p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-card rounded-lg border border-border p-5">
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={chartH}>
                   <BarChart data={comparisonData} barGap={8}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
@@ -1003,7 +1005,7 @@ const RelatoriosPage = () => {
     if (group.length === 1) return renderSlide(group[0]);
     // Pair two charts side by side
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full items-start">
         <div className="min-h-0">{renderSlide(group[0])}</div>
         <div className="min-h-0">{renderSlide(group[1])}</div>
       </div>
@@ -1077,7 +1079,7 @@ const RelatoriosPage = () => {
         </div>
 
         {/* ─── CAROUSEL ─── */}
-        <div ref={carouselRef} className={`relative mb-8 ${isCarouselFullscreen ? "fixed inset-0 z-[9999] bg-background p-8 overflow-auto flex flex-col" : ""}`}>
+        <div ref={carouselRef} className={`relative mb-8 ${isCarouselFullscreen ? "fixed inset-0 z-[9999] bg-background px-8 py-6 overflow-auto flex flex-col" : ""}`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               {Array.from({ length: isCarouselFullscreen ? TOTAL_FS_SLIDES : TOTAL_SLIDES }).map((_, i) => (
