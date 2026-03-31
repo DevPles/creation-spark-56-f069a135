@@ -719,6 +719,8 @@ const RelatoriosPage = () => {
   }, [contract, filteredGoals]);
 
   /* ── Render slides ── */
+  const chartH = isCarouselFullscreen ? 420 : 280;
+  const chartHSmall = isCarouselFullscreen ? 380 : 260;
   const renderSlide = (index: number) => {
     switch (index) {
       case 0: // KPIs
