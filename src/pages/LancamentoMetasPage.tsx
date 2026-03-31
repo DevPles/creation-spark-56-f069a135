@@ -33,11 +33,6 @@ interface EntryForm {
   notes: string;
 }
 
-const PERIODS = [
-  "Semana 1", "Semana 2", "Semana 3", "Semana 4",
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
 
 const LancamentoMetasPage = () => {
   const navigate = useNavigate();
