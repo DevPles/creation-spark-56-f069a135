@@ -96,8 +96,8 @@ const Login = () => {
               {isLogin ? (
                 <motion.div key="login-info" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
                   <p className="text-lg font-semibold text-white/90">Novo por aqui?</p>
-                  <p className="text-sm text-white/70 max-w-[220px] mx-auto">Solicite acesso ao sistema de gestão de indicadores.</p>
-                  <button onClick={() => setMode("register")} className={`${neumorphBtn} px-8 bg-white/10 text-white border border-white/30 backdrop-blur-sm hover:bg-white/20`}>Cadastrar</button>
+                  <p className="text-sm text-white/70 max-w-[240px] mx-auto">Sistema inteligente de análise de métricas para Organizações Sociais de Saúde.</p>
+                  <button onClick={() => setMode("register")} className={`${neumorphBtn} px-8 bg-primary/80 text-white border border-white/20 hover:bg-primary`}>Cadastrar</button>
                 </motion.div>
               ) : (
                 <motion.div key="register-info" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
