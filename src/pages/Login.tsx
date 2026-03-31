@@ -208,7 +208,8 @@ const Login = () => {
               </motion.div>
             ) : isLogin ? (
               <motion.div key="login-form" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="w-full max-w-xs space-y-5">
-                <h3 className="text-xl font-bold text-foreground text-center">Métricas para Organizações de Serviço Social</h3>
+                <h2 className="text-3xl font-bold text-foreground text-center">MOSS</h2>
+                <h3 className="text-sm text-muted-foreground text-center">Métricas para Organizações de Serviço Social</h3>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
                   <div className="relative">
