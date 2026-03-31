@@ -246,8 +246,7 @@ const LancamentoMetasPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleGeneratePdf}>
-              <FileText className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="h-9" onClick={handleGeneratePdf}>
               Gerar PDF
             </Button>
           </div>
