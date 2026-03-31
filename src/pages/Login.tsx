@@ -104,6 +104,29 @@ const GeoShapes = () => {
     </div>
   );
 };
+
+const Login = () => {
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+
+  useEffect(() => { if (session) navigate("/dashboard"); }, [session, navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault(); setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) toast.error(error.message); else navigate("/dashboard");
+    setLoading(false);
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { toast.error("Informe seu nome completo"); return; }
