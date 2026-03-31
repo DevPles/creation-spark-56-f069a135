@@ -60,6 +60,7 @@ const Dashboard = () => {
           <NavCard title="Evidências" description="Upload e validação de documentos" onClick={() => navigate("/evidencias")} />
           <NavCard title="Relatórios" description="Gerar PDF consolidado por período" onClick={() => navigate("/relatorios")} />
           <NavCard title="Administração" description="Usuários, perfis e permissões" onClick={() => navigate("/admin")} />
+          <NavCard title="Lançar Metas" description="Registrar valores realizados por meta" onClick={() => navigate("/lancamento")} />
           <NavCard title="SAU" description="Serviço de Atendimento ao Usuário" onClick={() => navigate("/sau")} />
           <NavCard title="Relatório Assistencial" description="Indicadores e dados assistenciais" onClick={() => navigate("/relatorio-assistencial")} />
           <NavCard title="Controle de Rubrica" description="Gestão e acompanhamento de rubricas" onClick={() => navigate("/controle-rubrica")} />
