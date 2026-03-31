@@ -50,18 +50,18 @@ const OrbBackground = () => {
 };
 
 const METRICS = [
-  "Meta Assistencial = 847/960 = 88,2%",
-  "Meta Assistencial = R$52.400/1.284 = R$40,81",
-  "Meta Assistencial = 87/102 = 85,3%",
-  "Meta Assistencial = (R$148.700 - R$52.400)/R$52.400 = 1,84",
-  "Meta Assistencial = 4.230/960 = 4,4 dias",
-  "Meta Assistencial = R$48.900/R$52.400 = 93,3%",
-  "Meta Assistencial = √(Σ(xᵢ-μ)²/12) = 3,72",
-  "Meta Assistencial = Σ(0,92+0,87+0,94)/3 = 91%",
-  "Meta Assistencial = 1.024/1.047 = 97,8%",
-  "Meta Assistencial = Σ CFₜ/(1+0,08)ᵗ = R$142.300",
-  "Meta Assistencial = 219/232 = 94,4%",
-  "Meta Assistencial = (88,2 - 85)/3,72 = 0,86",
+  "Taxa Ocupação = 847/960 = 88,2%",
+  "Custo por Atendimento = R$52.400/1.284 = R$40,81",
+  "Cobertura Vacinal = 1.024/1.047 = 97,8%",
+  "Tempo Médio Permanência = 4.230/960 = 4,4 dias",
+  "Execução Orçamentária = R$48.900/R$52.400 = 93,3%",
+  "Desvio Padrão = √(Σ(xᵢ-μ)²/12) = 3,72",
+  "Atingimento Médio = (92+87+94)/3 = 91%",
+  "Adesão ao Tratamento = 219/232 = 94,4%",
+  "ROI = (R$148.700-R$52.400)/R$52.400 = 1,84",
+  "NPV = Σ CFₜ/(1+0,08)ᵗ = R$142.300",
+  "Escore Z = (88,2-85)/3,72 = 0,86",
+  "Taxa Infecção = 62/1.000 = 6,2%",
 ];
 
 const TypewriterText = ({ text }: { text: string }) => {
