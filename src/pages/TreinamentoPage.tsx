@@ -424,6 +424,53 @@ const TreinamentoPage = () => {
               <Label>Descrição</Label>
               <Textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={4} />
             </div>
+
+            {/* Video management */}
+            <div className="space-y-2">
+              <Label>Vídeo</Label>
+              {editModule?.video_url ? (
+                <div className="p-3 bg-muted/30 rounded-lg border border-border space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-foreground font-medium">Vídeo anexado ✓</p>
+                      {editModule.video_uploaded_at && (
+                        <p className="text-[10px] text-muted-foreground">
+                          Enviado em {new Date(editModule.video_uploaded_at).toLocaleDateString("pt-BR")}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="rounded-full text-[10px] h-7"
+                      onClick={() => editModule && handleVideoDelete(editModule.id)}
+                    >
+                      Remover vídeo
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-muted/30 rounded-lg border border-dashed border-border">
+                  <p className="text-xs text-muted-foreground mb-2">Nenhum vídeo anexado</p>
+                  <label className="cursor-pointer">
+                    <span className="px-3 py-1.5 text-xs rounded-full bg-primary text-primary-foreground hover:brightness-110 transition inline-block">
+                      {uploading ? "Enviando..." : "Enviar vídeo"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      disabled={uploading}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && editModule) handleVideoUpload(editModule.id, file);
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2">
               <Button className="flex-1" onClick={handleSaveEdit}>Salvar</Button>
               <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
