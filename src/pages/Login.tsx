@@ -125,7 +125,7 @@ const Login = () => {
           <AnimatePresence mode="wait">
             {showReset ? (
               <motion.div key="reset" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full max-w-xs space-y-5">
-                <h3 className="font-display text-xl font-bold text-foreground text-center italic">Recuperar Senha</h3>
+                <h3 className="text-xl font-bold text-foreground text-center">Recuperar Senha</h3>
                 {!resetSent ? (
                   <form onSubmit={handleReset} className="space-y-4">
                     <p className="text-sm text-muted-foreground text-center">Informe seu e-mail para receber o link de redefinição.</p>
