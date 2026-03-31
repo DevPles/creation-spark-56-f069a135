@@ -16,6 +16,7 @@ interface TrainingModule {
   title: string;
   description: string;
   video_url: string | null;
+  video_uploaded_at: string | null;
   sort_order: number;
 }
 
@@ -168,12 +169,32 @@ const TreinamentoPage = () => {
 
     await supabase
       .from("training_modules")
-      .update({ video_url: urlData.publicUrl })
+      .update({ video_url: urlData.publicUrl, video_uploaded_at: new Date().toISOString() } as any)
       .eq("id", moduleId);
 
     toast.success("Vídeo enviado com sucesso");
     setUploading(false);
     fetchModules();
+    // Update edit module in modal
+    if (editModule?.id === moduleId) {
+      setEditModule(prev => prev ? { ...prev, video_url: urlData.publicUrl, video_uploaded_at: new Date().toISOString() } : null);
+    }
+  };
+
+  const handleVideoDelete = async (moduleId: string) => {
+    // Try to remove from storage (ignore errors if file doesn't exist)
+    await supabase.storage.from("training-videos").remove([`${moduleId}.mp4`, `${moduleId}.webm`, `${moduleId}.mov`]);
+
+    await supabase
+      .from("training_modules")
+      .update({ video_url: null, video_uploaded_at: null } as any)
+      .eq("id", moduleId);
+
+    toast.success("Vídeo removido");
+    fetchModules();
+    if (editModule?.id === moduleId) {
+      setEditModule(prev => prev ? { ...prev, video_url: null, video_uploaded_at: null } : null);
+    }
   };
 
   const HeartRating = ({ moduleId }: { moduleId: string }) => {
@@ -347,37 +368,23 @@ const TreinamentoPage = () => {
 
               {/* Video area */}
               {mod.video_url ? (
-                <button
-                  type="button"
-                  onClick={() => setPlayModule(mod)}
-                  className="w-full aspect-video bg-muted rounded-lg flex items-center justify-center hover:bg-muted/70 transition-colors border border-border"
-                >
-                  <span className="text-2xl">▶</span>
-                </button>
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => setPlayModule(mod)}
+                    className="w-full aspect-video bg-muted rounded-lg flex items-center justify-center hover:bg-muted/70 transition-colors border border-border"
+                  >
+                    <span className="text-2xl">▶</span>
+                  </button>
+                  {mod.video_uploaded_at && (
+                    <p className="text-[10px] text-muted-foreground">
+                      📅 Enviado em {new Date(mod.video_uploaded_at).toLocaleDateString("pt-BR")}
+                    </p>
+                  )}
+                </div>
               ) : (
                 <div className="w-full aspect-video bg-muted/50 rounded-lg flex items-center justify-center border border-dashed border-border">
                   <span className="text-xs text-muted-foreground">Sem vídeo</span>
-                </div>
-              )}
-
-              {/* Admin upload */}
-              {isAdmin && (
-                <div>
-                  <label className="cursor-pointer">
-                    <span className="text-[10px] text-primary hover:underline">
-                      {uploading ? "Enviando..." : "+ Enviar vídeo"}
-                    </span>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      className="hidden"
-                      disabled={uploading}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleVideoUpload(mod.id, file);
-                      }}
-                    />
-                  </label>
                 </div>
               )}
 
@@ -403,6 +410,53 @@ const TreinamentoPage = () => {
               <Label>Descrição</Label>
               <Textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={4} />
             </div>
+
+            {/* Video management */}
+            <div className="space-y-2">
+              <Label>Vídeo</Label>
+              {editModule?.video_url ? (
+                <div className="p-3 bg-muted/30 rounded-lg border border-border space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-foreground font-medium">Vídeo anexado ✓</p>
+                      {editModule.video_uploaded_at && (
+                        <p className="text-[10px] text-muted-foreground">
+                          Enviado em {new Date(editModule.video_uploaded_at).toLocaleDateString("pt-BR")}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="rounded-full text-[10px] h-7"
+                      onClick={() => editModule && handleVideoDelete(editModule.id)}
+                    >
+                      Remover vídeo
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-muted/30 rounded-lg border border-dashed border-border">
+                  <p className="text-xs text-muted-foreground mb-2">Nenhum vídeo anexado</p>
+                  <label className="cursor-pointer">
+                    <span className="px-3 py-1.5 text-xs rounded-full bg-primary text-primary-foreground hover:brightness-110 transition inline-block">
+                      {uploading ? "Enviando..." : "Enviar vídeo"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      disabled={uploading}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && editModule) handleVideoUpload(editModule.id, file);
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2">
               <Button className="flex-1" onClick={handleSaveEdit}>Salvar</Button>
               <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>

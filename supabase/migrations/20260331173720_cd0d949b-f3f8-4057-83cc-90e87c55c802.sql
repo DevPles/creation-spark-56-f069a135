@@ -1,0 +1,1 @@
+ALTER TABLE public.training_modules ADD COLUMN video_uploaded_at timestamp with time zone DEFAULT NULL;
