@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import KpiCard from "@/components/KpiCard";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MOCK_GOALS = [
   { id: "1", name: "Taxa de ocupação de leitos", target: 85, current: 78, unit: "%", type: "QNT" as const, risk: 12400, trend: "down" as const },
@@ -14,8 +15,27 @@ const MOCK_GOALS = [
   { id: "8", name: "Comissão de óbitos ativa", target: 1, current: 1, unit: "doc", type: "QLT" as const, risk: 0, trend: "stable" as const },
 ];
 
+const ALL_NAV_CARDS = [
+  { id: "contratos", title: "Contratos", description: "Gerir contratos, valores e glosas", route: "/contratos" },
+  { id: "metas", title: "Metas e indicadores", description: "Detalhamento e projeções por meta", route: "/metas" },
+  { id: "risco", title: "Projeção de risco", description: "Análise financeira e cenários", route: "/risco" },
+  { id: "evidencias", title: "Evidências", description: "Upload e validação de documentos", route: "/evidencias" },
+  { id: "relatorios", title: "Relatórios", description: "Gerar PDF consolidado por período", route: "/relatorios" },
+  { id: "admin", title: "Administração", description: "Usuários, perfis e permissões", route: "/admin" },
+  { id: "lancamento", title: "Lançar Metas", description: "Registrar valores realizados por meta", route: "/lancamento" },
+  { id: "sau", title: "SAU", description: "Serviço de Atendimento ao Usuário", route: "/sau" },
+  { id: "relatorio-assistencial", title: "Relatório Assistencial", description: "Indicadores e dados assistenciais", route: "/relatorio-assistencial" },
+  { id: "controle-rubrica", title: "Controle de Rubrica", description: "Gestão e acompanhamento de rubricas", route: "/controle-rubrica" },
+];
+
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+
+  const allowedCards = profile?.allowed_cards;
+  const visibleNavCards = allowedCards && allowedCards.length > 0
+    ? ALL_NAV_CARDS.filter(card => allowedCards.includes(card.id))
+    : ALL_NAV_CARDS;
 
   const totalRisk = MOCK_GOALS.reduce((s, g) => s + g.risk, 0);
   const goalsAtRisk = MOCK_GOALS.filter((g) => g.risk > 0).length;
@@ -32,7 +52,7 @@ const Dashboard = () => {
       <TopBar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* KPI Cards - clicáveis */}
+        {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
             onClick={() => navigate("/contratos")} className="cursor-pointer">
@@ -52,18 +72,11 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
-        {/* Navigation Cards */}
+        {/* Navigation Cards - filtered by permissions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <NavCard title="Contratos" description="Gerir contratos, valores e glosas" onClick={() => navigate("/contratos")} />
-          <NavCard title="Metas e indicadores" description="Detalhamento e projeções por meta" onClick={() => navigate("/metas")} />
-          <NavCard title="Projeção de risco" description="Análise financeira e cenários" onClick={() => navigate("/risco")} />
-          <NavCard title="Evidências" description="Upload e validação de documentos" onClick={() => navigate("/evidencias")} />
-          <NavCard title="Relatórios" description="Gerar PDF consolidado por período" onClick={() => navigate("/relatorios")} />
-          <NavCard title="Administração" description="Usuários, perfis e permissões" onClick={() => navigate("/admin")} />
-          <NavCard title="Lançar Metas" description="Registrar valores realizados por meta" onClick={() => navigate("/lancamento")} />
-          <NavCard title="SAU" description="Serviço de Atendimento ao Usuário" onClick={() => navigate("/sau")} />
-          <NavCard title="Relatório Assistencial" description="Indicadores e dados assistenciais" onClick={() => navigate("/relatorio-assistencial")} />
-          <NavCard title="Controle de Rubrica" description="Gestão e acompanhamento de rubricas" onClick={() => navigate("/controle-rubrica")} />
+          {visibleNavCards.map(card => (
+            <NavCard key={card.id} title={card.title} description={card.description} onClick={() => navigate(card.route)} />
+          ))}
         </div>
       </main>
     </div>
