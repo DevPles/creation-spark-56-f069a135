@@ -87,6 +87,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       setWeight(String(goal.weight * 100));
       setTrend(goal.trend);
       setGlosaPct(String((goal.glosaPct || 0.05) * 100));
+      setStartDate(goal.startDate || "");
+      setEndDate(goal.endDate || "");
       if (goal.scoring?.length) setScoringRules(goal.scoring);
     } else if (isNew) {
       setName("");
@@ -97,6 +99,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       setWeight("10");
       setTrend("stable");
       setGlosaPct("5");
+      setStartDate("");
+      setEndDate("");
       setScoringRules(DEFAULT_SCORING);
     }
   }, [goal, isNew, open]);
