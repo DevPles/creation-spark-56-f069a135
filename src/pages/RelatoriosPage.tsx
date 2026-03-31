@@ -206,14 +206,14 @@ async function generatePdfBlob(
   const margin = 15;
   let y = margin;
 
-  const PRIMARY = [20, 100, 140];
-  const DARK = [30, 40, 50];
-  const MUTED = [120, 130, 140];
-  const RED = [220, 60, 60];
-  const GREEN = [40, 160, 90];
-  const AMBER = [230, 160, 30];
-  const WHITE = [255, 255, 255];
-  const LIGHT_BG = [245, 247, 250];
+   const PRIMARY = [35, 66, 117]; // hsl(214 55% 30%)
+   const DARK = [30, 40, 50];
+   const MUTED = [120, 130, 140];
+   const RED = [220, 60, 60];
+   const GREEN = [40, 160, 90];
+   const AMBER = [230, 160, 30];
+   const WHITE = [255, 255, 255];
+   const LIGHT_BG = [235, 239, 245];
 
   /* ── Helper functions ── */
   const addNewPageIfNeeded = (needed: number) => {
@@ -226,7 +226,7 @@ async function generatePdfBlob(
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text("SisLu — Sistema de Acompanhamento de Metas", margin, 8);
+    doc.text("MOSS — Métricas para Organizações de Serviço Social", margin, 8);
     doc.text(now, W - margin, 8, { align: "right" });
     doc.setTextColor(DARK[0], DARK[1], DARK[2]);
     y = 18;
@@ -237,7 +237,7 @@ async function generatePdfBlob(
     doc.rect(0, H - 10, W, 10, "F");
     doc.setFontSize(7);
     doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-    doc.text("Gerado automaticamente pelo SisLu", margin, H - 4);
+    doc.text("Gerado automaticamente pelo MOSS", margin, H - 4);
     doc.text(`Página ${pageNum} de ${totalPages}`, W - margin, H - 4, { align: "right" });
   };
 
@@ -282,10 +282,10 @@ async function generatePdfBlob(
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
-  doc.text("SisLu", margin, 20);
+  doc.text("MOSS", margin, 20);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("Sistema de Acompanhamento de Metas", margin, 28);
+  doc.text("Métricas para Organizações de Serviço Social", margin, 28);
   doc.setFontSize(9);
   doc.text(`${reportLabel}  |  ${now}`, margin, 38);
   y = 55;
@@ -654,7 +654,7 @@ const RelatoriosPage = () => {
       const blob = await generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails, contract, chartRef);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      const fileName = `MOSS_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
       a.href = url; a.download = fileName;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
@@ -672,7 +672,7 @@ const RelatoriosPage = () => {
       const blob = await generatePdfBlob(filteredGoals, contract.name, report.type, true, true, contract, chartRef);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = `SisLu_${report.name.replace(/\s/g, "_")}.pdf`;
+      a.href = url; a.download = `MOSS_${report.name.replace(/\s/g, "_")}.pdf`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success("Download iniciado");
