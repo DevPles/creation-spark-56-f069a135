@@ -5,10 +5,9 @@ interface KpiCardProps {
   subtitle: string;
 }
 
-const KpiCard = ({ label, value, status, subtitle }: KpiCardProps) => {
-  const statusColor = status === "critical" ? "border-l-destructive" : status === "warning" ? "border-l-warning" : "border-l-success";
+const KpiCard = ({ label, value, subtitle }: KpiCardProps) => {
   return (
-    <div className={`kpi-card border-l-4 ${statusColor}`}>
+    <div className="kpi-card">
       <p className="text-xs text-muted-foreground font-medium">{label}</p>
       <p className="kpi-value mt-1">{value}</p>
       <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
