@@ -55,11 +55,13 @@ export type Database = {
       goals: {
         Row: {
           created_at: string
+          end_date: string | null
           facility_unit: Database["public"]["Enums"]["facility_unit"]
           id: string
           name: string
           risk: number
           scoring: Json
+          start_date: string | null
           target: number
           type: string
           unit: string
@@ -68,11 +70,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          end_date?: string | null
           facility_unit: Database["public"]["Enums"]["facility_unit"]
           id?: string
           name: string
           risk?: number
           scoring?: Json
+          start_date?: string | null
           target: number
           type?: string
           unit?: string
@@ -81,11 +85,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          end_date?: string | null
           facility_unit?: Database["public"]["Enums"]["facility_unit"]
           id?: string
           name?: string
           risk?: number
           scoring?: Json
+          start_date?: string | null
           target?: number
           type?: string
           unit?: string
