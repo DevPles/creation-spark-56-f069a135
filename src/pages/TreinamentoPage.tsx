@@ -24,6 +24,13 @@ interface Rating {
   rating: number;
 }
 
+interface ProfileContact {
+  id: string;
+  name: string;
+  cargo: string | null;
+  facility_unit: string;
+}
+
 const TreinamentoPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -37,14 +44,23 @@ const TreinamentoPage = () => {
   const [editDesc, setEditDesc] = useState("");
   const [uploading, setUploading] = useState(false);
   const [playModule, setPlayModule] = useState<TrainingModule | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchActive, setSearchActive] = useState(false);
+  const [contacts, setContacts] = useState<ProfileContact[]>([]);
 
   useEffect(() => {
     fetchModules();
+    fetchContacts();
     if (user) {
       checkAdmin();
       fetchMyRatings();
     }
   }, [user]);
+
+  const fetchContacts = async () => {
+    const { data } = await supabase.from("profiles").select("id, name, cargo, facility_unit");
+    if (data) setContacts(data as ProfileContact[]);
+  };
 
   const checkAdmin = async () => {
     if (!user) return;
@@ -209,8 +225,107 @@ const TreinamentoPage = () => {
           <p className="text-sm text-muted-foreground">Guia completo dos módulos — assista aos vídeos e avalie com corações</p>
         </div>
 
+        {/* Search bar */}
+        <div className="flex items-center gap-2 mb-6">
+          <Input
+            placeholder="Buscar módulo ou pessoa..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setSearchActive(false); }}
+            onKeyDown={(e) => { if (e.key === "Enter") setSearchActive(true); }}
+            className="flex-1"
+          />
+          <Button className="rounded-full" onClick={() => setSearchActive(true)}>
+            Buscar
+          </Button>
+          {searchQuery && (
+            <Button variant="outline" size="sm" className="rounded-full" onClick={() => { setSearchQuery(""); setSearchActive(false); }}>
+              Limpar
+            </Button>
+          )}
+        </div>
+
+        {/* Search results - contacts */}
+        {searchActive && searchQuery.trim() && (() => {
+          const q = searchQuery.trim().toLowerCase();
+          const filteredModules = modules.filter(m => m.title.toLowerCase().includes(q) || m.description.toLowerCase().includes(q));
+          const noModuleMatch = filteredModules.length === 0;
+          const matchedContacts = contacts.filter(c =>
+            c.name.toLowerCase().includes(q) ||
+            (c.cargo?.toLowerCase().includes(q)) ||
+            c.facility_unit.toLowerCase().includes(q)
+          );
+
+          if (!noModuleMatch) return null;
+
+          return (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="kpi-card mb-6">
+              <p className="text-sm font-medium text-foreground mb-1">Nenhum módulo encontrado para "{searchQuery}"</p>
+              <p className="text-xs text-muted-foreground mb-3">Entre em contato com alguém da equipe para tirar dúvidas:</p>
+              {matchedContacts.length > 0 ? (
+                <div className="space-y-2">
+                  {matchedContacts.slice(0, 5).map(c => (
+                    <div key={c.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{c.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{c.cargo || "Sem cargo"} • {c.facility_unit}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <a
+                          href={`mailto:${c.name.toLowerCase().replace(/\s/g, ".")}@moss.org?subject=Dúvida sobre ${searchQuery}`}
+                          className="px-3 py-1.5 text-xs rounded-full bg-primary text-primary-foreground hover:brightness-110 transition"
+                        >
+                          Email
+                        </a>
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(`Olá ${c.name}, tenho uma dúvida sobre: ${searchQuery}`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 text-xs rounded-full bg-[hsl(142_71%_45%)] text-white hover:brightness-110 transition"
+                        >
+                          WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Nenhum contato encontrado. Veja todos os contatos disponíveis:</p>
+                  {contacts.slice(0, 5).map(c => (
+                    <div key={c.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{c.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{c.cargo || "Sem cargo"} • {c.facility_unit}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <a
+                          href={`mailto:${c.name.toLowerCase().replace(/\s/g, ".")}@moss.org?subject=Dúvida sobre ${searchQuery}`}
+                          className="px-3 py-1.5 text-xs rounded-full bg-primary text-primary-foreground hover:brightness-110 transition"
+                        >
+                          Email
+                        </a>
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(`Olá ${c.name}, tenho uma dúvida sobre: ${searchQuery}`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 text-xs rounded-full bg-[hsl(142_71%_45%)] text-white hover:brightness-110 transition"
+                        >
+                          WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          );
+        })()}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {modules.map((mod, i) => (
+          {(searchActive && searchQuery.trim()
+            ? modules.filter(m => m.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) || m.description.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+            : modules
+          ).map((mod, i) => (
             <motion.div
               key={mod.id}
               initial={{ opacity: 0, y: 10 }}
