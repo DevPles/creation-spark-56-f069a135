@@ -1076,12 +1076,12 @@ const RelatoriosPage = () => {
         <div ref={carouselRef} className={`relative mb-8 ${isCarouselFullscreen ? "fixed inset-0 z-[9999] bg-background p-8 overflow-auto flex flex-col" : ""}`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
+              {Array.from({ length: isCarouselFullscreen ? TOTAL_FS_SLIDES : TOTAL_SLIDES }).map((_, i) => (
                 <button key={i} onClick={() => setCurrentSlide(i)}
                   className={`h-2 rounded-full transition-all duration-300 ${i === currentSlide ? "w-8 bg-primary" : "w-2 bg-muted-foreground/30"}`}
                 />
               ))}
-              <span className="text-[10px] text-muted-foreground ml-2">{currentSlide + 1}/{TOTAL_SLIDES}</span>
+              <span className="text-[10px] text-muted-foreground ml-2">{currentSlide + 1}/{isCarouselFullscreen ? TOTAL_FS_SLIDES : TOTAL_SLIDES}</span>
             </div>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={() => setIsPaused(!isPaused)}>
