@@ -3,7 +3,7 @@ import TopBar from "@/components/TopBar";
 import KpiCard from "@/components/KpiCard";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import FullscreenDashboard, { type SlideData } from "@/components/FullscreenDashboard";
+
 
 const MOCK_GOALS = [
   { id: "1", name: "Taxa de ocupação de leitos", target: 85, current: 78, unit: "%", type: "QNT" as const, risk: 12400, trend: "down" as const },
