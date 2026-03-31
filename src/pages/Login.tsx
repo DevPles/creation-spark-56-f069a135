@@ -81,7 +81,7 @@ const GeoShapes = () => {
   );
 };
 
-
+const Login = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
