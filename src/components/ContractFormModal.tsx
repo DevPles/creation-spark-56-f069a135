@@ -48,6 +48,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setUnit(contract.unit || "Hospital Geral");
       setGoalsCount(String(contract.goals));
       setPdfName(contract.pdfName || "");
+      setPdfUrl(contract.pdfUrl || "");
       setNotificationEmail(contract.notificationEmail || "");
       setRubricas(contract.rubricas?.length ? contract.rubricas : DEFAULT_RUBRICAS);
       const parts = contract.period.split("-");
@@ -63,12 +64,40 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setUnit("Hospital Geral");
       setGoalsCount("0");
       setPdfName("");
+      setPdfUrl("");
       setNotificationEmail("");
       setPeriodStart("2024");
       setPeriodEnd("2025");
       setRubricas(DEFAULT_RUBRICAS.map((r) => ({ ...r })));
     }
   }, [contract, isNew, open]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo deve ter no máximo 10MB");
+      return;
+    }
+    setUploading(true);
+    const filePath = `${crypto.randomUUID()}_${file.name}`;
+    const { error } = await supabase.storage.from("contract-pdfs").upload(filePath, file);
+    if (error) {
+      toast.error("Erro ao enviar arquivo");
+      setUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("contract-pdfs").getPublicUrl(filePath);
+    setPdfName(file.name);
+    setPdfUrl(urlData.publicUrl);
+    setUploading(false);
+    toast.success("PDF enviado com sucesso");
+  };
+
+  const handleRemovePdf = async () => {
+    setPdfName("");
+    setPdfUrl("");
+  };
 
   const handleSave = () => {
     const data: ContractData = {
