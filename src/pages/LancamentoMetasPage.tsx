@@ -140,9 +140,9 @@ const LancamentoMetasPage = () => {
         { label: "Metas ≥ 100%", value: String(metaRows.filter(r => r.pct >= 100).length) },
         { label: "Metas < 70%", value: String(metaRows.filter(r => r.pct < 70).length) },
       ];
-      const boxW = (pageW - 28 - 18) / 4;
+      const boxW = (contentW - 18) / 4;
       kpis.forEach((kpi, i) => {
-        const x = 14 + i * (boxW + 6);
+        const x = margin + i * (boxW + 6);
         doc.setFillColor(...lightBg);
         doc.roundedRect(x, startY, boxW, 22, 3, 3, "F");
         doc.setTextColor(100, 100, 100);
@@ -156,29 +156,31 @@ const LancamentoMetasPage = () => {
 
       // Bar chart simulation
       doc.setFillColor(...lightBg);
-      doc.roundedRect(14, startY, pageW - 28, 50, 3, 3, "F");
+      doc.roundedRect(margin, startY, contentW, 50, 3, 3, "F");
       doc.setTextColor(60, 60, 60);
       doc.setFontSize(9);
-      doc.text("Atingimento por Meta (%)", 18, startY + 10);
+      doc.text("Atingimento por Meta (%)", margin + 4, startY + 10);
 
       const chartStartY = startY + 16;
-      const chartW = pageW - 48;
+      const labelW = 46;
+      const barAreaW = contentW - labelW - 30;
       const barH = metaRows.length > 0 ? Math.min(6, 30 / metaRows.length) : 6;
       metaRows.forEach((r, i) => {
         const y = chartStartY + i * (barH + 2);
         if (y + barH > startY + 48) return;
+        const barX = margin + labelW;
         // Background bar
         doc.setFillColor(220, 225, 230);
-        doc.roundedRect(60, y, chartW - 46, barH, 1, 1, "F");
-        // Fill bar
-        const fillW = Math.min(r.pct / 100, 1.2) * (chartW - 46);
+        doc.roundedRect(barX, y, barAreaW, barH, 1, 1, "F");
+        // Fill bar (clamped to barAreaW)
+        const fillW = Math.min(Math.min(r.pct / 100, 1.2) * barAreaW, barAreaW);
         doc.setFillColor(r.pct >= 100 ? 46 : r.pct >= 70 ? 41 : 231, r.pct >= 100 ? 160 : r.pct >= 70 ? 128 : 76, r.pct >= 100 ? 67 : r.pct >= 70 ? 185 : 60);
-        doc.roundedRect(60, y, Math.max(fillW, 2), barH, 1, 1, "F");
+        doc.roundedRect(barX, y, Math.max(fillW, 2), barH, 1, 1, "F");
         // Label
         doc.setTextColor(60, 60, 60);
         doc.setFontSize(7);
-        doc.text(r.name.substring(0, 20), 18, y + barH - 1);
-        doc.text(`${r.pct}%`, 60 + chartW - 44, y + barH - 1);
+        doc.text(r.name.substring(0, 18), margin + 4, y + barH - 1);
+        doc.text(`${r.pct}%`, barX + barAreaW + 2, y + barH - 1);
       });
       startY += 56;
 
@@ -192,7 +194,7 @@ const LancamentoMetasPage = () => {
         bodyStyles: { fontSize: 8, textColor: [40, 40, 40] },
         alternateRowStyles: { fillColor: lightBg },
         styles: { cellPadding: 4, lineWidth: 0.1, lineColor: [200, 210, 220] },
-        margin: { left: 14, right: 14 },
+        margin: { left: margin, right: margin },
       });
     } else {
       const contract = CONTRACTS.find(c => c.id === selectedContract);
