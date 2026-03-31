@@ -845,10 +845,9 @@ const RelatorioAssistencialPage = () => {
                     { step: "Aprovação final", status: "waiting" },
                   ].map((item) => (
                     <div key={item.step} className="flex items-center gap-3">
-                      {item.status === "done" && <span className="text-primary font-bold">✓</span>}
-                      {item.status === "pending" && <span className="text-yellow-600 font-bold">⏳</span>}
-                      {item.status === "waiting" && <div className="w-5 h-5 rounded-full border-2 border-muted-foreground" />}
-                      <span className={`text-sm ${item.status === "done" ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}>{item.step}</span>
+                      <span className={`text-sm ${item.status === "done" ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}>
+                        {item.status === "done" ? "[concluído]" : item.status === "pending" ? "[em andamento]" : "[aguardando]"} {item.step}
+                      </span>
                     </div>
                   ))}
                 </div>
