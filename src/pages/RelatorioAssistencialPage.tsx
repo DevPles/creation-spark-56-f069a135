@@ -674,22 +674,22 @@ const RelatorioAssistencialPage = () => {
                                 {/* Actions */}
                                 <div className="flex items-center gap-1 shrink-0">
                                   {!isEditing && (
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingItemId(item.id); setEditText(item.description); }}>
-                                      <Edit2 className="h-3.5 w-3.5" />
+                                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setEditingItemId(item.id); setEditText(item.description); }}>
+                                      Editar
                                     </Button>
                                   )}
                                   {isEditing && (
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-success" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, description: editText } : ti)); setEditingItemId(null); toast.success("Texto atualizado"); }}>
-                                      <Save className="h-3.5 w-3.5" />
+                                    <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, description: editText } : ti)); setEditingItemId(null); toast.success("Texto atualizado"); }}>
+                                      Salvar
                                     </Button>
                                   )}
                                   {item.status === "pendente" && (
                                     <>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:bg-emerald-500/10" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, status: "aprovado" as const } : ti)); toast.success("Item aprovado"); }}>
-                                        <CheckCircle className="h-3.5 w-3.5" />
+                                      <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, status: "aprovado" as const } : ti)); toast.success("Item aprovado"); }}>
+                                        Aprovar
                                       </Button>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, status: "rejeitado" as const } : ti)); toast.error("Item rejeitado"); }}>
-                                        <XCircle className="h-3.5 w-3.5" />
+                                      <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, status: "rejeitado" as const } : ti)); toast.error("Item rejeitado"); }}>
+                                        Rejeitar
                                       </Button>
                                     </>
                                   )}
