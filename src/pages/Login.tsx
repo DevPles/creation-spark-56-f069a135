@@ -89,7 +89,17 @@ const Login = () => {
 
         {/* ── PAINEL BRANDING (azul degradê) ── */}
         <motion.div layout className="relative overflow-hidden flex flex-col items-center justify-center p-10 text-center" style={{ background: "linear-gradient(160deg, hsl(214 55% 30%) 0%, hsl(200 45% 35%) 100%)", order: isLogin ? 1 : 0, width: "45%", minWidth: 0 }}>
-          <OrbBackground />
+          {/* Animated floating rings */}
+          <div className="pointer-events-none absolute inset-0">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute -top-16 -right-16 w-48 h-48 rounded-full border border-white/10" />
+            <motion.div animate={{ rotate: -360 }} transition={{ duration: 28, repeat: Infinity, ease: "linear" }} className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full border border-white/[0.07]" />
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} className="absolute top-1/4 -left-10 w-32 h-32 rounded-full border border-white/[0.06]" />
+            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.15, 0.08] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} className="absolute top-10 right-8 w-24 h-24 rounded-full bg-cyan-300/10 blur-2xl" />
+            <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.06, 0.12, 0.06] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }} className="absolute bottom-10 left-1/3 w-36 h-36 rounded-full bg-blue-200/10 blur-3xl" />
+            <motion.div animate={{ y: [-10, 10, -10], x: [-5, 5, -5] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} className="absolute top-1/2 right-1/4 w-3 h-3 rounded-full bg-white/20" />
+            <motion.div animate={{ y: [8, -8, 8], x: [4, -4, 4] }} transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }} className="absolute top-1/4 left-1/3 w-2 h-2 rounded-full bg-white/15" />
+            <motion.div animate={{ y: [-6, 12, -6] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 3 }} className="absolute bottom-1/3 right-1/3 w-2.5 h-2.5 rounded-full bg-white/10" />
+          </div>
           <div className="relative z-10 space-y-4">
             <h2 className="font-display text-4xl font-bold text-white tracking-tight">Moss</h2>
             <AnimatePresence mode="wait">
