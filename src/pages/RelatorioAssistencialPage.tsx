@@ -710,9 +710,8 @@ const RelatorioAssistencialPage = () => {
 
                               {/* File attachment */}
                               {item.fileName && (
-                                <div className="mt-2 flex items-center gap-1.5 text-[11px] text-primary">
-                                  <FileText className="h-3 w-3" />
-                                  <span>{item.fileName}</span>
+                                <div className="mt-2 text-[11px] text-primary">
+                                  📎 {item.fileName}
                                 </div>
                               )}
                             </div>
