@@ -379,7 +379,7 @@ const TreinamentoPage = () => {
                   </button>
                   {mod.video_uploaded_at && (
                     <p className="text-[10px] text-muted-foreground">
-                      📅 Enviado em {new Date(mod.video_uploaded_at).toLocaleDateString("pt-BR")}
+                      Enviado em {new Date(mod.video_uploaded_at).toLocaleDateString("pt-BR")}
                     </p>
                   )}
                 </div>
