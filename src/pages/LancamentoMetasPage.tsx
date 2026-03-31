@@ -117,7 +117,7 @@ const LancamentoMetasPage = () => {
     } else {
       toast.success("Lançamento salvo com sucesso");
       setEntries((prev) => ({ ...prev, [goalId]: { value: "", period: "", notes: "" } }));
-      loadGoals();
+      loadGoals(selectedUnit);
     }
     setSubmitting(null);
   };
