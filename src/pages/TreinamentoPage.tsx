@@ -151,6 +151,22 @@ const TreinamentoPage = () => {
     fetchModules();
   };
 
+  const handleCreateModule = async () => {
+    if (!newTitle.trim()) return;
+    const maxOrder = modules.length > 0 ? Math.max(...modules.map(m => m.sort_order)) + 1 : 0;
+    await supabase.from("training_modules").insert({
+      title: newTitle.trim(),
+      description: newDesc.trim(),
+      sort_order: maxOrder,
+      created_by: user?.id,
+    } as any);
+    toast.success("Módulo criado");
+    setNewOpen(false);
+    setNewTitle("");
+    setNewDesc("");
+    fetchModules();
+  };
+
   const handleVideoUpload = async (moduleId: string, file: File) => {
     setUploading(true);
     const ext = file.name.split(".").pop();
