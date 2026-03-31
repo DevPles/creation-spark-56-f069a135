@@ -489,6 +489,24 @@ const TreinamentoPage = () => {
               </Button>
               <Button variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
             </div>
+
+            {/* Delete — admin only, edit mode only */}
+            {modalMode === "edit" && modalModule && isAdmin && (
+              <div className="pt-2 border-t border-border">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    if (window.confirm("Tem certeza que deseja excluir este módulo? Esta ação não pode ser desfeita.")) {
+                      handleDeleteModule(modalModule.id);
+                    }
+                  }}
+                >
+                  Excluir módulo
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
