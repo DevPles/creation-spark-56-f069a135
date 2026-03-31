@@ -878,7 +878,7 @@ const RelatoriosPage = () => {
             <p className="text-xs text-muted-foreground mb-4">Impacto financeiro individual — {contract.unit}</p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-card rounded-lg border border-border p-5">
-                <ResponsiveContainer width="100%" height={280}>
+                 <ResponsiveContainer width="100%" height={chartH}>
                   <PieChart>
                     <Pie data={filteredGoals.filter(g => g.risk > 0).map(g => ({ name: g.name.length > 20 ? g.name.slice(0, 20) + "…" : g.name, value: g.risk }))} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3}>
                       {filteredGoals.filter(g => g.risk > 0).map((_, i) => <Cell key={i} fill={["hsl(var(--destructive))", "hsl(38 92% 50%)", "hsl(var(--primary))", "hsl(280 70% 50%)", "hsl(190 80% 45%)", "hsl(340 75% 55%)", "hsl(160 60% 40%)", "hsl(25 85% 55%)"][i % 8]} />)}
