@@ -48,6 +48,49 @@ const Dashboard = () => {
   );
   const pendingEvidence = MOCK_GOALS.filter((g) => g.type === "DOC" && g.current < g.target).length;
 
+  const SLIDES: SlideData[] = [
+    {
+      title: "Contrato de Gestão — Hospital Geral",
+      subtitle: `Valor global: R$ 2.800.000/mês • ${MOCK_GOALS.length} metas filtradas`,
+      cards: [
+        { label: "Risco financeiro", value: `R$ ${(totalRisk / 1000).toFixed(0)}k`, color: "hsl(var(--destructive))" },
+        { label: "Atingimento médio", value: `${avgAttainment}%`, color: "hsl(35, 90%, 50%)" },
+        { label: "Em alerta", value: String(goalsAtRisk), color: "hsl(35, 90%, 50%)" },
+        { label: "Críticas", value: String(MOCK_GOALS.filter(g => { const att = g.type === "DOC" ? (g.current >= g.target ? 100 : 0) : (g.current / g.target) * 100; return att < 60; }).length), color: "hsl(var(--destructive))" },
+      ],
+      goals: MOCK_GOALS.map(g => ({
+        name: g.name,
+        attainment: g.type === "DOC" ? (g.current >= g.target ? 100 : 0) : Math.round(Math.min(100, (g.current / g.target) * 100)),
+        risk: g.risk,
+      })),
+    },
+    {
+      title: "Resumo Financeiro",
+      subtitle: "Indicadores financeiros consolidados",
+      cards: [
+        { label: "R$ em risco", value: `R$ ${(totalRisk / 1000).toFixed(1)}k`, color: "hsl(var(--destructive))" },
+        { label: "Metas em risco", value: `${goalsAtRisk} de ${MOCK_GOALS.length}`, color: "hsl(35, 90%, 50%)" },
+        { label: "Atingimento médio", value: `${avgAttainment}%`, color: avgAttainment >= 90 ? "hsl(142, 71%, 45%)" : "hsl(35, 90%, 50%)" },
+        { label: "Evidências pendentes", value: String(pendingEvidence), color: pendingEvidence > 0 ? "hsl(35, 90%, 50%)" : "hsl(142, 71%, 45%)" },
+      ],
+    },
+    {
+      title: "Metas Assistenciais",
+      subtitle: "Detalhamento por indicador assistencial",
+      cards: [
+        { label: "Taxa ocupação", value: "78%", color: "hsl(35, 90%, 50%)" },
+        { label: "Tempo espera", value: "42 min", color: "hsl(var(--destructive))" },
+        { label: "NPS", value: "71 pts", color: "hsl(35, 90%, 50%)" },
+        { label: "Higienização", value: "92%", color: "hsl(142, 71%, 45%)" },
+      ],
+      goals: MOCK_GOALS.slice(0, 4).map(g => ({
+        name: g.name,
+        attainment: Math.round(Math.min(100, (g.current / g.target) * 100)),
+        risk: g.risk,
+      })),
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
