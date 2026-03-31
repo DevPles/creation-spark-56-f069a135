@@ -206,14 +206,14 @@ async function generatePdfBlob(
   const margin = 15;
   let y = margin;
 
-  const PRIMARY = [20, 100, 140];
-  const DARK = [30, 40, 50];
-  const MUTED = [120, 130, 140];
-  const RED = [220, 60, 60];
-  const GREEN = [40, 160, 90];
-  const AMBER = [230, 160, 30];
-  const WHITE = [255, 255, 255];
-  const LIGHT_BG = [245, 247, 250];
+   const PRIMARY = [35, 66, 117]; // hsl(214 55% 30%)
+   const DARK = [30, 40, 50];
+   const MUTED = [120, 130, 140];
+   const RED = [220, 60, 60];
+   const GREEN = [40, 160, 90];
+   const AMBER = [230, 160, 30];
+   const WHITE = [255, 255, 255];
+   const LIGHT_BG = [235, 239, 245];
 
   /* ── Helper functions ── */
   const addNewPageIfNeeded = (needed: number) => {

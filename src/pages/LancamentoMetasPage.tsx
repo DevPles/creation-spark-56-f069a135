@@ -93,9 +93,9 @@ const LancamentoMetasPage = () => {
   const handleGeneratePdf = () => {
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
-    const primary: [number, number, number] = [26, 54, 71];
-    const accent: [number, number, number] = [41, 128, 185];
-    const lightBg: [number, number, number] = [240, 245, 250];
+    const primary: [number, number, number] = [35, 66, 117]; // hsl(214 55% 30%)
+    const accent: [number, number, number] = [55, 95, 155];
+    const lightBg: [number, number, number] = [235, 239, 245];
     const now = new Date();
 
     const margin = 14;
