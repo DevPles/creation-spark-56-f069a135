@@ -21,6 +21,7 @@ import {
   PieChart, Pie, Cell, Legend,
 } from "recharts";
 import { ALL_ENTRIES, CONTRACTS, MONTHS } from "@/data/rubricaData";
+import GoalGauge from "@/components/GoalGauge";
 
 /* ── Types ────────────────────────────────────── */
 interface Goal {
