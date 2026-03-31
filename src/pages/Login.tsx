@@ -33,94 +33,99 @@ const OrbBackground = () => {
   );
 };
 
-const FORMULAS = ["∫f(x)dx", "Σxᵢ", "A=πr²", "sin θ", "cos θ", "a²+b²=c²", "lim x→∞", "∂f/∂x", "d/dx", "2πr", "tan θ", "√x", "Δy/Δx"];
-const SHAPES_POOL = ["○", "△", "□", "◇"];
+const FORMULAS = [
+  "ROI=(Receita-Custo)/Custo",
+  "σ=√(Σ(xᵢ-μ)²/N)",
+  "z=(x-μ)/σ",
+  "ŷ=β₀+β₁x",
+  "R²=1-SSres/SStot",
+  "P(A|B)=P(A∩B)/P(B)",
+  "LTV=C×T×M",
+  "CAC=Investimento/Clientes",
+  "NPV=Σ CFₜ/(1+r)ᵗ",
+  "∫₀ᵀ f(t)e⁻ʳᵗdt",
+  "∂S/∂t+u∂S/∂x=0",
+  "Taxa=Óbitos/Internações",
+  "Σ(Meta-Real)²/n",
+  "Eficiência=Saídas/Entradas",
+];
 
-interface TypedItem {
+interface FloatingFormula {
   id: string;
   text: string;
   x: number;
   y: number;
   size: number;
-  type: "formula" | "shape";
 }
 
-const makeSlots = (): TypedItem[] => [
-  ...Array.from({ length: 5 }, () => ({
-    id: crypto.randomUUID(),
-    type: "formula" as const,
-    text: FORMULAS[Math.floor(Math.random() * FORMULAS.length)],
-    x: 8 + Math.random() * 78,
-    y: 8 + Math.random() * 78,
-    size: 13 + Math.random() * 13,
-  })),
-  ...Array.from({ length: 2 }, () => ({
-    id: crypto.randomUUID(),
-    type: "shape" as const,
-    text: SHAPES_POOL[Math.floor(Math.random() * SHAPES_POOL.length)],
-    x: 10 + Math.random() * 75,
-    y: 10 + Math.random() * 75,
-    size: 24 + Math.random() * 16,
-  })),
-];
-
-const TypewriterText = ({ text, onDone }: { text: string; onDone: () => void }) => {
-  const [visible, setVisible] = useState(0);
+const TypewriterText = ({ text }: { text: string }) => {
+  const [charIndex, setCharIndex] = useState(0);
   useEffect(() => {
-    if (visible < text.length) {
-      const t = setTimeout(() => setVisible(v => v + 1), 90);
-      return () => clearTimeout(t);
-    } else {
-      const t = setTimeout(onDone, 800);
+    setCharIndex(0);
+  }, [text]);
+  useEffect(() => {
+    if (charIndex < text.length) {
+      const t = setTimeout(() => setCharIndex(v => v + 1), 55);
       return () => clearTimeout(t);
     }
-  }, [visible, text.length, onDone]);
-  return <>{text.slice(0, visible)}<span className="animate-pulse">|</span></>;
+  }, [charIndex, text.length]);
+  return (
+    <>
+      {text.slice(0, charIndex)}
+      {charIndex < text.length && <span className="animate-pulse">|</span>}
+    </>
+  );
 };
 
 const GeoShapes = () => {
-  const [items, setItems] = useState(makeSlots);
-  const [fading, setFading] = useState(false);
+  const [items, setItems] = useState<FloatingFormula[]>([]);
 
-  const cycle = () => {
-    setFading(true);
-    setTimeout(() => {
-      setItems(makeSlots());
-      setFading(false);
-    }, 600);
-  };
-
-  // Auto-cycle every ~5s as fallback
   useEffect(() => {
-    const t = setInterval(cycle, 5500);
+    // Spawn a new formula at a random position every 1.6s, keep max 4 visible
+    const t = setInterval(() => {
+      setItems(prev => {
+        const next = [
+          ...prev.slice(-(3)),
+          {
+            id: crypto.randomUUID(),
+            text: FORMULAS[Math.floor(Math.random() * FORMULAS.length)],
+            x: 6 + Math.random() * 82,
+            y: 8 + Math.random() * 78,
+            size: 11 + Math.random() * 7,
+          },
+        ];
+        return next;
+      });
+    }, 1800);
     return () => clearInterval(t);
   }, []);
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {items.map((item, i) => (
-        <span
-          key={item.id}
-          className={`absolute select-none font-mono transition-opacity duration-500 ${fading ? "opacity-0" : ""}`}
-          style={{
-            left: `${item.x}%`,
-            top: `${item.y}%`,
-            fontSize: item.size,
-            color: item.type === "shape" ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.28)",
-            textShadow: "0 0 6px rgba(255,255,255,0.1)",
-          }}
-        >
-          {item.type === "formula" ? (
-            <TypewriterText text={item.text} onDone={() => {}} />
-          ) : (
-            item.text
-          )}
-        </span>
-      ))}
+      <AnimatePresence>
+        {items.map(item => (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.3 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className="absolute select-none font-mono"
+            style={{
+              left: `${item.x}%`,
+              top: `${item.y}%`,
+              fontSize: item.size,
+              color: "rgba(255,255,255,0.85)",
+              textShadow: "0 0 8px rgba(255,255,255,0.12)",
+            }}
+          >
+            <TypewriterText text={item.text} />
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
-
 const Login = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
