@@ -26,7 +26,7 @@ const ALL_NAV_CARDS = [
   { id: "lancamento", title: "Lançamentos", description: "Lançamento de metas e rubricas", route: "/lancamento" },
   { id: "sau", title: "SAU", description: "Serviço de Atendimento ao Usuário", route: "/sau" },
   { id: "relatorio-assistencial", title: "Relatório Assistencial", description: "Indicadores e dados assistenciais", route: "/relatorio-assistencial" },
-  { id: "controle-rubrica", title: "Controle de Rubrica", description: "Gestão e acompanhamento de rubricas", route: "/controle-rubrica" },
+  
 ];
 
 const Dashboard = () => {
