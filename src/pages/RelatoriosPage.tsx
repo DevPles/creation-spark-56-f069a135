@@ -638,7 +638,11 @@ const RelatoriosPage = () => {
   }, []);
 
   useEffect(() => {
-    const handler = () => setIsCarouselFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      const fs = !!document.fullscreenElement;
+      setIsCarouselFullscreen(fs);
+      setCurrentSlide(0); // reset to avoid out-of-bounds
+    };
     document.addEventListener("fullscreenchange", handler);
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
