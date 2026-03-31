@@ -64,8 +64,61 @@ const LancamentoMetasPage = () => {
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
+  const [dateFilter, setDateFilter] = useState<string>("todos");
 
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
+
+  const getDateRange = (filter: string): { start: Date; end: Date } | null => {
+    const now = new Date();
+    switch (filter) {
+      case "hoje": return { start: new Date(now.setHours(0,0,0,0)), end: new Date() };
+      case "7d": return { start: subDays(new Date(), 7), end: new Date() };
+      case "30d": return { start: subDays(new Date(), 30), end: new Date() };
+      case "mes": return { start: startOfMonth(new Date()), end: endOfMonth(new Date()) };
+      default: return null;
+    }
+  };
+
+  const filterEntriesByDate = (entryList: { value: number; period: string }[]) => {
+    const range = getDateRange(dateFilter);
+    if (!range) return entryList;
+    return entryList.filter(e => {
+      try {
+        const d = parse(e.period, "dd/MM/yyyy", new Date());
+        return isWithinInterval(d, range);
+      } catch { return true; }
+    });
+  };
+
+  const handleGeneratePdf = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`Lançamentos - ${selectedUnit}`, 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Filtro: ${dateFilter === "todos" ? "Todos" : dateFilter === "hoje" ? "Hoje" : dateFilter === "7d" ? "Últimos 7 dias" : dateFilter === "30d" ? "Últimos 30 dias" : "Este mês"}`, 14, 28);
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 34);
+
+    if (activeTab === "lancar-metas") {
+      const rows = goals.map(g => {
+        const existing = filterEntriesByDate(existingEntries[g.id] || []);
+        const total = existing.reduce((s, e) => s + e.value, 0);
+        const pct = g.target > 0 ? Math.round((total / g.target) * 100) : 0;
+        return [g.name, `${g.target}${g.unit}`, `${total.toFixed(1)}${g.unit}`, `${pct}%`, `${(g.weight * 100).toFixed(0)}%`];
+      });
+      autoTable(doc, { startY: 40, head: [["Meta", "Alvo", "Realizado", "Atingimento", "Peso"]], body: rows });
+    } else {
+      const contract = CONTRACTS.find(c => c.id === selectedContract);
+      if (contract) {
+        const rows = RUBRICA_NAMES.map(r => {
+          const entry = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === r);
+          return [r, formatCurrency(entry?.valorAllocated || 0), formatCurrency(entry?.valorExecuted || 0), `${entry ? Math.round((entry.valorExecuted / entry.valorAllocated) * 100) : 0}%`];
+        });
+        autoTable(doc, { startY: 40, head: [["Rubrica", "Alocado", "Executado", "% Exec"]], body: rows });
+      }
+    }
+    doc.save(`lancamentos_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+    toast.success("PDF gerado com sucesso!");
+  };
 
   useEffect(() => {
     if (!profile || !user) return;
