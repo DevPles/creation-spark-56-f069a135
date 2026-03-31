@@ -601,9 +601,22 @@ const RelatoriosPage = () => {
   const compareStats = useMemo(() => computeStats(compareFilteredGoals), [compareFilteredGoals]);
 
   const TOTAL_SLIDES = compareMode ? 11 : 10;
+  // In fullscreen, pair slides: [0], [1,2], [3,4], [5,6], [7,8], [9] + optional [10]
+  const FULLSCREEN_GROUPS = useMemo(() => {
+    const groups: number[][] = [[0], [1, 2], [3, 4], [5, 6], [7, 8], [9]];
+    if (compareMode) groups.push([10]);
+    return groups;
+  }, [compareMode]);
+  const TOTAL_FS_SLIDES = FULLSCREEN_GROUPS.length;
 
-  const nextSlide = useCallback(() => setCurrentSlide(prev => (prev + 1) % TOTAL_SLIDES), [TOTAL_SLIDES]);
-  const prevSlide = useCallback(() => setCurrentSlide(prev => (prev - 1 + TOTAL_SLIDES) % TOTAL_SLIDES), [TOTAL_SLIDES]);
+  const nextSlide = useCallback(() => setCurrentSlide(prev => {
+    const total = isCarouselFullscreen ? TOTAL_FS_SLIDES : TOTAL_SLIDES;
+    return (prev + 1) % total;
+  }), [TOTAL_SLIDES, TOTAL_FS_SLIDES, isCarouselFullscreen]);
+  const prevSlide = useCallback(() => setCurrentSlide(prev => {
+    const total = isCarouselFullscreen ? TOTAL_FS_SLIDES : TOTAL_SLIDES;
+    return (prev - 1 + total) % total;
+  }), [TOTAL_SLIDES, TOTAL_FS_SLIDES, isCarouselFullscreen]);
 
   useEffect(() => {
     if (isPaused) return;
