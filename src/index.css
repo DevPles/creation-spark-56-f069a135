@@ -119,7 +119,7 @@
   }
 
   .kpi-card {
-    @apply bg-card rounded-lg border border-border p-5 transition-all duration-200 shadow-md shadow-primary/5;
+    @apply bg-card rounded-lg border border-transparent p-5 transition-all duration-200 shadow-md shadow-primary/5;
   }
 
   .kpi-card:hover {
