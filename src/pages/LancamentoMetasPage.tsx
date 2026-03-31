@@ -32,6 +32,8 @@ interface Goal {
   weight: number;
   risk: number;
   facility_unit: string;
+  start_date?: string | null;
+  end_date?: string | null;
 }
 
 interface EntryForm {
