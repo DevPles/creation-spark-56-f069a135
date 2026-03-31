@@ -509,6 +509,29 @@ const TreinamentoPage = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* New module modal */}
+      <Dialog open={newOpen} onOpenChange={setNewOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Novo card de conhecimento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Título</Label>
+              <Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Ex: Dashboard" />
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={4} placeholder="Descreva o módulo..." />
+            </div>
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={handleCreateModule} disabled={!newTitle.trim()}>Criar</Button>
+              <Button variant="outline" onClick={() => setNewOpen(false)}>Cancelar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
