@@ -46,8 +46,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-primary px-4">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-sm bg-card rounded-xl p-8 shadow-2xl shadow-primary/30">
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-primary rounded-lg mx-auto mb-4 flex items-center justify-center">
             <span className="text-primary-foreground font-display font-bold text-lg">La</span>
