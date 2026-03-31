@@ -79,12 +79,11 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Admin Card - fixed at bottom center */}
+        {/* Admin Card - centered in middle column */}
         {visibleNavCards.some(c => c.id === "admin") && (
-          <div className="flex justify-center mt-8">
-            <div className="w-full max-w-md">
-              <NavCard title="Administração" description="Usuários, perfis e permissões" onClick={() => navigate("/admin")} />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+            <div className="hidden lg:block" />
+            <NavCard title="Administração" description="Usuários, perfis e permissões" onClick={() => navigate("/admin")} />
           </div>
         )}
       </main>
