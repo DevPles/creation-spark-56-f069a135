@@ -81,7 +81,7 @@ const Dashboard = () => {
 
         {/* Admin Card - centered in middle column */}
         {visibleNavCards.some(c => c.id === "admin") && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-12 lg:mt-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-20 lg:mt-24">
             <div className="hidden lg:block" />
             <NavCard title="Administração" description="Usuários, perfis e permissões" onClick={() => navigate("/admin")} />
           </div>
