@@ -74,10 +74,8 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
-        {/* Fullscreen presentation button */}
-        <div className="mb-8">
-          <FullscreenDashboard slides={SLIDES} />
-        </div>
+
+
 
         {/* Navigation Cards - filtered by permissions (excluding admin) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
