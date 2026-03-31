@@ -237,7 +237,7 @@ async function generatePdfBlob(
     doc.rect(0, H - 10, W, 10, "F");
     doc.setFontSize(7);
     doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-    doc.text("Gerado automaticamente pelo SisLu", margin, H - 4);
+    doc.text("Gerado automaticamente pelo MOSS", margin, H - 4);
     doc.text(`Página ${pageNum} de ${totalPages}`, W - margin, H - 4, { align: "right" });
   };
 
