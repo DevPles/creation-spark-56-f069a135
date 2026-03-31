@@ -320,11 +320,13 @@ const RelatorioAssistencialPage = () => {
           </div>
         ) : (
           <Tabs defaultValue="particularidades" className="space-y-4">
-            <TabsList className="grid grid-cols-4 w-full">
+            <TabsList className="grid grid-cols-6 w-full">
               <TabsTrigger value="particularidades">Particularidades</TabsTrigger>
               <TabsTrigger value="compilado">Compilado Unidade</TabsTrigger>
               <TabsTrigger value="cruzamento">Análise Cruzamento</TabsTrigger>
               <TabsTrigger value="relatorio">Relatório Final</TabsTrigger>
+              <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
+              <TabsTrigger value="aprovacao">Aprovação</TabsTrigger>
             </TabsList>
 
             {/* TAB 1 — Particularidades do contrato */}
@@ -728,6 +730,54 @@ const RelatorioAssistencialPage = () => {
                 <Button onClick={handleExportPdf} className="px-8">
                   Exportar Relatório PDF
                 </Button>
+              </div>
+            </TabsContent>
+
+            {/* TAB 5 — Personalização */}
+            <TabsContent value="personalizacao" className="space-y-6">
+              <div className="kpi-card p-6">
+                <h2 className="text-lg font-bold text-foreground mb-4">Personalização do Relatório</h2>
+                <p className="text-sm text-muted-foreground mb-4">Configure quais seções, gráficos e informações devem aparecer no relatório final exportado.</p>
+                <div className="space-y-3">
+                  {["Particularidades do Contrato", "Metas Assistenciais", "Metas Qualitativas", "Metas Quantitativas", "Penalizações e Glosas", "Gráficos de Desempenho", "Timeline de Evidências", "Observações do Gestor"].map((section) => (
+                    <label key={section} className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" defaultChecked className="accent-[hsl(var(--primary))] w-4 h-4" />
+                      <span className="text-sm text-foreground">{section}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-6">
+                  <Label className="text-sm font-medium">Logotipo personalizado</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Envie um logo para aparecer no cabeçalho do relatório exportado.</p>
+                  <Button variant="outline" size="sm" className="rounded-full">Enviar logo</Button>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* TAB 6 — Aprovação */}
+            <TabsContent value="aprovacao" className="space-y-6">
+              <div className="kpi-card p-6">
+                <h2 className="text-lg font-bold text-foreground mb-4">Fluxo de Aprovação</h2>
+                <p className="text-sm text-muted-foreground mb-4">Acompanhe o status de aprovação do relatório assistencial antes da publicação final.</p>
+                <div className="space-y-4">
+                  {[
+                    { step: "Preenchimento de metas", status: "done" },
+                    { step: "Inserção de evidências", status: "done" },
+                    { step: "Revisão do gestor", status: "pending" },
+                    { step: "Aprovação final", status: "waiting" },
+                  ].map((item) => (
+                    <div key={item.step} className="flex items-center gap-3">
+                      {item.status === "done" && <CheckCircle className="w-5 h-5 text-green-600" />}
+                      {item.status === "pending" && <Clock className="w-5 h-5 text-amber-500" />}
+                      {item.status === "waiting" && <div className="w-5 h-5 rounded-full border-2 border-muted-foreground" />}
+                      <span className={`text-sm ${item.status === "done" ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}>{item.step}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 flex gap-3">
+                  <Button className="rounded-full">Aprovar Relatório</Button>
+                  <Button variant="outline" className="rounded-full">Solicitar Revisão</Button>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
