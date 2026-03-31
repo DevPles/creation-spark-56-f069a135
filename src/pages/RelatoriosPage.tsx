@@ -917,7 +917,7 @@ const RelatoriosPage = () => {
         </div>
 
         {/* ─── CAROUSEL ─── */}
-        <div className="relative mb-8">
+        <div ref={carouselRef} className={`relative mb-8 ${isCarouselFullscreen ? "fixed inset-0 z-[9999] bg-background p-8 overflow-auto flex flex-col" : ""}`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
@@ -937,14 +937,24 @@ const RelatoriosPage = () => {
               <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={nextSlide}>
                 →
               </Button>
+              <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={toggleCarouselFullscreen}>
+                {isCarouselFullscreen ? "✕ Sair" : "⛶ Tela cheia"}
+              </Button>
             </div>
           </div>
 
           <AnimatePresence mode="wait">
-            <motion.div key={currentSlide} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.35 }}>
+            <motion.div key={currentSlide} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.35 }}
+              className={isCarouselFullscreen ? "flex-1" : ""}>
               {renderSlide(currentSlide)}
             </motion.div>
           </AnimatePresence>
+
+          {isCarouselFullscreen && !isPaused && (
+            <div className="h-1 bg-muted mt-4 rounded-full overflow-hidden">
+              <motion.div key={currentSlide} className="h-full bg-primary rounded-full" initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 8, ease: "linear" }} />
+            </div>
+          )}
         </div>
 
         {/* ─── METAS TABLE ─── */}
