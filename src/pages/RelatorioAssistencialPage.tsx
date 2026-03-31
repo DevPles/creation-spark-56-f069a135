@@ -167,7 +167,7 @@ const RelatorioAssistencialPage = () => {
   const handleExportPdf = () => {
     if (!selectedContract) return;
     const doc = new jsPDF();
-    const primary = [30, 58, 95];
+    const primary: [number, number, number] = [30, 58, 95];
 
     // Header
     doc.setFillColor(primary[0], primary[1], primary[2]);
