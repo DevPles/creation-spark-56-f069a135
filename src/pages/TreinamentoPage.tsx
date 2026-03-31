@@ -211,6 +211,17 @@ const TreinamentoPage = () => {
     }
   };
 
+  const handleDeleteModule = async (moduleId: string) => {
+    if (!isAdmin) return;
+    // Delete related ratings, video, then module
+    await supabase.from("training_ratings").delete().eq("module_id", moduleId);
+    await supabase.storage.from("training-videos").remove([`${moduleId}.mp4`, `${moduleId}.webm`, `${moduleId}.mov`]);
+    await supabase.from("training_modules").delete().eq("id", moduleId);
+    toast.success("Módulo excluído");
+    setModalOpen(false);
+    fetchModules();
+  };
+
   const handleVideoDelete = async (moduleId: string) => {
     await supabase.storage.from("training-videos").remove([`${moduleId}.mp4`, `${moduleId}.webm`, `${moduleId}.mov`]);
     await supabase
@@ -478,6 +489,24 @@ const TreinamentoPage = () => {
               </Button>
               <Button variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
             </div>
+
+            {/* Delete — admin only, edit mode only */}
+            {modalMode === "edit" && modalModule && isAdmin && (
+              <div className="pt-2 border-t border-border">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    if (window.confirm("Tem certeza que deseja excluir este módulo? Esta ação não pode ser desfeita.")) {
+                      handleDeleteModule(modalModule.id);
+                    }
+                  }}
+                >
+                  Excluir módulo
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
