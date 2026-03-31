@@ -71,7 +71,7 @@ const Dashboard = () => {
 };
 
 const NavCard = ({ title, description, onClick }: { title: string; description: string; onClick: () => void }) => (
-  <button onClick={onClick} className="kpi-card text-left cursor-pointer group">
+  <button onClick={onClick} className="kpi-card text-left cursor-pointer group border-l-4 border-l-primary">
     <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
     <p className="text-sm text-muted-foreground mt-1">{description}</p>
   </button>
