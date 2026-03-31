@@ -17,7 +17,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { X, Plus, FileText, Target, AlertTriangle, ClipboardList, Activity } from "lucide-react";
+
 
 export type EvidenceCategory = "meta" | "rubrica" | "justificativa_interna" | "relatorio_assistencial";
 
@@ -49,11 +49,11 @@ interface EvidenceFormModalProps {
 const EVIDENCE_TYPES = ["PDF", "Planilha", "Ata de reunião", "Relatório", "Checklist", "Pesquisa", "Justificativa Interna", "Outro"];
 const STATUSES: EvidenceData["status"][] = ["Pendente", "Enviada", "Validada", "Rejeitada"];
 
-const CATEGORY_OPTIONS: { value: EvidenceCategory; label: string; icon: React.ReactNode; description: string }[] = [
-  { value: "meta", label: "Meta / Indicador", icon: <Target className="h-4 w-4" />, description: "Evidência vinculada a uma meta qualitativa ou quantitativa" },
-  { value: "rubrica", label: "Rubrica orçamentária", icon: <AlertTriangle className="h-4 w-4" />, description: "Justificativa de execução orçamentária" },
-  { value: "justificativa_interna", label: "Justificativa interna", icon: <ClipboardList className="h-4 w-4" />, description: "Documentação interna para auditoria" },
-  { value: "relatorio_assistencial", label: "Relatório assistencial", icon: <Activity className="h-4 w-4" />, description: "Conteúdo para compor o relatório assistencial" },
+const CATEGORY_OPTIONS: { value: EvidenceCategory; label: string; description: string }[] = [
+  { value: "meta", label: "Meta / Indicador", description: "Evidência vinculada a uma meta qualitativa ou quantitativa" },
+  { value: "rubrica", label: "Rubrica orçamentária", description: "Justificativa de execução orçamentária" },
+  { value: "justificativa_interna", label: "Justificativa interna", description: "Documentação interna para auditoria" },
+  { value: "relatorio_assistencial", label: "Relatório assistencial", description: "Conteúdo para compor o relatório assistencial" },
 ];
 
 const inferCategory = (evidence: EvidenceData | null): EvidenceCategory => {
@@ -134,8 +134,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
+          <DialogTitle className="font-display">
             {isNew ? "Nova evidência" : "Editar evidência"}
           </DialogTitle>
         </DialogHeader>
@@ -156,7 +155,6 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
                       : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <span className={category === cat.value ? "text-primary" : "text-muted-foreground"}>{cat.icon}</span>
                   <span className="font-medium text-xs leading-tight">{cat.label}</span>
                 </button>
               ))}
@@ -254,7 +252,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
                 className="flex-1"
               />
               <Button type="button" size="sm" variant="outline" onClick={handleAddActivity} disabled={!newActivity.trim()}>
-                <Plus className="h-4 w-4" />
+                +
               </Button>
             </div>
             {activities.length > 0 && (
@@ -263,7 +261,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
                   <Badge key={idx} variant="secondary" className="text-xs flex items-center gap-1 pr-1">
                     {act}
                     <button type="button" onClick={() => handleRemoveActivity(act)} className="ml-0.5 hover:text-destructive">
-                      <X className="h-3 w-3" />
+                      ✕
                     </button>
                   </Badge>
                 ))}
