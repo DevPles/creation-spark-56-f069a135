@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
@@ -40,15 +40,17 @@ const TreinamentoPage = () => {
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [avgRatings, setAvgRatings] = useState<Record<string, { avg: number; count: number }>>({});
   const [isAdmin, setIsAdmin] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [playModule, setPlayModule] = useState<TrainingModule | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [contacts, setContacts] = useState<ProfileContact[]>([]);
+
+  // Unified modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [modalModule, setModalModule] = useState<TrainingModule | null>(null);
   const [modalTitle, setModalTitle] = useState("");
   const [modalDesc, setModalDesc] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [playModule, setPlayModule] = useState<TrainingModule | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [contacts, setContacts] = useState<ProfileContact[]>([]);
 
   useEffect(() => {
     fetchModules();
@@ -131,37 +133,43 @@ const TreinamentoPage = () => {
     fetchAllRatings(modules.map(m => m.id));
   };
 
+  // Modal helpers
+  const openCreate = () => {
+    setModalMode("create");
+    setModalModule(null);
+    setModalTitle("");
+    setModalDesc("");
+    setModalOpen(true);
+  };
+
   const openEdit = (mod: TrainingModule) => {
-    setEditModule(mod);
-    setEditTitle(mod.title);
-    setEditDesc(mod.description);
-    setEditOpen(true);
+    setModalMode("edit");
+    setModalModule(mod);
+    setModalTitle(mod.title);
+    setModalDesc(mod.description);
+    setModalOpen(true);
   };
 
-  const handleSaveEdit = async () => {
-    if (!editModule) return;
-    await supabase
-      .from("training_modules")
-      .update({ title: editTitle, description: editDesc })
-      .eq("id", editModule.id);
-    toast.success("Módulo atualizado");
-    setEditOpen(false);
-    fetchModules();
-  };
-
-  const handleCreateModule = async () => {
-    if (!newTitle.trim()) return;
-    const maxOrder = modules.length > 0 ? Math.max(...modules.map(m => m.sort_order)) + 1 : 0;
-    await supabase.from("training_modules").insert({
-      title: newTitle.trim(),
-      description: newDesc.trim(),
-      sort_order: maxOrder,
-      created_by: user?.id,
-    } as any);
-    toast.success("Módulo criado");
-    setNewOpen(false);
-    setNewTitle("");
-    setNewDesc("");
+  const handleModalSave = async () => {
+    if (modalMode === "create") {
+      if (!modalTitle.trim()) return;
+      const maxOrder = modules.length > 0 ? Math.max(...modules.map(m => m.sort_order)) + 1 : 0;
+      await supabase.from("training_modules").insert({
+        title: modalTitle.trim(),
+        description: modalDesc.trim(),
+        sort_order: maxOrder,
+        created_by: user?.id,
+      } as any);
+      toast.success("Módulo criado");
+    } else {
+      if (!modalModule) return;
+      await supabase
+        .from("training_modules")
+        .update({ title: modalTitle, description: modalDesc })
+        .eq("id", modalModule.id);
+      toast.success("Módulo atualizado");
+    }
+    setModalOpen(false);
     fetchModules();
   };
 
@@ -192,27 +200,54 @@ const TreinamentoPage = () => {
     toast.success("Vídeo enviado com sucesso");
     setUploading(false);
     fetchModules();
-    // Update edit module in modal
-    if (editModule?.id === moduleId) {
-      setEditModule(prev => prev ? { ...prev, video_url: urlData.publicUrl, video_uploaded_at: new Date().toISOString() } : null);
+    if (modalModule?.id === moduleId) {
+      setModalModule(prev => prev ? { ...prev, video_url: urlData.publicUrl, video_uploaded_at: new Date().toISOString() } : null);
     }
   };
 
   const handleVideoDelete = async (moduleId: string) => {
-    // Try to remove from storage (ignore errors if file doesn't exist)
     await supabase.storage.from("training-videos").remove([`${moduleId}.mp4`, `${moduleId}.webm`, `${moduleId}.mov`]);
-
     await supabase
       .from("training_modules")
       .update({ video_url: null, video_uploaded_at: null } as any)
       .eq("id", moduleId);
-
     toast.success("Vídeo removido");
     fetchModules();
-    if (editModule?.id === moduleId) {
-      setEditModule(prev => prev ? { ...prev, video_url: null, video_uploaded_at: null } : null);
+    if (modalModule?.id === moduleId) {
+      setModalModule(prev => prev ? { ...prev, video_url: null, video_uploaded_at: null } : null);
     }
   };
+
+  // Sort: user-created first, then by sort_order. Filter by search.
+  const visibleModules = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const sorted = [...modules].sort((a, b) => {
+      const aCustom = a.created_by ? 1 : 0;
+      const bCustom = b.created_by ? 1 : 0;
+      if (bCustom !== aCustom) return bCustom - aCustom;
+      return a.sort_order - b.sort_order;
+    });
+    if (!q) return sorted;
+    return sorted.filter(m => m.title.toLowerCase().includes(q) || m.description.toLowerCase().includes(q));
+  }, [modules, searchQuery]);
+
+  // Show contacts when search finds no modules
+  const showContacts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return false;
+    return visibleModules.length === 0;
+  }, [searchQuery, visibleModules]);
+
+  const matchedContacts = useMemo(() => {
+    if (!showContacts) return [];
+    const q = searchQuery.trim().toLowerCase();
+    const matched = contacts.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      (c.cargo?.toLowerCase().includes(q)) ||
+      c.facility_unit.toLowerCase().includes(q)
+    );
+    return matched.length > 0 ? matched.slice(0, 5) : contacts.slice(0, 5);
+  }, [showContacts, searchQuery, contacts]);
 
   const HeartRating = ({ moduleId }: { moduleId: string }) => {
     const myRating = ratings[moduleId] || 0;
@@ -267,109 +302,58 @@ const TreinamentoPage = () => {
             <Input
               placeholder="Buscar módulo ou pessoa..."
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setSearchActive(false); }}
-              onKeyDown={(e) => { if (e.key === "Enter") setSearchActive(true); }}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-56"
             />
-            {searchQuery ? (
-              <Button variant="outline" size="sm" className="rounded-full" onClick={() => { setSearchQuery(""); setSearchActive(false); }}>
+            {searchQuery && (
+              <Button variant="outline" size="sm" className="rounded-full" onClick={() => setSearchQuery("")}>
                 ✕
-              </Button>
-            ) : (
-              <Button className="rounded-full" size="sm" onClick={() => setSearchActive(true)}>
-                Buscar
               </Button>
             )}
             {isAdmin && (
-              <Button className="rounded-full" size="sm" onClick={() => setNewOpen(true)}>
+              <Button className="rounded-full" size="sm" onClick={openCreate}>
                 + Novo card
               </Button>
             )}
           </div>
         </div>
 
-        {/* Search results - contacts */}
-        {searchActive && searchQuery.trim() && (() => {
-          const q = searchQuery.trim().toLowerCase();
-          const filteredModules = modules.filter(m => m.title.toLowerCase().includes(q) || m.description.toLowerCase().includes(q));
-          const noModuleMatch = filteredModules.length === 0;
-          const matchedContacts = contacts.filter(c =>
-            c.name.toLowerCase().includes(q) ||
-            (c.cargo?.toLowerCase().includes(q)) ||
-            c.facility_unit.toLowerCase().includes(q)
-          );
-
-          if (!noModuleMatch) return null;
-
-          return (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="kpi-card mb-6">
-              <p className="text-sm font-medium text-foreground mb-1">Nenhum módulo encontrado para "{searchQuery}"</p>
-              <p className="text-xs text-muted-foreground mb-3">Entre em contato com alguém da equipe para tirar dúvidas:</p>
-              {matchedContacts.length > 0 ? (
-                <div className="space-y-2">
-                  {matchedContacts.slice(0, 5).map(c => (
-                    <div key={c.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{c.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{c.cargo || "Sem cargo"} • {c.facility_unit}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <a
-                          href={`mailto:${c.name.toLowerCase().replace(/\s/g, ".")}@moss.org?subject=Dúvida sobre ${searchQuery}`}
-                          className="px-3 py-1.5 text-xs rounded-full bg-primary text-primary-foreground hover:brightness-110 transition"
-                        >
-                          Email
-                        </a>
-                        <a
-                          href={`https://wa.me/?text=${encodeURIComponent(`Olá ${c.name}, tenho uma dúvida sobre: ${searchQuery}`)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 text-xs rounded-full bg-[hsl(142_71%_45%)] text-white hover:brightness-110 transition"
-                        >
-                          WhatsApp
-                        </a>
-                      </div>
-                    </div>
-                  ))}
+        {/* No results — show contacts */}
+        {showContacts && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="kpi-card mb-6">
+            <p className="text-sm font-medium text-foreground mb-1">Nenhum módulo encontrado para "{searchQuery}"</p>
+            <p className="text-xs text-muted-foreground mb-3">Entre em contato com alguém da equipe para tirar dúvidas:</p>
+            <div className="space-y-2">
+              {matchedContacts.map(c => (
+                <div key={c.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{c.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{c.cargo || "Sem cargo"} • {c.facility_unit}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href={`mailto:${c.name.toLowerCase().replace(/\s/g, ".")}@moss.org?subject=Dúvida sobre ${searchQuery}`}
+                      className="px-3 py-1.5 text-xs rounded-full bg-primary text-primary-foreground hover:brightness-110 transition"
+                    >
+                      Email
+                    </a>
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`Olá ${c.name}, tenho uma dúvida sobre: ${searchQuery}`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 text-xs rounded-full bg-[hsl(142_71%_45%)] text-white hover:brightness-110 transition"
+                    >
+                      WhatsApp
+                    </a>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">Nenhum contato encontrado. Veja todos os contatos disponíveis:</p>
-                  {contacts.slice(0, 5).map(c => (
-                    <div key={c.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{c.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{c.cargo || "Sem cargo"} • {c.facility_unit}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <a
-                          href={`mailto:${c.name.toLowerCase().replace(/\s/g, ".")}@moss.org?subject=Dúvida sobre ${searchQuery}`}
-                          className="px-3 py-1.5 text-xs rounded-full bg-primary text-primary-foreground hover:brightness-110 transition"
-                        >
-                          Email
-                        </a>
-                        <a
-                          href={`https://wa.me/?text=${encodeURIComponent(`Olá ${c.name}, tenho uma dúvida sobre: ${searchQuery}`)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 text-xs rounded-full bg-[hsl(142_71%_45%)] text-white hover:brightness-110 transition"
-                        >
-                          WhatsApp
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          );
-        })()}
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {(searchActive && searchQuery.trim()
-            ? modules.filter(m => m.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) || m.description.toLowerCase().includes(searchQuery.trim().toLowerCase()))
-            : modules
-          ).map((mod, i) => (
+          {visibleModules.map((mod, i) => (
             <motion.div
               key={mod.id}
               initial={{ opacity: 0, y: 10 }}
@@ -389,7 +373,6 @@ const TreinamentoPage = () => {
                 )}
               </div>
 
-              {/* Video area */}
               {mod.video_url ? (
                 <div className="space-y-1">
                   <button
@@ -411,78 +394,83 @@ const TreinamentoPage = () => {
                 </div>
               )}
 
-              {/* Heart rating */}
               <HeartRating moduleId={mod.id} />
             </motion.div>
           ))}
         </div>
       </main>
 
-      {/* Edit modal */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      {/* Unified create/edit modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display">Editar módulo</DialogTitle>
+            <DialogTitle className="font-display">
+              {modalMode === "create" ? "Novo card de conhecimento" : "Editar módulo"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Título</Label>
-              <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} />
+              <Input value={modalTitle} onChange={e => setModalTitle(e.target.value)} placeholder="Ex: Dashboard" />
             </div>
             <div className="space-y-2">
               <Label>Descrição</Label>
-              <Textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={4} />
+              <Textarea value={modalDesc} onChange={e => setModalDesc(e.target.value)} rows={4} placeholder="Descreva o módulo..." />
             </div>
 
-            {/* Video management */}
-            <div className="space-y-2">
-              <Label>Vídeo</Label>
-              {editModule?.video_url ? (
-                <div className="p-3 bg-muted/30 rounded-lg border border-border space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-foreground font-medium">Vídeo anexado ✓</p>
-                      {editModule.video_uploaded_at && (
-                        <p className="text-[10px] text-muted-foreground">
-                          Enviado em {new Date(editModule.video_uploaded_at).toLocaleDateString("pt-BR")}
-                        </p>
-                      )}
+            {/* Video management — only in edit mode */}
+            {modalMode === "edit" && modalModule && (
+              <div className="space-y-2">
+                <Label>Vídeo</Label>
+                {modalModule.video_url ? (
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-foreground font-medium">Vídeo anexado</p>
+                        {modalModule.video_uploaded_at && (
+                          <p className="text-[10px] text-muted-foreground">
+                            Enviado em {new Date(modalModule.video_uploaded_at).toLocaleDateString("pt-BR")}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="rounded-full text-[10px] h-7"
+                        onClick={() => handleVideoDelete(modalModule.id)}
+                      >
+                        Remover vídeo
+                      </Button>
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="rounded-full text-[10px] h-7"
-                      onClick={() => editModule && handleVideoDelete(editModule.id)}
-                    >
-                      Remover vídeo
-                    </Button>
                   </div>
-                </div>
-              ) : (
-                <div className="p-3 bg-muted/30 rounded-lg border border-dashed border-border">
-                  <p className="text-xs text-muted-foreground mb-2">Nenhum vídeo anexado</p>
-                  <label className="cursor-pointer">
-                    <span className="px-3 py-1.5 text-xs rounded-full bg-primary text-primary-foreground hover:brightness-110 transition inline-block">
-                      {uploading ? "Enviando..." : "Enviar vídeo"}
-                    </span>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      className="hidden"
-                      disabled={uploading}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file && editModule) handleVideoUpload(editModule.id, file);
-                      }}
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="p-3 bg-muted/30 rounded-lg border border-dashed border-border">
+                    <p className="text-xs text-muted-foreground mb-2">Nenhum vídeo anexado</p>
+                    <label className="cursor-pointer">
+                      <span className="px-3 py-1.5 text-xs rounded-full bg-primary text-primary-foreground hover:brightness-110 transition inline-block">
+                        {uploading ? "Enviando..." : "Enviar vídeo"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        className="hidden"
+                        disabled={uploading}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleVideoUpload(modalModule.id, file);
+                        }}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2">
-              <Button className="flex-1" onClick={handleSaveEdit}>Salvar</Button>
-              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+              <Button className="flex-1" onClick={handleModalSave} disabled={!modalTitle.trim()}>
+                {modalMode === "create" ? "Criar" : "Salvar"}
+              </Button>
+              <Button variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
             </div>
           </div>
         </DialogContent>
@@ -505,29 +493,6 @@ const TreinamentoPage = () => {
               />
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* New module modal */}
-      <Dialog open={newOpen} onOpenChange={setNewOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display">Novo card de conhecimento</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Título</Label>
-              <Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Ex: Dashboard" />
-            </div>
-            <div className="space-y-2">
-              <Label>Descrição</Label>
-              <Textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={4} placeholder="Descreva o módulo..." />
-            </div>
-            <div className="flex gap-2">
-              <Button className="flex-1" onClick={handleCreateModule} disabled={!newTitle.trim()}>Criar</Button>
-              <Button variant="outline" onClick={() => setNewOpen(false)}>Cancelar</Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>
