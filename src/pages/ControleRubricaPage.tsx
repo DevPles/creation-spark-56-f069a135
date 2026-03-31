@@ -311,8 +311,7 @@ const ControleRubricaPage = () => {
               <div className="kpi-card mt-6">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium text-foreground">Rubricas do contrato: {selectedContract}</p>
-                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleOpenRubricaModal()}>
-                    <Settings2 className="h-3.5 w-3.5" />
+                  <Button variant="outline" size="sm" onClick={() => handleOpenRubricaModal()}>
                     Editar
                   </Button>
                 </div>
