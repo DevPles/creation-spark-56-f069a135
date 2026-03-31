@@ -38,12 +38,12 @@ const ContratosPage = () => {
   const handleNew = () => { setEditContract(null); setIsNew(true); setFormModalOpen(true); };
   const handleEdit = (contract: ContractData) => { setEditContract(contract); setIsNew(false); setFormModalOpen(true); };
   const handleSave = (contract: ContractData) => {
-    if (isNew) setContracts((prev) => [...prev, contract]);
-    else setContracts((prev) => prev.map((c) => (c.id === contract.id ? contract : c)));
+    if (isNew) addContract(contract);
+    else updateContract(contract);
   };
   const handleDelete = () => {
     if (deleteTarget) {
-      setContracts((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      deleteContract(deleteTarget.id);
       setDeleteTarget(null);
     }
   };
