@@ -252,7 +252,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
                 className="flex-1"
               />
               <Button type="button" size="sm" variant="outline" onClick={handleAddActivity} disabled={!newActivity.trim()}>
-                <Plus className="h-4 w-4" />
+                +
               </Button>
             </div>
             {activities.length > 0 && (
