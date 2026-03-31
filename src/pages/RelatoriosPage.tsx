@@ -818,7 +818,7 @@ const RelatoriosPage = () => {
               </div>
               <div className="bg-card rounded-lg border border-border p-5">
                 <p className="text-xs text-muted-foreground mb-3">Distribuição por tipo</p>
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={isCarouselFullscreen ? 300 : 220}>
                   <PieChart>
                     <Pie data={typeDist} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4}>
                       {typeDist.map((entry, i) => <Cell key={i} fill={entry.color} />)}
