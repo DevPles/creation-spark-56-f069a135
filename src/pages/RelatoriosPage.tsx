@@ -742,7 +742,7 @@ const RelatoriosPage = () => {
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Evolução de desempenho</h3>
             <p className="text-xs text-muted-foreground mb-4">% de metas por status — {contract.unit}</p>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={280}>
+               <ResponsiveContainer width="100%" height={chartH}>
                 <AreaChart data={contract.performance}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
