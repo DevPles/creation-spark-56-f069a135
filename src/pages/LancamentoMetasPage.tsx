@@ -204,7 +204,7 @@ const LancamentoMetasPage = () => {
                 <div>
                   <label className="text-[10px] text-muted-foreground block mb-1">Unidade</label>
                   <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                    <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
                     <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
@@ -220,7 +220,7 @@ const LancamentoMetasPage = () => {
                 <div>
                   <label className="text-[10px] text-muted-foreground block mb-1">Contrato</label>
                   <Select value={selectedContract} onValueChange={setSelectedContract}>
-                    <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
                     <SelectContent>{CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.unit}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
@@ -233,6 +233,23 @@ const LancamentoMetasPage = () => {
                 </div>
               </>
             )}
+            <div>
+              <label className="text-[10px] text-muted-foreground block mb-1">Período</label>
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="hoje">Hoje</SelectItem>
+                  <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                  <SelectItem value="mes">Este mês</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleGeneratePdf}>
+              <FileText className="h-4 w-4" />
+              Gerar PDF
+            </Button>
           </div>
         </div>
 
