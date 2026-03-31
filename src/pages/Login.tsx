@@ -33,6 +33,54 @@ const OrbBackground = () => {
   );
 };
 
+const SHAPES = ["circle", "square", "triangle", "hexagon", "diamond"] as const;
+type Shape = typeof SHAPES[number];
+
+const shapeStyle = (shape: Shape, size: number): React.CSSProperties => {
+  const base: React.CSSProperties = { width: size, height: size, position: "absolute" as const };
+  switch (shape) {
+    case "circle": return { ...base, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.15)" };
+    case "square": return { ...base, borderRadius: 4, border: "1.5px solid rgba(255,255,255,0.12)" };
+    case "triangle": return { ...base, width: 0, height: 0, borderLeft: `${size/2}px solid transparent`, borderRight: `${size/2}px solid transparent`, borderBottom: `${size}px solid rgba(255,255,255,0.1)`, background: "none" };
+    case "hexagon": return { ...base, borderRadius: "25%", border: "1.5px solid rgba(255,255,255,0.12)", transform: "rotate(30deg)" };
+    case "diamond": return { ...base, border: "1.5px solid rgba(255,255,255,0.12)", transform: "rotate(45deg)", borderRadius: 3 };
+  }
+};
+
+const randomShape = (id: number) => ({
+  id, shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+  x: 5 + Math.random() * 85, y: 5 + Math.random() * 85,
+  size: 14 + Math.random() * 36, rotation: Math.random() * 360,
+});
+
+const GeoShapes = () => {
+  const [shapes, setShapes] = useState(() => Array.from({ length: 10 }, (_, i) => randomShape(i)));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShapes(prev => prev.map(s => Math.random() > 0.6 ? randomShape(s.id) : s));
+    }, 2800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <AnimatePresence mode="popLayout">
+        {shapes.map(s => (
+          <motion.div
+            key={`${s.id}-${s.x.toFixed(1)}-${s.y.toFixed(1)}`}
+            initial={{ opacity: 0, scale: 0, rotate: 0 }}
+            animate={{ opacity: 1, scale: 1, rotate: s.rotation }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+            style={{ ...shapeStyle(s.shape, s.size), left: `${s.x}%`, top: `${s.y}%` }}
+          />
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const Login = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
@@ -89,17 +137,8 @@ const Login = () => {
 
         {/* ── PAINEL BRANDING (azul degradê) ── */}
         <motion.div layout className="relative overflow-hidden flex flex-col items-center justify-center p-10 text-center" style={{ background: "linear-gradient(160deg, hsl(214 55% 30%) 0%, hsl(200 45% 35%) 100%)", order: isLogin ? 1 : 0, width: "45%", minWidth: 0 }}>
-          {/* Animated floating rings */}
-          <div className="pointer-events-none absolute inset-0">
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute -top-16 -right-16 w-48 h-48 rounded-full border border-white/10" />
-            <motion.div animate={{ rotate: -360 }} transition={{ duration: 28, repeat: Infinity, ease: "linear" }} className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full border border-white/[0.07]" />
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} className="absolute top-1/4 -left-10 w-32 h-32 rounded-full border border-white/[0.06]" />
-            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.15, 0.08] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} className="absolute top-10 right-8 w-24 h-24 rounded-full bg-cyan-300/10 blur-2xl" />
-            <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.06, 0.12, 0.06] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }} className="absolute bottom-10 left-1/3 w-36 h-36 rounded-full bg-blue-200/10 blur-3xl" />
-            <motion.div animate={{ y: [-10, 10, -10], x: [-5, 5, -5] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} className="absolute top-1/2 right-1/4 w-3 h-3 rounded-full bg-white/20" />
-            <motion.div animate={{ y: [8, -8, 8], x: [4, -4, 4] }} transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }} className="absolute top-1/4 left-1/3 w-2 h-2 rounded-full bg-white/15" />
-            <motion.div animate={{ y: [-6, 12, -6] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 3 }} className="absolute bottom-1/3 right-1/3 w-2.5 h-2.5 rounded-full bg-white/10" />
-          </div>
+          {/* Geometric shapes that appear/disappear randomly */}
+          <GeoShapes />
           <div className="relative z-10 space-y-4">
             <h2 className="font-display text-4xl font-bold text-white tracking-tight">Moss</h2>
             <AnimatePresence mode="wait">
