@@ -48,6 +48,9 @@ const TreinamentoPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchActive, setSearchActive] = useState(false);
   const [contacts, setContacts] = useState<ProfileContact[]>([]);
+  const [newOpen, setNewOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
 
   useEffect(() => {
     fetchModules();
