@@ -1102,7 +1102,7 @@ const RelatoriosPage = () => {
           <AnimatePresence mode="wait">
             <motion.div key={currentSlide} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.35 }}
               className={isCarouselFullscreen ? "flex-1" : ""}>
-              {renderSlide(currentSlide)}
+              {isCarouselFullscreen ? renderFullscreenSlide(currentSlide) : renderSlide(currentSlide)}
             </motion.div>
           </AnimatePresence>
 
