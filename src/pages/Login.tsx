@@ -125,7 +125,7 @@ const Login = () => {
           <AnimatePresence mode="wait">
             {showReset ? (
               <motion.div key="reset" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full max-w-xs space-y-5">
-                <h3 className="font-display text-xl font-bold text-foreground text-center italic">Recuperar Senha</h3>
+                <h3 className="text-xl font-bold text-foreground text-center">Recuperar Senha</h3>
                 {!resetSent ? (
                   <form onSubmit={handleReset} className="space-y-4">
                     <p className="text-sm text-muted-foreground text-center">Informe seu e-mail para receber o link de redefinição.</p>
@@ -141,7 +141,7 @@ const Login = () => {
               </motion.div>
             ) : isLogin ? (
               <motion.div key="login-form" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="w-full max-w-xs space-y-5">
-                <h3 className="font-display text-xl font-bold text-foreground text-center italic">Moss Login</h3>
+                <h3 className="text-xl font-bold text-foreground text-center">Moss Login</h3>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
                   <div className="relative">
@@ -156,7 +156,7 @@ const Login = () => {
               </motion.div>
             ) : (
               <motion.div key="register-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full max-w-xs space-y-5">
-                <h3 className="font-display text-xl font-bold text-foreground text-center italic">Criar Conta</h3>
+                <h3 className="text-xl font-bold text-foreground text-center">Criar Conta</h3>
                 <form onSubmit={handleRegister} className="space-y-4">
                   <Input type="text" placeholder="Seu nome completo" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
                   <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
