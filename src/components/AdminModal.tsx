@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -37,16 +38,19 @@ const UNITS_LIST = ["Hospital Geral", "UPA Norte", "UBS Centro", "Todas"];
 const STATUSES = ["Ativo", "Suspenso", "Bloqueado"];
 
 const ALL_CARDS = [
-  { id: "metas", label: "Metas" },
   { id: "contratos", label: "Contratos" },
-  { id: "riscos", label: "Riscos" },
+  { id: "metas", label: "Metas e Indicadores" },
+  { id: "risco", label: "Projeção de Risco" },
   { id: "evidencias", label: "Evidências" },
   { id: "relatorios", label: "Relatórios" },
   { id: "admin", label: "Administração" },
+  { id: "lancamento", label: "Lançar Metas" },
+  { id: "sau", label: "SAU" },
+  { id: "relatorio-assistencial", label: "Relatório Assistencial" },
+  { id: "controle-rubrica", label: "Controle de Rubrica" },
 ];
 
 const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }: AdminModalProps) => {
-  // Admin's own fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("Administrador");
@@ -55,9 +59,9 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
   const [photo, setPhoto] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Manage other users
   const [selectedUserId, setSelectedUserId] = useState("");
   const [visibleCards, setVisibleCards] = useState<string[]>(ALL_CARDS.map(c => c.id));
+  const [savingPermissions, setSavingPermissions] = useState(false);
 
   const nonAdminUsers = users.filter(u => u.role !== "Administrador");
   const selectedOtherUser = nonAdminUsers.find(u => u.id === selectedUserId);
@@ -75,7 +79,20 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
 
   useEffect(() => {
     if (selectedOtherUser) {
-      setVisibleCards(selectedOtherUser.visibleCards || ALL_CARDS.map(c => c.id));
+      // Load allowed_cards from DB
+      const loadCards = async () => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("allowed_cards")
+          .eq("id", selectedOtherUser.id)
+          .single();
+        if (data && (data as any).allowed_cards) {
+          setVisibleCards((data as any).allowed_cards);
+        } else {
+          setVisibleCards(ALL_CARDS.map(c => c.id));
+        }
+      };
+      loadCards();
     }
   }, [selectedUserId]);
 
@@ -103,8 +120,18 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     setVisibleCards(prev => prev.includes(cardId) ? prev.filter(c => c !== cardId) : [...prev, cardId]);
   };
 
-  const handleSavePermissions = () => {
+  const handleSavePermissions = async () => {
     if (!selectedOtherUser) { toast.error("Selecione um usuário"); return; }
+    setSavingPermissions(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ allowed_cards: visibleCards } as any)
+      .eq("id", selectedOtherUser.id);
+    setSavingPermissions(false);
+    if (error) {
+      toast.error("Erro ao salvar permissões", { description: error.message });
+      return;
+    }
     onSaveOtherUser({ ...selectedOtherUser, visibleCards });
     toast.success("Permissões atualizadas", { description: `Cards de ${selectedOtherUser.name} salvos.` });
   };
@@ -176,7 +203,6 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
 
           <Button className="w-full" onClick={handleSaveAdmin}>Salvar meus dados</Button>
 
-          {/* ── SEPARATOR ── */}
           <Separator />
 
           {/* ── MANAGE OTHER USERS ── */}
@@ -211,7 +237,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
 
               <div className="space-y-3 border border-border rounded-lg p-4">
                 <Label className="text-sm font-semibold">Cards visíveis para {selectedOtherUser.name}</Label>
-                <p className="text-[10px] text-muted-foreground -mt-1">Selecione quais módulos este usuário poderá acessar.</p>
+                <p className="text-[10px] text-muted-foreground -mt-1">Selecione quais módulos este usuário poderá acessar no dashboard.</p>
                 <div className="grid grid-cols-2 gap-2">
                   {ALL_CARDS.map(card => (
                     <div key={card.id} className="flex items-center gap-2">
@@ -220,7 +246,9 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
                     </div>
                   ))}
                 </div>
-                <Button className="w-full mt-2" onClick={handleSavePermissions}>Salvar permissões</Button>
+                <Button className="w-full mt-2" onClick={handleSavePermissions} disabled={savingPermissions}>
+                  {savingPermissions ? "Salvando..." : "Salvar permissões"}
+                </Button>
               </div>
 
               <div className="border border-border rounded-lg p-4 space-y-3">

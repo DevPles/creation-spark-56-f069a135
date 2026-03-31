@@ -8,6 +8,7 @@ interface Profile {
   cargo: string | null;
   facility_unit: string;
   avatar_url: string | null;
+  allowed_cards: string[] | null;
 }
 
 interface AuthContextType {
