@@ -654,7 +654,7 @@ const RelatoriosPage = () => {
       const blob = await generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails, contract, chartRef);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      const fileName = `SisLu_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      const fileName = `MOSS_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
       a.href = url; a.download = fileName;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
