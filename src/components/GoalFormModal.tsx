@@ -216,7 +216,18 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
             </div>
           </div>
 
-          {/* Scoring rules */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Início do período</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Fim do período</Label>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </div>
+          </div>
+
+
           <div className="space-y-2">
             <Label>Faixas de pontuação contratual</Label>
             <div className="bg-secondary rounded-lg p-3 space-y-2">
