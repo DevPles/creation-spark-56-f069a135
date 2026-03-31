@@ -142,10 +142,24 @@ const LancamentoMetasPage = () => {
             <h1 className="font-display text-xl font-bold text-foreground">Lançamento de metas</h1>
             <p className="text-sm text-muted-foreground">Lance os valores realizados das metas</p>
           </div>
-          <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
-            <p className="text-xs text-muted-foreground">Sua unidade</p>
-            <p className="font-display font-semibold text-foreground text-sm">{profile?.facility_unit || "Carregando..."}</p>
-          </div>
+          {isAdmin ? (
+            <div className="flex items-center gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Unidade</p>
+                <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                  <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
+              <p className="text-xs text-muted-foreground">Sua unidade</p>
+              <p className="font-display font-semibold text-foreground text-sm">{profile?.facility_unit || "Carregando..."}</p>
+            </div>
+          )}
         </div>
 
         {loading ? (
