@@ -24,6 +24,13 @@ interface Rating {
   rating: number;
 }
 
+interface ProfileContact {
+  id: string;
+  name: string;
+  cargo: string | null;
+  facility_unit: string;
+}
+
 const TreinamentoPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -37,6 +44,9 @@ const TreinamentoPage = () => {
   const [editDesc, setEditDesc] = useState("");
   const [uploading, setUploading] = useState(false);
   const [playModule, setPlayModule] = useState<TrainingModule | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchActive, setSearchActive] = useState(false);
+  const [contacts, setContacts] = useState<ProfileContact[]>([]);
 
   useEffect(() => {
     fetchModules();
