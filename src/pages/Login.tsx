@@ -8,25 +8,41 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 
-const ORB_COUNT = 6;
+const ORB_COUNT = 8;
 const generateOrb = (id: number) => ({
   id, x: Math.random() * 100, y: Math.random() * 100,
-  size: 100 + Math.random() * 220, duration: 6 + Math.random() * 8, delay: Math.random() * 3,
+  size: 150 + Math.random() * 300, duration: 8 + Math.random() * 10, delay: Math.random() * 2,
 });
 
 const OrbBackground = () => {
   const [orbs, setOrbs] = useState(() => Array.from({ length: ORB_COUNT }, (_, i) => generateOrb(i)));
   useEffect(() => {
     const interval = setInterval(() => {
-      setOrbs((prev) => prev.map((orb) => (Math.random() > 0.65 ? generateOrb(orb.id) : orb)));
-    }, 5000);
+      setOrbs((prev) => prev.map((orb) => (Math.random() > 0.5 ? generateOrb(orb.id) : orb)));
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute inset-0 overflow-hidden z-0">
       <AnimatePresence mode="popLayout">
         {orbs.map((orb) => (
-          <motion.div key={`${orb.id}-${orb.x.toFixed(1)}`} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 0.18, scale: 1 }} exit={{ opacity: 0, scale: 0.3 }} transition={{ duration: orb.duration / 2, delay: orb.delay, ease: "easeInOut" }} className="absolute rounded-full" style={{ left: `${orb.x}%`, top: `${orb.y}%`, width: orb.size, height: orb.size, background: `radial-gradient(circle, hsl(214 60% 55% / 0.45) 0%, transparent 70%)`, filter: "blur(50px)", transform: "translate(-50%, -50%)" }} />
+          <motion.div
+            key={`${orb.id}-${orb.x.toFixed(1)}`}
+            initial={{ opacity: 0, scale: 0.3 }}
+            animate={{ opacity: 0.4, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.3 }}
+            transition={{ duration: orb.duration / 2, delay: orb.delay, ease: "easeInOut" }}
+            className="absolute rounded-full"
+            style={{
+              left: `${orb.x}%`,
+              top: `${orb.y}%`,
+              width: orb.size,
+              height: orb.size,
+              background: `radial-gradient(circle, hsl(200 70% 65% / 0.35) 0%, hsl(214 60% 45% / 0.15) 50%, transparent 70%)`,
+              filter: "blur(40px)",
+              transform: "translate(-50%, -50%)",
+            }}
+          />
         ))}
       </AnimatePresence>
     </div>
