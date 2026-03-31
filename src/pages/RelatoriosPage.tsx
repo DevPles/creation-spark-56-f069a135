@@ -614,6 +614,22 @@ const RelatoriosPage = () => {
   useEffect(() => { setCurrentSlide(0); }, [selectedContractId, typeFilter, statusFilter, compareMode]);
 
   const chartRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [isCarouselFullscreen, setIsCarouselFullscreen] = useState(false);
+
+  const toggleCarouselFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      carouselRef.current?.requestFullscreen();
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setIsCarouselFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
 
   const handleGenerate = async () => {
     const reportLabel = REPORT_TYPES.find(t => t.id === selectedType)?.label || selectedType;
