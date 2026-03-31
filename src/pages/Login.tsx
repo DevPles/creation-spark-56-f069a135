@@ -36,58 +36,87 @@ const OrbBackground = () => {
 const FORMULAS = ["∫f(x)dx", "Σxᵢ", "A=πr²", "sin θ", "cos θ", "a²+b²=c²", "lim x→∞", "∂f/∂x", "d/dx", "2πr", "tan θ", "√x", "Δy/Δx"];
 const SHAPES_POOL = ["○", "△", "□", "◇"];
 
-const makeItems = () => [
-  ...Array.from({ length: 7 }, (_, i) => ({
+interface TypedItem {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  size: number;
+  type: "formula" | "shape";
+}
+
+const makeSlots = (): TypedItem[] => [
+  ...Array.from({ length: 5 }, () => ({
     id: crypto.randomUUID(),
     type: "formula" as const,
     text: FORMULAS[Math.floor(Math.random() * FORMULAS.length)],
-    x: 8 + Math.random() * 80,
-    y: 8 + Math.random() * 80,
-    size: 13 + Math.random() * 15,
-    delay: i * 0.15,
+    x: 8 + Math.random() * 78,
+    y: 8 + Math.random() * 78,
+    size: 13 + Math.random() * 13,
   })),
-  ...Array.from({ length: 2 }, (_, i) => ({
+  ...Array.from({ length: 2 }, () => ({
     id: crypto.randomUUID(),
     type: "shape" as const,
     text: SHAPES_POOL[Math.floor(Math.random() * SHAPES_POOL.length)],
     x: 10 + Math.random() * 75,
     y: 10 + Math.random() * 75,
-    size: 26 + Math.random() * 18,
-    delay: i * 0.25,
+    size: 24 + Math.random() * 16,
   })),
 ];
 
-const GeoShapes = () => {
-  const [items, setItems] = useState(makeItems);
-
+const TypewriterText = ({ text, onDone }: { text: string; onDone: () => void }) => {
+  const [visible, setVisible] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setItems(makeItems()), 3400);
+    if (visible < text.length) {
+      const t = setTimeout(() => setVisible(v => v + 1), 90);
+      return () => clearTimeout(t);
+    } else {
+      const t = setTimeout(onDone, 800);
+      return () => clearTimeout(t);
+    }
+  }, [visible, text.length, onDone]);
+  return <>{text.slice(0, visible)}<span className="animate-pulse">|</span></>;
+};
+
+const GeoShapes = () => {
+  const [items, setItems] = useState(makeSlots);
+  const [fading, setFading] = useState(false);
+
+  const cycle = () => {
+    setFading(true);
+    setTimeout(() => {
+      setItems(makeSlots());
+      setFading(false);
+    }, 600);
+  };
+
+  // Auto-cycle every ~5s as fallback
+  useEffect(() => {
+    const t = setInterval(cycle, 5500);
     return () => clearInterval(t);
   }, []);
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <AnimatePresence mode="wait">
-        {items.map(item => (
-          <motion.span
-            key={item.id}
-            initial={{ opacity: 0, scale: 0.3, y: 8 }}
-            animate={{ opacity: item.type === "shape" ? 0.18 : 0.25, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.3, y: -8 }}
-            transition={{ duration: 1.2, delay: item.delay, ease: "easeInOut" }}
-            className="absolute select-none font-mono"
-            style={{
-              left: `${item.x}%`,
-              top: `${item.y}%`,
-              fontSize: item.size,
-              color: "rgba(255,255,255,0.9)",
-              textShadow: "0 0 6px rgba(255,255,255,0.15)",
-            }}
-          >
-            {item.text}
-          </motion.span>
-        ))}
-      </AnimatePresence>
+      {items.map((item, i) => (
+        <span
+          key={item.id}
+          className={`absolute select-none font-mono transition-opacity duration-500 ${fading ? "opacity-0" : ""}`}
+          style={{
+            left: `${item.x}%`,
+            top: `${item.y}%`,
+            fontSize: item.size,
+            color: item.type === "shape" ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.28)",
+            textShadow: "0 0 6px rgba(255,255,255,0.1)",
+          }}
+        >
+          {item.type === "formula" ? (
+            <TypewriterText text={item.text} onDone={() => {}} />
+          ) : (
+            item.text
+          )}
+        </span>
+      ))}
     </div>
   );
 };
