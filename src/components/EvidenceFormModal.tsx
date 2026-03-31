@@ -17,7 +17,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-
+import { useContracts } from "@/contexts/ContractsContext";
 
 export type EvidenceCategory = "meta" | "rubrica" | "justificativa_interna" | "relatorio_assistencial";
 
@@ -31,10 +31,10 @@ export interface EvidenceData {
   submittedAt?: string;
   notes: string;
   facilityUnit?: string;
-  // New fields
   category?: EvidenceCategory;
   activities?: string[];
   module?: string;
+  contractId?: string;
 }
 
 interface EvidenceFormModalProps {
@@ -53,7 +53,7 @@ const CATEGORY_OPTIONS: { value: EvidenceCategory; label: string; description: s
   { value: "meta", label: "Meta / Indicador", description: "Evidência vinculada a uma meta qualitativa ou quantitativa" },
   { value: "rubrica", label: "Rubrica orçamentária", description: "Justificativa de execução orçamentária" },
   { value: "justificativa_interna", label: "Justificativa interna", description: "Documentação interna para auditoria" },
-  { value: "relatorio_assistencial", label: "Relatório assistencial", description: "Conteúdo para compor o relatório assistencial" },
+  { value: "relatorio_assistencial", label: "Relatório assistencial", description: "Usa o contrato de gestão enviado no cadastro do contrato para análise dos pontos relevantes" },
 ];
 
 const inferCategory = (evidence: EvidenceData | null): EvidenceCategory => {
@@ -64,6 +64,7 @@ const inferCategory = (evidence: EvidenceData | null): EvidenceCategory => {
 };
 
 const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false, goalNames = [] }: EvidenceFormModalProps) => {
+  const { contracts } = useContracts();
   const [category, setCategory] = useState<EvidenceCategory>("meta");
   const [goalName, setGoalName] = useState("");
   const [type, setType] = useState("PDF");
@@ -73,6 +74,9 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
   const [notes, setNotes] = useState("");
   const [activities, setActivities] = useState<string[]>([]);
   const [newActivity, setNewActivity] = useState("");
+  const [selectedContractId, setSelectedContractId] = useState("");
+
+  const contractsWithPdf = contracts.filter(c => c.pdfUrl);
 
   useEffect(() => {
     if (evidence && !isNew) {
@@ -84,6 +88,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
       setDueDate(evidence.dueDate);
       setNotes(evidence.notes);
       setActivities(evidence.activities || []);
+      setSelectedContractId(evidence.contractId || "");
     } else if (isNew) {
       setCategory("meta");
       setGoalName(goalNames[0] || "");
@@ -93,6 +98,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
       setDueDate("");
       setNotes("");
       setActivities([]);
+      setSelectedContractId("");
     }
   }, [evidence, isNew, open]);
 
@@ -121,12 +127,14 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
       category,
       activities: activities.length > 0 ? activities : undefined,
       module: category === "relatorio_assistencial" ? "relatorio" : "evidencias",
+      contractId: category === "relatorio_assistencial" ? selectedContractId : undefined,
     };
     onSave(data);
     onOpenChange(false);
   };
 
   const selectedCat = CATEGORY_OPTIONS.find((c) => c.value === category);
+  const selectedContract = contracts.find(c => c.id === selectedContractId);
 
   const referenceLabel = category === "meta" ? "Meta vinculada" : category === "rubrica" ? "Rubrica vinculada" : category === "justificativa_interna" ? "Referência interna" : "Seção do relatório";
 
@@ -163,6 +171,38 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
               <p className="text-[11px] text-muted-foreground">{selectedCat.description}</p>
             )}
           </div>
+
+          {/* Contract selector for relatório assistencial */}
+          {category === "relatorio_assistencial" && (
+            <div className="space-y-2">
+              <Label>Contrato de gestão vinculado</Label>
+              <Select value={selectedContractId} onValueChange={setSelectedContractId}>
+                <SelectTrigger><SelectValue placeholder="Selecione o contrato" /></SelectTrigger>
+                <SelectContent>
+                  {contracts.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedContract && selectedContract.pdfUrl && (
+                <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-1">
+                  <p className="text-xs font-medium text-foreground">PDF do contrato disponível</p>
+                  <p className="text-[11px] text-muted-foreground">{selectedContract.pdfName || "Contrato.pdf"}</p>
+                  <a
+                    href={selectedContract.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary underline hover:no-underline"
+                  >
+                    Abrir contrato para análise →
+                  </a>
+                </div>
+              )}
+              {selectedContract && !selectedContract.pdfUrl && (
+                <p className="text-[11px] text-destructive">Este contrato não possui PDF anexado. Faça upload no cadastro do contrato.</p>
+              )}
+            </div>
+          )}
 
           {/* Reference field */}
           <div className="space-y-2">
@@ -237,7 +277,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
             </div>
           </div>
 
-          {/* Activities section — useful for relatório assistencial */}
+          {/* Activities section */}
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
               Atividades realizadas
