@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN allowed_cards text[] DEFAULT NULL;

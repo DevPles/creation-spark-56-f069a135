@@ -96,6 +96,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allowed_cards: string[] | null
           avatar_url: string | null
           cargo: string | null
           created_at: string
@@ -106,6 +107,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allowed_cards?: string[] | null
           avatar_url?: string | null
           cargo?: string | null
           created_at?: string
@@ -116,6 +118,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allowed_cards?: string[] | null
           avatar_url?: string | null
           cargo?: string | null
           created_at?: string
