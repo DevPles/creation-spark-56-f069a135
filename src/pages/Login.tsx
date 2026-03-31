@@ -235,7 +235,7 @@ const Login = () => {
                       {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
-                  <button type="submit" disabled={loading} className={`${neumorphBtn} w-full bg-[hsl(220_15%_94%)] text-foreground`}>{loading ? "Entrando..." : "Sign In"}</button>
+                  <button type="submit" disabled={loading} className={`${neumorphBtn} w-full bg-[hsl(220_15%_94%)] text-foreground`}>{loading ? "Entrando..." : "Entrar"}</button>
                 </form>
                 <button onClick={() => setShowReset(true)} className="w-full text-sm text-muted-foreground hover:text-primary transition-colors text-center">Esqueci minha senha</button>
               </motion.div>
