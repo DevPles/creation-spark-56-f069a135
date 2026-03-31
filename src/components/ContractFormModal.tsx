@@ -202,16 +202,32 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
 
           <div className="space-y-2">
             <Label>PDF do contrato</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
             <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-              {pdfName ? (
-                <div>
-                  <p className="text-sm text-foreground">{pdfName}</p>
-                  <Button variant="outline" size="sm" className="mt-2" onClick={() => setPdfName("")}>Remover</Button>
+              {uploading ? (
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Enviando...</span>
+                </div>
+              ) : pdfName && pdfUrl ? (
+                <div className="flex items-center justify-center gap-3">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <span className="text-sm text-foreground">{pdfName}</span>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleRemovePdf}>
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               ) : (
                 <div>
+                  <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
                   <p className="text-sm text-muted-foreground">Arraste ou selecione o arquivo PDF</p>
-                  <Button variant="outline" size="sm" className="mt-2" onClick={() => setPdfName("Contrato_Gestao_2024.pdf")}>
+                  <Button variant="outline" size="sm" className="mt-2" onClick={() => fileInputRef.current?.click()}>
                     Selecionar arquivo
                   </Button>
                 </div>
