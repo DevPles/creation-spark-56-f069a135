@@ -154,13 +154,19 @@ const TreinamentoPage = () => {
     if (modalMode === "create") {
       if (!modalTitle.trim()) return;
       const maxOrder = modules.length > 0 ? Math.max(...modules.map(m => m.sort_order)) + 1 : 0;
-      await supabase.from("training_modules").insert({
+      const { data } = await supabase.from("training_modules").insert({
         title: modalTitle.trim(),
         description: modalDesc.trim(),
         sort_order: maxOrder,
         created_by: user?.id,
-      } as any);
-      toast.success("Módulo criado");
+      } as any).select().single();
+      toast.success("Módulo criado — agora você pode adicionar um vídeo");
+      await fetchModules();
+      if (data) {
+        // Switch to edit mode so user can upload video
+        setModalMode("edit");
+        setModalModule(data as TrainingModule);
+      }
     } else {
       if (!modalModule) return;
       await supabase
@@ -168,9 +174,9 @@ const TreinamentoPage = () => {
         .update({ title: modalTitle, description: modalDesc })
         .eq("id", modalModule.id);
       toast.success("Módulo atualizado");
+      setModalOpen(false);
+      fetchModules();
     }
-    setModalOpen(false);
-    fetchModules();
   };
 
   const handleVideoUpload = async (moduleId: string, file: File) => {
