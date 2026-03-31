@@ -156,7 +156,7 @@ const Login = () => {
               </motion.div>
             ) : (
               <motion.div key="register-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full max-w-xs space-y-5">
-                <h3 className="font-display text-xl font-bold text-foreground text-center italic">Criar Conta</h3>
+                <h3 className="text-xl font-bold text-foreground text-center">Criar Conta</h3>
                 <form onSubmit={handleRegister} className="space-y-4">
                   <Input type="text" placeholder="Seu nome completo" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
                   <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
