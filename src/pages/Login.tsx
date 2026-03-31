@@ -182,6 +182,7 @@ const Login = () => {
 
         {/* ── PAINEL BRANDING (azul degradê) ── */}
         <motion.div layout className="relative overflow-hidden flex flex-col items-center justify-center p-10 text-center" style={{ background: "linear-gradient(160deg, hsl(214 55% 30%) 0%, hsl(200 45% 35%) 100%)", order: isLogin ? 1 : 0, width: "45%", minWidth: 0 }}>
+
           {/* Geometric shapes that appear/disappear randomly */}
           <GeoShapes />
           <div className="relative z-10 space-y-4">
