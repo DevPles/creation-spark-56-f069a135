@@ -160,8 +160,7 @@ const ControleRubricaPage = () => {
         {byRubrica.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-muted-foreground mb-2">Nenhuma rubrica cadastrada para este contrato.</p>
-            <Button onClick={() => handleOpenRubricaModal()} className="gap-1.5">
-              <Settings2 className="h-4 w-4" />
+            <Button onClick={() => handleOpenRubricaModal()}>
               Cadastrar Rubricas
             </Button>
           </div>
