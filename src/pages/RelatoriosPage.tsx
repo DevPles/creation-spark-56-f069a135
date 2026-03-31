@@ -1004,7 +1004,7 @@ const RelatoriosPage = () => {
         <div className="min-h-0">{renderSlide(group[1])}</div>
       </div>
     );
-  
+  };
 
   return (
     <div className="min-h-screen bg-background">
