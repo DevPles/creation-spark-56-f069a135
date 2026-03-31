@@ -1079,7 +1079,7 @@ const RelatoriosPage = () => {
         </div>
 
         {/* ─── CAROUSEL ─── */}
-        <div ref={carouselRef} className={`relative mb-8 ${isCarouselFullscreen ? "fixed inset-0 z-[9999] bg-background p-8 overflow-auto flex flex-col" : ""}`}>
+        <div ref={carouselRef} className={`relative mb-8 ${isCarouselFullscreen ? "fixed inset-0 z-[9999] bg-background px-8 py-6 overflow-auto flex flex-col" : ""}`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               {Array.from({ length: isCarouselFullscreen ? TOTAL_FS_SLIDES : TOTAL_SLIDES }).map((_, i) => (
