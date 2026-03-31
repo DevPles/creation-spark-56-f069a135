@@ -33,39 +33,30 @@ const OrbBackground = () => {
   );
 };
 
-const FORMULAS = [
-  "ROI=(Receita-Custo)/Custo",
-  "σ=√(Σ(xᵢ-μ)²/N)",
-  "z=(x-μ)/σ",
-  "ŷ=β₀+β₁x",
-  "R²=1-SSres/SStot",
-  "P(A|B)=P(A∩B)/P(B)",
-  "LTV=C×T×M",
-  "CAC=Investimento/Clientes",
-  "NPV=Σ CFₜ/(1+r)ᵗ",
-  "∫₀ᵀ f(t)e⁻ʳᵗdt",
-  "∂S/∂t+u∂S/∂x=0",
-  "Taxa=Óbitos/Internações",
-  "Σ(Meta-Real)²/n",
-  "Eficiência=Saídas/Entradas",
-];
-
-interface FloatingFormula {
-  id: string;
-  text: string;
-  x: number;
-  y: number;
-  size: number;
-}
+const FORMULA_GROUPS = {
+  assistencial: [
+    "Cobertura = Atendidos / Referenciados",
+    "Efetividade = Concluídos / Iniciados",
+    "Acompanhamento = Monitorados / Ativos",
+  ],
+  financeira: [
+    "Execução = Liquidado / Aprovado",
+    "Custo/Atend = Total / Atendimentos",
+    "ROI = (Receita - Custo) / Custo",
+  ],
+  saude: [
+    "Ocupação = Pac·Dia / Leitos·Dia",
+    "Cobertura Vacinal = Vacinados / Alvo",
+    "TMP = Pac·Dia / Altas",
+  ],
+};
 
 const TypewriterText = ({ text }: { text: string }) => {
   const [charIndex, setCharIndex] = useState(0);
-  useEffect(() => {
-    setCharIndex(0);
-  }, [text]);
+  useEffect(() => { setCharIndex(0); }, [text]);
   useEffect(() => {
     if (charIndex < text.length) {
-      const t = setTimeout(() => setCharIndex(v => v + 1), 55);
+      const t = setTimeout(() => setCharIndex(v => v + 1), 45);
       return () => clearTimeout(t);
     }
   }, [charIndex, text.length]);
@@ -78,76 +69,41 @@ const TypewriterText = ({ text }: { text: string }) => {
 };
 
 const GeoShapes = () => {
-  const [items, setItems] = useState<FloatingFormula[]>([]);
-
-  useEffect(() => {
-    // Spawn a new formula at a random position every 1.6s, keep max 4 visible
-    const t = setInterval(() => {
-      setItems(prev => {
-        const next = [
-          ...prev.slice(-(3)),
-          {
-            id: crypto.randomUUID(),
-            text: FORMULAS[Math.floor(Math.random() * FORMULAS.length)],
-            x: 6 + Math.random() * 82,
-            y: 8 + Math.random() * 78,
-            size: 11 + Math.random() * 7,
-          },
-        ];
-        return next;
-      });
-    }, 1800);
-    return () => clearInterval(t);
-  }, []);
+  const groups = Object.entries(FORMULA_GROUPS) as [string, string[]][];
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <AnimatePresence>
-        {items.map(item => (
+      {groups.map(([group, formulas], col) =>
+        formulas.map((text, row) => (
           <motion.div
-            key={item.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.3 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="absolute select-none font-mono"
+            key={`${group}-${row}`}
+            className="absolute select-none font-mono whitespace-nowrap"
             style={{
-              left: `${item.x}%`,
-              top: `${item.y}%`,
-              fontSize: item.size,
-              color: "rgba(255,255,255,0.85)",
-              textShadow: "0 0 8px rgba(255,255,255,0.12)",
+              left: `${6 + col * 32}%`,
+              top: `${15 + row * 22}%`,
+              fontSize: 11,
+              maxWidth: "30%",
+              overflow: "hidden",
+              color: "rgba(255,255,255,0.75)",
+              textShadow: "0 0 6px rgba(255,255,255,0.1)",
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.35, 0.35, 0] }}
+            transition={{
+              duration: 6,
+              delay: row * 1.4 + col * 0.8,
+              repeat: Infinity,
+              repeatDelay: 3,
+              ease: "easeInOut",
             }}
           >
-            <TypewriterText text={item.text} />
+            <TypewriterText text={text} />
           </motion.div>
-        ))}
-      </AnimatePresence>
+        ))
+      )}
     </div>
   );
 };
-const Login = () => {
-  const navigate = useNavigate();
-  const { session } = useAuth();
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [showReset, setShowReset] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [resetSent, setResetSent] = useState(false);
-
-  useEffect(() => { if (session) navigate("/dashboard"); }, [session, navigate]);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault(); setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) toast.error(error.message); else navigate("/dashboard");
-    setLoading(false);
-  };
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { toast.error("Informe seu nome completo"); return; }
