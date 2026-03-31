@@ -79,7 +79,7 @@ const Login = () => {
 
   // Neumorphic input style
   const inputClass = "h-12 rounded-full bg-[hsl(220_15%_92%)] border-none shadow-[inset_2px_2px_5px_hsl(220_15%_82%),inset_-2px_-2px_5px_hsl(0_0%_100%)] placeholder:text-muted-foreground/60 px-5 text-sm focus-visible:ring-2 focus-visible:ring-primary/30";
-  const neumorphBtn = "h-12 rounded-full font-semibold text-sm shadow-[3px_3px_8px_hsl(220_15%_78%),-3px_-3px_8px_hsl(0_0%_100%)] hover:shadow-[inset_2px_2px_5px_hsl(220_15%_82%),inset_-2px_-2px_5px_hsl(0_0%_100%)] transition-all duration-200";
+  const neumorphBtn = "h-12 rounded-full font-semibold text-sm transition-all duration-200";
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative" style={{ background: "linear-gradient(135deg, hsl(214 55% 18%) 0%, hsl(214 55% 30%) 50%, hsl(214 45% 22%) 100%)" }}>
@@ -96,14 +96,14 @@ const Login = () => {
               {isLogin ? (
                 <motion.div key="login-info" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
                   <p className="text-lg font-semibold text-white/90">Novo por aqui?</p>
-                  <p className="text-sm text-white/70 max-w-[220px] mx-auto">Solicite acesso ao sistema de gestão de indicadores.</p>
-                  <button onClick={() => setMode("register")} className={`${neumorphBtn} px-8 bg-white/10 text-white border border-white/30 backdrop-blur-sm hover:bg-white/20`}>Cadastrar</button>
+                  <p className="text-sm text-white/70 max-w-[240px] mx-auto">Sistema inteligente de análise de métricas para Organizações Sociais de Saúde.</p>
+                  <button onClick={() => setMode("register")} className={`${neumorphBtn} px-8 bg-primary/80 text-white border border-white/20 hover:bg-primary`}>Cadastrar</button>
                 </motion.div>
               ) : (
                 <motion.div key="register-info" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
                   <p className="text-lg font-semibold text-white/90">Bem-vindo!</p>
-                  <p className="text-sm text-white/70 max-w-[220px] mx-auto">Acesse o sistema com suas credenciais fornecidas pelo administrador.</p>
-                  <button onClick={() => setMode("login")} className={`${neumorphBtn} px-8 bg-white/10 text-white border border-white/30 backdrop-blur-sm hover:bg-white/20`}>Entrar</button>
+                  <p className="text-sm text-white/70 max-w-[240px] mx-auto">Sistema inteligente de análise de métricas para Organizações Sociais de Saúde.</p>
+                  <button onClick={() => setMode("login")} className={`${neumorphBtn} px-8 bg-primary/80 text-white border border-white/20 hover:bg-primary`}>Entrar</button>
                 </motion.div>
               )}
             </AnimatePresence>
