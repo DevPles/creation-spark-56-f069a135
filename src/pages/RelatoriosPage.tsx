@@ -911,7 +911,7 @@ const RelatoriosPage = () => {
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Meta vs Realizado</h3>
             <p className="text-xs text-muted-foreground mb-4">Comparação direta entre valor pactuado e alcançado — {contract.unit}</p>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={isCarouselFullscreen ? 400 : 300}>
                 <BarChart data={filteredGoals.map(g => ({ name: g.name.length > 18 ? g.name.slice(0, 18) + "…" : g.name, meta: g.target, realizado: g.current, unidade: g.unit }))} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} angle={-25} textAnchor="end" height={70} />
