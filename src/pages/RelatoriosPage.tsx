@@ -975,7 +975,7 @@ const RelatoriosPage = () => {
             <p className="text-xs text-muted-foreground mb-4">{contract.unit} vs {compareContract.unit}</p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-card rounded-lg border border-border p-5">
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={chartH}>
                   <BarChart data={comparisonData} barGap={8}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
