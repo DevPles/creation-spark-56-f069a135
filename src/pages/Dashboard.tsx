@@ -72,12 +72,21 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
-        {/* Navigation Cards - filtered by permissions */}
+        {/* Navigation Cards - filtered by permissions (excluding admin) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {visibleNavCards.map(card => (
+          {visibleNavCards.filter(c => c.id !== "admin").map(card => (
             <NavCard key={card.id} title={card.title} description={card.description} onClick={() => navigate(card.route)} />
           ))}
         </div>
+
+        {/* Admin Card - fixed at bottom center */}
+        {visibleNavCards.some(c => c.id === "admin") && (
+          <div className="flex justify-center mt-8">
+            <div className="w-full max-w-md">
+              <NavCard title="Administração" description="Usuários, perfis e permissões" onClick={() => navigate("/admin")} />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
