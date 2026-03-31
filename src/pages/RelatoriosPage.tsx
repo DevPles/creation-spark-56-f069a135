@@ -834,7 +834,122 @@ const RelatoriosPage = () => {
             </div>
           </div>
         );
-      case 6: // Comparison (only in compare mode)
+      case 6: // Individual goal attainment bars
+        return (
+          <div>
+            <h3 className="font-display font-semibold text-lg text-foreground mb-1">Atingimento individual por meta</h3>
+            <p className="text-xs text-muted-foreground mb-4">% realizado vs meta pactuada — {contract.unit}</p>
+            <div className="bg-card rounded-lg border border-border p-5">
+              <ResponsiveContainer width="100%" height={Math.max(280, filteredGoals.length * 40)}>
+                <BarChart data={filteredGoals.map(g => ({ name: g.name.length > 25 ? g.name.slice(0, 25) + "…" : g.name, pct: Math.round(getGoalPct(g)), meta: 100 }))} layout="vertical" barGap={2}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                  <XAxis type="number" domain={[0, 110]} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}%`} />
+                  <YAxis type="category" dataKey="name" width={180} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
+                  <Bar dataKey="pct" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} name="Realizado" />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      case 7: // Risk distribution per goal
+        return (
+          <div>
+            <h3 className="font-display font-semibold text-lg text-foreground mb-1">Distribuição de risco por meta</h3>
+            <p className="text-xs text-muted-foreground mb-4">Impacto financeiro individual — {contract.unit}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-card rounded-lg border border-border p-5">
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie data={filteredGoals.filter(g => g.risk > 0).map(g => ({ name: g.name.length > 20 ? g.name.slice(0, 20) + "…" : g.name, value: g.risk }))} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3}>
+                      {filteredGoals.filter(g => g.risk > 0).map((_, i) => <Cell key={i} fill={["hsl(var(--destructive))", "hsl(38 92% 50%)", "hsl(var(--primary))", "hsl(280 70% 50%)", "hsl(190 80% 45%)", "hsl(340 75% 55%)", "hsl(160 60% 40%)", "hsl(25 85% 55%)"][i % 8]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatFullCurrency(v)} />
+                    <Legend wrapperStyle={{ fontSize: 10 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2">
+                {[...filteredGoals].sort((a, b) => b.risk - a.risk).filter(g => g.risk > 0).map(g => {
+                  const pct = stats.totalRisk > 0 ? (g.risk / stats.totalRisk * 100) : 0;
+                  return (
+                    <div key={g.id} className="flex items-center gap-3">
+                      <span className="text-xs text-foreground w-40 truncate">{g.name}</span>
+                      <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-destructive/70 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs font-medium text-destructive w-16 text-right">{formatCurrency(g.risk)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      case 8: // Meta vs Realizado
+        return (
+          <div>
+            <h3 className="font-display font-semibold text-lg text-foreground mb-1">Meta vs Realizado</h3>
+            <p className="text-xs text-muted-foreground mb-4">Comparação direta entre valor pactuado e alcançado — {contract.unit}</p>
+            <div className="bg-card rounded-lg border border-border p-5">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={filteredGoals.map(g => ({ name: g.name.length > 18 ? g.name.slice(0, 18) + "…" : g.name, meta: g.target, realizado: g.current, unidade: g.unit }))} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} angle={-25} textAnchor="end" height={70} />
+                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="meta" fill="hsl(var(--muted-foreground) / 0.3)" radius={[6, 6, 0, 0]} name="Meta" />
+                  <Bar dataKey="realizado" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Realizado" />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      case 9: // Executive summary
+        return (
+          <div>
+            <h3 className="font-display font-semibold text-lg text-foreground mb-1">Resumo executivo</h3>
+            <p className="text-xs text-muted-foreground mb-4">Visão consolidada do contrato — {contract.unit}</p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div className="kpi-card"><p className="text-xs text-muted-foreground">Valor do contrato</p><p className="text-xl font-bold text-foreground">{formatFullCurrency(contract.valorGlobal)}</p><p className="text-[10px] text-muted-foreground">Mensal</p></div>
+              <div className="kpi-card"><p className="text-xs text-muted-foreground">Total em risco</p><p className="text-xl font-bold text-destructive">{formatCurrency(stats.totalRisk)}</p><p className="text-[10px] text-muted-foreground">{((stats.totalRisk / contract.valorGlobal) * 100).toFixed(1)}% do valor</p></div>
+              <div className="kpi-card"><p className="text-xs text-muted-foreground">Glosa estimada</p><p className="text-xl font-bold" style={{ color: "hsl(38 92% 50%)" }}>{formatCurrency(contract.riskTrend[contract.riskTrend.length - 1]?.glosa || 0)}</p><p className="text-[10px] text-muted-foreground">Último mês</p></div>
+              <div className="kpi-card"><p className="text-xs text-muted-foreground">Tendência de risco</p><p className="text-xl font-bold" style={{ color: contract.riskTrend.length >= 2 && contract.riskTrend[contract.riskTrend.length - 1].risco < contract.riskTrend[contract.riskTrend.length - 2].risco ? "hsl(142 71% 45%)" : "hsl(var(--destructive))" }}>{contract.riskTrend.length >= 2 && contract.riskTrend[contract.riskTrend.length - 1].risco < contract.riskTrend[contract.riskTrend.length - 2].risco ? "↓ Queda" : "↑ Alta"}</p><p className="text-[10px] text-muted-foreground">vs mês anterior</p></div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="bg-card rounded-lg border border-border p-4">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Status das metas</p>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden flex">
+                    <div className="h-full" style={{ width: `${(stats.atingidas / stats.total) * 100}%`, background: "hsl(142 71% 45%)" }} />
+                    <div className="h-full" style={{ width: `${(stats.parciais / stats.total) * 100}%`, background: "hsl(38 92% 50%)" }} />
+                    <div className="h-full" style={{ width: `${(stats.criticas / stats.total) * 100}%`, background: "hsl(var(--destructive))" }} />
+                  </div>
+                </div>
+                <div className="flex gap-4 mt-2 text-[10px]">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: "hsl(142 71% 45%)" }} />{stats.atingidas} atingidas</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: "hsl(38 92% 50%)" }} />{stats.parciais} parciais</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-destructive" />{stats.criticas} críticas</span>
+                </div>
+              </div>
+              <div className="bg-card rounded-lg border border-border p-4">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Rubricas com maior risco</p>
+                {contract.rubricas.slice(0, 3).map(r => {
+                  const riskInR = filteredGoals.filter(g => g.rubrica === r.name).reduce((s, g) => s + g.risk, 0);
+                  return (
+                    <div key={r.name} className="flex items-center justify-between text-xs py-1 border-b border-border last:border-0">
+                      <span className="text-foreground">{r.name}</span>
+                      <span className="text-destructive font-medium">{riskInR > 0 ? formatCurrency(riskInR) : "—"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      case 10: // Comparison (only in compare mode)
         if (!compareMode || !compareContract) return null;
         return (
           <div>
