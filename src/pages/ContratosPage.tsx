@@ -87,8 +87,8 @@ const ContratosPage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`status-badge ${contract.status === "Vigente" ? "status-success" : "status-warning"}`}>{contract.status}</span>
-                  <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEdit(contract); }}>Editar</Button>
-                  <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); setDeleteTarget(contract); }}>
+                  <Button variant="outline" size="sm" className="rounded-full shadow-[3px_3px_8px_hsl(220_15%_82%),-3px_-3px_8px_hsl(0_0%_100%)] border-none bg-[hsl(220_15%_94%)] hover:shadow-[inset_2px_2px_5px_hsl(220_15%_82%),inset_-2px_-2px_5px_hsl(0_0%_100%)] transition-all" onClick={(e) => { e.stopPropagation(); handleEdit(contract); }}>Editar</Button>
+                  <Button variant="destructive" size="sm" className="rounded-full shadow-[3px_3px_8px_hsl(220_15%_82%),-3px_-3px_8px_hsl(0_0%_100%)] border-none hover:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.2),inset_-2px_-2px_5px_rgba(255,255,255,0.1)] transition-all" onClick={(e) => { e.stopPropagation(); setDeleteTarget(contract); }}>
                     Excluir
                   </Button>
                 </div>
