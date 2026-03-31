@@ -600,10 +600,26 @@ const RelatoriosPage = () => {
   const compareFilteredGoals = useMemo(() => compareContract ? filterGoals(compareContract.goals, typeFilter, statusFilter) : [], [compareContract, typeFilter, statusFilter]);
   const compareStats = useMemo(() => computeStats(compareFilteredGoals), [compareFilteredGoals]);
 
-  const TOTAL_SLIDES = compareMode ? 11 : 10;
+  const chartRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [isCarouselFullscreen, setIsCarouselFullscreen] = useState(false);
 
-  const nextSlide = useCallback(() => setCurrentSlide(prev => (prev + 1) % TOTAL_SLIDES), [TOTAL_SLIDES]);
-  const prevSlide = useCallback(() => setCurrentSlide(prev => (prev - 1 + TOTAL_SLIDES) % TOTAL_SLIDES), [TOTAL_SLIDES]);
+  const TOTAL_SLIDES = compareMode ? 11 : 10;
+  const FULLSCREEN_GROUPS = useMemo(() => {
+    const groups: number[][] = [[0], [1, 2], [3, 4], [5, 6], [7, 8], [9]];
+    if (compareMode) groups.push([10]);
+    return groups;
+  }, [compareMode]);
+  const TOTAL_FS_SLIDES = FULLSCREEN_GROUPS.length;
+
+  const nextSlide = useCallback(() => setCurrentSlide(prev => {
+    const total = isCarouselFullscreen ? TOTAL_FS_SLIDES : TOTAL_SLIDES;
+    return (prev + 1) % total;
+  }), [TOTAL_SLIDES, TOTAL_FS_SLIDES, isCarouselFullscreen]);
+  const prevSlide = useCallback(() => setCurrentSlide(prev => {
+    const total = isCarouselFullscreen ? TOTAL_FS_SLIDES : TOTAL_SLIDES;
+    return (prev - 1 + total) % total;
+  }), [TOTAL_SLIDES, TOTAL_FS_SLIDES, isCarouselFullscreen]);
 
   useEffect(() => {
     if (isPaused) return;
@@ -612,10 +628,6 @@ const RelatoriosPage = () => {
   }, [isPaused, nextSlide]);
 
   useEffect(() => { setCurrentSlide(0); }, [selectedContractId, typeFilter, statusFilter, compareMode]);
-
-  const chartRef = useRef<HTMLDivElement>(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const [isCarouselFullscreen, setIsCarouselFullscreen] = useState(false);
 
   const toggleCarouselFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -626,7 +638,11 @@ const RelatoriosPage = () => {
   }, []);
 
   useEffect(() => {
-    const handler = () => setIsCarouselFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      const fs = !!document.fullscreenElement;
+      setIsCarouselFullscreen(fs);
+      setCurrentSlide(0); // reset to avoid out-of-bounds
+    };
     document.addEventListener("fullscreenchange", handler);
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
@@ -981,6 +997,19 @@ const RelatoriosPage = () => {
     }
   };
 
+  const renderFullscreenSlide = (groupIndex: number) => {
+    const group = FULLSCREEN_GROUPS[groupIndex];
+    if (!group) return null;
+    if (group.length === 1) return renderSlide(group[0]);
+    // Pair two charts side by side
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+        <div className="min-h-0">{renderSlide(group[0])}</div>
+        <div className="min-h-0">{renderSlide(group[1])}</div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
@@ -1051,12 +1080,12 @@ const RelatoriosPage = () => {
         <div ref={carouselRef} className={`relative mb-8 ${isCarouselFullscreen ? "fixed inset-0 z-[9999] bg-background p-8 overflow-auto flex flex-col" : ""}`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
+              {Array.from({ length: isCarouselFullscreen ? TOTAL_FS_SLIDES : TOTAL_SLIDES }).map((_, i) => (
                 <button key={i} onClick={() => setCurrentSlide(i)}
                   className={`h-2 rounded-full transition-all duration-300 ${i === currentSlide ? "w-8 bg-primary" : "w-2 bg-muted-foreground/30"}`}
                 />
               ))}
-              <span className="text-[10px] text-muted-foreground ml-2">{currentSlide + 1}/{TOTAL_SLIDES}</span>
+              <span className="text-[10px] text-muted-foreground ml-2">{currentSlide + 1}/{isCarouselFullscreen ? TOTAL_FS_SLIDES : TOTAL_SLIDES}</span>
             </div>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={() => setIsPaused(!isPaused)}>
@@ -1077,7 +1106,7 @@ const RelatoriosPage = () => {
           <AnimatePresence mode="wait">
             <motion.div key={currentSlide} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.35 }}
               className={isCarouselFullscreen ? "flex-1" : ""}>
-              {renderSlide(currentSlide)}
+              {isCarouselFullscreen ? renderFullscreenSlide(currentSlide) : renderSlide(currentSlide)}
             </motion.div>
           </AnimatePresence>
 
