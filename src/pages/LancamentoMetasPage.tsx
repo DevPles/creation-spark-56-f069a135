@@ -5,6 +5,7 @@ import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,21 +43,36 @@ const LancamentoMetasPage = () => {
   const [existingEntries, setExistingEntries] = useState<Record<string, { value: number; period: string }[]>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
+
+  const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
   useEffect(() => {
-    if (!profile) return;
-    loadGoals();
-  }, [profile]);
+    if (!profile || !user) return;
+    // Check if user is admin
+    supabase.from("user_roles").select("role").eq("user_id", user.id).then(({ data }) => {
+      const admin = data?.some((r: any) => r.role === "admin" || r.role === "gestor");
+      setIsAdmin(!!admin);
+      setSelectedUnit(profile.facility_unit);
+    });
+  }, [profile, user]);
 
-  const loadGoals = async () => {
-    if (!profile) return;
+  useEffect(() => {
+    if (!selectedUnit) return;
+    loadGoals(selectedUnit);
+  }, [selectedUnit]);
+
+  const loadGoals = async (unit: string) => {
+    setLoading(true);
     const { data, error } = await supabase
       .from("goals")
       .select("*")
-      .eq("facility_unit", profile.facility_unit as any);
+      .eq("facility_unit", unit as any);
 
     if (error) {
       toast.error("Erro ao carregar metas");
+      setLoading(false);
       return;
     }
     setGoals((data as Goal[]) || []);
@@ -101,7 +117,7 @@ const LancamentoMetasPage = () => {
     } else {
       toast.success("Lançamento salvo com sucesso");
       setEntries((prev) => ({ ...prev, [goalId]: { value: "", period: "", notes: "" } }));
-      loadGoals();
+      loadGoals(selectedUnit);
     }
     setSubmitting(null);
   };
@@ -126,10 +142,24 @@ const LancamentoMetasPage = () => {
             <h1 className="font-display text-xl font-bold text-foreground">Lançamento de metas</h1>
             <p className="text-sm text-muted-foreground">Lance os valores realizados das metas</p>
           </div>
-          <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
-            <p className="text-xs text-muted-foreground">Sua unidade</p>
-            <p className="font-display font-semibold text-foreground text-sm">{profile?.facility_unit || "Carregando..."}</p>
-          </div>
+          {isAdmin ? (
+            <div className="flex items-center gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Unidade</p>
+                <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                  <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
+              <p className="text-xs text-muted-foreground">Sua unidade</p>
+              <p className="font-display font-semibold text-foreground text-sm">{profile?.facility_unit || "Carregando..."}</p>
+            </div>
+          )}
         </div>
 
         {loading ? (
