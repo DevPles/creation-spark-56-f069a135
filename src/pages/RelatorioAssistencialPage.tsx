@@ -75,6 +75,15 @@ const RelatorioAssistencialPage = () => {
   const { contracts } = useContracts();
   const [selectedContractId, setSelectedContractId] = useState("");
   const [editableNotes, setEditableNotes] = useState("");
+
+  // Personalização state — editable sections
+  const [persContrato, setPersContrato] = useState("");
+  const [persRubricas, setPersRubricas] = useState("");
+  const [persQualitativas, setPersQualitativas] = useState("");
+  const [persQuantitativas, setPersQuantitativas] = useState("");
+  const [persPenalidades, setPersPenalidades] = useState("");
+  const [persEvidencias, setPersEvidencias] = useState("");
+  const [persInitialized, setPersInitialized] = useState("");
   const reportRef = useRef<HTMLDivElement>(null);
 
   // Timeline items for Relatório Final
