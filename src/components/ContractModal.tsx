@@ -113,12 +113,20 @@ const ContractModal = ({ contract, open, onOpenChange }: ContractModalProps) => 
             </div>
           </div>
 
-          {/* PDF upload area */}
-          <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-            <p className="text-sm text-muted-foreground">PDF do contrato</p>
-            <p className="text-xs text-muted-foreground mt-1">Contrato_Gestao_2024.pdf — 2.4 MB</p>
-            <Button variant="outline" size="sm" className="mt-2">Visualizar PDF</Button>
-          </div>
+          {/* PDF do contrato */}
+          {contract.pdfUrl ? (
+            <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground">PDF do contrato</p>
+              <p className="text-xs text-muted-foreground mt-1">{contract.pdfName || "Documento"}</p>
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => window.open(contract.pdfUrl, "_blank")}>
+                Visualizar PDF
+              </Button>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground">Nenhum PDF anexado</p>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
