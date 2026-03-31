@@ -993,6 +993,19 @@ const RelatoriosPage = () => {
     }
   };
 
+  const renderFullscreenSlide = (groupIndex: number) => {
+    const group = FULLSCREEN_GROUPS[groupIndex];
+    if (!group) return null;
+    if (group.length === 1) return renderSlide(group[0]);
+    // Pair two charts side by side
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+        <div className="min-h-0">{renderSlide(group[0])}</div>
+        <div className="min-h-0">{renderSlide(group[1])}</div>
+      </div>
+    );
+  
+
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
