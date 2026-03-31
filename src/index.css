@@ -119,11 +119,14 @@
   }
 
   .kpi-card {
-    @apply bg-card rounded-lg p-5 transition-all duration-200 shadow-md shadow-primary/5;
+    @apply rounded-2xl p-5 transition-all duration-200;
+    background: hsl(220 15% 94%);
+    box-shadow: 6px 6px 14px hsl(220 15% 82%), -6px -6px 14px hsl(0 0% 100%);
   }
 
   .kpi-card:hover {
-    @apply shadow-xl shadow-primary/15 border-primary/40 -translate-y-0.5;
+    @apply -translate-y-0.5;
+    box-shadow: 8px 8px 18px hsl(220 15% 78%), -8px -8px 18px hsl(0 0% 100%);
   }
 
   .kpi-value {
