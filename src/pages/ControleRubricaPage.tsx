@@ -3,67 +3,13 @@ import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
+import { AlertTriangle } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
-
-/* ── Mock data matching contract rubricas ── */
-interface RubricaEntry {
-  id: string;
-  rubrica: string;
-  contract: string;
-  unit: string;
-  percentAllocated: number;
-  valorAllocated: number;
-  valorExecuted: number;
-  month: string;
-}
-
-const CONTRACTS = [
-  { id: "c1", name: "Contrato de Gestão — Hospital Geral", unit: "Hospital Geral", valorGlobal: 12000000, variable: 0.10 },
-  { id: "c2", name: "Contrato de Gestão — UPA Norte", unit: "UPA Norte", valorGlobal: 4500000, variable: 0.08 },
-  { id: "c3", name: "Contrato de Gestão — UBS Centro", unit: "UBS Centro", valorGlobal: 2800000, variable: 0.10 },
-];
-
-const RUBRICA_NAMES = ["Recursos Humanos", "Insumos e Materiais", "Equipamentos", "Infraestrutura", "Metas Qualitativas", "Metas Quantitativas"];
-const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
-
-// Generate mock entries
-const generateEntries = (): RubricaEntry[] => {
-  const entries: RubricaEntry[] = [];
-  const allocations: Record<string, Record<string, number>> = {
-    "c1": { "Recursos Humanos": 55, "Insumos e Materiais": 18, "Equipamentos": 8, "Infraestrutura": 4, "Metas Qualitativas": 5, "Metas Quantitativas": 10 },
-    "c2": { "Recursos Humanos": 60, "Insumos e Materiais": 15, "Equipamentos": 7, "Infraestrutura": 3, "Metas Qualitativas": 5, "Metas Quantitativas": 10 },
-    "c3": { "Recursos Humanos": 65, "Insumos e Materiais": 12, "Equipamentos": 5, "Infraestrutura": 3, "Metas Qualitativas": 5, "Metas Quantitativas": 10 },
-  };
-
-  CONTRACTS.forEach(c => {
-    RUBRICA_NAMES.forEach(rub => {
-      const pct = allocations[c.id]?.[rub] || 0;
-      if (pct === 0) return;
-      MONTHS.forEach((month, mi) => {
-        const allocated = c.valorGlobal * (pct / 100);
-        const executionRate = 0.7 + Math.random() * 0.35;
-        entries.push({
-          id: `${c.id}-${rub}-${month}`,
-          rubrica: rub,
-          contract: c.name,
-          unit: c.unit,
-          percentAllocated: pct,
-          valorAllocated: allocated,
-          valorExecuted: allocated * Math.min(1, executionRate),
-          month,
-        });
-      });
-    });
-  });
-  return entries;
-};
-
-const ALL_ENTRIES = generateEntries();
+import { ALL_ENTRIES, CONTRACTS, MONTHS } from "@/data/rubricaData";
 
 const formatCurrency = (v: number) => {
   if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;
@@ -86,7 +32,6 @@ const ControleRubricaPage = () => {
     });
   }, [selectedContract, selectedMonth]);
 
-  // Aggregate by rubrica
   const byRubrica = useMemo(() => {
     const map: Record<string, { allocated: number; executed: number; count: number }> = {};
     filtered.forEach(e => {
@@ -101,10 +46,10 @@ const ControleRubricaPage = () => {
       executed: v.executed,
       pctExec: v.allocated > 0 ? Math.round((v.executed / v.allocated) * 100) : 0,
       count: v.count,
+      estourada: v.executed > v.allocated,
     })).sort((a, b) => b.allocated - a.allocated);
   }, [filtered]);
 
-  // Aggregate by month
   const byMonth = useMemo(() => {
     const map: Record<string, { allocated: number; executed: number }> = {};
     const entries = ALL_ENTRIES.filter(e => selectedContract === "all" || e.unit === selectedContract);
@@ -123,9 +68,8 @@ const ControleRubricaPage = () => {
   const totalAllocated = byRubrica.reduce((s, r) => s + r.allocated, 0);
   const totalExecuted = byRubrica.reduce((s, r) => s + r.executed, 0);
   const avgExecution = totalAllocated > 0 ? Math.round((totalExecuted / totalAllocated) * 100) : 0;
-  const overBudget = byRubrica.filter(r => r.pctExec > 100).length;
+  const overBudget = byRubrica.filter(r => r.estourada).length;
   const underBudget = byRubrica.filter(r => r.pctExec < 70).length;
-
   const pieData = byRubrica.map(r => ({ name: r.name, value: r.allocated }));
 
   return (
@@ -159,6 +103,28 @@ const ControleRubricaPage = () => {
           </div>
         </div>
 
+        {/* Estouradas alert banner */}
+        {overBudget > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 p-4 mb-6 rounded-lg border border-destructive/30 bg-destructive/5"
+          >
+            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-destructive">
+                {overBudget} rubrica{overBudget > 1 ? "s" : ""} estourada{overBudget > 1 ? "s" : ""}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {byRubrica.filter(r => r.estourada).map(r => r.name).join(", ")} — pendência de evidência de justificativa em Evidências
+              </p>
+            </div>
+            <Button variant="outline" size="sm" className="rounded-full text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => navigate("/evidencias")}>
+              Ver Evidências
+            </Button>
+          </motion.div>
+        )}
+
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
@@ -184,16 +150,18 @@ const ControleRubricaPage = () => {
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <div className="kpi-card">
-              <p className="text-xs text-muted-foreground">Alertas</p>
-              <p className="font-display text-2xl font-bold text-destructive">{overBudget + underBudget}</p>
-              <p className="text-[10px] text-muted-foreground">{overBudget} acima • {underBudget} abaixo de 70%</p>
+              <p className="text-xs text-muted-foreground">Rubricas estouradas</p>
+              <div className="flex items-center gap-2">
+                <p className="font-display text-2xl font-bold text-destructive">{overBudget}</p>
+                {overBudget > 0 && <AlertTriangle className="h-4 w-4 text-destructive animate-pulse" />}
+              </div>
+              <p className="text-[10px] text-muted-foreground">{underBudget} abaixo de 70%</p>
             </div>
           </motion.div>
         </div>
 
         {/* Charts row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Allocation pie */}
           <div className="kpi-card">
             <p className="text-sm font-medium text-foreground mb-3">Distribuição por rubrica</p>
             <ResponsiveContainer width="100%" height={260}>
@@ -206,8 +174,6 @@ const ControleRubricaPage = () => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-
-          {/* Alocado vs Executado by month */}
           <div className="kpi-card">
             <p className="text-sm font-medium text-foreground mb-3">Alocado vs Executado (R$ mil)</p>
             <ResponsiveContainer width="100%" height={260}>
@@ -224,18 +190,18 @@ const ControleRubricaPage = () => {
           </div>
         </div>
 
-        {/* Execution by rubrica - horizontal bars */}
+        {/* Execution by rubrica */}
         <div className="kpi-card mb-6">
           <p className="text-sm font-medium text-foreground mb-3">Execução por rubrica</p>
           <ResponsiveContainer width="100%" height={Math.max(200, byRubrica.length * 45)}>
             <BarChart data={byRubrica.map(r => ({ name: r.name, execução: r.pctExec }))} layout="vertical" barGap={2}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-              <XAxis type="number" domain={[0, 110]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+              <XAxis type="number" domain={[0, 120]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
               <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
               <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
               <Bar dataKey="execução" radius={[0, 6, 6, 0]} name="% Executado">
                 {byRubrica.map((r, i) => (
-                  <Cell key={i} fill={r.pctExec > 100 ? "hsl(var(--destructive))" : r.pctExec >= 70 ? "hsl(var(--primary))" : "hsl(38 92% 50%)"} />
+                  <Cell key={i} fill={r.estourada ? "hsl(var(--destructive))" : r.pctExec >= 70 ? "hsl(var(--primary))" : "hsl(38 92% 50%)"} />
                 ))}
               </Bar>
             </BarChart>
@@ -259,19 +225,22 @@ const ControleRubricaPage = () => {
             </div>
             {byRubrica.map((r, i) => {
               const saldo = r.allocated - r.executed;
-              const statusClass = r.pctExec > 100 ? "status-critical" : r.pctExec >= 70 ? "status-success" : "status-warning";
-              const statusLabel = r.pctExec > 100 ? "Acima" : r.pctExec >= 70 ? "OK" : "Baixo";
+              const statusClass = r.estourada ? "status-critical" : r.pctExec >= 70 ? "status-success" : "status-warning";
+              const statusLabel = r.estourada ? "Estourada" : r.pctExec >= 70 ? "OK" : "Baixo";
               return (
                 <motion.div
                   key={r.name}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
-                  className="grid grid-cols-12 px-4 py-3 text-sm items-center border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                  className={`grid grid-cols-12 px-4 py-3 text-sm items-center border-b border-border last:border-0 hover:bg-muted/30 transition-colors ${r.estourada ? "bg-destructive/5" : ""}`}
                 >
-                  <span className="col-span-3 font-medium text-foreground text-xs">{r.name}</span>
+                  <span className="col-span-3 font-medium text-foreground text-xs flex items-center gap-1.5">
+                    {r.estourada && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />}
+                    {r.name}
+                  </span>
                   <span className="col-span-2 text-right text-xs text-muted-foreground">{formatCurrency(r.allocated)}</span>
-                  <span className="col-span-2 text-right text-xs text-foreground font-medium">{formatCurrency(r.executed)}</span>
+                  <span className={`col-span-2 text-right text-xs font-medium ${r.estourada ? "text-destructive" : "text-foreground"}`}>{formatCurrency(r.executed)}</span>
                   <span className={`col-span-2 text-right text-xs font-medium ${saldo < 0 ? "text-destructive" : "text-foreground"}`}>{formatCurrency(saldo)}</span>
                   <span className="col-span-2 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -280,7 +249,7 @@ const ControleRubricaPage = () => {
                           className="h-full rounded-full"
                           style={{
                             width: `${Math.min(r.pctExec, 100)}%`,
-                            background: r.pctExec > 100 ? "hsl(var(--destructive))" : r.pctExec >= 70 ? "hsl(var(--primary))" : "hsl(38 92% 50%)",
+                            background: r.estourada ? "hsl(var(--destructive))" : r.pctExec >= 70 ? "hsl(var(--primary))" : "hsl(38 92% 50%)",
                           }}
                         />
                       </div>
