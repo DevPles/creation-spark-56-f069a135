@@ -1,5 +1,6 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { CheckCircle, XCircle, Clock, Edit2, Save, FileText, AlertTriangle, Shield } from "lucide-react";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,35 @@ const RelatorioAssistencialPage = () => {
   const [selectedContractId, setSelectedContractId] = useState("");
   const [editableNotes, setEditableNotes] = useState("");
   const reportRef = useRef<HTMLDivElement>(null);
+
+  // Timeline items for Relatório Final
+  interface TimelineItem {
+    id: string;
+    title: string;
+    category: "acao_promocao" | "justificativa" | "meta" | "rubrica";
+    date: string;
+    description: string;
+    status: "pendente" | "aprovado" | "rejeitado";
+    fileName?: string;
+  }
+
+  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([
+    { id: "tl1", title: "Campanha de vacinação sazonal", category: "acao_promocao", date: "2024-03-15", description: "Realizada campanha de vacinação contra gripe com 320 doses aplicadas na unidade.", status: "aprovado", fileName: "relatorio_vacinacao.pdf" },
+    { id: "tl2", title: "Justificativa: tempo de espera elevado", category: "justificativa", date: "2024-03-10", description: "Aumento no tempo de espera devido a reforma na ala B, reduzindo capacidade operacional em 30%.", status: "pendente" },
+    { id: "tl3", title: "Palestra sobre higienização", category: "acao_promocao", date: "2024-02-28", description: "Treinamento sobre protocolo de higienização de mãos com 45 participantes.", status: "aprovado", fileName: "lista_presenca_higiene.pdf" },
+    { id: "tl4", title: "Justificativa: rubrica RH estourada", category: "rubrica", date: "2024-02-20", description: "Contratação emergencial de 3 enfermeiros devido a afastamentos por COVID.", status: "rejeitado" },
+    { id: "tl5", title: "Mutirão cirúrgico", category: "acao_promocao", date: "2024-02-10", description: "Mutirão de cirurgias eletivas: 28 procedimentos realizados em 3 dias.", status: "pendente", fileName: "relatorio_mutirao.pdf" },
+    { id: "tl6", title: "Meta NPS: pesquisa de satisfação", category: "meta", date: "2024-01-30", description: "Aplicação de pesquisa NPS com 180 pacientes. Resultado: 72 pontos.", status: "aprovado", fileName: "pesquisa_nps_q1.xlsx" },
+  ]);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+
+  const categoryLabels: Record<string, { label: string; color: string }> = {
+    acao_promocao: { label: "Ação de Promoção", color: "bg-primary/10 text-primary" },
+    justificativa: { label: "Justificativa", color: "bg-yellow-500/10 text-yellow-600" },
+    meta: { label: "Evidência de Meta", color: "bg-emerald-500/10 text-emerald-600" },
+    rubrica: { label: "Rubrica Estourada", color: "bg-destructive/10 text-destructive" },
+  };
 
   const selectedContract = contracts.find((c) => c.id === selectedContractId);
   const unit = selectedContract?.unit || "";
@@ -585,40 +615,97 @@ const RelatorioAssistencialPage = () => {
                 <div className="kpi-card"><p className="text-xs text-muted-foreground">Metas críticas</p><p className="kpi-value text-destructive">{crossAnalysisData.filter(r => r.status === "Crítica").length}</p></div>
               </div>
 
-              {/* Detailed table */}
+              {/* Timeline de Evidências, Ações e Justificativas */}
               <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-3">Detalhamento Completo</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-xs text-muted-foreground">
-                        <th className="text-left py-2 pr-3">Meta</th>
-                        <th className="py-2 px-2">Tipo</th>
-                        <th className="text-right py-2 px-2">Meta</th>
-                        <th className="text-right py-2 px-2">Realizado</th>
-                        <th className="text-right py-2 px-2">Alcance</th>
-                        <th className="text-right py-2 px-2">Penalidade</th>
-                        <th className="py-2 pl-2">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {crossAnalysisData.map((r, i) => (
-                        <tr key={i} className="border-b border-border last:border-0">
-                          <td className="py-2 pr-3 font-medium">{r.meta}</td>
-                          <td className="py-2 px-2 text-center text-xs">{r.tipo}</td>
-                          <td className="py-2 px-2 text-right">{r.target}</td>
-                          <td className="py-2 px-2 text-right">{r.achieved}</td>
-                          <td className="py-2 px-2 text-right font-medium">{r.pct}%</td>
-                          <td className={`py-2 px-2 text-right ${r.penalidade > 0 ? "text-destructive" : ""}`}>{r.penalidade > 0 ? `-${r.penalidade}%` : "—"}</td>
-                          <td className="py-2 pl-2">
-                            <span className={`status-badge ${r.status === "Atingida" ? "status-success" : r.status === "Parcial" ? "status-warning" : "status-critical"}`}>
-                              {r.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <h3 className="text-sm font-semibold mb-1">Timeline de Evidências e Ações</h3>
+                <p className="text-[11px] text-muted-foreground mb-4">Evidências, ações de promoção e justificativas vinculadas a esta unidade. O gestor pode aprovar, rejeitar e editar cada item.</p>
+
+                <div className="relative">
+                  {/* Vertical line */}
+                  <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
+
+                  <div className="space-y-4">
+                    {timelineItems
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map((item) => {
+                        const cat = categoryLabels[item.category] || { label: item.category, color: "bg-muted text-muted-foreground" };
+                        const isEditing = editingItemId === item.id;
+                        return (
+                          <div key={item.id} className="relative pl-10">
+                            {/* Dot */}
+                            <div className={`absolute left-2.5 top-3 w-3 h-3 rounded-full border-2 border-background ${
+                              item.status === "aprovado" ? "bg-emerald-500" : item.status === "rejeitado" ? "bg-destructive" : "bg-yellow-500"
+                            }`} />
+
+                            <div className={`rounded-lg border p-4 transition-colors ${
+                              item.status === "rejeitado" ? "border-destructive/30 bg-destructive/5" : "border-border"
+                            }`}>
+                              {/* Header */}
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${cat.color}`}>{cat.label}</span>
+                                    <span className="text-[10px] text-muted-foreground">{new Date(item.date).toLocaleDateString("pt-BR")}</span>
+                                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                                      item.status === "aprovado" ? "bg-emerald-500/10 text-emerald-600" :
+                                      item.status === "rejeitado" ? "bg-destructive/10 text-destructive" :
+                                      "bg-yellow-500/10 text-yellow-600"
+                                    }`}>
+                                      {item.status === "aprovado" ? "✓ Aprovado" : item.status === "rejeitado" ? "✗ Rejeitado" : "⏳ Pendente"}
+                                    </span>
+                                  </div>
+                                  <h4 className="text-sm font-medium mt-1">{item.title}</h4>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {!isEditing && (
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingItemId(item.id); setEditText(item.description); }}>
+                                      <Edit2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
+                                  {isEditing && (
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-success" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, description: editText } : ti)); setEditingItemId(null); toast.success("Texto atualizado"); }}>
+                                      <Save className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
+                                  {item.status === "pendente" && (
+                                    <>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:bg-emerald-500/10" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, status: "aprovado" as const } : ti)); toast.success("Item aprovado"); }}>
+                                        <CheckCircle className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, status: "rejeitado" as const } : ti)); toast.error("Item rejeitado"); }}>
+                                        <XCircle className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Body */}
+                              {isEditing ? (
+                                <Textarea
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  rows={3}
+                                  className="text-sm"
+                                />
+                              ) : (
+                                <p className="text-sm text-muted-foreground">{item.description}</p>
+                              )}
+
+                              {/* File attachment */}
+                              {item.fileName && (
+                                <div className="mt-2 flex items-center gap-1.5 text-[11px] text-primary">
+                                  <FileText className="h-3 w-3" />
+                                  <span>{item.fileName}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
               </div>
 
