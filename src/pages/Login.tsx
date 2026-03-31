@@ -33,23 +33,20 @@ const OrbBackground = () => {
   );
 };
 
-const FORMULA_GROUPS = {
-  assistencial: [
-    "Cobertura = Atendidos / Referenciados",
-    "Efetividade = Concluídos / Iniciados",
-    "Acompanhamento = Monitorados / Ativos",
-  ],
-  financeira: [
-    "Execução = Liquidado / Aprovado",
-    "Custo/Atend = Total / Atendimentos",
-    "ROI = (Receita - Custo) / Custo",
-  ],
-  saude: [
-    "Ocupação = Pac·Dia / Leitos·Dia",
-    "Cobertura Vacinal = Vacinados / Alvo",
-    "TMP = Pac·Dia / Altas",
-  ],
-};
+const METRICS = [
+  "1.284 atendimentos/mês",
+  "92% metas assistenciais",
+  "R$ 148,70 custo/atendimento",
+  "87 famílias acompanhadas",
+  "94,3% adesão aos planos",
+  "R$ 52.400 repasse aplicado",
+  "76% evolução clínica",
+  "219 visitas domiciliares",
+  "89% ocupação dos serviços",
+  "R$ 18.900 saldo operacional",
+  "1.047 prontuários ativos",
+  "98,1% cobertura vacinal",
+];
 
 const TypewriterText = ({ text }: { text: string }) => {
   const [charIndex, setCharIndex] = useState(0);
