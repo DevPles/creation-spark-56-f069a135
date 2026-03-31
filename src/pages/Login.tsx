@@ -1,12 +1,70 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+const ORB_COUNT = 8;
+
+const generateOrb = (id: number) => ({
+  id,
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  size: 80 + Math.random() * 200,
+  duration: 6 + Math.random() * 8,
+  delay: Math.random() * 4,
+});
+
+const OrbBackground = () => {
+  const [orbs, setOrbs] = useState(() =>
+    Array.from({ length: ORB_COUNT }, (_, i) => generateOrb(i))
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOrbs((prev) =>
+        prev.map((orb) =>
+          Math.random() > 0.7 ? generateOrb(orb.id) : orb
+        )
+      );
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <AnimatePresence mode="popLayout">
+        {orbs.map((orb) => (
+          <motion.div
+            key={`${orb.id}-${orb.x.toFixed(2)}-${orb.y.toFixed(2)}`}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 0.15, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.3 }}
+            transition={{
+              duration: orb.duration / 2,
+              delay: orb.delay,
+              ease: "easeInOut",
+            }}
+            className="absolute rounded-full"
+            style={{
+              left: `${orb.x}%`,
+              top: `${orb.y}%`,
+              width: orb.size,
+              height: orb.size,
+              background: `radial-gradient(circle, hsl(214 60% 55% / 0.4) 0%, hsl(214 55% 30% / 0) 70%)`,
+              filter: "blur(40px)",
+              transform: "translate(-50%, -50%)",
+            }}
+          />
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -46,8 +104,18 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-primary px-4">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-sm bg-card rounded-xl p-8 shadow-2xl shadow-primary/30">
+    <div className="min-h-screen flex items-center justify-center px-4 relative"
+      style={{
+        background: "linear-gradient(135deg, hsl(214 55% 18%) 0%, hsl(214 55% 30%) 50%, hsl(214 45% 22%) 100%)",
+      }}>
+      <OrbBackground />
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-sm bg-card rounded-xl p-8 shadow-2xl shadow-black/30 relative z-10"
+      >
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-primary rounded-lg mx-auto mb-4 flex items-center justify-center">
             <span className="text-primary-foreground font-display font-bold text-lg">M</span>
