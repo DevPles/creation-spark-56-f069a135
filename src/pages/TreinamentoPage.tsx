@@ -211,6 +211,17 @@ const TreinamentoPage = () => {
     }
   };
 
+  const handleDeleteModule = async (moduleId: string) => {
+    if (!isAdmin) return;
+    // Delete related ratings, video, then module
+    await supabase.from("training_ratings").delete().eq("module_id", moduleId);
+    await supabase.storage.from("training-videos").remove([`${moduleId}.mp4`, `${moduleId}.webm`, `${moduleId}.mov`]);
+    await supabase.from("training_modules").delete().eq("id", moduleId);
+    toast.success("Módulo excluído");
+    setModalOpen(false);
+    fetchModules();
+  };
+
   const handleVideoDelete = async (moduleId: string) => {
     await supabase.storage.from("training-videos").remove([`${moduleId}.mp4`, `${moduleId}.webm`, `${moduleId}.mov`]);
     await supabase
