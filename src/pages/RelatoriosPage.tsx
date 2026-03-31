@@ -810,8 +810,8 @@ const RelatoriosPage = () => {
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                     <YAxis tickFormatter={(v) => `${v}k`} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                     <Tooltip formatter={(v: number) => `R$ ${v}k`} contentStyle={tooltipStyle} />
-                    <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Valor alocado" />
-                    <Bar dataKey="risco" fill="hsl(var(--destructive) / 0.7)" radius={[6, 6, 0, 0]} name="Risco" />
+                    <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Valor alocado" label={{ position: "top", fontSize: 10, fill: "hsl(var(--muted-foreground))", formatter: (v: number) => `${v.toFixed(0)}k` }} />
+                    <Bar dataKey="risco" fill="hsl(var(--destructive) / 0.7)" radius={[6, 6, 0, 0]} name="Risco" label={{ position: "top", fontSize: 10, fill: "hsl(var(--destructive))", formatter: (v: number) => v > 0 ? `${v.toFixed(0)}k` : "" }} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                   </BarChart>
                 </ResponsiveContainer>
