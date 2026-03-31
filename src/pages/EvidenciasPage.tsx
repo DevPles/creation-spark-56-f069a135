@@ -58,7 +58,7 @@ const EvidenciasPage = () => {
       .map(est => ({
         id: `rubrica-${est.unit}-${est.rubrica}`,
         goalName: `Justificativa: ${est.rubrica} (${est.unit})`,
-        type: "Justificativa de estouro",
+        type: "Justificativa Interna",
         fileName: "",
         status: "Pendente" as const,
         dueDate: new Date().toISOString().split("T")[0],
