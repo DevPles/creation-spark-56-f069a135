@@ -14,9 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ContractData, ContractFormModalProps, Rubrica, STATUSES, UNITS_LIST, DEFAULT_RUBRICAS } from "./contract/types";
 import RubricaSection from "./contract/RubricaSection";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Upload, FileText, X, Loader2 } from "lucide-react";
 
 export type { ContractData } from "./contract/types";
 
