@@ -17,7 +17,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { X, Plus, FileText, Target, AlertTriangle, ClipboardList, Activity } from "lucide-react";
+
 
 export type EvidenceCategory = "meta" | "rubrica" | "justificativa_interna" | "relatorio_assistencial";
 
