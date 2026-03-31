@@ -155,7 +155,6 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
                       : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <span className={category === cat.value ? "text-primary" : "text-muted-foreground"}>{cat.icon}</span>
                   <span className="font-medium text-xs leading-tight">{cat.label}</span>
                 </button>
               ))}
