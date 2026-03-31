@@ -115,7 +115,7 @@
 
 @layer components {
   .topbar {
-    @apply bg-card border-b border-border shadow-sm;
+    @apply bg-primary text-primary-foreground border-b border-primary/80 shadow-md;
   }
 
   .kpi-card {
