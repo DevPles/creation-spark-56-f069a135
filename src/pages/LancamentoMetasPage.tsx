@@ -118,7 +118,7 @@ const LancamentoMetasPage = () => {
     const filterLabel = dateFilter === "todos" ? "Todos os períodos" : dateFilter === "hoje" ? "Hoje" : dateFilter === "7d" ? "Últimos 7 dias" : dateFilter === "30d" ? "Últimos 30 dias" : "Este mês";
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(9);
-    doc.text(`Filtro: ${filterLabel}`, 14, 48);
+    doc.text(`Filtro: ${filterLabel}`, margin, 48);
 
     let startY = 54;
 
