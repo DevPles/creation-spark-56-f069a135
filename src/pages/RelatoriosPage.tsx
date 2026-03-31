@@ -282,10 +282,10 @@ async function generatePdfBlob(
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
-  doc.text("SisLu", margin, 20);
+  doc.text("MOSS", margin, 20);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("Sistema de Acompanhamento de Metas", margin, 28);
+  doc.text("Métricas para Organizações de Serviço Social", margin, 28);
   doc.setFontSize(9);
   doc.text(`${reportLabel}  |  ${now}`, margin, 38);
   y = 55;
