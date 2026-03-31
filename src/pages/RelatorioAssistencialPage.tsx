@@ -297,19 +297,22 @@ const RelatorioAssistencialPage = () => {
           ← Voltar
         </Button>
 
-        <PageHeader title="Relatório Assistencial" subtitle="Análise de metas, penalizações e desempenho contratual" />
-
-        <div className="mt-4 mb-6 max-w-md">
-          <Label>Contrato de gestão</Label>
-          <Select value={selectedContractId} onValueChange={setSelectedContractId}>
-            <SelectTrigger><SelectValue placeholder="Selecione o contrato" /></SelectTrigger>
-            <SelectContent>
-              {contracts.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <PageHeader
+          title="Relatório Assistencial"
+          subtitle="Análise de metas, penalizações e desempenho contratual"
+          action={
+            <div className="w-64">
+              <Select value={selectedContractId} onValueChange={setSelectedContractId}>
+                <SelectTrigger><SelectValue placeholder="Selecione o contrato" /></SelectTrigger>
+                <SelectContent>
+                  {contracts.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          }
+        />
 
         {!selectedContract ? (
           <div className="kpi-card p-8 text-center">
