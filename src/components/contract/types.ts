@@ -14,6 +14,7 @@ export interface ContractData {
   period: string;
   unit: string;
   pdfName?: string;
+  pdfUrl?: string;
   rubricas?: Rubrica[];
   notificationEmail?: string;
 }

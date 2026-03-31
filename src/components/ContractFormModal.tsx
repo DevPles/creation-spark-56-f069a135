@@ -14,9 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ContractData, ContractFormModalProps, Rubrica, STATUSES, UNITS_LIST, DEFAULT_RUBRICAS } from "./contract/types";
 import RubricaSection from "./contract/RubricaSection";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Upload, FileText, X, Loader2 } from "lucide-react";
 
 export type { ContractData } from "./contract/types";
 
@@ -30,8 +33,11 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   const [unit, setUnit] = useState("Hospital Geral");
   const [goalsCount, setGoalsCount] = useState("0");
   const [pdfName, setPdfName] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
   const [rubricas, setRubricas] = useState<Rubrica[]>(DEFAULT_RUBRICAS);
   const [notificationEmail, setNotificationEmail] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (contract && !isNew) {
@@ -42,6 +48,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setUnit(contract.unit || "Hospital Geral");
       setGoalsCount(String(contract.goals));
       setPdfName(contract.pdfName || "");
+      setPdfUrl(contract.pdfUrl || "");
       setNotificationEmail(contract.notificationEmail || "");
       setRubricas(contract.rubricas?.length ? contract.rubricas : DEFAULT_RUBRICAS);
       const parts = contract.period.split("-");
@@ -57,12 +64,40 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setUnit("Hospital Geral");
       setGoalsCount("0");
       setPdfName("");
+      setPdfUrl("");
       setNotificationEmail("");
       setPeriodStart("2024");
       setPeriodEnd("2025");
       setRubricas(DEFAULT_RUBRICAS.map((r) => ({ ...r })));
     }
   }, [contract, isNew, open]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo deve ter no máximo 10MB");
+      return;
+    }
+    setUploading(true);
+    const filePath = `${crypto.randomUUID()}_${file.name}`;
+    const { error } = await supabase.storage.from("contract-pdfs").upload(filePath, file);
+    if (error) {
+      toast.error("Erro ao enviar arquivo");
+      setUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("contract-pdfs").getPublicUrl(filePath);
+    setPdfName(file.name);
+    setPdfUrl(urlData.publicUrl);
+    setUploading(false);
+    toast.success("PDF enviado com sucesso");
+  };
+
+  const handleRemovePdf = async () => {
+    setPdfName("");
+    setPdfUrl("");
+  };
 
   const handleSave = () => {
     const data: ContractData = {
@@ -75,6 +110,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       period: `${periodStart}-${periodEnd}`,
       unit,
       pdfName,
+      pdfUrl,
       notificationEmail,
       rubricas: rubricas.filter((r) => r.percent > 0),
     };
@@ -166,16 +202,32 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
 
           <div className="space-y-2">
             <Label>PDF do contrato</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
             <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-              {pdfName ? (
-                <div>
-                  <p className="text-sm text-foreground">{pdfName}</p>
-                  <Button variant="outline" size="sm" className="mt-2" onClick={() => setPdfName("")}>Remover</Button>
+              {uploading ? (
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Enviando...</span>
+                </div>
+              ) : pdfName && pdfUrl ? (
+                <div className="flex items-center justify-center gap-3">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <span className="text-sm text-foreground">{pdfName}</span>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleRemovePdf}>
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               ) : (
                 <div>
+                  <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
                   <p className="text-sm text-muted-foreground">Arraste ou selecione o arquivo PDF</p>
-                  <Button variant="outline" size="sm" className="mt-2" onClick={() => setPdfName("Contrato_Gestao_2024.pdf")}>
+                  <Button variant="outline" size="sm" className="mt-2" onClick={() => fileInputRef.current?.click()}>
                     Selecionar arquivo
                   </Button>
                 </div>
