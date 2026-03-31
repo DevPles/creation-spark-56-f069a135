@@ -1,12 +1,43 @@
+import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 const FloatingTrainingHeart = () => {
   const navigate = useNavigate();
+  const [pos, setPos] = useState({ x: -1, y: -1 });
+  const dragRef = useRef<{ dx: number; dy: number } | null>(null);
+  const didDrag = useRef(false);
+
+  const initPos = useCallback((el: HTMLButtonElement | null) => {
+    if (el && pos.x === -1) {
+      setPos({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+    }
+  }, []);
+
   return (
     <button
+      ref={initPos}
       type="button"
-      onClick={() => navigate("/treinamento")}
-      className="fixed bottom-6 right-6 z-[9999] flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:scale-105 hover:brightness-110"
+      onClick={() => { if (!didDrag.current) navigate("/treinamento"); }}
+      onPointerDown={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        dragRef.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+        didDrag.current = false;
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        if (!dragRef.current) return;
+        didDrag.current = true;
+        setPos({ x: e.clientX - dragRef.current.dx, y: e.clientY - dragRef.current.dy });
+      }}
+      onPointerUp={() => { dragRef.current = null; }}
+      className="fixed z-[9999] flex h-14 w-14 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow-lg cursor-grab active:cursor-grabbing"
+      style={{
+        left: pos.x === -1 ? undefined : pos.x,
+        top: pos.y === -1 ? undefined : pos.y,
+        right: pos.x === -1 ? 24 : undefined,
+        bottom: pos.y === -1 ? 24 : undefined,
+        animation: "heartbeat 1.4s ease-in-out infinite",
+      }}
       aria-label="Treinamento do sistema"
     >
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
