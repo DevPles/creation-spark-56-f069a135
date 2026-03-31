@@ -75,10 +75,6 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Arquivo deve ter no máximo 10MB");
-      return;
-    }
     setUploading(true);
     const filePath = `${crypto.randomUUID()}_${file.name}`;
     const { error } = await supabase.storage.from("contract-pdfs").upload(filePath, file);
