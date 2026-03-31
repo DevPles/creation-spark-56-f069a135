@@ -282,6 +282,11 @@ const TreinamentoPage = () => {
                 Buscar
               </Button>
             )}
+            {isAdmin && (
+              <Button className="rounded-full" size="sm" onClick={() => setNewOpen(true)}>
+                + Novo card
+              </Button>
+            )}
           </div>
         </div>
 
