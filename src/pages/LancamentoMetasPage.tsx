@@ -92,31 +92,180 @@ const LancamentoMetasPage = () => {
 
   const handleGeneratePdf = () => {
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`Lançamentos - ${selectedUnit}`, 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Filtro: ${dateFilter === "todos" ? "Todos" : dateFilter === "hoje" ? "Hoje" : dateFilter === "7d" ? "Últimos 7 dias" : dateFilter === "30d" ? "Últimos 30 dias" : "Este mês"}`, 14, 28);
-    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 34);
+    const pageW = doc.internal.pageSize.getWidth();
+    const primary: [number, number, number] = [26, 54, 71];
+    const accent: [number, number, number] = [41, 128, 185];
+    const lightBg: [number, number, number] = [240, 245, 250];
+    const now = new Date();
+
+    // Header band
+    doc.setFillColor(...primary);
+    doc.rect(0, 0, pageW, 38, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.text("Larilu — Sistema de Gestão", 14, 18);
+    doc.setFontSize(11);
+    doc.text("Relatório de Lançamentos", 14, 28);
+    doc.setFontSize(9);
+    doc.text(`${selectedUnit} • ${format(now, "dd/MM/yyyy HH:mm")}`, pageW - 14, 28, { align: "right" });
+
+    // Filter info
+    const filterLabel = dateFilter === "todos" ? "Todos os períodos" : dateFilter === "hoje" ? "Hoje" : dateFilter === "7d" ? "Últimos 7 dias" : dateFilter === "30d" ? "Últimos 30 dias" : "Este mês";
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(9);
+    doc.text(`Filtro: ${filterLabel}`, 14, 48);
+
+    let startY = 54;
 
     if (activeTab === "lancar-metas") {
-      const rows = goals.map(g => {
+      // KPI summary cards
+      const metaRows = goals.map(g => {
         const existing = filterEntriesByDate(existingEntries[g.id] || []);
         const total = existing.reduce((s, e) => s + e.value, 0);
         const pct = g.target > 0 ? Math.round((total / g.target) * 100) : 0;
-        return [g.name, `${g.target}${g.unit}`, `${total.toFixed(1)}${g.unit}`, `${pct}%`, `${(g.weight * 100).toFixed(0)}%`];
+        return { name: g.name, target: g.target, unit: g.unit, total, pct, weight: g.weight };
       });
-      autoTable(doc, { startY: 40, head: [["Meta", "Alvo", "Realizado", "Atingimento", "Peso"]], body: rows });
+
+      const totalPct = metaRows.length > 0 ? Math.round(metaRows.reduce((s, r) => s + r.pct * r.weight, 0) / Math.max(metaRows.reduce((s, r) => s + r.weight, 0), 0.01)) : 0;
+
+      // KPI boxes
+      const kpis = [
+        { label: "Total de Metas", value: String(metaRows.length) },
+        { label: "Atingimento Médio", value: `${totalPct}%` },
+        { label: "Metas ≥ 100%", value: String(metaRows.filter(r => r.pct >= 100).length) },
+        { label: "Metas < 70%", value: String(metaRows.filter(r => r.pct < 70).length) },
+      ];
+      const boxW = (pageW - 28 - 18) / 4;
+      kpis.forEach((kpi, i) => {
+        const x = 14 + i * (boxW + 6);
+        doc.setFillColor(...lightBg);
+        doc.roundedRect(x, startY, boxW, 22, 3, 3, "F");
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(8);
+        doc.text(kpi.label, x + 4, startY + 8);
+        doc.setTextColor(...primary);
+        doc.setFontSize(16);
+        doc.text(kpi.value, x + 4, startY + 18);
+      });
+      startY += 30;
+
+      // Bar chart simulation
+      doc.setFillColor(...lightBg);
+      doc.roundedRect(14, startY, pageW - 28, 50, 3, 3, "F");
+      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(9);
+      doc.text("Atingimento por Meta (%)", 18, startY + 10);
+
+      const chartStartY = startY + 16;
+      const chartW = pageW - 48;
+      const barH = metaRows.length > 0 ? Math.min(6, 30 / metaRows.length) : 6;
+      metaRows.forEach((r, i) => {
+        const y = chartStartY + i * (barH + 2);
+        if (y + barH > startY + 48) return;
+        // Background bar
+        doc.setFillColor(220, 225, 230);
+        doc.roundedRect(60, y, chartW - 46, barH, 1, 1, "F");
+        // Fill bar
+        const fillW = Math.min(r.pct / 100, 1.2) * (chartW - 46);
+        doc.setFillColor(r.pct >= 100 ? 46 : r.pct >= 70 ? 41 : 231, r.pct >= 100 ? 160 : r.pct >= 70 ? 128 : 76, r.pct >= 100 ? 67 : r.pct >= 70 ? 185 : 60);
+        doc.roundedRect(60, y, Math.max(fillW, 2), barH, 1, 1, "F");
+        // Label
+        doc.setTextColor(60, 60, 60);
+        doc.setFontSize(7);
+        doc.text(r.name.substring(0, 20), 18, y + barH - 1);
+        doc.text(`${r.pct}%`, 60 + chartW - 44, y + barH - 1);
+      });
+      startY += 56;
+
+      // Table
+      const rows = metaRows.map(r => [r.name, `${r.target}${r.unit}`, `${r.total.toFixed(1)}${r.unit}`, `${r.pct}%`, `${(r.weight * 100).toFixed(0)}%`]);
+      autoTable(doc, {
+        startY,
+        head: [["Meta", "Alvo", "Realizado", "Atingimento", "Peso"]],
+        body: rows,
+        headStyles: { fillColor: primary, textColor: [255, 255, 255], fontSize: 9, fontStyle: "bold" },
+        bodyStyles: { fontSize: 8, textColor: [40, 40, 40] },
+        alternateRowStyles: { fillColor: lightBg },
+        styles: { cellPadding: 4, lineWidth: 0.1, lineColor: [200, 210, 220] },
+        margin: { left: 14, right: 14 },
+      });
     } else {
       const contract = CONTRACTS.find(c => c.id === selectedContract);
       if (contract) {
         const rows = RUBRICA_NAMES.map(r => {
           const entry = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === r);
-          return [r, formatCurrency(entry?.valorAllocated || 0), formatCurrency(entry?.valorExecuted || 0), `${entry ? Math.round((entry.valorExecuted / entry.valorAllocated) * 100) : 0}%`];
+          const alloc = entry?.valorAllocated || 0;
+          const exec = entry?.valorExecuted || 0;
+          const pct = alloc > 0 ? Math.round((exec / alloc) * 100) : 0;
+          return { name: r, alloc, exec, pct };
         });
-        autoTable(doc, { startY: 40, head: [["Rubrica", "Alocado", "Executado", "% Exec"]], body: rows });
+
+        // KPI boxes
+        const totalAlloc = rows.reduce((s, r) => s + r.alloc, 0);
+        const totalExec = rows.reduce((s, r) => s + r.exec, 0);
+        const avgPct = totalAlloc > 0 ? Math.round((totalExec / totalAlloc) * 100) : 0;
+        const kpis = [
+          { label: "Total Alocado", value: formatCurrency(totalAlloc) },
+          { label: "Total Executado", value: formatCurrency(totalExec) },
+          { label: "Execução", value: `${avgPct}%` },
+          { label: "Estouradas", value: String(rows.filter(r => r.pct > 100).length) },
+        ];
+        const boxW = (pageW - 28 - 18) / 4;
+        kpis.forEach((kpi, i) => {
+          const x = 14 + i * (boxW + 6);
+          doc.setFillColor(...lightBg);
+          doc.roundedRect(x, startY, boxW, 22, 3, 3, "F");
+          doc.setTextColor(100, 100, 100);
+          doc.setFontSize(8);
+          doc.text(kpi.label, x + 4, startY + 8);
+          doc.setTextColor(...primary);
+          doc.setFontSize(16);
+          doc.text(kpi.value, x + 4, startY + 18);
+        });
+        startY += 30;
+
+        // Pie chart simulation
+        doc.setFillColor(...lightBg);
+        doc.roundedRect(14, startY, pageW - 28, 50, 3, 3, "F");
+        doc.setTextColor(60, 60, 60);
+        doc.setFontSize(9);
+        doc.text("Execução por Rubrica (%)", 18, startY + 10);
+        const colors: [number, number, number][] = [[26, 54, 71], [41, 128, 185], [46, 160, 67], [142, 68, 173], [231, 76, 60], [52, 152, 219]];
+        rows.forEach((r, i) => {
+          const y = startY + 16 + i * 5;
+          if (y > startY + 46) return;
+          doc.setFillColor(...(colors[i % colors.length]));
+          doc.roundedRect(18, y, Math.min(r.pct, 120) * 0.8, 3.5, 1, 1, "F");
+          doc.setTextColor(60, 60, 60);
+          doc.setFontSize(6.5);
+          doc.text(`${r.name} (${r.pct}%)`, 18 + Math.min(r.pct, 120) * 0.8 + 4, y + 3);
+        });
+        startY += 56;
+
+        // Table
+        autoTable(doc, {
+          startY,
+          head: [["Rubrica", "Alocado", "Executado", "% Exec"]],
+          body: rows.map(r => [r.name, formatCurrency(r.alloc), formatCurrency(r.exec), `${r.pct}%`]),
+          headStyles: { fillColor: primary, textColor: [255, 255, 255], fontSize: 9, fontStyle: "bold" },
+          bodyStyles: { fontSize: 8, textColor: [40, 40, 40] },
+          alternateRowStyles: { fillColor: lightBg },
+          styles: { cellPadding: 4, lineWidth: 0.1, lineColor: [200, 210, 220] },
+          margin: { left: 14, right: 14 },
+        });
       }
     }
-    doc.save(`lancamentos_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+
+    // Footer
+    const pageH = doc.internal.pageSize.getHeight();
+    doc.setDrawColor(200, 210, 220);
+    doc.line(14, pageH - 14, pageW - 14, pageH - 14);
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(7);
+    doc.text("Larilu — Sistema de Gestão Hospitalar", 14, pageH - 8);
+    doc.text(`Página 1 de 1`, pageW - 14, pageH - 8, { align: "right" });
+
+    doc.save(`lancamentos_${format(now, "yyyyMMdd_HHmm")}.pdf`);
     toast.success("PDF gerado com sucesso!");
   };
 
