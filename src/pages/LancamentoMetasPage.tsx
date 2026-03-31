@@ -12,12 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth, isWithinInterval, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ALL_ENTRIES, CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
 import GoalGauge from "@/components/GoalGauge";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 /* ── Types ────────────────────────────────────── */
 interface Goal {
@@ -62,8 +64,61 @@ const LancamentoMetasPage = () => {
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
+  const [dateFilter, setDateFilter] = useState<string>("todos");
 
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
+
+  const getDateRange = (filter: string): { start: Date; end: Date } | null => {
+    const now = new Date();
+    switch (filter) {
+      case "hoje": return { start: new Date(now.setHours(0,0,0,0)), end: new Date() };
+      case "7d": return { start: subDays(new Date(), 7), end: new Date() };
+      case "30d": return { start: subDays(new Date(), 30), end: new Date() };
+      case "mes": return { start: startOfMonth(new Date()), end: endOfMonth(new Date()) };
+      default: return null;
+    }
+  };
+
+  const filterEntriesByDate = (entryList: { value: number; period: string }[]) => {
+    const range = getDateRange(dateFilter);
+    if (!range) return entryList;
+    return entryList.filter(e => {
+      try {
+        const d = parse(e.period, "dd/MM/yyyy", new Date());
+        return isWithinInterval(d, range);
+      } catch { return true; }
+    });
+  };
+
+  const handleGeneratePdf = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`Lançamentos - ${selectedUnit}`, 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Filtro: ${dateFilter === "todos" ? "Todos" : dateFilter === "hoje" ? "Hoje" : dateFilter === "7d" ? "Últimos 7 dias" : dateFilter === "30d" ? "Últimos 30 dias" : "Este mês"}`, 14, 28);
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 34);
+
+    if (activeTab === "lancar-metas") {
+      const rows = goals.map(g => {
+        const existing = filterEntriesByDate(existingEntries[g.id] || []);
+        const total = existing.reduce((s, e) => s + e.value, 0);
+        const pct = g.target > 0 ? Math.round((total / g.target) * 100) : 0;
+        return [g.name, `${g.target}${g.unit}`, `${total.toFixed(1)}${g.unit}`, `${pct}%`, `${(g.weight * 100).toFixed(0)}%`];
+      });
+      autoTable(doc, { startY: 40, head: [["Meta", "Alvo", "Realizado", "Atingimento", "Peso"]], body: rows });
+    } else {
+      const contract = CONTRACTS.find(c => c.id === selectedContract);
+      if (contract) {
+        const rows = RUBRICA_NAMES.map(r => {
+          const entry = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === r);
+          return [r, formatCurrency(entry?.valorAllocated || 0), formatCurrency(entry?.valorExecuted || 0), `${entry ? Math.round((entry.valorExecuted / entry.valorAllocated) * 100) : 0}%`];
+        });
+        autoTable(doc, { startY: 40, head: [["Rubrica", "Alocado", "Executado", "% Exec"]], body: rows });
+      }
+    }
+    doc.save(`lancamentos_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+    toast.success("PDF gerado com sucesso!");
+  };
 
   useEffect(() => {
     if (!profile || !user) return;
@@ -149,7 +204,7 @@ const LancamentoMetasPage = () => {
                 <div>
                   <label className="text-[10px] text-muted-foreground block mb-1">Unidade</label>
                   <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                    <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
                     <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
@@ -165,7 +220,7 @@ const LancamentoMetasPage = () => {
                 <div>
                   <label className="text-[10px] text-muted-foreground block mb-1">Contrato</label>
                   <Select value={selectedContract} onValueChange={setSelectedContract}>
-                    <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
                     <SelectContent>{CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.unit}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
@@ -178,6 +233,23 @@ const LancamentoMetasPage = () => {
                 </div>
               </>
             )}
+            <div>
+              <label className="text-[10px] text-muted-foreground block mb-1">Período</label>
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="hoje">Hoje</SelectItem>
+                  <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                  <SelectItem value="mes">Este mês</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleGeneratePdf}>
+              <FileText className="h-4 w-4" />
+              Gerar PDF
+            </Button>
           </div>
         </div>
 
@@ -200,7 +272,7 @@ const LancamentoMetasPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {goals.map((goal, i) => {
                   const entry = entries[goal.id] || { value: "", period: "", notes: "" };
-                  const existing = existingEntries[goal.id] || [];
+                  const existing = filterEntriesByDate(existingEntries[goal.id] || []);
                   return (
                     <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card">
                       {/* Gauge + header */}
