@@ -14,6 +14,8 @@ interface Contract {
   goals: number;
   status: string;
   period: string;
+  pdfName?: string;
+  pdfUrl?: string;
 }
 
 interface ContractModalProps {
