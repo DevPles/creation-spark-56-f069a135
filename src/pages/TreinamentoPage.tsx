@@ -50,11 +50,17 @@ const TreinamentoPage = () => {
 
   useEffect(() => {
     fetchModules();
+    fetchContacts();
     if (user) {
       checkAdmin();
       fetchMyRatings();
     }
   }, [user]);
+
+  const fetchContacts = async () => {
+    const { data } = await supabase.from("profiles").select("id, name, cargo, facility_unit");
+    if (data) setContacts(data as ProfileContact[]);
+  };
 
   const checkAdmin = async () => {
     if (!user) return;
