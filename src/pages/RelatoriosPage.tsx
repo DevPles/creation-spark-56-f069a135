@@ -783,7 +783,7 @@ const RelatoriosPage = () => {
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Atingimento por rubrica</h3>
             <p className="text-xs text-muted-foreground mb-4">Radar de desempenho vs peso orçamentário — {contract.unit}</p>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={300}>
+               <ResponsiveContainer width="100%" height={chartH}>
                 <RadarChart data={rubricaRadar}>
                   <PolarGrid stroke="hsl(var(--border))" />
                   <PolarAngleAxis dataKey="rubrica" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
