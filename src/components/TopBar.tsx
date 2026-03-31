@@ -33,8 +33,8 @@ const TopBar = () => {
           </button>
 
           <div className="flex-1 flex justify-center gap-2">
-            <Button size="sm" onClick={() => navigate("/dashboard")} className="rounded-full px-4">Menu</Button>
-            <Button size="sm" variant="outline" onClick={() => navigate("/lancamento")} className="rounded-full px-4">Lançar metas</Button>
+            <Button size="sm" onClick={() => navigate("/dashboard")} className="rounded-full px-4 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 border-0">Menu</Button>
+            <Button size="sm" variant="outline" onClick={() => navigate("/lancamento")} className="rounded-full px-4 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/20">Lançar metas</Button>
           </div>
 
           <DropdownMenu>
