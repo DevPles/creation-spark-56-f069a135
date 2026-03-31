@@ -134,8 +134,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
+          <DialogTitle className="font-display">
             {isNew ? "Nova evidência" : "Editar evidência"}
           </DialogTitle>
         </DialogHeader>
