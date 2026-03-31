@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ContractsProvider } from "@/contexts/ContractsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import FloatingTrainingHeart from "@/components/FloatingTrainingHeart";
 import Login from "./pages/Login";
@@ -26,6 +27,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <ContractsProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -49,6 +51,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </ContractsProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

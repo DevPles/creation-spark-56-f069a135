@@ -16,17 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-const INITIAL_CONTRACTS: ContractData[] = [
-  { id: "1", name: "Contrato de Gestão — Hospital Geral", value: 12000000, variable: 0.10, goals: 8, status: "Vigente", period: "2024-2025", unit: "Hospital Geral" },
-  { id: "2", name: "Contrato de Gestão — UPA Norte", value: 4500000, variable: 0.08, goals: 6, status: "Vigente", period: "2024-2025", unit: "UPA Norte" },
-  { id: "3", name: "Contrato de Gestão — UBS Centro", value: 2800000, variable: 0.10, goals: 5, status: "Em renovação", period: "2023-2024", unit: "UBS Centro" },
-];
+import { useContracts } from "@/contexts/ContractsContext";
 
 const ContratosPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [contracts, setContracts] = useState<ContractData[]>(INITIAL_CONTRACTS);
+  const { contracts, addContract, updateContract, deleteContract } = useContracts();
 
   const filteredContracts = contracts.filter((c) =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -43,12 +38,12 @@ const ContratosPage = () => {
   const handleNew = () => { setEditContract(null); setIsNew(true); setFormModalOpen(true); };
   const handleEdit = (contract: ContractData) => { setEditContract(contract); setIsNew(false); setFormModalOpen(true); };
   const handleSave = (contract: ContractData) => {
-    if (isNew) setContracts((prev) => [...prev, contract]);
-    else setContracts((prev) => prev.map((c) => (c.id === contract.id ? contract : c)));
+    if (isNew) addContract(contract);
+    else updateContract(contract);
   };
   const handleDelete = () => {
     if (deleteTarget) {
-      setContracts((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      deleteContract(deleteTarget.id);
       setDeleteTarget(null);
     }
   };
