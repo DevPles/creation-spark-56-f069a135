@@ -39,7 +39,7 @@ const TopBar = () => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors shrink-0">
+              <button className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-xs font-semibold text-primary-foreground hover:bg-primary-foreground/30 transition-colors shrink-0">
                 {initials}
               </button>
             </DropdownMenuTrigger>
