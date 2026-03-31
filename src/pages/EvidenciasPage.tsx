@@ -62,6 +62,7 @@ const EvidenciasPage = () => {
         fileName: "",
         status: "Pendente" as const,
         dueDate: new Date().toISOString().split("T")[0],
+        submittedAt: undefined as string | undefined,
         notes: `Rubrica estourada: ${est.pctExec}% executado (excedente de R$ ${(est.excedente / 1000).toFixed(0)}k). Necessária justificativa.`,
         facilityUnit: est.unit,
         isRubricaPendencia: true,
