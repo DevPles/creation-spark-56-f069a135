@@ -84,6 +84,8 @@ const RelatorioAssistencialPage = () => {
   const [persPenalidades, setPersPenalidades] = useState("");
   const [persEvidencias, setPersEvidencias] = useState("");
   const [persInitialized, setPersInitialized] = useState("");
+  const [pontosMelhoria, setPontosMelhoria] = useState<string[]>([]);
+  const [novoPonto, setNovoPonto] = useState("");
   const reportRef = useRef<HTMLDivElement>(null);
 
   // Timeline items for Relatório Final
