@@ -606,7 +606,7 @@ const RelatoriosPage = () => {
 
   const TOTAL_SLIDES = compareMode ? 11 : 10;
   const FULLSCREEN_GROUPS = useMemo(() => {
-    const groups: number[][] = [[0], [1, 2], [3, 4], [5, 6], [7, 8], [9]];
+    const groups: number[][] = [[0, 9], [1, 2], [3, 4], [5, 6], [7, 8]];
     if (compareMode) groups.push([10]);
     return groups;
   }, [compareMode]);
