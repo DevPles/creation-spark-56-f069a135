@@ -40,18 +40,15 @@ const TreinamentoPage = () => {
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [avgRatings, setAvgRatings] = useState<Record<string, { avg: number; count: number }>>({});
   const [isAdmin, setIsAdmin] = useState(false);
-  const [editModule, setEditModule] = useState<TrainingModule | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDesc, setEditDesc] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [modalModule, setModalModule] = useState<TrainingModule | null>(null);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalDesc, setModalDesc] = useState("");
   const [uploading, setUploading] = useState(false);
   const [playModule, setPlayModule] = useState<TrainingModule | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchActive, setSearchActive] = useState(false);
   const [contacts, setContacts] = useState<ProfileContact[]>([]);
-  const [newOpen, setNewOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newDesc, setNewDesc] = useState("");
 
   useEffect(() => {
     fetchModules();
