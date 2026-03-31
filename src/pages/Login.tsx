@@ -33,53 +33,75 @@ const OrbBackground = () => {
   );
 };
 
-const SHAPES = ["circle", "square", "triangle", "hexagon", "diamond"] as const;
-type Shape = typeof SHAPES[number];
+const MATH_SYMBOLS = ["∑", "∫", "π", "∞", "√", "Δ", "θ", "α", "β", "λ", "σ", "μ", "∂", "∇", "≈", "≠", "∈", "⊂", "∪", "∩"];
+const GEO_LABELS = ["r²", "2πr", "A=πr²", "sin θ", "cos θ", "tan θ", "a²+b²", "Σxᵢ", "∫f(x)dx", "lim x→∞", "d/dx", "∂f/∂x"];
 
-const shapeStyle = (shape: Shape, size: number): React.CSSProperties => {
-  const base: React.CSSProperties = { width: size, height: size, position: "absolute" as const };
-  switch (shape) {
-    case "circle": return { ...base, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.15)" };
-    case "square": return { ...base, borderRadius: 4, border: "1.5px solid rgba(255,255,255,0.12)" };
-    case "triangle": return { ...base, width: 0, height: 0, borderLeft: `${size/2}px solid transparent`, borderRight: `${size/2}px solid transparent`, borderBottom: `${size}px solid rgba(255,255,255,0.1)`, background: "none" };
-    case "hexagon": return { ...base, borderRadius: "25%", border: "1.5px solid rgba(255,255,255,0.12)", transform: "rotate(30deg)" };
-    case "diamond": return { ...base, border: "1.5px solid rgba(255,255,255,0.12)", transform: "rotate(45deg)", borderRadius: 3 };
-  }
+type ElementType = "shape" | "formula";
+
+interface FloatingElement {
+  id: number;
+  type: ElementType;
+  content: string;
+  x: number;
+  y: number;
+  size: number;
+  rotation: number;
+  opacity: number;
+}
+
+const randomElement = (id: number): FloatingElement => {
+  const type: ElementType = Math.random() > 0.45 ? "formula" : "shape";
+  const pool = type === "formula" ? [...MATH_SYMBOLS, ...GEO_LABELS] : ["○", "△", "□", "⬡", "◇"];
+  return {
+    id,
+    type,
+    content: pool[Math.floor(Math.random() * pool.length)],
+    x: 5 + Math.random() * 85,
+    y: 5 + Math.random() * 85,
+    size: type === "formula" ? 12 + Math.random() * 16 : 16 + Math.random() * 28,
+    rotation: -30 + Math.random() * 60,
+    opacity: 0.12 + Math.random() * 0.18,
+  };
 };
 
-const randomShape = (id: number) => ({
-  id, shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-  x: 5 + Math.random() * 85, y: 5 + Math.random() * 85,
-  size: 14 + Math.random() * 36, rotation: Math.random() * 360,
-});
-
 const GeoShapes = () => {
-  const [shapes, setShapes] = useState(() => Array.from({ length: 10 }, (_, i) => randomShape(i)));
+  const [elements, setElements] = useState(() => Array.from({ length: 14 }, (_, i) => randomElement(i)));
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setShapes(prev => prev.map(s => Math.random() > 0.6 ? randomShape(s.id) : s));
-    }, 2800);
+      setElements(prev => prev.map(el => Math.random() > 0.55 ? randomElement(el.id) : el));
+    }, 3200);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       <AnimatePresence mode="popLayout">
-        {shapes.map(s => (
-          <motion.div
-            key={`${s.id}-${s.x.toFixed(1)}-${s.y.toFixed(1)}`}
-            initial={{ opacity: 0, scale: 0, rotate: 0 }}
-            animate={{ opacity: 1, scale: 1, rotate: s.rotation }}
+        {elements.map(el => (
+          <motion.span
+            key={`${el.id}-${el.x.toFixed(1)}-${el.y.toFixed(1)}`}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: el.opacity, scale: 1, rotate: el.rotation }}
             exit={{ opacity: 0, scale: 0 }}
-            transition={{ duration: 1.2, ease: "easeInOut" }}
-            style={{ ...shapeStyle(s.shape, s.size), left: `${s.x}%`, top: `${s.y}%` }}
-          />
+            transition={{ duration: 1.4, ease: "easeInOut" }}
+            className="absolute select-none font-mono"
+            style={{
+              left: `${el.x}%`,
+              top: `${el.y}%`,
+              fontSize: el.size,
+              color: "rgba(255,255,255,0.85)",
+              transform: "translate(-50%, -50%)",
+              textShadow: "0 0 8px rgba(255,255,255,0.1)",
+            }}
+          >
+            {el.content}
+          </motion.span>
         ))}
       </AnimatePresence>
     </div>
   );
 };
+
 const Login = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
