@@ -606,7 +606,7 @@ const RelatoriosPage = () => {
 
   const TOTAL_SLIDES = compareMode ? 11 : 10;
   const FULLSCREEN_GROUPS = useMemo(() => {
-    const groups: number[][] = [[0], [1, 2], [3, 4], [5, 6], [7, 8], [9]];
+    const groups: number[][] = [[0, 9], [1, 2], [3, 4], [5, 6], [7, 8]];
     if (compareMode) groups.push([10]);
     return groups;
   }, [compareMode]);
@@ -810,8 +810,8 @@ const RelatoriosPage = () => {
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                     <YAxis tickFormatter={(v) => `${v}k`} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                     <Tooltip formatter={(v: number) => `R$ ${v}k`} contentStyle={tooltipStyle} />
-                    <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Valor alocado" />
-                    <Bar dataKey="risco" fill="hsl(var(--destructive) / 0.7)" radius={[6, 6, 0, 0]} name="Risco" />
+                    <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Valor alocado" label={{ position: "top", fontSize: 10, fill: "hsl(var(--muted-foreground))", formatter: (v: number) => `${v.toFixed(0)}k` }} />
+                    <Bar dataKey="risco" fill="hsl(var(--destructive) / 0.7)" radius={[6, 6, 0, 0]} name="Risco" label={{ position: "top", fontSize: 10, fill: "hsl(var(--destructive))", formatter: (v: number) => v > 0 ? `${v.toFixed(0)}k` : "" }} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -864,7 +864,7 @@ const RelatoriosPage = () => {
                   <XAxis type="number" domain={[0, 110]} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}%`} />
                   <YAxis type="category" dataKey="name" width={180} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                   <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
-                  <Bar dataKey="pct" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} name="Realizado" />
+                  <Bar dataKey="pct" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} name="Realizado" label={{ position: "right", fontSize: 10, fill: "hsl(var(--muted-foreground))", formatter: (v: number) => `${v}%` }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </BarChart>
               </ResponsiveContainer>
@@ -917,8 +917,8 @@ const RelatoriosPage = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} angle={-25} textAnchor="end" height={70} />
                   <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="meta" fill="hsl(var(--muted-foreground) / 0.3)" radius={[6, 6, 0, 0]} name="Meta" />
-                  <Bar dataKey="realizado" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Realizado" />
+                  <Bar dataKey="meta" fill="hsl(var(--muted-foreground) / 0.3)" radius={[6, 6, 0, 0]} name="Meta" label={{ position: "top", fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                  <Bar dataKey="realizado" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Realizado" label={{ position: "top", fontSize: 9, fill: "hsl(var(--primary))" }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </BarChart>
               </ResponsiveContainer>
@@ -981,8 +981,8 @@ const RelatoriosPage = () => {
                     <XAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                     <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                     <Tooltip contentStyle={tooltipStyle} />
-                    <Bar dataKey={contract.unit} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey={compareContract.unit} fill="hsl(38 92% 50%)" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey={contract.unit} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} label={{ position: "top", fontSize: 10, fill: "hsl(var(--primary))" }} />
+                    <Bar dataKey={compareContract.unit} fill="hsl(38 92% 50%)" radius={[6, 6, 0, 0]} label={{ position: "top", fontSize: 10, fill: "hsl(38 92% 50%)" }} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                   </BarChart>
                 </ResponsiveContainer>
