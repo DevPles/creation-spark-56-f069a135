@@ -26,10 +26,7 @@ const TopBar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 gap-3">
           <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 bg-primary-foreground/20 rounded-md flex items-center justify-center">
-              <span className="text-primary-foreground font-display font-bold text-xs">M</span>
-            </div>
-            <span className="font-display font-semibold text-primary-foreground text-sm hidden sm:block">Moss</span>
+            <span className="font-display font-semibold text-primary-foreground text-sm">Moss</span>
           </button>
 
           <div className="flex-1 flex justify-center gap-2">
