@@ -102,8 +102,8 @@ const Login = () => {
               ) : (
                 <motion.div key="register-info" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
                   <p className="text-lg font-semibold text-white/90">Bem-vindo!</p>
-                  <p className="text-sm text-white/70 max-w-[220px] mx-auto">Acesse o sistema com suas credenciais fornecidas pelo administrador.</p>
-                  <button onClick={() => setMode("login")} className={`${neumorphBtn} px-8 bg-white/10 text-white border border-white/30 backdrop-blur-sm hover:bg-white/20`}>Entrar</button>
+                  <p className="text-sm text-white/70 max-w-[240px] mx-auto">Sistema inteligente de análise de métricas para Organizações Sociais de Saúde.</p>
+                  <button onClick={() => setMode("login")} className={`${neumorphBtn} px-8 bg-primary/80 text-white border border-white/20 hover:bg-primary`}>Entrar</button>
                 </motion.div>
               )}
             </AnimatePresence>
