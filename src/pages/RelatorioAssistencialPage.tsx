@@ -839,24 +839,66 @@ const RelatorioAssistencialPage = () => {
               <div className="kpi-card p-6">
                 <h2 className="text-lg font-bold text-foreground mb-4">Fluxo de Aprovação</h2>
                 <p className="text-sm text-muted-foreground mb-4">Acompanhe o status de aprovação do relatório assistencial antes da publicação final.</p>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {[
                     { step: "Preenchimento de metas", status: "done" },
                     { step: "Inserção de evidências", status: "done" },
                     { step: "Revisão do gestor", status: "pending" },
                     { step: "Aprovação final", status: "waiting" },
                   ].map((item) => (
-                    <div key={item.step} className="flex items-center gap-3">
-                      <span className={`text-sm ${item.status === "done" ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}>
-                        {item.status === "done" ? "[concluído]" : item.status === "pending" ? "[em andamento]" : "[aguardando]"} {item.step}
+                    <div key={item.step} className={`flex items-center gap-3 p-3 rounded-lg border ${item.status === "done" ? "border-primary/20 bg-primary/5" : item.status === "pending" ? "border-accent bg-accent/5" : "border-border bg-muted/30"}`}>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${item.status === "done" ? "bg-primary/10 text-primary" : item.status === "pending" ? "bg-accent/20 text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+                        {item.status === "done" ? "Concluído" : item.status === "pending" ? "Em andamento" : "Aguardando"}
                       </span>
+                      <span className={`text-sm ${item.status === "done" ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}>{item.step}</span>
                     </div>
                   ))}
                 </div>
+
                 <div className="mt-6 flex gap-3">
                   <Button className="rounded-full">Aprovar Relatório</Button>
                   <Button variant="outline" className="rounded-full">Solicitar Revisão</Button>
                 </div>
+              </div>
+
+              {/* Pontos de Melhoria */}
+              <div className="kpi-card p-6">
+                <h3 className="text-sm font-semibold text-foreground mb-2">Sinalizar Pontos de Melhoria</h3>
+                <p className="text-xs text-muted-foreground mb-4">Registre observações e pontos que precisam de atenção antes da aprovação final.</p>
+                <div className="flex gap-2 mb-4">
+                  <Textarea
+                    value={novoPonto}
+                    onChange={(e) => setNovoPonto(e.target.value)}
+                    placeholder="Descreva o ponto a melhorar..."
+                    rows={2}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    className="shrink-0 self-end"
+                    onClick={() => {
+                      if (novoPonto.trim()) {
+                        setPontosMelhoria(prev => [...prev, novoPonto.trim()]);
+                        setNovoPonto("");
+                        toast.success("Ponto de melhoria registrado");
+                      }
+                    }}
+                  >
+                    Sinalizar
+                  </Button>
+                </div>
+                {pontosMelhoria.length > 0 && (
+                  <div className="space-y-2">
+                    {pontosMelhoria.map((p, i) => (
+                      <div key={i} className="flex items-start justify-between gap-2 p-3 rounded-lg border border-border bg-muted/30 text-sm">
+                        <span className="flex-1">{p}</span>
+                        <Button variant="ghost" size="sm" className="text-xs text-destructive shrink-0 h-6" onClick={() => setPontosMelhoria(prev => prev.filter((_, idx) => idx !== i))}>
+                          Remover
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
