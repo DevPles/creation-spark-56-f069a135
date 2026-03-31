@@ -217,9 +217,9 @@ const LancamentoMetasPage = () => {
           { label: "Execução", value: `${avgPct}%` },
           { label: "Estouradas", value: String(rows.filter(r => r.pct > 100).length) },
         ];
-        const boxW = (pageW - 28 - 18) / 4;
+        const boxW = (contentW - 18) / 4;
         kpis.forEach((kpi, i) => {
-          const x = 14 + i * (boxW + 6);
+          const x = margin + i * (boxW + 6);
           doc.setFillColor(...lightBg);
           doc.roundedRect(x, startY, boxW, 22, 3, 3, "F");
           doc.setTextColor(100, 100, 100);
@@ -231,21 +231,23 @@ const LancamentoMetasPage = () => {
         });
         startY += 30;
 
-        // Pie chart simulation
+        // Bar chart simulation
         doc.setFillColor(...lightBg);
-        doc.roundedRect(14, startY, pageW - 28, 50, 3, 3, "F");
+        doc.roundedRect(margin, startY, contentW, 50, 3, 3, "F");
         doc.setTextColor(60, 60, 60);
         doc.setFontSize(9);
-        doc.text("Execução por Rubrica (%)", 18, startY + 10);
+        doc.text("Execução por Rubrica (%)", margin + 4, startY + 10);
         const colors: [number, number, number][] = [[26, 54, 71], [41, 128, 185], [46, 160, 67], [142, 68, 173], [231, 76, 60], [52, 152, 219]];
+        const rubBarAreaW = contentW - 80;
         rows.forEach((r, i) => {
           const y = startY + 16 + i * 5;
           if (y > startY + 46) return;
           doc.setFillColor(...(colors[i % colors.length]));
-          doc.roundedRect(18, y, Math.min(r.pct, 120) * 0.8, 3.5, 1, 1, "F");
+          const barW = Math.min((r.pct / 120) * rubBarAreaW, rubBarAreaW);
+          doc.roundedRect(margin + 4, y, Math.max(barW, 2), 3.5, 1, 1, "F");
           doc.setTextColor(60, 60, 60);
           doc.setFontSize(6.5);
-          doc.text(`${r.name} (${r.pct}%)`, 18 + Math.min(r.pct, 120) * 0.8 + 4, y + 3);
+          doc.text(`${r.name} (${r.pct}%)`, margin + 8 + barW, y + 3);
         });
         startY += 56;
 
@@ -258,7 +260,7 @@ const LancamentoMetasPage = () => {
           bodyStyles: { fontSize: 8, textColor: [40, 40, 40] },
           alternateRowStyles: { fillColor: lightBg },
           styles: { cellPadding: 4, lineWidth: 0.1, lineColor: [200, 210, 220] },
-          margin: { left: 14, right: 14 },
+          margin: { left: margin, right: margin },
         });
       }
     }
@@ -266,11 +268,11 @@ const LancamentoMetasPage = () => {
     // Footer
     const pageH = doc.internal.pageSize.getHeight();
     doc.setDrawColor(200, 210, 220);
-    doc.line(14, pageH - 14, pageW - 14, pageH - 14);
+    doc.line(margin, pageH - 14, pageW - margin, pageH - 14);
     doc.setTextColor(150, 150, 150);
     doc.setFontSize(7);
-    doc.text("Larilu — Sistema de Gestão Hospitalar", 14, pageH - 8);
-    doc.text(`Página 1 de 1`, pageW - 14, pageH - 8, { align: "right" });
+    doc.text("MOSS — Métricas para Organizações de Serviço Social", margin, pageH - 8);
+    doc.text(`Página 1 de 1`, pageW - margin, pageH - 8, { align: "right" });
 
     doc.save(`lancamentos_${format(now, "yyyyMMdd_HHmm")}.pdf`);
     toast.success("PDF gerado com sucesso!");
