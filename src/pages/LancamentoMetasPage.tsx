@@ -272,7 +272,7 @@ const LancamentoMetasPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {goals.map((goal, i) => {
                   const entry = entries[goal.id] || { value: "", period: "", notes: "" };
-                  const existing = existingEntries[goal.id] || [];
+                  const existing = filterEntriesByDate(existingEntries[goal.id] || []);
                   return (
                     <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card">
                       {/* Gauge + header */}
