@@ -33,8 +33,11 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   const [unit, setUnit] = useState("Hospital Geral");
   const [goalsCount, setGoalsCount] = useState("0");
   const [pdfName, setPdfName] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
   const [rubricas, setRubricas] = useState<Rubrica[]>(DEFAULT_RUBRICAS);
   const [notificationEmail, setNotificationEmail] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (contract && !isNew) {
