@@ -30,6 +30,8 @@ export interface GoalData {
   history: number[];
   glosaPct: number;
   facilityUnit?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface GoalFormModalProps {
