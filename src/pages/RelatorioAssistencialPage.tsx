@@ -320,11 +320,13 @@ const RelatorioAssistencialPage = () => {
           </div>
         ) : (
           <Tabs defaultValue="particularidades" className="space-y-4">
-            <TabsList className="grid grid-cols-4 w-full">
+            <TabsList className="grid grid-cols-6 w-full">
               <TabsTrigger value="particularidades">Particularidades</TabsTrigger>
               <TabsTrigger value="compilado">Compilado Unidade</TabsTrigger>
               <TabsTrigger value="cruzamento">Análise Cruzamento</TabsTrigger>
               <TabsTrigger value="relatorio">Relatório Final</TabsTrigger>
+              <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
+              <TabsTrigger value="aprovacao">Aprovação</TabsTrigger>
             </TabsList>
 
             {/* TAB 1 — Particularidades do contrato */}
