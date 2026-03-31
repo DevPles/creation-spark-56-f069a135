@@ -917,8 +917,8 @@ const RelatoriosPage = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} angle={-25} textAnchor="end" height={70} />
                   <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="meta" fill="hsl(var(--muted-foreground) / 0.3)" radius={[6, 6, 0, 0]} name="Meta" />
-                  <Bar dataKey="realizado" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Realizado" />
+                  <Bar dataKey="meta" fill="hsl(var(--muted-foreground) / 0.3)" radius={[6, 6, 0, 0]} name="Meta" label={{ position: "top", fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                  <Bar dataKey="realizado" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Realizado" label={{ position: "top", fontSize: 9, fill: "hsl(var(--primary))" }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </BarChart>
               </ResponsiveContainer>
