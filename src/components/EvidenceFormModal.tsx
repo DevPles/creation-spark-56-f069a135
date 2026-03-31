@@ -261,7 +261,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
                   <Badge key={idx} variant="secondary" className="text-xs flex items-center gap-1 pr-1">
                     {act}
                     <button type="button" onClick={() => handleRemoveActivity(act)} className="ml-0.5 hover:text-destructive">
-                      <X className="h-3 w-3" />
+                      ✕
                     </button>
                   </Badge>
                 ))}
