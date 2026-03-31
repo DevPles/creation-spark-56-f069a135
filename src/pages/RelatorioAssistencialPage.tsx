@@ -70,6 +70,63 @@ const GOALS_DATA: Record<string, { name: string; type: "QLT" | "QNT"; target: nu
   ],
 };
 
+  // Timeline evidence items for the selected unit
+  interface TimelineItem {
+    id: string;
+    title: string;
+    category: "acao_promocao" | "justificativa" | "meta" | "rubrica";
+    date: string;
+    description: string;
+    status: "pendente" | "aprovado" | "rejeitado";
+    fileName?: string;
+  }
+
+  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([
+    { id: "tl1", title: "Campanha de vacinação sazonal", category: "acao_promocao", date: "2024-03-15", description: "Realizada campanha de vacinação contra gripe com 320 doses aplicadas na unidade.", status: "aprovado", fileName: "relatorio_vacinacao.pdf" },
+    { id: "tl2", title: "Justificativa: tempo de espera elevado", category: "justificativa", date: "2024-03-10", description: "Aumento no tempo de espera devido a reforma na ala B, reduzindo capacidade operacional em 30%.", status: "pendente" },
+    { id: "tl3", title: "Palestra sobre higienização", category: "acao_promocao", date: "2024-02-28", description: "Treinamento sobre protocolo de higienização de mãos com 45 participantes.", status: "aprovado", fileName: "lista_presenca_higiene.pdf" },
+    { id: "tl4", title: "Justificativa: rubrica RH estourada", category: "rubrica", date: "2024-02-20", description: "Contratação emergencial de 3 enfermeiros devido a afastamentos por COVID.", status: "rejeitado" },
+    { id: "tl5", title: "Mutirão cirúrgico", category: "acao_promocao", date: "2024-02-10", description: "Mutirão de cirurgias eletivas: 28 procedimentos realizados em 3 dias.", status: "pendente", fileName: "relatorio_mutirao.pdf" },
+    { id: "tl6", title: "Meta NPS: pesquisa de satisfação", category: "meta", date: "2024-01-30", description: "Aplicação de pesquisa NPS com 180 pacientes. Resultado: 72 pontos.", status: "aprovado", fileName: "pesquisa_nps_q1.xlsx" },
+  ]);
+
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+
+  const handleApprove = useCallback((id: string) => {
+    setTimelineItems(prev => prev.map(item => item.id === id ? { ...item, status: "aprovado" as const } : item));
+    toast.success("Item aprovado pelo gestor");
+  }, []);
+
+  const handleReject = useCallback((id: string) => {
+    setTimelineItems(prev => prev.map(item => item.id === id ? { ...item, status: "rejeitado" as const } : item));
+    toast.error("Item rejeitado");
+  }, []);
+
+  const handleStartEdit = useCallback((item: TimelineItem) => {
+    setEditingItemId(item.id);
+    setEditText(item.description);
+  }, []);
+
+  const handleSaveEdit = useCallback((id: string) => {
+    setTimelineItems(prev => prev.map(item => item.id === id ? { ...item, description: editText } : item));
+    setEditingItemId(null);
+    toast.success("Texto atualizado");
+  }, [editText]);
+
+  const CATEGORY_LABELS: Record<TimelineItem["category"], { label: string; color: string }> = {
+    acao_promocao: { label: "Ação de Promoção", color: "bg-primary/10 text-primary border-primary/20" },
+    justificativa: { label: "Justificativa", color: "bg-warning/10 text-warning border-warning/20" },
+    meta: { label: "Evidência de Meta", color: "bg-success/10 text-success border-success/20" },
+    rubrica: { label: "Rubrica Estourada", color: "bg-destructive/10 text-destructive border-destructive/20" },
+  };
+
+  const STATUS_ICONS: Record<TimelineItem["status"], React.ReactNode> = {
+    pendente: <Clock className="h-4 w-4 text-warning" />,
+    aprovado: <CheckCircle className="h-4 w-4 text-success" />,
+    rejeitado: <XCircle className="h-4 w-4 text-destructive" />,
+  };
+
 const RelatorioAssistencialPage = () => {
   const navigate = useNavigate();
   const { contracts } = useContracts();
