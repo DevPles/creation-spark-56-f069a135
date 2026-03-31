@@ -34,18 +34,18 @@ const OrbBackground = () => {
 };
 
 const METRICS = [
-  "Taxa Ocupação = 847/960 = 88,2%",
-  "Custo/Atend = R$52.400/1.284 = R$40,81",
-  "Cobertura = 87/102 = 85,3%",
-  "ROI = (R$148.700 - R$52.400)/R$52.400 = 1,84",
-  "TMP = 4.230/960 = 4,4 dias",
-  "Execução = R$48.900/R$52.400 = 93,3%",
-  "σ = √(Σ(xᵢ-μ)²/12) = 3,72",
-  "Meta = Σ(0,92+0,87+0,94)/3 = 91%",
-  "Vacinal = 1.024/1.047 = 97,8%",
-  "NPV = Σ CFₜ/(1+0,08)ᵗ = R$142.300",
-  "Adesão = 219/232 = 94,4%",
-  "z = (88,2 - 85)/3,72 = 0,86",
+  "Meta Assistencial = 847/960 = 88,2%",
+  "Meta Assistencial = R$52.400/1.284 = R$40,81",
+  "Meta Assistencial = 87/102 = 85,3%",
+  "Meta Assistencial = (R$148.700 - R$52.400)/R$52.400 = 1,84",
+  "Meta Assistencial = 4.230/960 = 4,4 dias",
+  "Meta Assistencial = R$48.900/R$52.400 = 93,3%",
+  "Meta Assistencial = √(Σ(xᵢ-μ)²/12) = 3,72",
+  "Meta Assistencial = Σ(0,92+0,87+0,94)/3 = 91%",
+  "Meta Assistencial = 1.024/1.047 = 97,8%",
+  "Meta Assistencial = Σ CFₜ/(1+0,08)ᵗ = R$142.300",
+  "Meta Assistencial = 219/232 = 94,4%",
+  "Meta Assistencial = (88,2 - 85)/3,72 = 0,86",
 ];
 
 const TypewriterText = ({ text }: { text: string }) => {
