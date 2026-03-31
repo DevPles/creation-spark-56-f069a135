@@ -600,7 +600,7 @@ const RelatoriosPage = () => {
   const compareFilteredGoals = useMemo(() => compareContract ? filterGoals(compareContract.goals, typeFilter, statusFilter) : [], [compareContract, typeFilter, statusFilter]);
   const compareStats = useMemo(() => computeStats(compareFilteredGoals), [compareFilteredGoals]);
 
-  const TOTAL_SLIDES = compareMode ? 7 : 6;
+  const TOTAL_SLIDES_BASE = 10;
 
   const nextSlide = useCallback(() => setCurrentSlide(prev => (prev + 1) % TOTAL_SLIDES), [TOTAL_SLIDES]);
   const prevSlide = useCallback(() => setCurrentSlide(prev => (prev - 1 + TOTAL_SLIDES) % TOTAL_SLIDES), [TOTAL_SLIDES]);
