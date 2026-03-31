@@ -14,6 +14,9 @@ import AdminPage from "./pages/AdminPage";
 import EvidenciasPage from "./pages/EvidenciasPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
 import LancamentoMetasPage from "./pages/LancamentoMetasPage";
+import SauPage from "./pages/SauPage";
+import RelatorioAssistencialPage from "./pages/RelatorioAssistencialPage";
+import ControleRubricaPage from "./pages/ControleRubricaPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
