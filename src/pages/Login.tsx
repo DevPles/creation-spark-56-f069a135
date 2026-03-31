@@ -79,7 +79,7 @@ const Login = () => {
 
   // Neumorphic input style
   const inputClass = "h-12 rounded-full bg-[hsl(220_15%_92%)] border-none shadow-[inset_2px_2px_5px_hsl(220_15%_82%),inset_-2px_-2px_5px_hsl(0_0%_100%)] placeholder:text-muted-foreground/60 px-5 text-sm focus-visible:ring-2 focus-visible:ring-primary/30";
-  const neumorphBtn = "h-12 rounded-full font-semibold text-sm shadow-[3px_3px_8px_hsl(220_15%_78%),-3px_-3px_8px_hsl(0_0%_100%)] hover:shadow-[inset_2px_2px_5px_hsl(220_15%_82%),inset_-2px_-2px_5px_hsl(0_0%_100%)] transition-all duration-200";
+  const neumorphBtn = "h-12 rounded-full font-semibold text-sm transition-all duration-200";
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative" style={{ background: "linear-gradient(135deg, hsl(214 55% 18%) 0%, hsl(214 55% 30%) 50%, hsl(214 45% 22%) 100%)" }}>
