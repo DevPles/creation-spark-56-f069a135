@@ -763,7 +763,7 @@ const RelatoriosPage = () => {
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Risco financeiro & glosas</h3>
             <p className="text-xs text-muted-foreground mb-4">Evolução mensal — {contract.unit}</p>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={280}>
+               <ResponsiveContainer width="100%" height={chartH}>
                 <LineChart data={contract.riskTrend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
