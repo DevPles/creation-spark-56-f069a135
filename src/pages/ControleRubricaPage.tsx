@@ -136,15 +136,12 @@ const ControleRubricaPage = () => {
           ← Voltar
         </Button>
 
-        <div className="mb-6">
-          <h1 className="font-display text-xl font-bold text-foreground">Controle de Rubrica</h1>
-          <p className="text-sm text-muted-foreground">Gestão e acompanhamento de rubricas por contrato</p>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-end gap-3 mb-6 p-4 bg-card rounded-lg border border-border">
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Contrato / Unidade</Label>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="font-display text-xl font-bold text-foreground">Controle de Rubrica</h1>
+            <p className="text-sm text-muted-foreground">Gestão e acompanhamento de rubricas por contrato</p>
+          </div>
+          <div className="flex items-center gap-3">
             <Select value={selectedContract} onValueChange={setSelectedContract}>
               <SelectTrigger className="w-[240px]"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -152,9 +149,6 @@ const ControleRubricaPage = () => {
                 {CONTRACTS.map(c => <SelectItem key={c.id} value={c.unit}>{c.unit}</SelectItem>)}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Mês</Label>
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
               <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
               <SelectContent>
