@@ -43,21 +43,36 @@ const LancamentoMetasPage = () => {
   const [existingEntries, setExistingEntries] = useState<Record<string, { value: number; period: string }[]>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
+
+  const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
   useEffect(() => {
-    if (!profile) return;
-    loadGoals();
-  }, [profile]);
+    if (!profile || !user) return;
+    // Check if user is admin
+    supabase.from("user_roles").select("role").eq("user_id", user.id).then(({ data }) => {
+      const admin = data?.some((r: any) => r.role === "admin" || r.role === "gestor");
+      setIsAdmin(!!admin);
+      setSelectedUnit(profile.facility_unit);
+    });
+  }, [profile, user]);
 
-  const loadGoals = async () => {
-    if (!profile) return;
+  useEffect(() => {
+    if (!selectedUnit) return;
+    loadGoals(selectedUnit);
+  }, [selectedUnit]);
+
+  const loadGoals = async (unit: string) => {
+    setLoading(true);
     const { data, error } = await supabase
       .from("goals")
       .select("*")
-      .eq("facility_unit", profile.facility_unit as any);
+      .eq("facility_unit", unit as any);
 
     if (error) {
       toast.error("Erro ao carregar metas");
+      setLoading(false);
       return;
     }
     setGoals((data as Goal[]) || []);
