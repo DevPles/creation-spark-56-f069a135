@@ -76,10 +76,16 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const filePath = `${crypto.randomUUID()}_${file.name}`;
-    const { error } = await supabase.storage.from("contract-pdfs").upload(filePath, file);
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filePath = `${crypto.randomUUID()}_${safeName}`;
+    const { error } = await supabase.storage.from("contract-pdfs").upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+      contentType: file.type || "application/pdf",
+    });
     if (error) {
-      toast.error("Erro ao enviar arquivo");
+      console.error("Upload error:", error);
+      toast.error("Erro ao enviar arquivo", { description: error.message });
       setUploading(false);
       return;
     }
