@@ -84,6 +84,7 @@ const RelatorioAssistencialPage = () => {
   const [persPenalidades, setPersPenalidades] = useState("");
   const [persEvidencias, setPersEvidencias] = useState("");
   const [persInitialized, setPersInitialized] = useState("");
+  const [sectionImages, setSectionImages] = useState<Record<string, string[]>>({});
   const [pontosMelhoria, setPontosMelhoria] = useState<string[]>([]);
   const [novoPonto, setNovoPonto] = useState("");
   const reportRef = useRef<HTMLDivElement>(null);
