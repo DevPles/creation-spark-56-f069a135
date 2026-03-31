@@ -745,163 +745,84 @@ const RelatorioAssistencialPage = () => {
             <TabsContent value="personalizacao" className="space-y-6">
               <div className="bg-card rounded-lg border border-border p-5">
                 <h2 className="text-lg font-bold text-foreground mb-1">Personalização do Relatório</h2>
-                <p className="text-sm text-muted-foreground mb-6">Revise e edite todas as informações que compõem o relatório antes de exportar. Cada seção pode ser modificada diretamente.</p>
+                <p className="text-sm text-muted-foreground mb-6">Todas as informações do relatório estão reunidas abaixo e são editáveis. Modifique livremente antes de exportar.</p>
 
-                {/* Seção 1: Dados do Contrato */}
-                <div className="space-y-6">
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold mb-3">1. Dados do Contrato</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Nome do contrato</Label>
-                        <p className="font-medium">{selectedContract.name}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Unidade</Label>
-                        <p className="font-medium">{unit}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Valor global</Label>
-                        <p className="font-medium">R$ {(selectedContract.value / 1e6).toFixed(1)}M</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Parte variável</Label>
-                        <p className="font-medium">{(selectedContract.variable * 100).toFixed(0)}%</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Período</Label>
-                        <p className="font-medium">{selectedContract.period}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Alcance ponderado</Label>
-                        <p className={`font-medium ${goalAchievementPct >= 80 ? "text-emerald-600" : "text-destructive"}`}>{goalAchievementPct}%</p>
-                      </div>
-                    </div>
-                  </div>
+                {(() => {
+                  // Auto-initialize editable fields from data
+                  const contractKey = selectedContract.id;
+                  if (persInitialized !== contractKey) {
+                    const contratoText = `Contrato: ${selectedContract.name}\nUnidade: ${unit}\nValor global: R$ ${(selectedContract.value / 1e6).toFixed(1)}M\nParte variável: ${(selectedContract.variable * 100).toFixed(0)}%\nR$ variável: R$ ${((selectedContract.value * selectedContract.variable) / 1000).toFixed(0)}k\nPeríodo: ${selectedContract.period}\nAlcance ponderado: ${goalAchievementPct}%`;
 
-                  {/* Seção 2: Rubricas */}
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold mb-3">2. Distribuição de Rubricas</h3>
-                    <div className="space-y-2">
-                      {(selectedContract.rubricas || []).map(r => (
-                        <div key={r.id} className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">{r.name}</span>
-                          <span className="font-medium">{r.percent}%</span>
-                        </div>
-                      ))}
-                    </div>
-                    {estouradas.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-border">
-                        <p className="text-xs font-medium text-destructive mb-2">Rubricas estouradas: {estouradas.length}</p>
-                        {estouradas.map((e, i) => (
-                          <div key={i} className="text-xs text-muted-foreground flex justify-between">
-                            <span>{e.rubrica}</span>
-                            <span className="text-destructive">+R$ {(e.excedente / 1000).toFixed(0)}k ({e.pctExec}%)</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    const rubricasText = (selectedContract.rubricas || []).map(r => `${r.name}: ${r.percent}%`).join("\n") +
+                      (estouradas.length > 0 ? "\n\n--- Rubricas estouradas ---\n" + estouradas.map(e => `${e.rubrica}: Alocado R$ ${(e.allocated / 1000).toFixed(0)}k | Executado R$ ${(e.executed / 1000).toFixed(0)}k | Excedente R$ ${(e.excedente / 1000).toFixed(0)}k (${e.pctExec}%)`).join("\n") : "");
 
-                  {/* Seção 3: Metas Qualitativas */}
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold mb-3">3. Metas Qualitativas ({qualitativas.length})</h3>
-                    <div className="space-y-2">
-                      {qualitativas.map((g, i) => {
-                        const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
-                        return (
-                          <div key={i} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
-                            <span>{g.name}</span>
-                            <span className={`font-medium ${pct >= 100 ? "text-emerald-600" : "text-destructive"}`}>{pct >= 100 ? "Atingida" : "Não atingida"} — Penalidade: {g.penalty}%</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                    const qualText = qualitativas.map(g => {
+                      const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
+                      return `${g.name} — ${pct >= 100 ? "Atingida" : "Não atingida"} | Peso: ${g.weight}% | Penalidade: ${g.penalty}%`;
+                    }).join("\n");
 
-                  {/* Seção 4: Metas Quantitativas */}
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold mb-3">4. Metas Quantitativas ({quantitativas.length})</h3>
-                    <div className="space-y-2">
-                      {quantitativas.map((g, i) => {
-                        const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
-                        return (
-                          <div key={i} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
-                            <span>{g.name}</span>
-                            <span className="text-muted-foreground">Meta: {g.target} | Realizado: {g.achieved} | </span>
-                            <span className={`font-medium ${pct >= 100 ? "text-emerald-600" : pct >= 80 ? "text-yellow-600" : "text-destructive"}`}>{pct}%</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                    const quantText = quantitativas.map(g => {
+                      const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
+                      return `${g.name} — Meta: ${g.target} | Realizado: ${g.achieved} | Alcance: ${pct}% | Peso: ${g.weight}% | Penalidade: ${g.penalty}%`;
+                    }).join("\n");
 
-                  {/* Seção 5: Penalizações e Glosas */}
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold mb-3">5. Penalizações e Glosas</h3>
-                    <div className="grid grid-cols-3 gap-4 text-sm mb-3">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Penalidade total</Label>
-                        <p className="font-medium text-destructive">{totalPenalty.toFixed(1)}%</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Glosa estimada</Label>
-                        <p className="font-medium text-destructive">R$ {(totalGlosa / 1000).toFixed(0)}k</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Metas críticas</Label>
-                        <p className="font-medium text-destructive">{crossAnalysisData.filter(r => r.status === "Crítica").length}</p>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      {crossAnalysisData.filter(r => r.penalidade > 0).map((r, i) => (
-                        <div key={i} className="flex justify-between text-xs text-muted-foreground">
-                          <span>{r.meta}</span>
-                          <span className="text-destructive">-{r.penalidade}% (R$ {(r.glosa / 1000).toFixed(0)}k)</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                    const penText = `Penalidade total: ${totalPenalty.toFixed(1)}%\nGlosa estimada: R$ ${(totalGlosa / 1000).toFixed(0)}k\nMetas críticas: ${crossAnalysisData.filter(r => r.status === "Crítica").length}\n\n--- Detalhamento ---\n` +
+                      crossAnalysisData.filter(r => r.penalidade > 0).map(r => `${r.meta}: -${r.penalidade}% (R$ ${(r.glosa / 1000).toFixed(0)}k)`).join("\n");
 
-                  {/* Seção 6: Timeline de Evidências (resumo) */}
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold mb-3">6. Evidências e Ações ({timelineItems.length})</h3>
-                    <div className="space-y-2">
-                      {timelineItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((item) => {
+                    const evidText = timelineItems
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map(item => {
                         const cat = categoryLabels[item.category];
-                        return (
-                          <div key={item.id} className="flex items-start gap-3 text-sm p-2 rounded bg-muted/30">
-                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 ${cat?.color || ""}`}>{cat?.label || item.category}</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-xs">{item.title}</p>
-                              <p className="text-xs text-muted-foreground truncate">{item.description}</p>
-                            </div>
-                            <span className={`text-[10px] shrink-0 ${item.status === "aprovado" ? "text-emerald-600" : item.status === "rejeitado" ? "text-destructive" : "text-yellow-600"}`}>
-                              {item.status === "aprovado" ? "✓" : item.status === "rejeitado" ? "✗" : "⏳"}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                        return `[${cat?.label || item.category}] ${new Date(item.date).toLocaleDateString("pt-BR")} — ${item.title}\n${item.description}\nStatus: ${item.status}${item.fileName ? `\nArquivo: ${item.fileName}` : ""}`;
+                      }).join("\n\n");
+
+                    setTimeout(() => {
+                      setPersContrato(contratoText);
+                      setPersRubricas(rubricasText);
+                      setPersQualitativas(qualText);
+                      setPersQuantitativas(quantText);
+                      setPersPenalidades(penText);
+                      setPersEvidencias(evidText);
+                      setPersInitialized(contractKey);
+                    }, 0);
+                  }
+                  return null;
+                })()}
+
+                <div className="space-y-6">
+                  <div className="border border-border rounded-lg p-4 space-y-2">
+                    <Label className="text-sm font-semibold">1. Dados do Contrato</Label>
+                    <Textarea value={persContrato} onChange={e => setPersContrato(e.target.value)} rows={7} />
                   </div>
 
-                  {/* Seção 7: Observações editáveis */}
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold mb-2">7. Observações e Notas do Relatório</h3>
-                    <p className="text-xs text-muted-foreground mb-2">Edite livremente as observações que serão incluídas no relatório exportado.</p>
-                    <Textarea
-                      value={editableNotes}
-                      onChange={(e) => setEditableNotes(e.target.value)}
-                      placeholder="Insira suas observações, justificativas e recomendações..."
-                      rows={6}
-                    />
+                  <div className="border border-border rounded-lg p-4 space-y-2">
+                    <Label className="text-sm font-semibold">2. Distribuição de Rubricas</Label>
+                    <Textarea value={persRubricas} onChange={e => setPersRubricas(e.target.value)} rows={8} />
                   </div>
 
-                  {/* Logotipo */}
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold mb-2">Logotipo personalizado</h3>
-                    <p className="text-xs text-muted-foreground mb-2">Envie um logo para aparecer no cabeçalho do relatório exportado.</p>
-                    <Button variant="outline" size="sm" className="rounded-full">Enviar logo</Button>
+                  <div className="border border-border rounded-lg p-4 space-y-2">
+                    <Label className="text-sm font-semibold">3. Metas Qualitativas</Label>
+                    <Textarea value={persQualitativas} onChange={e => setPersQualitativas(e.target.value)} rows={6} />
+                  </div>
+
+                  <div className="border border-border rounded-lg p-4 space-y-2">
+                    <Label className="text-sm font-semibold">4. Metas Quantitativas</Label>
+                    <Textarea value={persQuantitativas} onChange={e => setPersQuantitativas(e.target.value)} rows={6} />
+                  </div>
+
+                  <div className="border border-border rounded-lg p-4 space-y-2">
+                    <Label className="text-sm font-semibold">5. Penalizações e Glosas</Label>
+                    <Textarea value={persPenalidades} onChange={e => setPersPenalidades(e.target.value)} rows={8} />
+                  </div>
+
+                  <div className="border border-border rounded-lg p-4 space-y-2">
+                    <Label className="text-sm font-semibold">6. Evidências e Ações</Label>
+                    <Textarea value={persEvidencias} onChange={e => setPersEvidencias(e.target.value)} rows={10} />
+                  </div>
+
+                  <div className="border border-border rounded-lg p-4 space-y-2">
+                    <Label className="text-sm font-semibold">7. Observações do Analista</Label>
+                    <Textarea value={editableNotes} onChange={e => setEditableNotes(e.target.value)} placeholder="Insira suas observações, justificativas e recomendações..." rows={6} />
                   </div>
 
                   <div className="flex justify-end">
