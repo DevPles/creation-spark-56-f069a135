@@ -368,37 +368,23 @@ const TreinamentoPage = () => {
 
               {/* Video area */}
               {mod.video_url ? (
-                <button
-                  type="button"
-                  onClick={() => setPlayModule(mod)}
-                  className="w-full aspect-video bg-muted rounded-lg flex items-center justify-center hover:bg-muted/70 transition-colors border border-border"
-                >
-                  <span className="text-2xl">▶</span>
-                </button>
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => setPlayModule(mod)}
+                    className="w-full aspect-video bg-muted rounded-lg flex items-center justify-center hover:bg-muted/70 transition-colors border border-border"
+                  >
+                    <span className="text-2xl">▶</span>
+                  </button>
+                  {mod.video_uploaded_at && (
+                    <p className="text-[10px] text-muted-foreground">
+                      📅 Enviado em {new Date(mod.video_uploaded_at).toLocaleDateString("pt-BR")}
+                    </p>
+                  )}
+                </div>
               ) : (
                 <div className="w-full aspect-video bg-muted/50 rounded-lg flex items-center justify-center border border-dashed border-border">
                   <span className="text-xs text-muted-foreground">Sem vídeo</span>
-                </div>
-              )}
-
-              {/* Admin upload */}
-              {isAdmin && (
-                <div>
-                  <label className="cursor-pointer">
-                    <span className="text-[10px] text-primary hover:underline">
-                      {uploading ? "Enviando..." : "+ Enviar vídeo"}
-                    </span>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      className="hidden"
-                      disabled={uploading}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleVideoUpload(mod.id, file);
-                      }}
-                    />
-                  </label>
                 </div>
               )}
 
