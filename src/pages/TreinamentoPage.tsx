@@ -18,6 +18,7 @@ interface TrainingModule {
   video_url: string | null;
   video_uploaded_at: string | null;
   sort_order: number;
+  created_by: string | null;
 }
 
 interface Rating {
