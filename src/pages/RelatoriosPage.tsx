@@ -804,7 +804,7 @@ const RelatoriosPage = () => {
             <p className="text-xs text-muted-foreground mb-4">Valor alocado vs risco em R$ mil — {contract.unit}</p>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 bg-card rounded-lg border border-border p-5">
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={chartHSmall}>
                   <BarChart data={rubricaFinancial} barGap={4}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
