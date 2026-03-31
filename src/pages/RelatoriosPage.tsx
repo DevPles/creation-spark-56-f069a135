@@ -226,7 +226,7 @@ async function generatePdfBlob(
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text("SisLu — Sistema de Acompanhamento de Metas", margin, 8);
+    doc.text("MOSS — Métricas para Organizações de Serviço Social", margin, 8);
     doc.text(now, W - margin, 8, { align: "right" });
     doc.setTextColor(DARK[0], DARK[1], DARK[2]);
     y = 18;
