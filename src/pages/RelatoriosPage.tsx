@@ -858,7 +858,7 @@ const RelatoriosPage = () => {
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Atingimento individual por meta</h3>
             <p className="text-xs text-muted-foreground mb-4">% realizado vs meta pactuada — {contract.unit}</p>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={Math.max(280, filteredGoals.length * 40)}>
+              <ResponsiveContainer width="100%" height={Math.max(isCarouselFullscreen ? 420 : 280, filteredGoals.length * 40)}>
                 <BarChart data={filteredGoals.map(g => ({ name: g.name.length > 25 ? g.name.slice(0, 25) + "…" : g.name, pct: Math.round(getGoalPct(g)), meta: 100 }))} layout="vertical" barGap={2}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                   <XAxis type="number" domain={[0, 110]} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}%`} />
