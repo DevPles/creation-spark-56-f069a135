@@ -143,19 +143,42 @@ const LancamentoMetasPage = () => {
             <h1 className="font-display text-xl font-bold text-foreground">Lançamentos</h1>
             <p className="text-sm text-muted-foreground">Lançamento de metas e rubricas</p>
           </div>
-          {activeTab === "lancar-metas" && (
-            isAdmin ? (
-              <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-                <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
-              </Select>
-            ) : (
-              <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
-                <p className="text-xs text-muted-foreground">Sua unidade</p>
-                <p className="font-display font-semibold text-foreground text-sm">{profile?.facility_unit || "Carregando..."}</p>
-              </div>
-            )
-          )}
+          <div className="flex items-end gap-3 flex-wrap">
+            {activeTab === "lancar-metas" && (
+              isAdmin ? (
+                <div>
+                  <label className="text-[10px] text-muted-foreground block mb-1">Unidade</label>
+                  <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                    <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
+                  <p className="text-xs text-muted-foreground">Sua unidade</p>
+                  <p className="font-display font-semibold text-foreground text-sm">{profile?.facility_unit || "Carregando..."}</p>
+                </div>
+              )
+            )}
+            {activeTab === "lancamento-rubricas" && (
+              <>
+                <div>
+                  <label className="text-[10px] text-muted-foreground block mb-1">Contrato</label>
+                  <Select value={selectedContract} onValueChange={setSelectedContract}>
+                    <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.unit}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground block mb-1">Mês</label>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
