@@ -733,23 +733,172 @@ const RelatorioAssistencialPage = () => {
               </div>
             </TabsContent>
 
-            {/* TAB 5 — Personalização */}
+            {/* TAB 5 — Personalização (edição completa do relatório) */}
             <TabsContent value="personalizacao" className="space-y-6">
-              <div className="kpi-card p-6">
-                <h2 className="text-lg font-bold text-foreground mb-4">Personalização do Relatório</h2>
-                <p className="text-sm text-muted-foreground mb-4">Configure quais seções, gráficos e informações devem aparecer no relatório final exportado.</p>
-                <div className="space-y-3">
-                  {["Particularidades do Contrato", "Metas Assistenciais", "Metas Qualitativas", "Metas Quantitativas", "Penalizações e Glosas", "Gráficos de Desempenho", "Timeline de Evidências", "Observações do Gestor"].map((section) => (
-                    <label key={section} className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" defaultChecked className="accent-[hsl(var(--primary))] w-4 h-4" />
-                      <span className="text-sm text-foreground">{section}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="mt-6">
-                  <Label className="text-sm font-medium">Logotipo personalizado</Label>
-                  <p className="text-xs text-muted-foreground mb-2">Envie um logo para aparecer no cabeçalho do relatório exportado.</p>
-                  <Button variant="outline" size="sm" className="rounded-full">Enviar logo</Button>
+              <div className="bg-card rounded-lg border border-border p-5">
+                <h2 className="text-lg font-bold text-foreground mb-1">Personalização do Relatório</h2>
+                <p className="text-sm text-muted-foreground mb-6">Revise e edite todas as informações que compõem o relatório antes de exportar. Cada seção pode ser modificada diretamente.</p>
+
+                {/* Seção 1: Dados do Contrato */}
+                <div className="space-y-6">
+                  <div className="border border-border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold mb-3">1. Dados do Contrato</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Nome do contrato</Label>
+                        <p className="font-medium">{selectedContract.name}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Unidade</Label>
+                        <p className="font-medium">{unit}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Valor global</Label>
+                        <p className="font-medium">R$ {(selectedContract.value / 1e6).toFixed(1)}M</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Parte variável</Label>
+                        <p className="font-medium">{(selectedContract.variable * 100).toFixed(0)}%</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Período</Label>
+                        <p className="font-medium">{selectedContract.period}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Alcance ponderado</Label>
+                        <p className={`font-medium ${goalAchievementPct >= 80 ? "text-emerald-600" : "text-destructive"}`}>{goalAchievementPct}%</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Seção 2: Rubricas */}
+                  <div className="border border-border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold mb-3">2. Distribuição de Rubricas</h3>
+                    <div className="space-y-2">
+                      {(selectedContract.rubricas || []).map(r => (
+                        <div key={r.id} className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">{r.name}</span>
+                          <span className="font-medium">{r.percent}%</span>
+                        </div>
+                      ))}
+                    </div>
+                    {estouradas.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <p className="text-xs font-medium text-destructive mb-2">Rubricas estouradas: {estouradas.length}</p>
+                        {estouradas.map((e, i) => (
+                          <div key={i} className="text-xs text-muted-foreground flex justify-between">
+                            <span>{e.rubrica}</span>
+                            <span className="text-destructive">+R$ {(e.excedente / 1000).toFixed(0)}k ({e.pctExec}%)</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Seção 3: Metas Qualitativas */}
+                  <div className="border border-border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold mb-3">3. Metas Qualitativas ({qualitativas.length})</h3>
+                    <div className="space-y-2">
+                      {qualitativas.map((g, i) => {
+                        const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
+                        return (
+                          <div key={i} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
+                            <span>{g.name}</span>
+                            <span className={`font-medium ${pct >= 100 ? "text-emerald-600" : "text-destructive"}`}>{pct >= 100 ? "Atingida" : "Não atingida"} — Penalidade: {g.penalty}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Seção 4: Metas Quantitativas */}
+                  <div className="border border-border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold mb-3">4. Metas Quantitativas ({quantitativas.length})</h3>
+                    <div className="space-y-2">
+                      {quantitativas.map((g, i) => {
+                        const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
+                        return (
+                          <div key={i} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
+                            <span>{g.name}</span>
+                            <span className="text-muted-foreground">Meta: {g.target} | Realizado: {g.achieved} | </span>
+                            <span className={`font-medium ${pct >= 100 ? "text-emerald-600" : pct >= 80 ? "text-yellow-600" : "text-destructive"}`}>{pct}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Seção 5: Penalizações e Glosas */}
+                  <div className="border border-border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold mb-3">5. Penalizações e Glosas</h3>
+                    <div className="grid grid-cols-3 gap-4 text-sm mb-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Penalidade total</Label>
+                        <p className="font-medium text-destructive">{totalPenalty.toFixed(1)}%</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Glosa estimada</Label>
+                        <p className="font-medium text-destructive">R$ {(totalGlosa / 1000).toFixed(0)}k</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Metas críticas</Label>
+                        <p className="font-medium text-destructive">{crossAnalysisData.filter(r => r.status === "Crítica").length}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      {crossAnalysisData.filter(r => r.penalidade > 0).map((r, i) => (
+                        <div key={i} className="flex justify-between text-xs text-muted-foreground">
+                          <span>{r.meta}</span>
+                          <span className="text-destructive">-{r.penalidade}% (R$ {(r.glosa / 1000).toFixed(0)}k)</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Seção 6: Timeline de Evidências (resumo) */}
+                  <div className="border border-border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold mb-3">6. Evidências e Ações ({timelineItems.length})</h3>
+                    <div className="space-y-2">
+                      {timelineItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((item) => {
+                        const cat = categoryLabels[item.category];
+                        return (
+                          <div key={item.id} className="flex items-start gap-3 text-sm p-2 rounded bg-muted/30">
+                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 ${cat?.color || ""}`}>{cat?.label || item.category}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-xs">{item.title}</p>
+                              <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                            </div>
+                            <span className={`text-[10px] shrink-0 ${item.status === "aprovado" ? "text-emerald-600" : item.status === "rejeitado" ? "text-destructive" : "text-yellow-600"}`}>
+                              {item.status === "aprovado" ? "✓" : item.status === "rejeitado" ? "✗" : "⏳"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Seção 7: Observações editáveis */}
+                  <div className="border border-border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold mb-2">7. Observações e Notas do Relatório</h3>
+                    <p className="text-xs text-muted-foreground mb-2">Edite livremente as observações que serão incluídas no relatório exportado.</p>
+                    <Textarea
+                      value={editableNotes}
+                      onChange={(e) => setEditableNotes(e.target.value)}
+                      placeholder="Insira suas observações, justificativas e recomendações..."
+                      rows={6}
+                    />
+                  </div>
+
+                  {/* Logotipo */}
+                  <div className="border border-border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold mb-2">Logotipo personalizado</h3>
+                    <p className="text-xs text-muted-foreground mb-2">Envie um logo para aparecer no cabeçalho do relatório exportado.</p>
+                    <Button variant="outline" size="sm" className="rounded-full">Enviar logo</Button>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button onClick={handleExportPdf} className="px-8">Exportar Relatório PDF</Button>
+                  </div>
                 </div>
               </div>
             </TabsContent>
