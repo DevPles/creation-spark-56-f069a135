@@ -118,46 +118,20 @@ const LancamentoMetasPage = () => {
   };
 
   /* ── Rubrica state ── */
-  const [selectedContract, setSelectedContract] = useState("all");
-  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedContract, setSelectedContract] = useState(CONTRACTS[0].id);
+  const [selectedMonth, setSelectedMonth] = useState(MONTHS[0]);
+  const [rubricaEntries, setRubricaEntries] = useState<Record<string, EntryForm>>({});
+  const [rubricaSubmitting, setRubricaSubmitting] = useState<string | null>(null);
 
-  const filtered = useMemo(() => ALL_ENTRIES.filter(e => {
-    if (selectedContract !== "all" && e.unit !== selectedContract) return false;
-    if (selectedMonth !== "all" && e.month !== selectedMonth) return false;
-    return true;
-  }), [selectedContract, selectedMonth]);
-
-  const byRubrica = useMemo(() => {
-    const map: Record<string, { allocated: number; executed: number }> = {};
-    filtered.forEach(e => {
-      if (!map[e.rubrica]) map[e.rubrica] = { allocated: 0, executed: 0 };
-      map[e.rubrica].allocated += e.valorAllocated;
-      map[e.rubrica].executed += e.valorExecuted;
-    });
-    return Object.entries(map).map(([name, v]) => ({
-      name, allocated: v.allocated, executed: v.executed,
-      pctExec: v.allocated > 0 ? Math.round((v.executed / v.allocated) * 100) : 0,
-      estourada: v.executed > v.allocated,
-    })).sort((a, b) => b.allocated - a.allocated);
-  }, [filtered]);
-
-  const byMonth = useMemo(() => {
-    const map: Record<string, { allocated: number; executed: number }> = {};
-    const ent = ALL_ENTRIES.filter(e => selectedContract === "all" || e.unit === selectedContract);
-    ent.forEach(e => {
-      if (!map[e.month]) map[e.month] = { allocated: 0, executed: 0 };
-      map[e.month].allocated += e.valorAllocated;
-      map[e.month].executed += e.valorExecuted;
-    });
-    return MONTHS.map(m => ({ month: m, alocado: (map[m]?.allocated || 0) / 1000, executado: (map[m]?.executed || 0) / 1000 }));
-  }, [selectedContract]);
-
-  const totalAllocated = byRubrica.reduce((s, r) => s + r.allocated, 0);
-  const totalExecuted = byRubrica.reduce((s, r) => s + r.executed, 0);
-  const avgExecution = totalAllocated > 0 ? Math.round((totalExecuted / totalAllocated) * 100) : 0;
-  const overBudget = byRubrica.filter(r => r.estourada).length;
-  const underBudget = byRubrica.filter(r => r.pctExec < 70).length;
-  const pieData = byRubrica.map(r => ({ name: r.name, value: r.allocated }));
+  const handleRubricaSubmit = async (key: string, rubName: string, contract: typeof CONTRACTS[0]) => {
+    const entry = rubricaEntries[key];
+    if (!entry?.value || !entry?.period) { toast.error("Preencha o valor e a data"); return; }
+    setRubricaSubmitting(key);
+    // For now, just show success (mock — would insert into a rubrica_entries table)
+    toast.success(`Lançamento de ${rubName} (${contract.unit}) salvo`);
+    setRubricaEntries(prev => ({ ...prev, [key]: { value: "", period: "", notes: "" } }));
+    setRubricaSubmitting(null);
+  };
 
   /* ── Render ── */
   return (
