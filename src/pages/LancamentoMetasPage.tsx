@@ -20,7 +20,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { ALL_ENTRIES, CONTRACTS, MONTHS } from "@/data/rubricaData";
+import { ALL_ENTRIES, CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
 import GoalGauge from "@/components/GoalGauge";
 
 /* ── Types ────────────────────────────────────── */
