@@ -77,6 +77,35 @@ const RelatorioAssistencialPage = () => {
   const [editableNotes, setEditableNotes] = useState("");
   const reportRef = useRef<HTMLDivElement>(null);
 
+  // Timeline items for Relatório Final
+  interface TimelineItem {
+    id: string;
+    title: string;
+    category: "acao_promocao" | "justificativa" | "meta" | "rubrica";
+    date: string;
+    description: string;
+    status: "pendente" | "aprovado" | "rejeitado";
+    fileName?: string;
+  }
+
+  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([
+    { id: "tl1", title: "Campanha de vacinação sazonal", category: "acao_promocao", date: "2024-03-15", description: "Realizada campanha de vacinação contra gripe com 320 doses aplicadas na unidade.", status: "aprovado", fileName: "relatorio_vacinacao.pdf" },
+    { id: "tl2", title: "Justificativa: tempo de espera elevado", category: "justificativa", date: "2024-03-10", description: "Aumento no tempo de espera devido a reforma na ala B, reduzindo capacidade operacional em 30%.", status: "pendente" },
+    { id: "tl3", title: "Palestra sobre higienização", category: "acao_promocao", date: "2024-02-28", description: "Treinamento sobre protocolo de higienização de mãos com 45 participantes.", status: "aprovado", fileName: "lista_presenca_higiene.pdf" },
+    { id: "tl4", title: "Justificativa: rubrica RH estourada", category: "rubrica", date: "2024-02-20", description: "Contratação emergencial de 3 enfermeiros devido a afastamentos por COVID.", status: "rejeitado" },
+    { id: "tl5", title: "Mutirão cirúrgico", category: "acao_promocao", date: "2024-02-10", description: "Mutirão de cirurgias eletivas: 28 procedimentos realizados em 3 dias.", status: "pendente", fileName: "relatorio_mutirao.pdf" },
+    { id: "tl6", title: "Meta NPS: pesquisa de satisfação", category: "meta", date: "2024-01-30", description: "Aplicação de pesquisa NPS com 180 pacientes. Resultado: 72 pontos.", status: "aprovado", fileName: "pesquisa_nps_q1.xlsx" },
+  ]);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+
+  const categoryLabels: Record<string, { label: string; color: string }> = {
+    acao_promocao: { label: "Ação de Promoção", color: "bg-primary/10 text-primary" },
+    justificativa: { label: "Justificativa", color: "bg-yellow-500/10 text-yellow-600" },
+    meta: { label: "Evidência de Meta", color: "bg-emerald-500/10 text-emerald-600" },
+    rubrica: { label: "Rubrica Estourada", color: "bg-destructive/10 text-destructive" },
+  };
+
   const selectedContract = contracts.find((c) => c.id === selectedContractId);
   const unit = selectedContract?.unit || "";
 
