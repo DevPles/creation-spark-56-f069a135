@@ -84,6 +84,7 @@ const RelatorioAssistencialPage = () => {
   const [persPenalidades, setPersPenalidades] = useState("");
   const [persEvidencias, setPersEvidencias] = useState("");
   const [persInitialized, setPersInitialized] = useState("");
+  const [sectionImages, setSectionImages] = useState<Record<string, string[]>>({});
   const [pontosMelhoria, setPontosMelhoria] = useState<string[]>([]);
   const [novoPonto, setNovoPonto] = useState("");
   const reportRef = useRef<HTMLDivElement>(null);
@@ -747,37 +748,30 @@ const RelatorioAssistencialPage = () => {
             <TabsContent value="personalizacao" className="space-y-6">
               <div className="bg-card rounded-lg border border-border p-5">
                 <h2 className="text-lg font-bold text-foreground mb-1">Personalização do Relatório</h2>
-                <p className="text-sm text-muted-foreground mb-6">Todas as informações do relatório estão reunidas abaixo e são editáveis. Modifique livremente antes de exportar.</p>
+                <p className="text-sm text-muted-foreground mb-6">Visualize todas as páginas do relatório, edite textos e insira imagens em cada seção.</p>
 
                 {(() => {
-                  // Auto-initialize editable fields from data
                   const contractKey = selectedContract.id;
                   if (persInitialized !== contractKey) {
                     const contratoText = `Contrato: ${selectedContract.name}\nUnidade: ${unit}\nValor global: R$ ${(selectedContract.value / 1e6).toFixed(1)}M\nParte variável: ${(selectedContract.variable * 100).toFixed(0)}%\nR$ variável: R$ ${((selectedContract.value * selectedContract.variable) / 1000).toFixed(0)}k\nPeríodo: ${selectedContract.period}\nAlcance ponderado: ${goalAchievementPct}%`;
-
                     const rubricasText = (selectedContract.rubricas || []).map(r => `${r.name}: ${r.percent}%`).join("\n") +
                       (estouradas.length > 0 ? "\n\n--- Rubricas estouradas ---\n" + estouradas.map(e => `${e.rubrica}: Alocado R$ ${(e.allocated / 1000).toFixed(0)}k | Executado R$ ${(e.executed / 1000).toFixed(0)}k | Excedente R$ ${(e.excedente / 1000).toFixed(0)}k (${e.pctExec}%)`).join("\n") : "");
-
                     const qualText = qualitativas.map(g => {
                       const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
                       return `${g.name} — ${pct >= 100 ? "Atingida" : "Não atingida"} | Peso: ${g.weight}% | Penalidade: ${g.penalty}%`;
                     }).join("\n");
-
                     const quantText = quantitativas.map(g => {
                       const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
                       return `${g.name} — Meta: ${g.target} | Realizado: ${g.achieved} | Alcance: ${pct}% | Peso: ${g.weight}% | Penalidade: ${g.penalty}%`;
                     }).join("\n");
-
                     const penText = `Penalidade total: ${totalPenalty.toFixed(1)}%\nGlosa estimada: R$ ${(totalGlosa / 1000).toFixed(0)}k\nMetas críticas: ${crossAnalysisData.filter(r => r.status === "Crítica").length}\n\n--- Detalhamento ---\n` +
                       crossAnalysisData.filter(r => r.penalidade > 0).map(r => `${r.meta}: -${r.penalidade}% (R$ ${(r.glosa / 1000).toFixed(0)}k)`).join("\n");
-
                     const evidText = timelineItems
                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                       .map(item => {
                         const cat = categoryLabels[item.category];
                         return `[${cat?.label || item.category}] ${new Date(item.date).toLocaleDateString("pt-BR")} — ${item.title}\n${item.description}\nStatus: ${item.status}${item.fileName ? `\nArquivo: ${item.fileName}` : ""}`;
                       }).join("\n\n");
-
                     setTimeout(() => {
                       setPersContrato(contratoText);
                       setPersRubricas(rubricasText);
@@ -791,46 +785,102 @@ const RelatorioAssistencialPage = () => {
                   return null;
                 })()}
 
-                <div className="space-y-6">
-                  <div className="border border-border rounded-lg p-4 space-y-2">
-                    <Label className="text-sm font-semibold">1. Dados do Contrato</Label>
-                    <Textarea value={persContrato} onChange={e => setPersContrato(e.target.value)} rows={7} />
-                  </div>
+                {(() => {
+                  const handleImageUpload = (sectionKey: string) => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = "image/*";
+                    input.multiple = true;
+                    input.onchange = (e) => {
+                      const files = (e.target as HTMLInputElement).files;
+                      if (!files) return;
+                      Array.from(files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const dataUrl = ev.target?.result as string;
+                          setSectionImages(prev => ({
+                            ...prev,
+                            [sectionKey]: [...(prev[sectionKey] || []), dataUrl],
+                          }));
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                    };
+                    input.click();
+                  };
 
-                  <div className="border border-border rounded-lg p-4 space-y-2">
-                    <Label className="text-sm font-semibold">2. Distribuição de Rubricas</Label>
-                    <Textarea value={persRubricas} onChange={e => setPersRubricas(e.target.value)} rows={8} />
-                  </div>
+                  const removeImage = (sectionKey: string, idx: number) => {
+                    setSectionImages(prev => ({
+                      ...prev,
+                      [sectionKey]: (prev[sectionKey] || []).filter((_, i) => i !== idx),
+                    }));
+                  };
 
-                  <div className="border border-border rounded-lg p-4 space-y-2">
-                    <Label className="text-sm font-semibold">3. Metas Qualitativas</Label>
-                    <Textarea value={persQualitativas} onChange={e => setPersQualitativas(e.target.value)} rows={6} />
-                  </div>
+                  const sections = [
+                    { key: "contrato", label: "Página 1 — Dados do Contrato", value: persContrato, setter: setPersContrato, rows: 7 },
+                    { key: "rubricas", label: "Página 2 — Distribuição de Rubricas", value: persRubricas, setter: setPersRubricas, rows: 8 },
+                    { key: "qualitativas", label: "Página 3 — Metas Qualitativas", value: persQualitativas, setter: setPersQualitativas, rows: 6 },
+                    { key: "quantitativas", label: "Página 4 — Metas Quantitativas", value: persQuantitativas, setter: setPersQuantitativas, rows: 6 },
+                    { key: "penalidades", label: "Página 5 — Penalizações e Glosas", value: persPenalidades, setter: setPersPenalidades, rows: 8 },
+                    { key: "evidencias", label: "Página 6 — Evidências e Ações", value: persEvidencias, setter: setPersEvidencias, rows: 10 },
+                    { key: "observacoes", label: "Página 7 — Observações do Analista", value: editableNotes, setter: setEditableNotes, rows: 6 },
+                  ];
 
-                  <div className="border border-border rounded-lg p-4 space-y-2">
-                    <Label className="text-sm font-semibold">4. Metas Quantitativas</Label>
-                    <Textarea value={persQuantitativas} onChange={e => setPersQuantitativas(e.target.value)} rows={6} />
-                  </div>
+                  return (
+                    <div className="space-y-6">
+                      {sections.map((section, idx) => (
+                        <div key={section.key} className="border border-border rounded-lg overflow-hidden">
+                          {/* Page header */}
+                          <div className="bg-muted/50 px-4 py-2 border-b border-border flex items-center justify-between">
+                            <span className="text-sm font-semibold text-foreground">{section.label}</span>
+                            <span className="text-[10px] text-muted-foreground">{idx + 1} / {sections.length}</span>
+                          </div>
 
-                  <div className="border border-border rounded-lg p-4 space-y-2">
-                    <Label className="text-sm font-semibold">5. Penalizações e Glosas</Label>
-                    <Textarea value={persPenalidades} onChange={e => setPersPenalidades(e.target.value)} rows={8} />
-                  </div>
+                          {/* Page body simulating A4 */}
+                          <div className="p-5 bg-background space-y-3" style={{ minHeight: 200 }}>
+                            <Textarea
+                              value={section.value}
+                              onChange={e => section.setter(e.target.value)}
+                              rows={section.rows}
+                              placeholder={`Conteúdo da ${section.label}...`}
+                            />
 
-                  <div className="border border-border rounded-lg p-4 space-y-2">
-                    <Label className="text-sm font-semibold">6. Evidências e Ações</Label>
-                    <Textarea value={persEvidencias} onChange={e => setPersEvidencias(e.target.value)} rows={10} />
-                  </div>
+                            {/* Inserted images */}
+                            {(sectionImages[section.key] || []).length > 0 && (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+                                {(sectionImages[section.key] || []).map((src, imgIdx) => (
+                                  <div key={imgIdx} className="relative group rounded-lg overflow-hidden border border-border">
+                                    <img src={src} alt={`Imagem ${imgIdx + 1}`} className="w-full h-32 object-cover" />
+                                    <button
+                                      onClick={() => removeImage(section.key, imgIdx)}
+                                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[10px] rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      Remover
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
 
-                  <div className="border border-border rounded-lg p-4 space-y-2">
-                    <Label className="text-sm font-semibold">7. Observações do Analista</Label>
-                    <Textarea value={editableNotes} onChange={e => setEditableNotes(e.target.value)} placeholder="Insira suas observações, justificativas e recomendações..." rows={6} />
-                  </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => handleImageUpload(section.key)}
+                            >
+                              + Inserir imagem nesta seção
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
 
-                  <div className="flex justify-end">
-                    <Button onClick={handleExportPdf} className="px-8">Exportar Relatório PDF</Button>
-                  </div>
-                </div>
+                      <div className="flex justify-end gap-3">
+                        <Button variant="outline" onClick={() => toast.success("Alterações salvas localmente")}>Salvar rascunho</Button>
+                        <Button onClick={handleExportPdf} className="px-8">Exportar Relatório PDF</Button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </TabsContent>
 
