@@ -110,6 +110,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       period: `${periodStart}-${periodEnd}`,
       unit,
       pdfName,
+      pdfUrl,
       notificationEmail,
       rubricas: rubricas.filter((r) => r.percent > 0),
     };
