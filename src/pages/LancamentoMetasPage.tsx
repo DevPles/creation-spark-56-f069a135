@@ -16,10 +16,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
-} from "recharts";
 import { ALL_ENTRIES, CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
 import GoalGauge from "@/components/GoalGauge";
 
