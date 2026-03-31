@@ -33,23 +33,20 @@ const OrbBackground = () => {
   );
 };
 
-const FORMULA_GROUPS = {
-  assistencial: [
-    "Cobertura = Atendidos / Referenciados",
-    "Efetividade = Concluídos / Iniciados",
-    "Acompanhamento = Monitorados / Ativos",
-  ],
-  financeira: [
-    "Execução = Liquidado / Aprovado",
-    "Custo/Atend = Total / Atendimentos",
-    "ROI = (Receita - Custo) / Custo",
-  ],
-  saude: [
-    "Ocupação = Pac·Dia / Leitos·Dia",
-    "Cobertura Vacinal = Vacinados / Alvo",
-    "TMP = Pac·Dia / Altas",
-  ],
-};
+const METRICS = [
+  "1.284 atendimentos/mês",
+  "92% metas assistenciais",
+  "R$ 148,70 custo/atendimento",
+  "87 famílias acompanhadas",
+  "94,3% adesão aos planos",
+  "R$ 52.400 repasse aplicado",
+  "76% evolução clínica",
+  "219 visitas domiciliares",
+  "89% ocupação dos serviços",
+  "R$ 18.900 saldo operacional",
+  "1.047 prontuários ativos",
+  "98,1% cobertura vacinal",
+];
 
 const TypewriterText = ({ text }: { text: string }) => {
   const [charIndex, setCharIndex] = useState(0);
@@ -69,38 +66,46 @@ const TypewriterText = ({ text }: { text: string }) => {
 };
 
 const GeoShapes = () => {
-  const groups = Object.entries(FORMULA_GROUPS) as [string, string[]][];
+  const [items, setItems] = useState<{ id: string; text: string; x: number; y: number }[]>([]);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setItems(prev => [
+        ...prev.slice(-3),
+        {
+          id: crypto.randomUUID(),
+          text: METRICS[Math.floor(Math.random() * METRICS.length)],
+          x: 6 + Math.random() * 80,
+          y: 8 + Math.random() * 78,
+        },
+      ]);
+    }, 2000);
+    return () => clearInterval(t);
+  }, []);
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {groups.map(([group, formulas], col) =>
-        formulas.map((text, row) => (
+      <AnimatePresence>
+        {items.map(item => (
           <motion.div
-            key={`${group}-${row}`}
+            key={item.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.3 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1 }}
             className="absolute select-none font-mono whitespace-nowrap"
             style={{
-              left: `${6 + col * 32}%`,
-              top: `${15 + row * 22}%`,
-              fontSize: 11,
-              maxWidth: "30%",
-              overflow: "hidden",
-              color: "rgba(255,255,255,0.75)",
+              left: `${item.x}%`,
+              top: `${item.y}%`,
+              fontSize: 12,
+              color: "rgba(255,255,255,0.8)",
               textShadow: "0 0 6px rgba(255,255,255,0.1)",
             }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.35, 0.35, 0] }}
-            transition={{
-              duration: 6,
-              delay: row * 1.4 + col * 0.8,
-              repeat: Infinity,
-              repeatDelay: 3,
-              ease: "easeInOut",
-            }}
           >
-            <TypewriterText text={text} />
+            <TypewriterText text={item.text} />
           </motion.div>
-        ))
-      )}
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
