@@ -35,8 +35,12 @@ const TopBar = () => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-xs font-semibold text-primary-foreground hover:bg-primary-foreground/30 transition-colors shrink-0">
-                {initials}
+              <button className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-xs font-semibold text-primary-foreground hover:bg-primary-foreground/30 transition-colors shrink-0 overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  initials
+                )}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
