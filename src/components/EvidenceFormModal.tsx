@@ -49,11 +49,11 @@ interface EvidenceFormModalProps {
 const EVIDENCE_TYPES = ["PDF", "Planilha", "Ata de reunião", "Relatório", "Checklist", "Pesquisa", "Justificativa Interna", "Outro"];
 const STATUSES: EvidenceData["status"][] = ["Pendente", "Enviada", "Validada", "Rejeitada"];
 
-const CATEGORY_OPTIONS: { value: EvidenceCategory; label: string; icon: React.ReactNode; description: string }[] = [
-  { value: "meta", label: "Meta / Indicador", icon: <Target className="h-4 w-4" />, description: "Evidência vinculada a uma meta qualitativa ou quantitativa" },
-  { value: "rubrica", label: "Rubrica orçamentária", icon: <AlertTriangle className="h-4 w-4" />, description: "Justificativa de execução orçamentária" },
-  { value: "justificativa_interna", label: "Justificativa interna", icon: <ClipboardList className="h-4 w-4" />, description: "Documentação interna para auditoria" },
-  { value: "relatorio_assistencial", label: "Relatório assistencial", icon: <Activity className="h-4 w-4" />, description: "Conteúdo para compor o relatório assistencial" },
+const CATEGORY_OPTIONS: { value: EvidenceCategory; label: string; description: string }[] = [
+  { value: "meta", label: "Meta / Indicador", description: "Evidência vinculada a uma meta qualitativa ou quantitativa" },
+  { value: "rubrica", label: "Rubrica orçamentária", description: "Justificativa de execução orçamentária" },
+  { value: "justificativa_interna", label: "Justificativa interna", description: "Documentação interna para auditoria" },
+  { value: "relatorio_assistencial", label: "Relatório assistencial", description: "Conteúdo para compor o relatório assistencial" },
 ];
 
 const inferCategory = (evidence: EvidenceData | null): EvidenceCategory => {
