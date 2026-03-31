@@ -33,7 +33,55 @@ const OrbBackground = () => {
   );
 };
 
-const Login = () => {
+const SHAPES = ["circle", "square", "triangle", "hexagon", "diamond"] as const;
+type Shape = typeof SHAPES[number];
+
+const shapeStyle = (shape: Shape, size: number): React.CSSProperties => {
+  const base: React.CSSProperties = { width: size, height: size, position: "absolute" as const };
+  switch (shape) {
+    case "circle": return { ...base, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.15)" };
+    case "square": return { ...base, borderRadius: 4, border: "1.5px solid rgba(255,255,255,0.12)" };
+    case "triangle": return { ...base, width: 0, height: 0, borderLeft: `${size/2}px solid transparent`, borderRight: `${size/2}px solid transparent`, borderBottom: `${size}px solid rgba(255,255,255,0.1)`, background: "none" };
+    case "hexagon": return { ...base, borderRadius: "25%", border: "1.5px solid rgba(255,255,255,0.12)", transform: "rotate(30deg)" };
+    case "diamond": return { ...base, border: "1.5px solid rgba(255,255,255,0.12)", transform: "rotate(45deg)", borderRadius: 3 };
+  }
+};
+
+const randomShape = (id: number) => ({
+  id, shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+  x: 5 + Math.random() * 85, y: 5 + Math.random() * 85,
+  size: 14 + Math.random() * 36, rotation: Math.random() * 360,
+});
+
+const GeoShapes = () => {
+  const [shapes, setShapes] = useState(() => Array.from({ length: 10 }, (_, i) => randomShape(i)));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShapes(prev => prev.map(s => Math.random() > 0.6 ? randomShape(s.id) : s));
+    }, 2800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <AnimatePresence mode="popLayout">
+        {shapes.map(s => (
+          <motion.div
+            key={`${s.id}-${s.x.toFixed(1)}-${s.y.toFixed(1)}`}
+            initial={{ opacity: 0, scale: 0, rotate: 0 }}
+            animate={{ opacity: 1, scale: 1, rotate: s.rotation }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+            style={{ ...shapeStyle(s.shape, s.size), left: `${s.x}%`, top: `${s.y}%` }}
+          />
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+
   const navigate = useNavigate();
   const { session } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
