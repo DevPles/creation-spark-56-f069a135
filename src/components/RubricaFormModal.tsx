@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { ContractData, Rubrica } from "@/components/contract/types";
-import { Plus, Trash2 } from "lucide-react";
+
 
 interface RubricaFormModalProps {
   open: boolean;
