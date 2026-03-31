@@ -169,12 +169,32 @@ const TreinamentoPage = () => {
 
     await supabase
       .from("training_modules")
-      .update({ video_url: urlData.publicUrl })
+      .update({ video_url: urlData.publicUrl, video_uploaded_at: new Date().toISOString() } as any)
       .eq("id", moduleId);
 
     toast.success("Vídeo enviado com sucesso");
     setUploading(false);
     fetchModules();
+    // Update edit module in modal
+    if (editModule?.id === moduleId) {
+      setEditModule(prev => prev ? { ...prev, video_url: urlData.publicUrl, video_uploaded_at: new Date().toISOString() } : null);
+    }
+  };
+
+  const handleVideoDelete = async (moduleId: string) => {
+    // Try to remove from storage (ignore errors if file doesn't exist)
+    await supabase.storage.from("training-videos").remove([`${moduleId}.mp4`, `${moduleId}.webm`, `${moduleId}.mov`]);
+
+    await supabase
+      .from("training_modules")
+      .update({ video_url: null, video_uploaded_at: null } as any)
+      .eq("id", moduleId);
+
+    toast.success("Vídeo removido");
+    fetchModules();
+    if (editModule?.id === moduleId) {
+      setEditModule(prev => prev ? { ...prev, video_url: null, video_uploaded_at: null } : null);
+    }
   };
 
   const HeartRating = ({ moduleId }: { moduleId: string }) => {
