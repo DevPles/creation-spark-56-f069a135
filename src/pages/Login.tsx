@@ -33,68 +33,58 @@ const OrbBackground = () => {
   );
 };
 
-const MATH_SYMBOLS = ["∑", "∫", "π", "∞", "√", "Δ", "θ", "α", "β", "λ", "σ", "μ", "∂", "∇", "≈", "≠", "∈", "⊂", "∪", "∩"];
-const GEO_LABELS = ["r²", "2πr", "A=πr²", "sin θ", "cos θ", "tan θ", "a²+b²", "Σxᵢ", "∫f(x)dx", "lim x→∞", "d/dx", "∂f/∂x"];
+const FORMULAS = ["∫f(x)dx", "Σxᵢ", "A=πr²", "sin θ", "cos θ", "a²+b²=c²", "lim x→∞", "∂f/∂x", "d/dx", "2πr", "tan θ", "√x", "Δy/Δx"];
+const SHAPES_POOL = ["○", "△", "□", "◇"];
 
-type ElementType = "shape" | "formula";
-
-interface FloatingElement {
-  id: number;
-  type: ElementType;
-  content: string;
-  x: number;
-  y: number;
-  size: number;
-  rotation: number;
-  opacity: number;
-}
-
-const randomElement = (id: number): FloatingElement => {
-  const type: ElementType = Math.random() > 0.45 ? "formula" : "shape";
-  const pool = type === "formula" ? [...MATH_SYMBOLS, ...GEO_LABELS] : ["○", "△", "□", "⬡", "◇"];
-  return {
-    id,
-    type,
-    content: pool[Math.floor(Math.random() * pool.length)],
-    x: 5 + Math.random() * 85,
-    y: 5 + Math.random() * 85,
-    size: type === "formula" ? 12 + Math.random() * 16 : 16 + Math.random() * 28,
-    rotation: -30 + Math.random() * 60,
-    opacity: 0.12 + Math.random() * 0.18,
-  };
-};
+const makeItems = () => [
+  ...Array.from({ length: 7 }, (_, i) => ({
+    id: crypto.randomUUID(),
+    type: "formula" as const,
+    text: FORMULAS[Math.floor(Math.random() * FORMULAS.length)],
+    x: 8 + Math.random() * 80,
+    y: 8 + Math.random() * 80,
+    size: 13 + Math.random() * 15,
+    delay: i * 0.15,
+  })),
+  ...Array.from({ length: 2 }, (_, i) => ({
+    id: crypto.randomUUID(),
+    type: "shape" as const,
+    text: SHAPES_POOL[Math.floor(Math.random() * SHAPES_POOL.length)],
+    x: 10 + Math.random() * 75,
+    y: 10 + Math.random() * 75,
+    size: 26 + Math.random() * 18,
+    delay: i * 0.25,
+  })),
+];
 
 const GeoShapes = () => {
-  const [elements, setElements] = useState(() => Array.from({ length: 14 }, (_, i) => randomElement(i)));
+  const [items, setItems] = useState(makeItems);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setElements(prev => prev.map(el => Math.random() > 0.55 ? randomElement(el.id) : el));
-    }, 3200);
-    return () => clearInterval(interval);
+    const t = setInterval(() => setItems(makeItems()), 3400);
+    return () => clearInterval(t);
   }, []);
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <AnimatePresence mode="popLayout">
-        {elements.map(el => (
+      <AnimatePresence mode="wait">
+        {items.map(item => (
           <motion.span
-            key={`${el.id}-${el.x.toFixed(1)}-${el.y.toFixed(1)}`}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: el.opacity, scale: 1, rotate: el.rotation }}
-            exit={{ opacity: 0, scale: 0 }}
-            transition={{ duration: 1.4, ease: "easeInOut" }}
+            key={item.id}
+            initial={{ opacity: 0, scale: 0.3, y: 8 }}
+            animate={{ opacity: item.type === "shape" ? 0.18 : 0.25, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.3, y: -8 }}
+            transition={{ duration: 1.2, delay: item.delay, ease: "easeInOut" }}
             className="absolute select-none font-mono"
             style={{
-              left: `${el.x}%`,
-              top: `${el.y}%`,
-              fontSize: el.size,
-              color: "rgba(255,255,255,0.85)",
-              transform: "translate(-50%, -50%)",
-              textShadow: "0 0 8px rgba(255,255,255,0.1)",
+              left: `${item.x}%`,
+              top: `${item.y}%`,
+              fontSize: item.size,
+              color: "rgba(255,255,255,0.9)",
+              textShadow: "0 0 6px rgba(255,255,255,0.15)",
             }}
           >
-            {el.content}
+            {item.text}
           </motion.span>
         ))}
       </AnimatePresence>
