@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format, subDays, startOfMonth, endOfMonth, isWithinInterval, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, FileText } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ALL_ENTRIES, CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
 import GoalGauge from "@/components/GoalGauge";
