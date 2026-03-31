@@ -981,8 +981,8 @@ const RelatoriosPage = () => {
                     <XAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                     <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                     <Tooltip contentStyle={tooltipStyle} />
-                    <Bar dataKey={contract.unit} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey={compareContract.unit} fill="hsl(38 92% 50%)" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey={contract.unit} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} label={{ position: "top", fontSize: 10, fill: "hsl(var(--primary))" }} />
+                    <Bar dataKey={compareContract.unit} fill="hsl(38 92% 50%)" radius={[6, 6, 0, 0]} label={{ position: "top", fontSize: 10, fill: "hsl(38 92% 50%)" }} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                   </BarChart>
                 </ResponsiveContainer>
