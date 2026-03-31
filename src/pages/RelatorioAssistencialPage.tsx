@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-
+// no icon imports - text only
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
