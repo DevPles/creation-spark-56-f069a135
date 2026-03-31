@@ -50,10 +50,10 @@ const Login = () => {
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-primary rounded-lg mx-auto mb-4 flex items-center justify-center">
-            <span className="text-primary-foreground font-display font-bold text-lg">SL</span>
+            <span className="text-primary-foreground font-display font-bold text-lg">La</span>
           </div>
-          <h1 className="font-display text-xl font-bold text-foreground">SisLu</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sistema de gestão e acompanhamento</p>
+          <h1 className="font-display text-xl font-bold text-foreground">Larilu</h1>
+          <p className="text-sm text-muted-foreground mt-1">Plataforma de gestão financeira</p>
         </div>
 
         {!showReset ? (

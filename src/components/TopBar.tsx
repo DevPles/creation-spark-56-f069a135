@@ -26,20 +26,20 @@ const TopBar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 gap-3">
           <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-primary-foreground font-display font-bold text-xs">SL</span>
+            <div className="w-8 h-8 bg-primary-foreground/20 rounded-md flex items-center justify-center">
+              <span className="text-primary-foreground font-display font-bold text-xs">La</span>
             </div>
-            <span className="font-display font-semibold text-foreground text-sm hidden sm:block">SisLu</span>
+            <span className="font-display font-semibold text-primary-foreground text-sm hidden sm:block">Larilu</span>
           </button>
 
           <div className="flex-1 flex justify-center gap-2">
-            <Button size="sm" onClick={() => navigate("/dashboard")} className="rounded-full px-4">Menu</Button>
-            <Button size="sm" variant="outline" onClick={() => navigate("/lancamento")} className="rounded-full px-4">Lançar metas</Button>
+            <Button size="sm" onClick={() => navigate("/dashboard")} className="rounded-full px-4 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 border-0">Menu</Button>
+            <Button size="sm" variant="outline" onClick={() => navigate("/lancamento")} className="rounded-full px-4 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/20">Lançar metas</Button>
           </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors shrink-0">
+              <button className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-xs font-semibold text-primary-foreground hover:bg-primary-foreground/30 transition-colors shrink-0">
                 {initials}
               </button>
             </DropdownMenuTrigger>
