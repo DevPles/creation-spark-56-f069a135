@@ -128,15 +128,18 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
   const handleSavePermissions = async () => {
     if (!selectedOtherUser) { toast.error("Selecione um usuário"); return; }
     setSavingPermissions(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ allowed_cards: visibleCards } as any)
-      .eq("id", selectedOtherUser.id);
-    setSavingPermissions(false);
-    if (error) {
-      toast.error("Erro ao salvar permissões", { description: error.message });
-      return;
+    if (isValidUuid(selectedOtherUser.id)) {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ allowed_cards: visibleCards } as any)
+        .eq("id", selectedOtherUser.id);
+      if (error) {
+        setSavingPermissions(false);
+        toast.error("Erro ao salvar permissões", { description: error.message });
+        return;
+      }
     }
+    setSavingPermissions(false);
     onSaveOtherUser({ ...selectedOtherUser, visibleCards });
     toast.success("Permissões atualizadas", { description: `Cards de ${selectedOtherUser.name} salvos.` });
   };
