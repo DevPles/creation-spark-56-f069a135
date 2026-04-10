@@ -25,8 +25,7 @@ const PdfExportModal = ({ open, onOpenChange, onGenerate, generating }: Props) =
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display flex items-center gap-2">
-            <FileDown className="h-5 w-5 text-primary" />
+          <DialogTitle className="font-display">
             Gerar Relatório PDF
           </DialogTitle>
         </DialogHeader>
