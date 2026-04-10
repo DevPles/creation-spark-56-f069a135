@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useContracts } from "@/contexts/ContractsContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -24,7 +25,7 @@ import PdfExportModal from "@/components/PdfExportModal";
 import GoalGauge from "@/components/GoalGauge";
 import { GoalData } from "@/components/GoalFormModal";
 import { EvidenceData } from "@/components/EvidenceFormModal";
-import { ALL_ENTRIES, CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
+import { ALL_ENTRIES, CONTRACTS as RUBRICA_CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
 
 const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
@@ -41,7 +42,10 @@ type Step =
   | "lancar-rubrica-select"
   | "lancar-rubrica-form"
   | "consultar-metas-unit"
-  | "consultar-metas-list";
+  | "consultar-metas-list"
+  | "enviar-evidencia-contract"
+  | "relatorio-select"
+  | "finalizado";
 
 interface WizardCard {
   id: string;
@@ -84,9 +88,21 @@ interface ProfileContact {
   facility_unit: string;
 }
 
+const REPORT_OPTIONS = [
+  { id: "consolidado", title: "Relatório Consolidado", description: "Resumo geral de metas, atingimento e risco financeiro de todas as unidades." },
+  { id: "rdqa", title: "RDQA — Relatório Detalhado", description: "Relatório exigido pela LC 141/2012, art. 36, com dados quadrimestrais." },
+  { id: "contrato", title: "Relatório por Contrato", description: "Detalhamento financeiro, glosas e execução orçamentária por contrato." },
+  { id: "metas", title: "Relatório de Metas", description: "Evolução, projeções e atingimento por indicador." },
+  { id: "risco", title: "Análise de Risco", description: "Cenários de glosa e priorização de recuperação de metas." },
+  { id: "evidencias", title: "Status de Evidências", description: "Listagem de documentos enviados, pendentes e validados." },
+  { id: "assistencial", title: "Relatório Assistencial", description: "Indicadores assistenciais com análise detalhada por unidade." },
+  { id: "pdf-export", title: "Exportar PDF Personalizado", description: "Monte um relatório customizado selecionando contratos e seções." },
+];
+
 const AssistentePage = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { contracts } = useContracts();
   const [step, setStep] = useState<Step>("inicio");
   const [history, setHistory] = useState<Step[]>([]);
 
@@ -94,7 +110,7 @@ const AssistentePage = () => {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [selectedRubrica, setSelectedRubrica] = useState("");
-  const [selectedContract, setSelectedContract] = useState(CONTRACTS[0]?.id || "");
+  const [selectedContract, setSelectedContract] = useState(RUBRICA_CONTRACTS[0]?.id || "");
   const [selectedMonth, setSelectedMonth] = useState(MONTHS[0] || "");
 
   // Goal data
@@ -118,6 +134,12 @@ const AssistentePage = () => {
   const [contractModalOpen, setContractModalOpen] = useState(false);
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
+
+  // Confirmation data
+  const [finalizadoData, setFinalizadoData] = useState<{ title: string; details: string[] }>({ title: "", details: [] });
+
+  // Evidence contract selection
+  const [evidenceContractId, setEvidenceContractId] = useState("");
 
   /* ══ Training state ══ */
   const [trainingModules, setTrainingModules] = useState<TrainingModule[]>([]);
@@ -309,6 +331,11 @@ const AssistentePage = () => {
     setRubricaValue(""); setRubricaDate(""); setRubricaNotes("");
   };
 
+  const goToFinalizado = (title: string, details: string[]) => {
+    setFinalizadoData({ title, details });
+    goTo("finalizado");
+  };
+
   /* ══ Goal data loading ══ */
   const loadGoals = async (unit: string) => {
     setLoading(true);
@@ -334,15 +361,31 @@ const AssistentePage = () => {
     const { error } = await supabase.from("goal_entries").insert({
       goal_id: selectedGoal.id, user_id: user.id, value: parseFloat(entryValue), period: entryDate, notes: entryNotes || null,
     });
-    if (error) toast.error("Erro ao salvar lançamento");
-    else { toast.success("Lançamento salvo!"); resetForm(); await loadGoals(selectedUnit); }
+    if (error) { toast.error("Erro ao salvar lançamento"); setSubmitting(false); return; }
+    toast.success("Lançamento salvo!");
     setSubmitting(false);
+    goToFinalizado("Lançamento de meta realizado", [
+      `Meta: ${selectedGoal.name}`,
+      `Unidade: ${selectedUnit}`,
+      `Valor lançado: ${entryValue}${selectedGoal.unit}`,
+      `Data: ${entryDate}`,
+      entryNotes ? `Observações: ${entryNotes}` : "",
+    ].filter(Boolean));
+    resetForm();
+    await loadGoals(selectedUnit);
   };
 
   const handleSubmitRubrica = () => {
     if (!rubricaValue || !rubricaDate) { toast.error("Preencha o valor e a data"); return; }
-    const contract = CONTRACTS.find(c => c.id === selectedContract);
-    toast.success(`Lançamento de ${selectedRubrica} (${contract?.unit}) salvo`);
+    const contract = RUBRICA_CONTRACTS.find(c => c.id === selectedContract);
+    goToFinalizado("Lançamento de rubrica realizado", [
+      `Rubrica: ${selectedRubrica}`,
+      `Contrato: ${contract?.unit || ""}`,
+      `Valor executado: R$ ${rubricaValue}`,
+      `Data: ${rubricaDate}`,
+      `Mês de referência: ${selectedMonth}`,
+      rubricaNotes ? `Observações: ${rubricaNotes}` : "",
+    ].filter(Boolean));
     resetForm();
   };
 
@@ -358,7 +401,8 @@ const AssistentePage = () => {
       case "inicio": return { title: "Assistente", desc: "O que deseja fazer? Selecione uma opção para começar.", progress: 20 };
       case "cadastrar": return { title: "Cadastrar / Lançar dados", desc: "Escolha o tipo de registro ou lançamento.", progress: 40 };
       case "consultar": return { title: "Consultar informações", desc: "Acesse rapidamente as informações cadastradas.", progress: 40 };
-      case "relatorios": return { title: "Gerar relatórios", desc: "Selecione as opções do relatório.", progress: 100 };
+      case "relatorios": return { title: "Gerar relatórios", desc: "Selecione o tipo de relatório desejado.", progress: 40 };
+      case "relatorio-select": return { title: "Relatórios disponíveis", desc: "Escolha o relatório que deseja gerar ou consultar.", progress: 60 };
       case "treinamento": return { title: "Treinamento do Sistema", desc: "Assista vídeos e aprenda a usar cada módulo.", progress: 40 };
       case "lancar-meta-unit": return { title: "Lançar meta — Selecione a unidade", desc: "De qual unidade deseja lançar?", progress: 40 };
       case "lancar-meta-select": return { title: `Lançar meta — ${selectedUnit}`, desc: "Selecione a meta.", progress: 60 };
@@ -368,6 +412,8 @@ const AssistentePage = () => {
       case "lancar-rubrica-form": return { title: `Lançar: ${selectedRubrica}`, desc: "Registre o valor executado.", progress: 80 };
       case "consultar-metas-unit": return { title: "Consultar metas — Selecione a unidade", desc: "De qual unidade deseja consultar?", progress: 40 };
       case "consultar-metas-list": return { title: `Metas — ${selectedUnit}`, desc: "Metas cadastradas e atingimentos.", progress: 80 };
+      case "enviar-evidencia-contract": return { title: "Enviar Evidência — Selecione o contrato", desc: "Vincule a evidência a um contrato de gestão.", progress: 50 };
+      case "finalizado": return { title: "Concluído", desc: "Ação realizada com sucesso.", progress: 100 };
       default: return { title: "", desc: "", progress: 0 };
     }
   };
@@ -381,30 +427,55 @@ const AssistentePage = () => {
         return [
           { id: "cadastrar", title: "Cadastrar / Lançar dados", description: "Registre metas, contratos, evidências ou faça lançamentos de metas e rubricas.", action: () => goTo("cadastrar") },
           { id: "consultar", title: "Consultar informações", description: "Visualize metas, contratos, rubricas e evidências cadastrados.", action: () => goTo("consultar") },
-          { id: "relatorios", title: "Gerar relatórios", description: "Crie relatórios em PDF com dados consolidados.", action: () => setPdfModalOpen(true) },
+          { id: "relatorios", title: "Gerar relatórios", description: "Crie relatórios em PDF com dados consolidados do sistema.", action: () => goTo("relatorio-select") },
           { id: "treinamento", title: "Treinamento do Sistema", description: "Assista vídeos explicativos e aprenda a usar cada módulo do sistema.", action: () => goTo("treinamento") },
         ];
       case "cadastrar":
         return [
-          { id: "nova-meta", title: "Cadastrar Meta", description: "Crie uma nova meta quantitativa, qualitativa ou documental.", action: () => setGoalModalOpen(true) },
-          { id: "novo-contrato", title: "Cadastrar Contrato", description: "Registre um novo contrato de gestão com valores e leitos.", action: () => setContractModalOpen(true) },
-          { id: "nova-evidencia", title: "Enviar Evidência", description: "Faça upload de documentos comprobatórios.", action: () => setEvidenceModalOpen(true) },
-          { id: "lancar-meta", title: "Lançar Meta", description: "Selecione unidade e meta para registrar o valor realizado.", action: () => goTo("lancar-meta-unit") },
-          { id: "lancar-rubrica", title: "Lançar Rubrica", description: "Registre valores executados por rubrica.", action: () => goTo("lancar-rubrica-unit") },
+          { id: "nova-meta", title: "Cadastrar Meta", description: "Crie uma nova meta quantitativa, qualitativa ou documental vinculada a uma unidade.", action: () => setGoalModalOpen(true) },
+          { id: "novo-contrato", title: "Cadastrar Contrato", description: "Registre um novo contrato de gestão com valores, rubricas e PDF.", action: () => setContractModalOpen(true) },
+          { id: "nova-evidencia", title: "Enviar Evidência", description: "Faça upload de documentos comprobatórios vinculados a um contrato.", action: () => goTo("enviar-evidencia-contract") },
+          { id: "lancar-meta", title: "Lançar Meta", description: "Selecione unidade e meta para registrar o valor realizado no período.", action: () => goTo("lancar-meta-unit") },
+          { id: "lancar-rubrica", title: "Lançar Rubrica", description: "Registre valores executados por rubrica orçamentária.", action: () => goTo("lancar-rubrica-unit") },
         ];
       case "consultar":
         return [
-          { id: "ver-metas", title: "Ver Metas", description: "Consulte metas com atingimento e histórico.", action: () => goTo("consultar-metas-unit") },
-          { id: "ver-contratos", title: "Ver Contratos", description: "Contratos vigentes, valores e status.", action: () => navigate("/contratos") },
-          { id: "ver-rubricas", title: "Ver Rubricas e Riscos", description: "Execução orçamentária e projeção de risco.", action: () => navigate("/controle-rubrica") },
-          { id: "ver-evidencias", title: "Ver Evidências", description: "Documentos e status de validação.", action: () => navigate("/evidencias") },
-          { id: "ver-sau", title: "Ver SAU", description: "Serviço de Atendimento ao Usuário.", action: () => navigate("/sau") },
-          { id: "ver-relatorio", title: "Relatório Assistencial", description: "Indicadores e dados assistenciais.", action: () => navigate("/relatorio-assistencial") },
+          { id: "ver-metas", title: "Ver Metas", description: "Consulte metas com atingimento, histórico de lançamentos e gauge.", action: () => goTo("consultar-metas-unit") },
+          { id: "ver-contratos", title: "Ver Contratos", description: "Contratos vigentes, valores, rubricas e status.", action: () => navigate("/contratos") },
+          { id: "ver-rubricas", title: "Ver Rubricas e Riscos", description: "Execução orçamentária e projeção de risco por contrato.", action: () => navigate("/controle-rubrica") },
+          { id: "ver-evidencias", title: "Ver Evidências", description: "Documentos enviados, pendentes e status de validação.", action: () => navigate("/evidencias") },
+          { id: "ver-sau", title: "Ver SAU", description: "Serviço de Atendimento ao Usuário — indicadores e ocorrências.", action: () => navigate("/sau") },
+          { id: "ver-relatorio", title: "Relatório Assistencial", description: "Indicadores e dados assistenciais detalhados por unidade.", action: () => navigate("/relatorio-assistencial") },
         ];
+      case "relatorio-select":
+        return REPORT_OPTIONS.map(r => ({
+          id: r.id,
+          title: r.title,
+          description: r.description,
+          action: () => {
+            if (r.id === "pdf-export") {
+              setPdfModalOpen(true);
+            } else if (r.id === "assistencial") {
+              navigate("/relatorio-assistencial");
+            } else {
+              navigate("/relatorios");
+            }
+          },
+        }));
+      case "enviar-evidencia-contract":
+        return contracts.map(c => ({
+          id: c.id,
+          title: c.name,
+          description: `${c.unit} — ${c.status} — Período: ${c.period}`,
+          action: () => {
+            setEvidenceContractId(c.id);
+            setEvidenceModalOpen(true);
+          },
+        }));
       case "lancar-meta-unit":
         return UNITS.map(u => ({ id: u, title: u, description: `Lançar metas da unidade ${u}`, action: () => { setSelectedUnit(u); loadGoals(u); goTo("lancar-meta-select"); } }));
       case "lancar-rubrica-unit":
-        return CONTRACTS.map(c => ({ id: c.id, title: c.unit, description: `Contrato: ${c.unit}`, action: () => { setSelectedContract(c.id); goTo("lancar-rubrica-select"); } }));
+        return RUBRICA_CONTRACTS.map(c => ({ id: c.id, title: c.unit, description: `Contrato: ${c.unit}`, action: () => { setSelectedContract(c.id); goTo("lancar-rubrica-select"); } }));
       case "consultar-metas-unit":
         return UNITS.map(u => ({ id: u, title: u, description: `Consultar metas de ${u}`, action: () => { setSelectedUnit(u); loadGoals(u); goTo("consultar-metas-list"); } }));
       default:
@@ -420,10 +491,10 @@ const AssistentePage = () => {
     scoring: [{ min: 0, label: "Insuficiente", points: 0 }, { min: 50, label: "Regular", points: 50 }, { min: 80, label: "Bom", points: 80 }, { min: 100, label: "Ótimo", points: 100 }],
     history: [], glosaPct: 0,
   };
-  const newEvidenceTemplate: EvidenceData = { id: "", goalName: "", type: "PDF", fileName: "", status: "Pendente", dueDate: new Date().toISOString().split("T")[0], notes: "" };
+  const newEvidenceTemplate: EvidenceData = { id: "", goalName: "", type: "PDF", fileName: "", status: "Pendente", dueDate: new Date().toISOString().split("T")[0], notes: "", contractId: evidenceContractId };
 
   /* ══ Inline renders ══ */
-  const isInlineStep = ["lancar-meta-select", "lancar-meta-form", "lancar-rubrica-select", "lancar-rubrica-form", "consultar-metas-list", "treinamento"].includes(step);
+  const isInlineStep = ["lancar-meta-select", "lancar-meta-form", "lancar-rubrica-select", "lancar-rubrica-form", "consultar-metas-list", "treinamento", "finalizado"].includes(step);
 
   const HeartRating = ({ moduleId }: { moduleId: string }) => {
     const myRating = trainingRatings[moduleId] || 0;
@@ -579,7 +650,7 @@ const AssistentePage = () => {
   };
 
   const renderLancarRubricaSelect = () => {
-    const contract = CONTRACTS.find(c => c.id === selectedContract);
+    const contract = RUBRICA_CONTRACTS.find(c => c.id === selectedContract);
     if (!contract) return <p className="text-muted-foreground text-center py-12">Contrato não encontrado.</p>;
     return (
       <div className="grid grid-cols-1 gap-3">
@@ -607,7 +678,7 @@ const AssistentePage = () => {
   };
 
   const renderLancarRubricaForm = () => {
-    const contract = CONTRACTS.find(c => c.id === selectedContract);
+    const contract = RUBRICA_CONTRACTS.find(c => c.id === selectedContract);
     if (!contract) return null;
     const existing = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === selectedRubrica);
     const allocated = existing?.valorAllocated || 0;
@@ -676,6 +747,27 @@ const AssistentePage = () => {
     );
   };
 
+  const renderFinalizado = () => (
+    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-lg mx-auto text-center">
+      <div className="kpi-card p-8">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <span className="text-3xl text-primary">✓</span>
+        </div>
+        <h2 className="font-display font-bold text-xl text-foreground mb-2">{finalizadoData.title}</h2>
+        <p className="text-sm text-muted-foreground mb-6">Confira o resumo abaixo:</p>
+        <div className="bg-secondary/30 rounded-lg p-4 text-left space-y-1.5 mb-6">
+          {finalizadoData.details.map((detail, i) => (
+            <p key={i} className="text-sm text-foreground">{detail}</p>
+          ))}
+        </div>
+        <div className="flex flex-col gap-2">
+          <Button className="w-full" onClick={() => { setStep("inicio"); setHistory([]); }}>Voltar ao início do assistente</Button>
+          <Button variant="outline" className="w-full" onClick={() => navigate("/dashboard")}>Ir para o Dashboard</Button>
+        </div>
+      </div>
+    </motion.div>
+  );
+
   const renderInlineContent = () => {
     switch (step) {
       case "lancar-meta-select": return renderLancarMetaSelect();
@@ -684,6 +776,7 @@ const AssistentePage = () => {
       case "lancar-rubrica-form": return renderLancarRubricaForm();
       case "consultar-metas-list": return renderConsultarMetasList();
       case "treinamento": return renderTrainamento();
+      case "finalizado": return renderFinalizado();
       default: return null;
     }
   };
@@ -728,10 +821,33 @@ const AssistentePage = () => {
       </main>
 
       {/* Wizard Modals */}
-      <GoalFormModal goal={newGoalTemplate} open={goalModalOpen} onOpenChange={setGoalModalOpen} onSave={() => { setGoalModalOpen(false); toast.success("Meta cadastrada!"); }} isNew />
-      <ContractFormModal contract={null} open={contractModalOpen} onOpenChange={setContractModalOpen} onSave={() => { setContractModalOpen(false); toast.success("Contrato cadastrado!"); }} isNew />
-      <EvidenceFormModal evidence={newEvidenceTemplate} open={evidenceModalOpen} onOpenChange={setEvidenceModalOpen} onSave={() => { setEvidenceModalOpen(false); toast.success("Evidência enviada!"); }} isNew />
-      <PdfExportModal open={pdfModalOpen} onOpenChange={setPdfModalOpen} onGenerate={() => { setPdfModalOpen(false); toast.success("Relatório gerado!"); }} />
+      <GoalFormModal goal={newGoalTemplate} open={goalModalOpen} onOpenChange={setGoalModalOpen} onSave={() => {
+        setGoalModalOpen(false);
+        goToFinalizado("Meta cadastrada com sucesso", ["A meta foi criada e já está disponível para lançamentos.", "Você pode lançar valores acessando 'Lançar Meta' no assistente."]);
+      }} isNew />
+      <ContractFormModal contract={null} open={contractModalOpen} onOpenChange={setContractModalOpen} onSave={() => {
+        setContractModalOpen(false);
+        goToFinalizado("Contrato cadastrado com sucesso", ["O contrato de gestão foi registrado no sistema.", "As rubricas e metas vinculadas já estão disponíveis."]);
+      }} isNew />
+      <EvidenceFormModal
+        evidence={{ ...newEvidenceTemplate, contractId: evidenceContractId }}
+        open={evidenceModalOpen}
+        onOpenChange={setEvidenceModalOpen}
+        onSave={() => {
+          setEvidenceModalOpen(false);
+          const contract = contracts.find(c => c.id === evidenceContractId);
+          goToFinalizado("Evidência enviada com sucesso", [
+            contract ? `Contrato vinculado: ${contract.name}` : "",
+            "O documento foi registrado e está aguardando validação.",
+            "Acompanhe o status em Consultar → Ver Evidências.",
+          ].filter(Boolean));
+        }}
+        isNew
+      />
+      <PdfExportModal open={pdfModalOpen} onOpenChange={setPdfModalOpen} onGenerate={() => {
+        setPdfModalOpen(false);
+        goToFinalizado("Relatório gerado com sucesso", ["O PDF foi gerado e está pronto para download.", "Você pode acessar seus relatórios anteriores na página de Relatórios."]);
+      }} />
 
       {/* Training create/edit modal */}
       <Dialog open={trainingModalOpen} onOpenChange={setTrainingModalOpen}>
