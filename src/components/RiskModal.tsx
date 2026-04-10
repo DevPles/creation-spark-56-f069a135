@@ -5,6 +5,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
+
+interface RiskItem {
   goal: string;
   risk: number;
   prob: number;
