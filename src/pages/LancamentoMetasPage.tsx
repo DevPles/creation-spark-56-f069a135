@@ -79,7 +79,8 @@ const LancamentoMetasPage = () => {
     { value: "9", label: "Outubro" }, { value: "10", label: "Novembro" }, { value: "11", label: "Dezembro" },
   ];
   const [bedData, setBedData] = useState<{ category: string; specialty: string; quantity: number }[]>([]);
-
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
   const totalBedsByCategory = useMemo(() => {
