@@ -91,19 +91,17 @@ const LancamentoMetasPage = () => {
     return lower.includes("ocupação") || lower.includes("internação") || lower.includes("internacao") || lower.includes("rotatividade") || lower.includes("leito");
   };
 
-  const getDateRange = (filter: string): { start: Date; end: Date } | null => {
-    const now = new Date();
-    switch (filter) {
-      case "hoje": return { start: new Date(now.setHours(0,0,0,0)), end: new Date() };
-      case "7d": return { start: subDays(new Date(), 7), end: new Date() };
-      case "30d": return { start: subDays(new Date(), 30), end: new Date() };
-      case "mes": return { start: startOfMonth(new Date()), end: endOfMonth(new Date()) };
-      default: return null;
+  const getDateRange = (): { start: Date; end: Date } | null => {
+    const year = Number(filterYear);
+    if (filterMonth === "todos") {
+      return { start: new Date(year, 0, 1), end: new Date(year, 11, 31, 23, 59, 59) };
     }
+    const month = Number(filterMonth);
+    return { start: new Date(year, month, 1), end: endOfMonth(new Date(year, month, 1)) };
   };
 
   const filterEntriesByDate = (entryList: { value: number; period: string }[]) => {
-    const range = getDateRange(dateFilter);
+    const range = getDateRange();
     if (!range) return entryList;
     return entryList.filter(e => {
       try {
