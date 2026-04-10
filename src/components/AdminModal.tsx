@@ -77,9 +77,14 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     }
   }, [user, open]);
 
+  const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
   useEffect(() => {
     if (selectedOtherUser) {
-      // Load allowed_cards from DB
+      if (!isValidUuid(selectedOtherUser.id)) {
+        setVisibleCards(selectedOtherUser.visibleCards || ALL_CARDS.map(c => c.id));
+        return;
+      }
       const loadCards = async () => {
         const { data } = await supabase
           .from("profiles")
