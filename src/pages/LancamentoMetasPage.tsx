@@ -983,6 +983,27 @@ const LancamentoMetasPage = () => {
                 });
               });
 
+              // Collect all values for global mode ranking
+              const allValues: number[] = [];
+              if (heatmapCompare === "global") {
+                heatmapGoals.forEach(g => {
+                  const entries = goalDayMap[g.id] || {};
+                  Object.values(entries).forEach(v => allValues.push(v));
+                });
+                allValues.sort((a, b) => a - b);
+              }
+
+              const getPercentileColor = (value: number) => {
+                if (allValues.length === 0) return "bg-muted/30 text-muted-foreground/50";
+                const rank = allValues.filter(v => v <= value).length;
+                const pct = (rank / allValues.length) * 100;
+                // Heat map: red (worst/lowest) → orange → yellow → green (best/highest)
+                if (pct <= 25) return "bg-destructive/80 text-white";
+                if (pct <= 50) return "bg-orange-400/80 text-white";
+                if (pct <= 75) return "bg-amber-400/80 text-white";
+                return "bg-emerald-500/80 text-white";
+              };
+
               const getCellColor = (goal: Goal, value: number | undefined) => {
                 if (value === undefined) return "bg-muted/30 text-muted-foreground/50";
 
@@ -993,9 +1014,8 @@ const LancamentoMetasPage = () => {
                   goal.name.toLowerCase().includes("óbito");
 
                 if (heatmapCompare === "meta") {
-                  // Compare against daily target (target / days in month)
-                  const dailyTarget = goal.target / daysInMonth;
-                  const pct = dailyTarget > 0 ? (value / dailyTarget) * 100 : 0;
+                  // Compare against the goal's full target
+                  const pct = goal.target > 0 ? (value / goal.target) * 100 : 0;
                   if (lowerIsBetter) {
                     if (pct <= 80) return "bg-emerald-500/80 text-white";
                     if (pct <= 100) return "bg-amber-400/80 text-white";
@@ -1008,17 +1028,8 @@ const LancamentoMetasPage = () => {
                   return "bg-destructive/80 text-white";
                 }
 
-                // Global fixed thresholds
-                const pct = goal.target > 0 ? (value / goal.target) * 100 : 0;
-                if (lowerIsBetter) {
-                  if (pct <= 80) return "bg-emerald-500/80 text-white";
-                  if (pct <= 100) return "bg-amber-400/80 text-white";
-                  return "bg-destructive/80 text-white";
-                }
-                if (pct >= 90) return "bg-emerald-500/80 text-white";
-                if (pct >= 70) return "bg-amber-400/80 text-white";
-                if (pct >= 50) return "bg-orange-400/80 text-white";
-                return "bg-destructive/80 text-white";
+                // Global mode: relative ranking across all values
+                return getPercentileColor(value);
               };
 
               if (heatmapGoals.length === 0) {
@@ -1049,10 +1060,10 @@ const LancamentoMetasPage = () => {
                     <div className="flex gap-3 mt-3">
                       {heatmapCompare === "global" ? (
                         <>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">≥ 90%</span></div>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">70–89%</span></div>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">50–69%</span></div>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">&lt; 50%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">Top 25% (melhor)</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">50–75%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">25–50%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">Bottom 25% (pior)</span></div>
                         </>
                       ) : (
                         <>
