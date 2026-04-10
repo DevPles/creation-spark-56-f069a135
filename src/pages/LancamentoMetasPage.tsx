@@ -55,7 +55,7 @@ const PIE_COLORS = ["hsl(var(--primary))", "hsl(38 92% 50%)", "hsl(142 71% 45%)"
 /* ── Component ────────────────────────────────── */
 const LancamentoMetasPage = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin: isAdminRole } = useAuth();
   const [activeTab, setActiveTab] = useState("lancar-metas");
 
   /* ── Metas state ── */
@@ -737,7 +737,7 @@ const LancamentoMetasPage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="lancar-metas">Lançamento de Metas</TabsTrigger>
-            <TabsTrigger value="lancamento-rubricas">Lançamento de Rubricas</TabsTrigger>
+            {isAdminRole && <TabsTrigger value="lancamento-rubricas">Lançamento de Rubricas</TabsTrigger>}
             <TabsTrigger value="lancar-leitos">Movimentação de Leitos</TabsTrigger>
             <TabsTrigger value="mapa-termico">Mapa Térmico Diário</TabsTrigger>
           </TabsList>

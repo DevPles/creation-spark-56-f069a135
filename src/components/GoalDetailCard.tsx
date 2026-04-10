@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import GoalGauge from "./GoalGauge";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface GoalDetail {
   id: string;
@@ -18,6 +19,7 @@ interface GoalDetail {
 }
 
 const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => void }) => {
+  const { isAdmin } = useAuth();
   const attainment = goal.type === "DOC"
     ? (goal.current >= goal.target ? 100 : 0)
     : Math.min(100, Math.round((goal.current / goal.target) * 100));
@@ -102,7 +104,7 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
       </div>
 
       {/* Values */}
-      <div className="grid grid-cols-3 gap-3 mt-4 pt-3 border-t border-border">
+      <div className={`grid ${isAdmin ? "grid-cols-3" : "grid-cols-2"} gap-3 mt-4 pt-3 border-t border-border`}>
         <div>
           <p className="text-[10px] text-muted-foreground">Realizado</p>
           <p className="font-display font-bold text-foreground text-sm">{goal.current}{goal.unit}</p>
@@ -111,12 +113,14 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
           <p className="text-[10px] text-muted-foreground">Meta</p>
           <p className="font-display font-bold text-foreground text-sm">{goal.target}{goal.unit}</p>
         </div>
-        <div>
-          <p className="text-[10px] text-muted-foreground">R$ em risco</p>
-          <p className="font-display font-bold text-risk text-sm">
-            {goal.risk > 0 ? `R$ ${(goal.risk / 1000).toFixed(1)}k` : "—"}
-          </p>
-        </div>
+        {isAdmin && (
+          <div>
+            <p className="text-[10px] text-muted-foreground">R$ em risco</p>
+            <p className="font-display font-bold text-risk text-sm">
+              {goal.risk > 0 ? `R$ ${(goal.risk / 1000).toFixed(1)}k` : "—"}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Scoring rules */}

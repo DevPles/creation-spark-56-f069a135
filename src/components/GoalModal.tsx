@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Goal {
   id: string;
@@ -24,6 +25,7 @@ interface GoalModalProps {
 }
 
 const GoalModal = ({ goal, open, onOpenChange }: GoalModalProps) => {
+  const { isAdmin } = useAuth();
   if (!goal) return null;
 
   const attainment = goal.type === "DOC"
@@ -88,12 +90,14 @@ const GoalModal = ({ goal, open, onOpenChange }: GoalModalProps) => {
               <p className="text-[10px] text-muted-foreground">Realizado</p>
               <p className="font-display font-bold text-foreground">{goal.current}{goal.unit}</p>
             </div>
-            <div className="kpi-card !p-3">
-              <p className="text-[10px] text-muted-foreground">R$ em risco</p>
-              <p className="font-display font-bold text-risk">
-                {goal.risk > 0 ? `R$ ${(goal.risk / 1000).toFixed(1)}k` : "—"}
-              </p>
-            </div>
+            {isAdmin && (
+              <div className="kpi-card !p-3">
+                <p className="text-[10px] text-muted-foreground">R$ em risco</p>
+                <p className="font-display font-bold text-risk">
+                  {goal.risk > 0 ? `R$ ${(goal.risk / 1000).toFixed(1)}k` : "—"}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* History */}
@@ -130,7 +134,7 @@ const GoalModal = ({ goal, open, onOpenChange }: GoalModalProps) => {
           </div>
 
           {/* Projection */}
-          {goal.risk > 0 && (
+          {isAdmin && goal.risk > 0 && (
             <div className="bg-risk/5 border border-risk/20 rounded-lg p-3">
               <p className="text-sm font-medium text-foreground">Projeção de risco</p>
               <p className="text-xs text-muted-foreground mt-1">

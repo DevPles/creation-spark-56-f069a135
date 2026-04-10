@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface RiskItem {
   goal: string;
@@ -20,7 +21,21 @@ interface RiskModalProps {
 }
 
 const RiskModal = ({ item, open, onOpenChange }: RiskModalProps) => {
+  const { isAdmin } = useAuth();
   if (!item) return null;
+
+  if (!isAdmin) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Acesso restrito</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-4">Dados financeiros de risco são visíveis apenas para administradores.</p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const scenarios = [
     { label: "Otimista", prob: Math.max(5, item.prob - 25), risk: Math.round(item.risk * 0.4) },

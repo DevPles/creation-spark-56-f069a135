@@ -38,7 +38,7 @@ const App = () => (
             <Route path="/" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/metas" element={<ProtectedRoute><MetasPage /></ProtectedRoute>} />
-            <Route path="/contratos" element={<ProtectedRoute><ContratosPage /></ProtectedRoute>} />
+            <Route path="/contratos" element={<ProtectedRoute adminOnly><ContratosPage /></ProtectedRoute>} />
             
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             <Route path="/evidencias" element={<ProtectedRoute><EvidenciasPage /></ProtectedRoute>} />
@@ -46,7 +46,7 @@ const App = () => (
             <Route path="/lancamento" element={<ProtectedRoute><LancamentoMetasPage /></ProtectedRoute>} />
             <Route path="/sau" element={<ProtectedRoute><SauPage /></ProtectedRoute>} />
             <Route path="/relatorio-assistencial" element={<ProtectedRoute><RelatorioAssistencialPage /></ProtectedRoute>} />
-            <Route path="/controle-rubrica" element={<ProtectedRoute><ControleRubricaPage /></ProtectedRoute>} />
+            <Route path="/controle-rubrica" element={<ProtectedRoute adminOnly><ControleRubricaPage /></ProtectedRoute>} />
             <Route path="/treinamento" element={<ProtectedRoute><TreinamentoPage /></ProtectedRoute>} />
             <Route path="/assistente" element={<ProtectedRoute><AssistentePage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

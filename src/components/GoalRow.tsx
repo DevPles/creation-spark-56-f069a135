@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Goal {
   id: string;
@@ -12,6 +13,7 @@ interface Goal {
 }
 
 const GoalRow = ({ goal, index, onClick }: { goal: Goal; index: number; onClick?: () => void }) => {
+  const { isAdmin } = useAuth();
   const attainment = goal.type === "DOC"
     ? (goal.current >= goal.target ? 100 : 0)
     : Math.min(100, Math.round((goal.current / goal.target) * 100));
@@ -33,7 +35,7 @@ const GoalRow = ({ goal, index, onClick }: { goal: Goal; index: number; onClick?
       onClick={onClick}
       className="px-5 py-3 grid grid-cols-12 items-center text-sm hover:bg-muted/30 transition-colors cursor-pointer"
     >
-      <div className="col-span-4 sm:col-span-5">
+      <div className={isAdmin ? "col-span-4 sm:col-span-5" : "col-span-5 sm:col-span-6"}>
         <p className="font-medium text-foreground">{goal.name}</p>
         <span className={`status-badge mt-1 ${goal.type === "QNT" ? "bg-accent text-accent-foreground" : goal.type === "QLT" ? "status-success" : "status-warning"}`}>
           {goal.type}
@@ -43,7 +45,7 @@ const GoalRow = ({ goal, index, onClick }: { goal: Goal; index: number; onClick?
         <p className="text-foreground">{goal.current}{goal.unit}</p>
         <p className="text-xs text-muted-foreground">meta: {goal.target}{goal.unit}</p>
       </div>
-      <div className="col-span-2 text-center">
+      <div className={isAdmin ? "col-span-2 text-center" : "col-span-3 text-center"}>
         <div className="inline-flex items-center gap-1">
           <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
             <div
@@ -54,13 +56,15 @@ const GoalRow = ({ goal, index, onClick }: { goal: Goal; index: number; onClick?
           <span className="text-xs text-muted-foreground">{attainment}%</span>
         </div>
       </div>
-      <div className="col-span-2 text-right">
-        {goal.risk > 0 ? (
-          <span className="font-display font-semibold text-risk">R$ {(goal.risk / 1000).toFixed(1)}k</span>
-        ) : (
-          <span className="text-success font-medium">Sem risco</span>
-        )}
-      </div>
+      {isAdmin && (
+        <div className="col-span-2 text-right">
+          {goal.risk > 0 ? (
+            <span className="font-display font-semibold text-risk">R$ {(goal.risk / 1000).toFixed(1)}k</span>
+          ) : (
+            <span className="text-success font-medium">Sem risco</span>
+          )}
+        </div>
+      )}
       <div className="col-span-2 sm:col-span-1 text-right text-muted-foreground">
         {trendLabel}
       </div>
