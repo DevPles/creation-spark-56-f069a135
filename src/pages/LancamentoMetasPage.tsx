@@ -197,7 +197,7 @@ const LancamentoMetasPage = () => {
     startY = drawKpiBoxes([
       { label: "Total de Metas", value: String(metaRows.length) },
       { label: "Atingimento Ponderado", value: `${totalPct}%`, color: totalPct >= 100 ? success : totalPct >= 70 ? warning : danger },
-      { label: "Metas ≥ 100%", value: String(metaRows.filter(r => r.pct >= 100).length), color: success },
+      { label: "Metas >= 100%", value: String(metaRows.filter(r => r.pct >= 100).length), color: success },
       { label: "Metas < 70%", value: String(metaRows.filter(r => r.pct < 70).length), color: metaRows.filter(r => r.pct < 70).length > 0 ? danger : success },
     ], startY);
 
