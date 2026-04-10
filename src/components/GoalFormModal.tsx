@@ -78,6 +78,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
   const [weight, setWeight] = useState("");
   const [trend, setTrend] = useState<"up" | "down" | "stable">("stable");
   const [glosaPct, setGlosaPct] = useState("");
+  const [facilityUnit, setFacilityUnit] = useState("Hospital Geral");
+  const [sector, setSector] = useState("Todos");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
