@@ -592,6 +592,35 @@ const RelatoriosPage = () => {
   const [selectedGoal, setSelectedGoal] = useState<GoalItem | null>(null);
   const [goalModalOpen, setGoalModalOpen] = useState(false);
 
+  // Bed data from DB
+  const [bedData, setBedData] = useState<{ facility_unit: string; category: string; specialty: string; quantity: number }[]>([]);
+  const [bedGoalEntries, setBedGoalEntries] = useState<{ goal_name: string; facility_unit: string; period: string; value: number; target: number }[]>([]);
+
+  useEffect(() => {
+    const fetchBedData = async () => {
+      const { data: beds } = await supabase.from("beds").select("*");
+      if (beds) setBedData(beds);
+
+      const { data: goals } = await supabase.from("goals").select("id, name, facility_unit, target");
+      if (!goals) return;
+      const bedGoals = goals.filter(g => {
+        const n = g.name.toLowerCase();
+        return n.includes("ocupa") || n.includes("intern") || n.includes("giro") || n.includes("rotat");
+      });
+      if (!bedGoals.length) return;
+
+      const { data: entries } = await supabase.from("goal_entries").select("goal_id, value, period").in("goal_id", bedGoals.map(g => g.id));
+      if (!entries) return;
+
+      const mapped = entries.map(e => {
+        const goal = bedGoals.find(g => g.id === e.goal_id)!;
+        return { goal_name: goal.name, facility_unit: goal.facility_unit, period: e.period, value: Number(e.value), target: Number(goal.target) };
+      });
+      setBedGoalEntries(mapped);
+    };
+    fetchBedData();
+  }, []);
+
   const contract = CONTRACTS.find(c => c.id === selectedContractId)!;
   const compareContract = CONTRACTS.find(c => c.id === compareContractId);
 
@@ -601,16 +630,53 @@ const RelatoriosPage = () => {
   const compareFilteredGoals = useMemo(() => compareContract ? filterGoals(compareContract.goals, typeFilter, statusFilter) : [], [compareContract, typeFilter, statusFilter]);
   const compareStats = useMemo(() => computeStats(compareFilteredGoals), [compareFilteredGoals]);
 
+  // Bed chart data - filtered by selected contract unit
+  const bedChartData = useMemo(() => {
+    const unit = contract.unit;
+    const totalInternacao = bedData.filter(b => b.facility_unit === unit && b.category === "internacao").reduce((s, b) => s + b.quantity, 0);
+    const totalComplementar = bedData.filter(b => b.facility_unit === unit && b.category === "complementar").reduce((s, b) => s + b.quantity, 0);
+    const totalLeitos = totalInternacao + totalComplementar;
+
+    // Group entries by period for this unit
+    const entriesByPeriod: Record<string, { internacoes: number; saidas: number }> = {};
+    bedGoalEntries.filter(e => e.facility_unit === unit).forEach(e => {
+      if (!entriesByPeriod[e.period]) entriesByPeriod[e.period] = { internacoes: 0, saidas: 0 };
+      const n = e.goal_name.toLowerCase();
+      if (n.includes("ocupa") || n.includes("intern")) {
+        entriesByPeriod[e.period].internacoes += e.value;
+      }
+      if (n.includes("giro") || n.includes("rotat")) {
+        entriesByPeriod[e.period].saidas += e.value;
+      }
+    });
+
+    const periods = Object.keys(entriesByPeriod).sort();
+    let accumulated = 0;
+    const timeline = periods.map(p => {
+      const d = entriesByPeriod[p];
+      const taxaOcupacao = totalInternacao > 0 ? Math.round((d.internacoes / totalInternacao) * 100) : 0;
+      const giro = totalInternacao > 0 ? parseFloat((d.internacoes / totalInternacao).toFixed(2)) : 0;
+      accumulated += d.internacoes;
+      return { period: p, taxaOcupacao, giro, internacoes: d.internacoes, leitos: totalInternacao };
+    });
+
+    return { totalInternacao, totalComplementar, totalLeitos, timeline, 
+      bedBreakdown: bedData.filter(b => b.facility_unit === unit) };
+  }, [contract.unit, bedData, bedGoalEntries]);
+
   const chartRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const [isCarouselFullscreen, setIsCarouselFullscreen] = useState(false);
 
-  const TOTAL_SLIDES = compareMode ? 11 : 10;
+  const hasBedData = bedChartData.totalLeitos > 0;
+  const TOTAL_SLIDES = (compareMode ? 11 : 10) + (hasBedData ? 2 : 0);
   const FULLSCREEN_GROUPS = useMemo(() => {
     const groups: number[][] = [[0, 9], [1, 2], [3, 4], [5, 6], [7, 8]];
-    if (compareMode) groups.push([10]);
+    if (hasBedData) groups.push([10, 11]);
+    const compIdx = hasBedData ? 12 : 10;
+    if (compareMode) groups.push([compIdx]);
     return groups;
-  }, [compareMode]);
+  }, [compareMode, hasBedData]);
   const TOTAL_FS_SLIDES = FULLSCREEN_GROUPS.length;
 
   const nextSlide = useCallback(() => setCurrentSlide(prev => {
