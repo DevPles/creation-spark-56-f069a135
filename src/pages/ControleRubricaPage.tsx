@@ -43,6 +43,19 @@ const ControleRubricaPage = () => {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [rubricaModalOpen, setRubricaModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractData | null>(null);
+  const [selectedRisk, setSelectedRisk] = useState<typeof RISK_DATA[0] | null>(null);
+  const [riskModalOpen, setRiskModalOpen] = useState(false);
+
+  const filteredRisks =
+    selectedContract === "all"
+      ? RISK_DATA
+      : RISK_DATA.filter((item) => item.unit === selectedContract);
+  const totalRisk = filteredRisks.reduce((sum, item) => sum + item.risk, 0);
+
+  const handleRiskClick = (item: typeof RISK_DATA[0]) => {
+    setSelectedRisk(item);
+    setRiskModalOpen(true);
+  };
 
   // Build rubrica data from contracts
   const byRubrica = useMemo(() => {
