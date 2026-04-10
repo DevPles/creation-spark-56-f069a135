@@ -1046,20 +1046,42 @@ const RelatoriosPage = () => {
             <p className="text-xs text-muted-foreground mb-4">Distribuição de leitos e ocupação por período — {contract.unit}</p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-card rounded-lg border border-border p-5">
-                <p className="text-xs font-medium text-muted-foreground mb-3">Distribuição por especialidade</p>
-                <ResponsiveContainer width="100%" height={chartHSmall}>
-                  <BarChart data={bedChartData.bedBreakdown.filter(b => b.category === "internacao").map(b => ({ name: b.specialty.length > 18 ? b.specialty.slice(0, 18) + "…" : b.specialty, leitos: b.quantity }))} layout="vertical" barGap={2}>
+                <div className="flex items-center gap-4 mb-3">
+                  <p className="text-xs font-medium text-muted-foreground">Leitos de Internação</p>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">{bedChartData.totalInternacao} leitos</span>
+                </div>
+                <ResponsiveContainer width="100%" height={Math.max(120, bedChartData.bedBreakdown.filter(b => b.category === "internacao").length * 28)}>
+                  <BarChart data={bedChartData.bedBreakdown.filter(b => b.category === "internacao").map(b => ({ name: b.specialty.length > 20 ? b.specialty.slice(0, 20) + "…" : b.specialty, leitos: b.quantity }))} layout="vertical" barGap={2}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                     <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                    <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                     <Tooltip contentStyle={tooltipStyle} />
                     <defs>
-                      <linearGradient id="gradientBar" x1="0" y1="0" x2="1" y2="0">
+                      <linearGradient id="gradientBarInternacao" x1="0" y1="0" x2="1" y2="0">
                         <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
                         <stop offset="100%" stopColor="hsl(210 80% 55%)" stopOpacity={1} />
                       </linearGradient>
                     </defs>
-                    <Bar dataKey="leitos" fill="url(#gradientBar)" radius={[0, 8, 8, 0]} name="Leitos" label={{ position: "right", fontSize: 10, fill: "hsl(var(--foreground))", fontWeight: 600 }} />
+                    <Bar dataKey="leitos" fill="url(#gradientBarInternacao)" radius={[0, 8, 8, 0]} name="Leitos" label={{ position: "right", fontSize: 10, fill: "hsl(var(--foreground))", fontWeight: 600 }} />
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-4 mb-3 mt-5">
+                  <p className="text-xs font-medium text-muted-foreground">Leitos Complementares</p>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/60 text-accent-foreground font-semibold">{bedChartData.totalComplementar} leitos</span>
+                </div>
+                <ResponsiveContainer width="100%" height={Math.max(120, bedChartData.bedBreakdown.filter(b => b.category === "complementar").length * 28)}>
+                  <BarChart data={bedChartData.bedBreakdown.filter(b => b.category === "complementar").map(b => ({ name: b.specialty.length > 20 ? b.specialty.slice(0, 20) + "…" : b.specialty, leitos: b.quantity }))} layout="vertical" barGap={2}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <defs>
+                      <linearGradient id="gradientBarComplementar" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="hsl(35 90% 55%)" stopOpacity={0.8} />
+                        <stop offset="100%" stopColor="hsl(35 90% 65%)" stopOpacity={1} />
+                      </linearGradient>
+                    </defs>
+                    <Bar dataKey="leitos" fill="url(#gradientBarComplementar)" radius={[0, 8, 8, 0]} name="Leitos" label={{ position: "right", fontSize: 10, fill: "hsl(var(--foreground))", fontWeight: 600 }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
