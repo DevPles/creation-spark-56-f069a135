@@ -242,6 +242,13 @@ const AssistentePage = () => {
   // Evidence contract selection
   const [evidenceContractId, setEvidenceContractId] = useState("");
 
+  // Report generation state
+  const [selectedReportType, setSelectedReportType] = useState("");
+  const [reportContractId, setReportContractId] = useState(REPORT_CONTRACTS[0].id);
+  const [reportIncludeCharts, setReportIncludeCharts] = useState(true);
+  const [reportIncludeDetails, setReportIncludeDetails] = useState(true);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+
   /* ══ Training state ══ */
   const [trainingModules, setTrainingModules] = useState<TrainingModule[]>([]);
   const [trainingRatings, setTrainingRatings] = useState<Record<string, number>>({});
