@@ -4,7 +4,7 @@ import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, FileDown } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -13,6 +13,7 @@ import { useContracts } from "@/contexts/ContractsContext";
 import RubricaFormModal from "@/components/RubricaFormModal";
 import { ContractData } from "@/components/contract/types";
 import { MONTHS } from "@/data/rubricaData";
+import { toast } from "sonner";
 
 const formatCurrency = (v: number) => {
   if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;
@@ -103,6 +104,147 @@ const ControleRubricaPage = () => {
     updateContract(updated);
   };
 
+  const handleGeneratePdf = async () => {
+    const { jsPDF } = await import("jspdf");
+    const autoTableModule = await import("jspdf-autotable");
+    const autoTable = autoTableModule.default;
+
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const primary: [number, number, number] = [35, 66, 117];
+    const accent: [number, number, number] = [55, 95, 155];
+    const lightBg: [number, number, number] = [235, 239, 245];
+    const margin = 14;
+    const contentW = pageW - margin * 2;
+    const now = new Date();
+
+    doc.setFillColor(...primary);
+    doc.rect(0, 0, pageW, 38, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.text("MOSS", margin, 18);
+    doc.setFontSize(9);
+    doc.text("Métricas para Organizações de Serviço Social", margin, 26);
+    doc.setFontSize(11);
+    doc.text("Relatório de Controle de Rubrica", margin, 34);
+    doc.setFontSize(8);
+    const unitLabel = selectedContract === "all" ? "Todos os contratos" : selectedContract;
+    const monthLabel = selectedMonth === "all" ? "Todos os meses" : selectedMonth;
+    doc.text(`${unitLabel} • ${selectedYear} • ${monthLabel} • ${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, pageW - margin, 34, { align: "right" });
+
+    let y = 48;
+
+    const kpis = [
+      { label: "Total alocado", value: formatCurrency(totalAllocated) },
+      { label: "Total executado", value: formatCurrency(totalExecuted) },
+      { label: "Execução", value: `${avgExecution}%` },
+      { label: "Rubricas estouradas", value: String(overBudget) },
+    ];
+    const boxW = (contentW - 18) / 4;
+    kpis.forEach((kpi, i) => {
+      const x = margin + i * (boxW + 6);
+      doc.setFillColor(...lightBg);
+      doc.roundedRect(x, y, boxW, 22, 3, 3, "F");
+      doc.setTextColor(100, 100, 100);
+      doc.setFontSize(8);
+      doc.text(kpi.label, x + 4, y + 8);
+      doc.setTextColor(...primary);
+      doc.setFontSize(16);
+      doc.text(kpi.value, x + 4, y + 18);
+    });
+    y += 30;
+
+    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(11);
+    doc.text("Execução por Rubrica", margin, y + 4);
+    y += 8;
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [["Rubrica", "Alocado", "Executado", "% Exec.", "Status"]],
+      body: byRubrica.map(r => [
+        r.name,
+        formatCurrency(r.allocated),
+        formatCurrency(r.executed),
+        `${r.pctExec}%`,
+        r.estourada ? "ESTOURADA" : r.pctExec < 70 ? "ABAIXO 70%" : "OK",
+      ]),
+      headStyles: { fillColor: primary, textColor: [255, 255, 255], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.column.index === 4) {
+          const val = data.cell.raw;
+          if (val === "ESTOURADA") data.cell.styles.textColor = [220, 50, 50];
+          else if (val === "OK") data.cell.styles.textColor = [46, 160, 67];
+        }
+      },
+    });
+
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    if (y + 60 > doc.internal.pageSize.getHeight() - 20) { doc.addPage(); y = 20; }
+    doc.setFillColor(...lightBg);
+    doc.roundedRect(margin, y, contentW, 55, 3, 3, "F");
+    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(9);
+    doc.text("Alocado vs Executado por Rubrica", margin + 4, y + 10);
+
+    const chartY = y + 16;
+    const barAreaW = contentW - 60;
+    const maxVal = Math.max(...byRubrica.map(r => Math.max(r.allocated, r.executed)), 1);
+    byRubrica.slice(0, 6).forEach((r, i) => {
+      const rowY = chartY + i * 6;
+      if (rowY + 6 > y + 53) return;
+      const barX = margin + 50;
+      doc.setTextColor(80, 80, 80);
+      doc.setFontSize(6);
+      doc.text(r.name.substring(0, 18), margin + 4, rowY + 4);
+      doc.setFillColor(180, 195, 215);
+      doc.roundedRect(barX, rowY, (r.allocated / maxVal) * barAreaW, 2.5, 0.5, 0.5, "F");
+      doc.setFillColor(...(r.estourada ? [220, 50, 50] as [number, number, number] : accent));
+      doc.roundedRect(barX, rowY + 2.8, (r.executed / maxVal) * barAreaW, 2.5, 0.5, 0.5, "F");
+    });
+    y += 60;
+
+    if (y + 30 > doc.internal.pageSize.getHeight() - 20) { doc.addPage(); y = 20; }
+    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(11);
+    doc.text("Evolução Mensal (R$ mil)", margin, y + 4);
+    y += 8;
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [["Mês", "Alocado (R$ mil)", "Executado (R$ mil)", "% Exec."]],
+      body: byMonth.map(m => [
+        m.month,
+        `R$ ${m.alocado.toFixed(0)}k`,
+        `R$ ${m.executado.toFixed(0)}k`,
+        `${m.alocado > 0 ? Math.round((m.executado / m.alocado) * 100) : 0}%`,
+      ]),
+      headStyles: { fillColor: primary, textColor: [255, 255, 255], fontSize: 8 },
+      bodyStyles: { fontSize: 7 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+    });
+
+    const totalPages = doc.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setFillColor(...primary);
+      doc.rect(0, doc.internal.pageSize.getHeight() - 10, pageW, 10, "F");
+      doc.setTextColor(200, 210, 225);
+      doc.setFontSize(7);
+      doc.text("MOSS — Controle de Rubrica", margin, doc.internal.pageSize.getHeight() - 4);
+      doc.text(`Página ${p} de ${totalPages}`, pageW - margin, doc.internal.pageSize.getHeight() - 4, { align: "right" });
+    }
+
+    doc.save(`rubrica_${unitLabel.replace(/\\s/g, "_")}_${selectedYear}_${monthLabel}.pdf`);
+    toast.success("PDF gerado com sucesso!");
+  };
+
+
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
@@ -139,6 +281,9 @@ const ControleRubricaPage = () => {
                 {MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Button variant="default" size="sm" className="h-9" onClick={handleGeneratePdf}>
+              <FileDown className="h-4 w-4 mr-1" /> Gerar PDF
+            </Button>
             <Button variant="outline" size="sm" className="h-9" onClick={() => handleOpenRubricaModal()}>
               Gerenciar Rubricas
             </Button>
