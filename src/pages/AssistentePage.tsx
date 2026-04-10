@@ -985,11 +985,9 @@ const AssistentePage = () => {
       actions.push({ label: "Exportar PDF personalizado", action: () => setPdfModalOpen(true), variant: "outline" });
       actions.push({ label: "Escolher outro relatório", action: () => goTo("relatorio-select"), variant: "outline" });
     } else if (title.includes("redirecionando")) {
-      // Extract destination from title
-      if (title.includes("rubrica")) actions.push({ label: "Ir para Rubricas", action: () => navigate("/controle-rubrica"), variant: "default" });
-      else if (title.includes("evidência")) actions.push({ label: "Ir para Evidências", action: () => navigate("/evidencias"), variant: "default" });
-      else if (title.includes("sau")) actions.push({ label: "Ir para SAU", action: () => navigate("/sau"), variant: "default" });
-      else if (title.includes("assistencial")) actions.push({ label: "Ir para Relatório", action: () => navigate("/relatorio-assistencial"), variant: "default" });
+      const dest = finalizadoData.redirectTo || "/dashboard";
+      const label = finalizadoData.title.replace("Redirecionando para ", "");
+      actions.push({ label: `Ir para ${label}`, action: () => navigate(dest), variant: "default" });
       actions.push({ label: "Gerar relatório", action: () => goTo("relatorio-select"), variant: "outline" });
     }
 
