@@ -81,7 +81,17 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
 
   // Scoring rules
   const [scoringRules, setScoringRules] = useState(DEFAULT_SCORING);
-
+  
+  // Dynamic sectors from DB
+  const [sectorOptions, setSectorOptions] = useState<string[]>([]);
+  
+  useEffect(() => {
+    const loadSectors = async () => {
+      const { data } = await supabase.from("sectors").select("name").eq("facility_unit", facilityUnit).order("name");
+      setSectorOptions(["Todos", ...(data || []).map((s: any) => s.name)]);
+    };
+    loadSectors();
+  }, [facilityUnit]);
   useEffect(() => {
     if (goal && !isNew) {
       setName(goal.name);
