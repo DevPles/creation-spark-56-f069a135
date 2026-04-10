@@ -65,8 +65,20 @@ const LancamentoMetasPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("todos");
+  const [bedData, setBedData] = useState<{ category: string; specialty: string; quantity: number }[]>([]);
 
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
+
+  const totalBedsByCategory = useMemo(() => {
+    const internacao = bedData.filter(b => b.category === "internacao").reduce((s, b) => s + b.quantity, 0);
+    const complementar = bedData.filter(b => b.category === "complementar").reduce((s, b) => s + b.quantity, 0);
+    return { internacao, complementar, total: internacao + complementar };
+  }, [bedData]);
+
+  const isBedRelatedGoal = (name: string) => {
+    const lower = name.toLowerCase();
+    return lower.includes("ocupação") || lower.includes("internação") || lower.includes("internacao") || lower.includes("rotatividade") || lower.includes("leito");
+  };
 
   const getDateRange = (filter: string): { start: Date; end: Date } | null => {
     const now = new Date();
@@ -290,6 +302,9 @@ const LancamentoMetasPage = () => {
   useEffect(() => {
     if (!selectedUnit) return;
     loadGoals(selectedUnit);
+    // Load bed data for the selected unit
+    supabase.from("beds").select("category, specialty, quantity").eq("facility_unit", selectedUnit)
+      .then(({ data }) => setBedData((data as any[]) || []));
   }, [selectedUnit]);
 
   const loadGoals = async (unit: string) => {
@@ -462,6 +477,25 @@ const LancamentoMetasPage = () => {
                                 ) : null}
                               </p>
                             </div>
+                            {isBedRelatedGoal(goal.name) && totalBedsByCategory.total > 0 && (
+                              <div className="bg-primary/5 border border-primary/10 rounded-lg p-2 mb-2">
+                                <p className="text-[10px] font-semibold text-foreground mb-1">Leitos vinculados — {selectedUnit}</p>
+                                <div className="flex gap-3 text-[10px] text-muted-foreground">
+                                  <span>Internação: <span className="font-semibold text-foreground">{totalBedsByCategory.internacao}</span></span>
+                                  <span>Complementar: <span className="font-semibold text-foreground">{totalBedsByCategory.complementar}</span></span>
+                                  <span>Total: <span className="font-semibold text-foreground">{totalBedsByCategory.total}</span></span>
+                                </div>
+                                {entry.value && (
+                                  <div className="mt-1 pt-1 border-t border-primary/10 text-[10px] text-muted-foreground">
+                                    {goal.name.toLowerCase().includes("rotatividade") ? (
+                                      <span>Rotatividade: <span className="font-semibold text-foreground">{(parseFloat(entry.value) / totalBedsByCategory.internacao).toFixed(2)}</span> pacientes/leito</span>
+                                    ) : (
+                                      <span>Taxa de ocupação: <span className="font-semibold text-foreground">{((parseFloat(entry.value) / totalBedsByCategory.internacao) * 100).toFixed(1)}%</span> ({parseFloat(entry.value)} de {totalBedsByCategory.internacao} leitos)</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </>
                         );
                       })()}
