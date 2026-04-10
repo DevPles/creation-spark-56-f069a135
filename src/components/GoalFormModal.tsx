@@ -96,6 +96,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       setWeight(String(goal.weight * 100));
       setTrend(goal.trend);
       setGlosaPct(String((goal.glosaPct || 0.05) * 100));
+      setFacilityUnit(goal.facilityUnit || "Hospital Geral");
+      setSector(goal.sector || "Todos");
       setStartDate(goal.startDate || "");
       setEndDate(goal.endDate || "");
       if (goal.scoring?.length) setScoringRules(goal.scoring);
