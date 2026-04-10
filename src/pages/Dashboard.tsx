@@ -53,8 +53,7 @@ const Dashboard = () => {
     baseCards = baseCards.filter(c => !FINANCIAL_CARD_IDS.includes(c.id));
   }
 
-  const nonAdminCards = baseCards.filter(c => c.id !== "admin");
-  const hasAdmin = baseCards.some(c => c.id === "admin");
+  const visibleCards = baseCards;
 
   // Positions: { [cardId]: { x, y } } — relative to grid container
   const [positions, setPositions] = useState<Record<string, CardPosition>>({});
@@ -76,20 +75,20 @@ const Dashboard = () => {
   // Calculate grid positions for auto-organize
   const getGridPositions = useCallback((): Record<string, CardPosition> => {
     const cols = 3;
-    const gap = 16;
+    const gap = 24;
     const containerWidth = containerRef.current?.offsetWidth || 1100;
     const cardWidth = (containerWidth - gap * (cols - 1)) / cols;
-    const cardHeight = 80;
+    const cardHeight = 90;
     const result: Record<string, CardPosition> = {};
     
-    const sorted = [...nonAdminCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
+    const sorted = [...visibleCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
     sorted.forEach((card, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
       result[card.id] = { x: col * (cardWidth + gap), y: row * (cardHeight + gap) };
     });
     return result;
-  }, [nonAdminCards]);
+  }, [visibleCards]);
 
   const autoOrganize = useCallback(() => {
     const gridPos = getGridPositions();
@@ -161,7 +160,7 @@ const Dashboard = () => {
         >
           {hasCustomPositions ? (
             // Absolute positioning mode
-            nonAdminCards.map((card) => {
+            visibleCards.map((card) => {
               const pos = positions[card.id] || { x: 0, y: 0 };
               return (
                 <motion.div
@@ -198,8 +197,8 @@ const Dashboard = () => {
             })
           ) : (
             // Normal grid mode — still draggable to initiate free mode
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {nonAdminCards.map((card) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visibleCards.map((card) => (
                 <motion.div
                   key={card.id}
                   drag
@@ -209,16 +208,14 @@ const Dashboard = () => {
                   onDragStart={() => setIsDragging(true)}
                   onDragEnd={(_, info) => {
                     setTimeout(() => setIsDragging(false), 100);
-                    // If dragged far enough, switch to absolute mode
                     if (Math.abs(info.offset.x) > 30 || Math.abs(info.offset.y) > 30) {
-                      // Calculate current grid positions and apply offset to dragged card
                       const cols = 3;
-                      const gap = 16;
+                      const gap = 24;
                       const containerWidth = containerRef.current?.offsetWidth || 1100;
                       const cardWidth = (containerWidth - gap * (cols - 1)) / cols;
-                      const cardHeight = 80;
+                      const cardHeight = 90;
                       const newPositions: Record<string, CardPosition> = {};
-                      nonAdminCards.forEach((c, i) => {
+                      visibleCards.forEach((c, i) => {
                         const col = i % cols;
                         const row = Math.floor(i / cols);
                         newPositions[c.id] = {
@@ -226,7 +223,6 @@ const Dashboard = () => {
                           y: row * (cardHeight + gap),
                         };
                       });
-                      // Apply offset to the dragged card
                       newPositions[card.id] = {
                         x: newPositions[card.id].x + info.offset.x,
                         y: newPositions[card.id].y + info.offset.y,
@@ -247,14 +243,6 @@ const Dashboard = () => {
             </div>
           )}
         </div>
-
-        {/* Admin Card - centered */}
-        {hasAdmin && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-32 lg:mt-40">
-            <div className="hidden lg:block" />
-            <NavCard title="Administração" description="Usuários, perfis e permissões" onClick={() => navigate("/admin")} />
-          </div>
-        )}
       </main>
     </div>
   );
