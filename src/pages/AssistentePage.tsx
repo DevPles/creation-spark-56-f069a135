@@ -136,7 +136,7 @@ const AssistentePage = () => {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
 
   // Confirmation data
-  const [finalizadoData, setFinalizadoData] = useState<{ title: string; details: string[] }>({ title: "", details: [] });
+  const [finalizadoData, setFinalizadoData] = useState<{ title: string; details: string[]; redirectTo?: string }>({ title: "", details: [] });
 
   // Evidence contract selection
   const [evidenceContractId, setEvidenceContractId] = useState("");
