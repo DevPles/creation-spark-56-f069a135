@@ -173,6 +173,31 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Taxa de ocupação de leitos" />
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Unidade hospitalar</Label>
+              <Select value={facilityUnit} onValueChange={setFacilityUnit}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FACILITY_UNITS.map((u) => (
+                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Setor</Label>
+              <Select value={sector} onValueChange={setSector}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SECTORS.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label>Tipo</Label>
