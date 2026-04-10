@@ -75,10 +75,10 @@ const Dashboard = () => {
   // Calculate grid positions for auto-organize
   const getGridPositions = useCallback((): Record<string, CardPosition> => {
     const cols = 3;
-    const gap = 16;
+    const gap = 24;
     const containerWidth = containerRef.current?.offsetWidth || 1100;
     const cardWidth = (containerWidth - gap * (cols - 1)) / cols;
-    const cardHeight = 80;
+    const cardHeight = 90;
     const result: Record<string, CardPosition> = {};
     
     const sorted = [...visibleCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
