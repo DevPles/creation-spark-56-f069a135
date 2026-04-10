@@ -280,9 +280,15 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
 
               <div className="border border-border rounded-lg p-4 space-y-3">
                 <Label className="text-sm font-semibold">Segurança</Label>
-                <p className="text-[10px] text-muted-foreground -mt-1">Enviar e-mail de redefinição para {selectedOtherUser.email}</p>
-                <Button variant="outline" className="w-full" onClick={handleResetPassword}>
-                  Resetar senha de {selectedOtherUser.name.split(" ")[0]}
+                <p className="text-[10px] text-muted-foreground -mt-1">Definir nova senha para {selectedOtherUser.name}</p>
+                <Input
+                  type="password"
+                  placeholder="Nova senha (mín. 6 caracteres)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <Button variant="outline" className="w-full" onClick={handleResetPassword} disabled={resettingPassword}>
+                  {resettingPassword ? "Salvando..." : `Redefinir senha de ${selectedOtherUser.name.split(" ")[0]}`}
                 </Button>
               </div>
             </>
