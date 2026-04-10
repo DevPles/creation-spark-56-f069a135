@@ -1042,7 +1042,7 @@ const AssistentePage = () => {
         {/* Progress */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <Button variant="ghost" onClick={goBack} className="text-sm">Voltar</Button>
+            <Button variant="outline" onClick={goBack} className="text-sm rounded-full">Voltar</Button>
           </div>
           <Progress value={stepInfo.progress} className="h-2" />
         </div>
