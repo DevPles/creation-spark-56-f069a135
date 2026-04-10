@@ -14,9 +14,27 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const { email, password, name, facility_unit } = await req.json();
+  const body = await req.json();
+  const { action } = body;
 
-  // Create user
+  // ── Reset password ──
+  if (action === "reset-password") {
+    const { userId, newPassword } = body;
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { password: newPassword });
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // ── Create user (default) ──
+  const { email, password, name, facility_unit } = body;
+
   const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
@@ -31,7 +49,6 @@ serve(async (req) => {
     });
   }
 
-  // Assign admin role
   const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
     user_id: userData.user.id,
     role: "admin",
