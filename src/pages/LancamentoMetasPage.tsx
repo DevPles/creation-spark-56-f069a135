@@ -630,7 +630,7 @@ const LancamentoMetasPage = () => {
                           </div>
                         </div>
                       )}
-                      <div className="space-y-2">
+                      <div className="space-y-2 mt-auto">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="text-[10px] text-muted-foreground">Valor realizado</label>
