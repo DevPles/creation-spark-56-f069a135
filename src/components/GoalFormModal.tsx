@@ -196,7 +196,7 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
               <Select value={sector} onValueChange={setSector}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {SECTORS.map((s) => (
+                  {sectorOptions.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>
