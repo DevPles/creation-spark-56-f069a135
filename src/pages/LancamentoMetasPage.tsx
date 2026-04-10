@@ -985,14 +985,31 @@ const LancamentoMetasPage = () => {
 
               const getCellColor = (goal: Goal, value: number | undefined) => {
                 if (value === undefined) return "bg-muted/30 text-muted-foreground/50";
-                const pct = goal.target > 0 ? (value / goal.target) * 100 : 0;
-                // For goals where lower is better (e.g. "tempo", "taxa de infecção", "retorno")
+
                 const lowerIsBetter = goal.name.toLowerCase().includes("tempo") ||
                   goal.name.toLowerCase().includes("infecção") ||
                   goal.name.toLowerCase().includes("retorno") ||
                   goal.name.toLowerCase().includes("mortalidade") ||
                   goal.name.toLowerCase().includes("óbito");
 
+                if (heatmapCompare === "meta") {
+                  // Compare against daily target (target / days in month)
+                  const dailyTarget = goal.target / daysInMonth;
+                  const pct = dailyTarget > 0 ? (value / dailyTarget) * 100 : 0;
+                  if (lowerIsBetter) {
+                    if (pct <= 80) return "bg-emerald-500/80 text-white";
+                    if (pct <= 100) return "bg-amber-400/80 text-white";
+                    if (pct <= 120) return "bg-orange-400/80 text-white";
+                    return "bg-destructive/80 text-white";
+                  }
+                  if (pct >= 100) return "bg-emerald-500/80 text-white";
+                  if (pct >= 80) return "bg-amber-400/80 text-white";
+                  if (pct >= 50) return "bg-orange-400/80 text-white";
+                  return "bg-destructive/80 text-white";
+                }
+
+                // Global fixed thresholds
+                const pct = goal.target > 0 ? (value / goal.target) * 100 : 0;
                 if (lowerIsBetter) {
                   if (pct <= 80) return "bg-emerald-500/80 text-white";
                   if (pct <= 100) return "bg-amber-400/80 text-white";
