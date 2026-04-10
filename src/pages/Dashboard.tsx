@@ -81,14 +81,14 @@ const Dashboard = () => {
     const cardHeight = 80;
     const result: Record<string, CardPosition> = {};
     
-    const sorted = [...nonAdminCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
+    const sorted = [...visibleCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
     sorted.forEach((card, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
       result[card.id] = { x: col * (cardWidth + gap), y: row * (cardHeight + gap) };
     });
     return result;
-  }, [nonAdminCards]);
+  }, [visibleCards]);
 
   const autoOrganize = useCallback(() => {
     const gridPos = getGridPositions();
@@ -160,7 +160,7 @@ const Dashboard = () => {
         >
           {hasCustomPositions ? (
             // Absolute positioning mode
-            nonAdminCards.map((card) => {
+            visibleCards.map((card) => {
               const pos = positions[card.id] || { x: 0, y: 0 };
               return (
                 <motion.div
@@ -198,7 +198,7 @@ const Dashboard = () => {
           ) : (
             // Normal grid mode — still draggable to initiate free mode
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {nonAdminCards.map((card) => (
+              {visibleCards.map((card) => (
                 <motion.div
                   key={card.id}
                   drag
@@ -217,7 +217,7 @@ const Dashboard = () => {
                       const cardWidth = (containerWidth - gap * (cols - 1)) / cols;
                       const cardHeight = 80;
                       const newPositions: Record<string, CardPosition> = {};
-                      nonAdminCards.forEach((c, i) => {
+                      visibleCards.forEach((c, i) => {
                         const col = i % cols;
                         const row = Math.floor(i / cols);
                         newPositions[c.id] = {
@@ -248,7 +248,7 @@ const Dashboard = () => {
         </div>
 
         {/* Admin Card - centered */}
-        {hasAdmin && (
+        {false && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-32 lg:mt-40">
             <div className="hidden lg:block" />
             <NavCard title="Administração" description="Usuários, perfis e permissões" onClick={() => navigate("/admin")} />
