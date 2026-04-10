@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { format, subDays, startOfMonth, endOfMonth, isWithinInterval, parse } from "date-fns";
+import { format, endOfMonth, isWithinInterval, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -64,7 +64,18 @@ const LancamentoMetasPage = () => {
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
-  const [dateFilter, setDateFilter] = useState<string>("todos");
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth(); // 0-indexed
+  const [filterYear, setFilterYear] = useState<string>(String(currentYear));
+  const [filterMonth, setFilterMonth] = useState<string>(String(currentMonth));
+  const FILTER_YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
+  const FILTER_MONTHS = [
+    { value: "todos", label: "Todos" },
+    { value: "0", label: "Janeiro" }, { value: "1", label: "Fevereiro" }, { value: "2", label: "Março" },
+    { value: "3", label: "Abril" }, { value: "4", label: "Maio" }, { value: "5", label: "Junho" },
+    { value: "6", label: "Julho" }, { value: "7", label: "Agosto" }, { value: "8", label: "Setembro" },
+    { value: "9", label: "Outubro" }, { value: "10", label: "Novembro" }, { value: "11", label: "Dezembro" },
+  ];
   const [bedData, setBedData] = useState<{ category: string; specialty: string; quantity: number }[]>([]);
 
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
@@ -80,19 +91,17 @@ const LancamentoMetasPage = () => {
     return lower.includes("ocupação") || lower.includes("internação") || lower.includes("internacao") || lower.includes("rotatividade") || lower.includes("leito");
   };
 
-  const getDateRange = (filter: string): { start: Date; end: Date } | null => {
-    const now = new Date();
-    switch (filter) {
-      case "hoje": return { start: new Date(now.setHours(0,0,0,0)), end: new Date() };
-      case "7d": return { start: subDays(new Date(), 7), end: new Date() };
-      case "30d": return { start: subDays(new Date(), 30), end: new Date() };
-      case "mes": return { start: startOfMonth(new Date()), end: endOfMonth(new Date()) };
-      default: return null;
+  const getDateRange = (): { start: Date; end: Date } | null => {
+    const year = Number(filterYear);
+    if (filterMonth === "todos") {
+      return { start: new Date(year, 0, 1), end: new Date(year, 11, 31, 23, 59, 59) };
     }
+    const month = Number(filterMonth);
+    return { start: new Date(year, month, 1), end: endOfMonth(new Date(year, month, 1)) };
   };
 
   const filterEntriesByDate = (entryList: { value: number; period: string }[]) => {
-    const range = getDateRange(dateFilter);
+    const range = getDateRange();
     if (!range) return entryList;
     return entryList.filter(e => {
       try {
@@ -127,7 +136,8 @@ const LancamentoMetasPage = () => {
     doc.text(`${selectedUnit} • ${format(now, "dd/MM/yyyy HH:mm")}`, pageW - margin, 34, { align: "right" });
 
     // Filter info
-    const filterLabel = dateFilter === "todos" ? "Todos os períodos" : dateFilter === "hoje" ? "Hoje" : dateFilter === "7d" ? "Últimos 7 dias" : dateFilter === "30d" ? "Últimos 30 dias" : "Este mês";
+    const monthLabel = filterMonth === "todos" ? "Todos os meses" : FILTER_MONTHS.find(m => m.value === filterMonth)?.label || "";
+    const filterLabel = `${filterYear} — ${monthLabel}`;
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(9);
     doc.text(`Filtro: ${filterLabel}`, margin, 48);
@@ -407,16 +417,17 @@ const LancamentoMetasPage = () => {
               </>
             )}
             <div>
-              <label className="text-[10px] text-muted-foreground block mb-1">Período</label>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="hoje">Hoje</SelectItem>
-                  <SelectItem value="7d">Últimos 7 dias</SelectItem>
-                  <SelectItem value="30d">Últimos 30 dias</SelectItem>
-                  <SelectItem value="mes">Este mês</SelectItem>
-                </SelectContent>
+              <label className="text-[10px] text-muted-foreground block mb-1">Ano</label>
+              <Select value={filterYear} onValueChange={setFilterYear}>
+                <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
+                <SelectContent>{FILTER_YEARS.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground block mb-1">Mês</label>
+              <Select value={filterMonth} onValueChange={setFilterMonth}>
+                <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                <SelectContent>{FILTER_MONTHS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <Button variant="outline" size="sm" className="h-9" onClick={handleGeneratePdf}>
