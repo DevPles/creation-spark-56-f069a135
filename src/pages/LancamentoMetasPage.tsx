@@ -64,7 +64,18 @@ const LancamentoMetasPage = () => {
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
-  const [dateFilter, setDateFilter] = useState<string>("todos");
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth(); // 0-indexed
+  const [filterYear, setFilterYear] = useState<string>(String(currentYear));
+  const [filterMonth, setFilterMonth] = useState<string>(String(currentMonth));
+  const FILTER_YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
+  const FILTER_MONTHS = [
+    { value: "todos", label: "Todos" },
+    { value: "0", label: "Janeiro" }, { value: "1", label: "Fevereiro" }, { value: "2", label: "Março" },
+    { value: "3", label: "Abril" }, { value: "4", label: "Maio" }, { value: "5", label: "Junho" },
+    { value: "6", label: "Julho" }, { value: "7", label: "Agosto" }, { value: "8", label: "Setembro" },
+    { value: "9", label: "Outubro" }, { value: "10", label: "Novembro" }, { value: "11", label: "Dezembro" },
+  ];
   const [bedData, setBedData] = useState<{ category: string; specialty: string; quantity: number }[]>([]);
 
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
