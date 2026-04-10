@@ -171,7 +171,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       toast.error("Erro ao adicionar setor");
       return;
     }
-    setSectors(prev => [...prev, { id: data.id, name: data.name }]);
+    setSectors(prev => [...prev, { id: data.id, name: data.name }].sort((a, b) => a.name.localeCompare(b.name)));
     setNewSectorName("");
     toast.success(`Setor "${trimmed}" adicionado`);
   };
