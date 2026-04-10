@@ -477,6 +477,25 @@ const LancamentoMetasPage = () => {
                                 ) : null}
                               </p>
                             </div>
+                            {isBedRelatedGoal(goal.name) && totalBedsByCategory.total > 0 && (
+                              <div className="bg-primary/5 border border-primary/10 rounded-lg p-2 mb-2">
+                                <p className="text-[10px] font-semibold text-foreground mb-1">Leitos vinculados — {selectedUnit}</p>
+                                <div className="flex gap-3 text-[10px] text-muted-foreground">
+                                  <span>Internação: <span className="font-semibold text-foreground">{totalBedsByCategory.internacao}</span></span>
+                                  <span>Complementar: <span className="font-semibold text-foreground">{totalBedsByCategory.complementar}</span></span>
+                                  <span>Total: <span className="font-semibold text-foreground">{totalBedsByCategory.total}</span></span>
+                                </div>
+                                {entry.value && (
+                                  <div className="mt-1 pt-1 border-t border-primary/10 text-[10px] text-muted-foreground">
+                                    {goal.name.toLowerCase().includes("rotatividade") ? (
+                                      <span>Rotatividade: <span className="font-semibold text-foreground">{(parseFloat(entry.value) / totalBedsByCategory.internacao).toFixed(2)}</span> pacientes/leito</span>
+                                    ) : (
+                                      <span>Taxa de ocupação: <span className="font-semibold text-foreground">{((parseFloat(entry.value) / totalBedsByCategory.internacao) * 100).toFixed(1)}%</span> ({parseFloat(entry.value)} de {totalBedsByCategory.internacao} leitos)</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </>
                         );
                       })()}
