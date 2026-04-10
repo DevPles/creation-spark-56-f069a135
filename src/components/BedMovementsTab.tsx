@@ -10,9 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarIcon, Save, Bed, Activity, TrendingUp, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
 
 interface BedRow {
   category: string;
@@ -46,12 +46,17 @@ interface BedMovement {
 
 interface Props {
   selectedUnit: string;
+  onUnitChange: (unit: string) => void;
+  isAdmin: boolean;
   filterYear: string;
   filterMonth: string;
 }
 
-const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
-  const { user } = useAuth();
+const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
+const tooltipStyle = { background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 };
+
+const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filterMonth }: Props) => {
+  const { user, profile } = useAuth();
   const [beds, setBeds] = useState<BedRow[]>([]);
   const [movementDate, setMovementDate] = useState<Date>(new Date());
   const [forms, setForms] = useState<Record<string, MovementForm>>({});
@@ -59,21 +64,19 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
   const [history, setHistory] = useState<BedMovement[]>([]);
   const [daysWithData, setDaysWithData] = useState<Set<string>>(new Set());
 
-  // Load beds for the unit
   useEffect(() => {
     if (!selectedUnit) return;
     supabase.from("beds").select("category, specialty, quantity").eq("facility_unit", selectedUnit)
       .then(({ data }) => setBeds((data as BedRow[]) || []));
   }, [selectedUnit]);
 
-  // Load movements for selected date
   const loadMovements = useCallback(async () => {
     if (!selectedUnit) return;
     const dateStr = format(movementDate, "yyyy-MM-dd");
     const { data } = await supabase.from("bed_movements").select("*")
       .eq("facility_unit", selectedUnit)
       .eq("movement_date", dateStr);
-    
+
     const movements = (data as BedMovement[]) || [];
     const newForms: Record<string, MovementForm> = {};
     beds.forEach(b => {
@@ -88,8 +91,8 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
 
   useEffect(() => { loadMovements(); }, [loadMovements]);
 
-  // Load month history for calendar dots and table
-  useEffect(() => {
+  // Load month history
+  const loadHistory = useCallback(async () => {
     if (!selectedUnit) return;
     const year = Number(filterYear);
     const month = filterMonth === "todos" ? undefined : Number(filterMonth);
@@ -98,17 +101,18 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
       ? `${year}-${String(month + 1).padStart(2, "0")}-${getDaysInMonth(new Date(year, month))}`
       : `${year}-12-31`;
 
-    supabase.from("bed_movements").select("*")
+    const { data } = await supabase.from("bed_movements").select("*")
       .eq("facility_unit", selectedUnit)
       .gte("movement_date", startDate)
       .lte("movement_date", endDate)
-      .order("movement_date", { ascending: false })
-      .then(({ data }) => {
-        const movements = (data as BedMovement[]) || [];
-        setHistory(movements);
-        setDaysWithData(new Set(movements.map(m => m.movement_date)));
-      });
-  }, [selectedUnit, filterYear, filterMonth, movementDate]);
+      .order("movement_date", { ascending: false });
+
+    const movements = (data as BedMovement[]) || [];
+    setHistory(movements);
+    setDaysWithData(new Set(movements.map(m => m.movement_date)));
+  }, [selectedUnit, filterYear, filterMonth]);
+
+  useEffect(() => { loadHistory(); }, [loadHistory]);
 
   const totalBeds = useMemo(() => beds.reduce((s, b) => s + b.quantity, 0), [beds]);
   const totalInternacao = useMemo(() => beds.filter(b => b.category === "internacao").reduce((s, b) => s + b.quantity, 0), [beds]);
@@ -149,24 +153,12 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
 
       if (existing) {
         await supabase.from("bed_movements").update({
-          occupied: form.occupied,
-          admissions: form.admissions,
-          discharges: form.discharges,
-          deaths: form.deaths,
-          transfers: form.transfers,
+          occupied: form.occupied, admissions: form.admissions, discharges: form.discharges, deaths: form.deaths, transfers: form.transfers,
         }).eq("id", existing.id);
       } else {
         await supabase.from("bed_movements").insert({
-          facility_unit: selectedUnit,
-          category: bed.category,
-          specialty: bed.specialty,
-          movement_date: dateStr,
-          occupied: form.occupied,
-          admissions: form.admissions,
-          discharges: form.discharges,
-          deaths: form.deaths,
-          transfers: form.transfers,
-          user_id: user.id,
+          facility_unit: selectedUnit, category: bed.category, specialty: bed.specialty, movement_date: dateStr,
+          occupied: form.occupied, admissions: form.admissions, discharges: form.discharges, deaths: form.deaths, transfers: form.transfers, user_id: user.id,
         });
       }
     }
@@ -174,59 +166,88 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
     toast.success("Movimentação salva com sucesso!");
     setSaving(false);
     loadMovements();
+    loadHistory();
   };
 
   const groupedBeds = useMemo(() => {
     const groups: Record<string, BedRow[]> = {};
-    beds.forEach(b => {
-      if (!groups[b.category]) groups[b.category] = [];
-      groups[b.category].push(b);
-    });
+    beds.forEach(b => { if (!groups[b.category]) groups[b.category] = []; groups[b.category].push(b); });
     return groups;
   }, [beds]);
 
   const categoryLabel = (cat: string) => cat === "internacao" ? "Internação" : cat === "complementar" ? "Complementar" : cat;
 
-  // Aggregate history by date for the table
+  // Aggregate history by date
   const historyByDate = useMemo(() => {
     const map = new Map<string, { date: string; occupied: number; admissions: number; discharges: number; deaths: number; transfers: number }>();
     history.forEach(m => {
       const existing = map.get(m.movement_date) || { date: m.movement_date, occupied: 0, admissions: 0, discharges: 0, deaths: 0, transfers: 0 };
-      existing.occupied += m.occupied;
-      existing.admissions += m.admissions;
-      existing.discharges += m.discharges;
-      existing.deaths += m.deaths;
-      existing.transfers += m.transfers;
+      existing.occupied += m.occupied; existing.admissions += m.admissions; existing.discharges += m.discharges;
+      existing.deaths += m.deaths; existing.transfers += m.transfers;
       map.set(m.movement_date, existing);
     });
-    return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
+    return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
   }, [history]);
+
+  // Chart data
+  const chartData = useMemo(() => historyByDate.map(row => ({
+    name: format(new Date(row.date + "T00:00:00"), "dd/MM"),
+    ocupados: row.occupied,
+    internacoes: row.admissions,
+    altas: row.discharges,
+    obitos: row.deaths,
+    ocupacao: totalBeds > 0 ? Number(((row.occupied / totalBeds) * 100).toFixed(1)) : 0,
+  })), [historyByDate, totalBeds]);
 
   if (beds.length === 0) {
     return (
-      <div className="text-center py-12">
-        <Bed className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-        <p className="text-muted-foreground">Nenhum leito cadastrado para {selectedUnit}.</p>
-        <p className="text-sm text-muted-foreground mt-1">Cadastre leitos em Contratos antes de lançar movimentação.</p>
+      <div className="space-y-4">
+        {/* Unit filter */}
+        {isAdmin && (
+          <div>
+            <label className="text-[10px] text-muted-foreground block mb-1">Unidade</label>
+            <Select value={selectedUnit} onValueChange={onUnitChange}>
+              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+              <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        )}
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Nenhum leito cadastrado para {selectedUnit}.</p>
+          <p className="text-sm text-muted-foreground mt-1">Cadastre leitos em Contratos antes de lançar movimentação.</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Indicator cards */}
+      {/* Unit filter for admin */}
+      {isAdmin ? (
+        <div>
+          <label className="text-[10px] text-muted-foreground block mb-1">Unidade</label>
+          <Select value={selectedUnit} onValueChange={onUnitChange}>
+            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+      ) : (
+        <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2 w-fit">
+          <p className="text-xs text-muted-foreground">Unidade</p>
+          <p className="font-display font-semibold text-foreground text-sm">{profile?.facility_unit || selectedUnit}</p>
+        </div>
+      )}
+
+      {/* Indicator cards — no icons */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Taxa de Ocupação", value: `${occupancyRate}%`, icon: Bed, color: "text-primary" },
-          { label: "Giro de Leitos", value: turnover, icon: ArrowUpDown, color: "text-primary" },
-          { label: "Saldo do Dia", value: String(dailyBalance), icon: TrendingUp, color: dailyBalance >= 0 ? "text-emerald-600" : "text-destructive" },
-          { label: "Leitos Ocupados", value: `${totalOccupied}/${totalBeds}`, icon: Activity, color: "text-primary" },
+          { label: "Taxa de Ocupação", value: `${occupancyRate}%`, color: "text-primary" },
+          { label: "Giro de Leitos", value: turnover, color: "text-primary" },
+          { label: "Saldo do Dia", value: String(dailyBalance), color: dailyBalance >= 0 ? "text-emerald-600" : "text-destructive" },
+          { label: "Leitos Ocupados", value: `${totalOccupied}/${totalBeds}`, color: "text-primary" },
         ].map((kpi, i) => (
           <motion.div key={kpi.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <kpi.icon className={cn("h-4 w-4", kpi.color)} />
-              <span className="text-[10px] text-muted-foreground">{kpi.label}</span>
-            </div>
+            <span className="text-[10px] text-muted-foreground">{kpi.label}</span>
             <p className={cn("text-xl font-bold font-display", kpi.color)}>{kpi.value}</p>
           </motion.div>
         ))}
@@ -239,7 +260,6 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn("w-[200px] h-9 justify-start text-left font-normal")}>
-                <CalendarIcon className="mr-2 h-4 w-4" />
                 {format(movementDate, "dd/MM/yyyy", { locale: ptBR })}
               </Button>
             </PopoverTrigger>
@@ -257,7 +277,6 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
           </Popover>
         </div>
         <Button onClick={handleSave} disabled={saving} className="h-9">
-          <Save className="mr-2 h-4 w-4" />
           {saving ? "Salvando..." : "Salvar movimentação"}
         </Button>
       </div>
@@ -267,9 +286,7 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
         <div key={category} className="kpi-card p-0 overflow-hidden">
           <div className="bg-primary/5 px-4 py-2 border-b border-border">
             <h3 className="font-display font-semibold text-sm text-foreground">{categoryLabel(category)}</h3>
-            <p className="text-[10px] text-muted-foreground">
-              {categoryBeds.reduce((s, b) => s + b.quantity, 0)} leitos cadastrados
-            </p>
+            <p className="text-[10px] text-muted-foreground">{categoryBeds.reduce((s, b) => s + b.quantity, 0)} leitos cadastrados</p>
           </div>
           <div className="overflow-auto">
             <Table>
@@ -294,13 +311,7 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
                       <TableCell className="text-xs text-muted-foreground">{bed.quantity}</TableCell>
                       {(["occupied", "admissions", "discharges", "deaths", "transfers"] as const).map(field => (
                         <TableCell key={field} className="p-1">
-                          <Input
-                            type="number"
-                            min="0"
-                            value={form[field]}
-                            onChange={e => updateForm(key, field, e.target.value)}
-                            className="h-7 w-16 text-xs text-center"
-                          />
+                          <Input type="number" min="0" value={form[field]} onChange={e => updateForm(key, field, e.target.value)} className="h-7 w-16 text-xs text-center" />
                         </TableCell>
                       ))}
                     </TableRow>
@@ -312,7 +323,49 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
         </div>
       ))}
 
-      {/* History / Census table */}
+      {/* Charts — only show when there's history data */}
+      {chartData.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Occupancy rate area chart */}
+          <div className="kpi-card p-4">
+            <h3 className="font-display font-semibold text-sm text-foreground mb-4">Taxa de Ocupação (%)</h3>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="gradOcupacao" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" domain={[0, 100]} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Area type="monotone" dataKey="ocupacao" stroke="hsl(var(--primary))" fill="url(#gradOcupacao)" name="Ocupação %" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Admissions vs discharges bar chart */}
+          <div className="kpi-card p-4">
+            <h3 className="font-display font-semibold text-sm text-foreground mb-4">Internações vs Saídas</h3>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="internacoes" fill="hsl(var(--primary))" name="Internações" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="altas" fill="hsl(142 71% 45%)" name="Altas" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="obitos" fill="hsl(var(--destructive))" name="Óbitos" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* History table */}
       {historyByDate.length > 0 && (
         <div className="kpi-card p-0 overflow-hidden">
           <div className="bg-primary/5 px-4 py-2 border-b border-border">
@@ -333,15 +386,11 @@ const BedMovementsTab = ({ selectedUnit, filterYear, filterMonth }: Props) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {historyByDate.map(row => {
+                {[...historyByDate].reverse().map(row => {
                   const occRate = totalBeds > 0 ? ((row.occupied / totalBeds) * 100).toFixed(1) : "0";
                   const dateFormatted = format(new Date(row.date + "T00:00:00"), "dd/MM/yyyy");
                   return (
-                    <TableRow
-                      key={row.date}
-                      className="cursor-pointer hover:bg-primary/5"
-                      onClick={() => setMovementDate(new Date(row.date + "T00:00:00"))}
-                    >
+                    <TableRow key={row.date} className="cursor-pointer hover:bg-primary/5" onClick={() => setMovementDate(new Date(row.date + "T00:00:00"))}>
                       <TableCell className="text-xs font-medium">{dateFormatted}</TableCell>
                       <TableCell className="text-xs">{row.occupied}</TableCell>
                       <TableCell className="text-xs">{row.admissions}</TableCell>
