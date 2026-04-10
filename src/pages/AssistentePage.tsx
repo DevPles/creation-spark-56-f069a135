@@ -294,17 +294,79 @@ const AssistentePage = () => {
     }
   };
 
+  const handleAiSearch = async (query: string) => {
+    if (!query.trim() || trainingModules.length === 0) {
+      setAiSearchDone(false);
+      setAiRankedIds([]);
+      setAiExplanations({});
+      setAiSuggestion("");
+      setAiHasRelevant(true);
+      return;
+    }
+    setAiSearching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("training-search", {
+        body: {
+          query: query.trim(),
+          modules: trainingModules.map(m => ({ id: m.id, title: m.title, description: m.description })),
+        },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+
+      const rankedIndices: number[] = data.ranked_indices || [];
+      const explanations: string[] = data.explanations || [];
+      const ids = rankedIndices
+        .map(idx => trainingModules[idx - 1]?.id)
+        .filter(Boolean);
+      const explMap: Record<string, string> = {};
+      rankedIndices.forEach((idx, i) => {
+        const mod = trainingModules[idx - 1];
+        if (mod && explanations[i]) explMap[mod.id] = explanations[i];
+      });
+
+      setAiRankedIds(ids);
+      setAiExplanations(explMap);
+      setAiSuggestion(data.suggestion || "");
+      setAiHasRelevant(data.has_relevant !== false);
+      setAiSearchDone(true);
+    } catch (e) {
+      console.error("AI search error:", e);
+      toast.error("Erro na busca inteligente");
+    } finally {
+      setAiSearching(false);
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setAiSearchDone(false);
+    if (searchTimerRef[0]) clearTimeout(searchTimerRef[0]);
+  };
+
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) handleAiSearch(searchQuery);
+  };
+
   const visibleModules = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
     const sorted = [...trainingModules].sort((a, b) => {
       const aCustom = a.created_by ? 1 : 0;
       const bCustom = b.created_by ? 1 : 0;
       if (bCustom !== aCustom) return bCustom - aCustom;
       return a.sort_order - b.sort_order;
     });
+
+    if (aiSearchDone && aiRankedIds.length > 0) {
+      // AI-ranked order
+      const ranked = aiRankedIds.map(id => sorted.find(m => m.id === id)).filter(Boolean) as TrainingModule[];
+      const rest = sorted.filter(m => !aiRankedIds.includes(m.id));
+      return [...ranked, ...rest];
+    }
+
+    const q = searchQuery.trim().toLowerCase();
     if (!q) return sorted;
     return sorted.filter(m => m.title.toLowerCase().includes(q) || m.description.toLowerCase().includes(q));
-  }, [trainingModules, searchQuery]);
+  }, [trainingModules, searchQuery, aiSearchDone, aiRankedIds]);
 
   const showContacts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
