@@ -136,7 +136,7 @@ const AssistentePage = () => {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
 
   // Confirmation data
-  const [finalizadoData, setFinalizadoData] = useState<{ title: string; details: string[] }>({ title: "", details: [] });
+  const [finalizadoData, setFinalizadoData] = useState<{ title: string; details: string[]; redirectTo?: string }>({ title: "", details: [] });
 
   // Evidence contract selection
   const [evidenceContractId, setEvidenceContractId] = useState("");
@@ -402,8 +402,8 @@ const AssistentePage = () => {
     setRubricaValue(""); setRubricaDate(""); setRubricaNotes("");
   };
 
-  const goToFinalizado = (title: string, details: string[]) => {
-    setFinalizadoData({ title, details });
+  const goToFinalizado = (title: string, details: string[], redirectTo?: string) => {
+    setFinalizadoData({ title, details, redirectTo });
     goTo("finalizado");
   };
 
@@ -512,11 +512,11 @@ const AssistentePage = () => {
       case "consultar":
         return [
           { id: "ver-metas", title: "Ver Metas", description: "Consulte metas com atingimento, histórico de lançamentos e gauge.", action: () => goTo("consultar-metas-unit") },
-          { id: "ver-contratos", title: "Ver Contratos", description: "Contratos vigentes, valores, rubricas e status.", action: () => navigate("/contratos") },
-          { id: "ver-rubricas", title: "Ver Rubricas e Riscos", description: "Execução orçamentária e projeção de risco por contrato.", action: () => navigate("/controle-rubrica") },
-          { id: "ver-evidencias", title: "Ver Evidências", description: "Documentos enviados, pendentes e status de validação.", action: () => navigate("/evidencias") },
-          { id: "ver-sau", title: "Ver SAU", description: "Serviço de Atendimento ao Usuário — indicadores e ocorrências.", action: () => navigate("/sau") },
-          { id: "ver-relatorio", title: "Relatório Assistencial", description: "Indicadores e dados assistenciais detalhados por unidade.", action: () => navigate("/relatorio-assistencial") },
+          { id: "ver-contratos", title: "Ver Contratos", description: "Contratos vigentes, valores, rubricas e status.", action: () => goToFinalizado("Redirecionando para Contratos", ["Abrindo página de contratos de gestão.", "Consulte valores, rubricas e status de cada contrato."], "/contratos") },
+          { id: "ver-rubricas", title: "Ver Rubricas e Riscos", description: "Execução orçamentária e projeção de risco por contrato.", action: () => goToFinalizado("Redirecionando para Rubricas", ["Abrindo controle de rubricas e análise de risco.", "Verifique a execução orçamentária por contrato."], "/controle-rubrica") },
+          { id: "ver-evidencias", title: "Ver Evidências", description: "Documentos enviados, pendentes e status de validação.", action: () => goToFinalizado("Redirecionando para Evidências", ["Abrindo painel de evidências.", "Consulte documentos enviados e pendentes."], "/evidencias") },
+          { id: "ver-sau", title: "Ver SAU", description: "Serviço de Atendimento ao Usuário — indicadores e ocorrências.", action: () => goToFinalizado("Redirecionando para SAU", ["Abrindo Serviço de Atendimento ao Usuário.", "Consulte indicadores e ocorrências registradas."], "/sau") },
+          { id: "ver-relatorio", title: "Relatório Assistencial", description: "Indicadores e dados assistenciais detalhados por unidade.", action: () => goToFinalizado("Redirecionando para Relatório Assistencial", ["Abrindo relatório assistencial detalhado.", "Analise indicadores por unidade de saúde."], "/relatorio-assistencial") },
         ];
       case "relatorio-select":
         return REPORT_OPTIONS.map(r => ({
@@ -526,10 +526,20 @@ const AssistentePage = () => {
           action: () => {
             if (r.id === "pdf-export") {
               setPdfModalOpen(true);
-            } else if (r.id === "assistencial") {
-              navigate("/relatorio-assistencial");
             } else {
-              navigate("/relatorios");
+              const routeMap: Record<string, string> = {
+                assistencial: "/relatorio-assistencial",
+                consolidado: "/relatorios",
+                rdqa: "/relatorios",
+                contrato: "/relatorios",
+                metas: "/relatorios",
+                risco: "/controle-rubrica",
+                evidencias: "/evidencias",
+              };
+              goToFinalizado(`Relatório: ${r.title}`, [
+                r.description,
+                "Clique abaixo para acessar o relatório selecionado.",
+              ], routeMap[r.id] || "/relatorios");
             }
           },
         }));
@@ -870,60 +880,146 @@ const AssistentePage = () => {
   const renderConsultarMetasList = () => {
     if (loading) return <p className="text-muted-foreground text-center py-12">Carregando metas...</p>;
     if (goals.length === 0) return <p className="text-muted-foreground text-center py-12">Nenhuma meta cadastrada para {selectedUnit}.</p>;
+    const totalGoals = goals.length;
+    const totalEntries = goals.reduce((s, g) => s + (existingEntries[g.id]?.length || 0), 0);
+    const avgAttainment = goals.length > 0 ? Math.round(goals.reduce((s, g) => {
+      const entries = existingEntries[g.id] || [];
+      const val = entries.reduce((a, e) => a + e.value, 0);
+      return s + (g.target > 0 ? Math.min(100, (val / g.target) * 100) : 0);
+    }, 0) / goals.length) : 0;
+    const criticalGoals = goals.filter(g => {
+      const entries = existingEntries[g.id] || [];
+      const val = entries.reduce((a, e) => a + e.value, 0);
+      return g.target > 0 && (val / g.target) * 100 < 50;
+    });
     return (
-      <div className="grid grid-cols-1 gap-3">
-        {goals.map((goal, i) => {
-          const existing = existingEntries[goal.id] || [];
-          const currentVal = existing.reduce((s, e) => s + e.value, 0);
-          const attainment = goal.target > 0 ? Math.min(100, Math.round((currentVal / goal.target) * 100)) : 0;
-          const remaining = Math.max(0, goal.target - currentVal);
-          return (
-            <motion.div key={goal.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card p-5">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="font-display font-semibold text-foreground text-sm">{goal.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Meta: {goal.target}{goal.unit} — Peso: {(goal.weight * 100).toFixed(0)}% — {goal.type}</p>
-                </div>
-                <GoalGauge percent={attainment} size={70} />
-              </div>
-              <div className="bg-secondary/50 rounded-lg p-2 text-center mb-2">
-                <p className="text-xs text-muted-foreground">Realizado: <span className="font-semibold text-foreground">{currentVal.toFixed(1)}{goal.unit}</span> — Faltam: <span className="font-semibold text-foreground">{remaining.toFixed(1)}{goal.unit}</span></p>
-              </div>
-              {existing.length > 0 && (
-                <div className="p-2 bg-secondary/30 rounded">
-                  <p className="text-xs text-muted-foreground mb-1">Lançamentos ({existing.length}):</p>
-                  <div className="flex flex-wrap gap-1">
-                    {existing.map((e, idx) => <span key={idx} className="text-xs bg-background px-1.5 py-0.5 rounded border border-border">{e.period}: {e.value}{goal.unit}</span>)}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-3">
+          {goals.map((goal, i) => {
+            const existing = existingEntries[goal.id] || [];
+            const currentVal = existing.reduce((s, e) => s + e.value, 0);
+            const attainment = goal.target > 0 ? Math.min(100, Math.round((currentVal / goal.target) * 100)) : 0;
+            const remaining = Math.max(0, goal.target - currentVal);
+            return (
+              <motion.div key={goal.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="font-display font-semibold text-foreground text-sm">{goal.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Meta: {goal.target}{goal.unit} — Peso: {(goal.weight * 100).toFixed(0)}% — {goal.type}</p>
                   </div>
+                  <GoalGauge percent={attainment} size={70} />
                 </div>
-              )}
-            </motion.div>
-          );
-        })}
+                <div className="bg-secondary/50 rounded-lg p-2 text-center mb-2">
+                  <p className="text-xs text-muted-foreground">Realizado: <span className="font-semibold text-foreground">{currentVal.toFixed(1)}{goal.unit}</span> — Faltam: <span className="font-semibold text-foreground">{remaining.toFixed(1)}{goal.unit}</span></p>
+                </div>
+                {existing.length > 0 && (
+                  <div className="p-2 bg-secondary/30 rounded">
+                    <p className="text-xs text-muted-foreground mb-1">Lançamentos ({existing.length}):</p>
+                    <div className="flex flex-wrap gap-1">
+                      {existing.map((e, idx) => <span key={idx} className="text-xs bg-background px-1.5 py-0.5 rounded border border-border">{e.period}: {e.value}{goal.unit}</span>)}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Smart final actions */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="kpi-card p-6 mt-6 border-primary/20">
+          <div className="text-center mb-4">
+            <h3 className="font-display font-semibold text-foreground mb-1">Resumo — {selectedUnit}</h3>
+            <p className="text-xs text-muted-foreground">
+              {totalGoals} meta(s) cadastrada(s) · {totalEntries} lançamento(s) · Atingimento médio: {avgAttainment}%
+            </p>
+            {criticalGoals.length > 0 && (
+              <p className="text-xs text-destructive mt-1 font-medium">
+                ⚠ {criticalGoals.length} meta(s) com atingimento abaixo de 50%: {criticalGoals.map(g => g.name).join(", ")}
+              </p>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground text-center mb-4">O que deseja fazer agora?</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button variant="default" className="w-full" onClick={() => navigate("/relatorios")}>
+              Gerar relatório de {selectedUnit}
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => { goTo("lancar-meta-unit"); }}>
+              Lançar uma meta
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => setPdfModalOpen(true)}>
+              Exportar PDF personalizado
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => { setStep("inicio"); setHistory([]); }}>
+              Voltar ao início
+            </Button>
+          </div>
+        </motion.div>
       </div>
     );
   };
 
-  const renderFinalizado = () => (
-    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-lg mx-auto text-center">
-      <div className="kpi-card p-8">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-          <span className="text-3xl text-primary">✓</span>
+  const getFinalizadoActions = () => {
+    const title = finalizadoData.title.toLowerCase();
+    const actions: { label: string; action: () => void; variant?: "default" | "outline" | "ghost" }[] = [];
+
+    if (title.includes("meta cadastrada") || title.includes("lançamento de meta")) {
+      actions.push({ label: "Gerar relatório de metas", action: () => navigate("/relatorios"), variant: "default" });
+      actions.push({ label: "Lançar outra meta", action: () => goTo("lancar-meta-unit"), variant: "outline" });
+      actions.push({ label: "Consultar metas", action: () => goTo("consultar-metas-unit"), variant: "outline" });
+    } else if (title.includes("rubrica")) {
+      actions.push({ label: "Ver controle de rubricas", action: () => navigate("/controle-rubrica"), variant: "default" });
+      actions.push({ label: "Lançar outra rubrica", action: () => goTo("lancar-rubrica-unit"), variant: "outline" });
+      actions.push({ label: "Gerar relatório por contrato", action: () => navigate("/relatorios"), variant: "outline" });
+    } else if (title.includes("contrato")) {
+      actions.push({ label: "Ver contratos", action: () => navigate("/contratos"), variant: "default" });
+      actions.push({ label: "Cadastrar nova meta", action: () => setGoalModalOpen(true), variant: "outline" });
+      if (title.includes("redirecionando")) {
+        actions.push({ label: "Ir para Contratos", action: () => navigate("/contratos"), variant: "default" });
+      }
+    } else if (title.includes("evidência")) {
+      actions.push({ label: "Ver evidências enviadas", action: () => navigate("/evidencias"), variant: "default" });
+      actions.push({ label: "Enviar outra evidência", action: () => goTo("enviar-evidencia-contract"), variant: "outline" });
+    } else if (title.includes("relatório")) {
+      const dest = finalizadoData.redirectTo || "/relatorios";
+      actions.push({ label: "Acessar relatório", action: () => navigate(dest), variant: "default" });
+      actions.push({ label: "Exportar PDF personalizado", action: () => setPdfModalOpen(true), variant: "outline" });
+      actions.push({ label: "Escolher outro relatório", action: () => goTo("relatorio-select"), variant: "outline" });
+    } else if (title.includes("redirecionando")) {
+      const dest = finalizadoData.redirectTo || "/dashboard";
+      const label = finalizadoData.title.replace("Redirecionando para ", "");
+      actions.push({ label: `Ir para ${label}`, action: () => navigate(dest), variant: "default" });
+      actions.push({ label: "Gerar relatório", action: () => goTo("relatorio-select"), variant: "outline" });
+    }
+
+    actions.push({ label: "Voltar ao início do assistente", action: () => { setStep("inicio"); setHistory([]); }, variant: "ghost" });
+    actions.push({ label: "Ir para o Dashboard", action: () => navigate("/dashboard"), variant: "ghost" });
+    return actions;
+  };
+
+  const renderFinalizado = () => {
+    const actions = getFinalizadoActions();
+    return (
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-lg mx-auto text-center">
+        <div className="kpi-card p-8">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl text-primary">✓</span>
+          </div>
+          <h2 className="font-display font-bold text-xl text-foreground mb-2">{finalizadoData.title}</h2>
+          <p className="text-sm text-muted-foreground mb-6">Confira o resumo abaixo:</p>
+          <div className="bg-secondary/30 rounded-lg p-4 text-left space-y-1.5 mb-6">
+            {finalizadoData.details.map((detail, i) => (
+              <p key={i} className="text-sm text-foreground">{detail}</p>
+            ))}
+          </div>
+          <div className="flex flex-col gap-2">
+            {actions.map((a, i) => (
+              <Button key={i} variant={a.variant || "default"} className="w-full" onClick={a.action}>{a.label}</Button>
+            ))}
+          </div>
         </div>
-        <h2 className="font-display font-bold text-xl text-foreground mb-2">{finalizadoData.title}</h2>
-        <p className="text-sm text-muted-foreground mb-6">Confira o resumo abaixo:</p>
-        <div className="bg-secondary/30 rounded-lg p-4 text-left space-y-1.5 mb-6">
-          {finalizadoData.details.map((detail, i) => (
-            <p key={i} className="text-sm text-foreground">{detail}</p>
-          ))}
-        </div>
-        <div className="flex flex-col gap-2">
-          <Button className="w-full" onClick={() => { setStep("inicio"); setHistory([]); }}>Voltar ao início do assistente</Button>
-          <Button variant="outline" className="w-full" onClick={() => navigate("/dashboard")}>Ir para o Dashboard</Button>
-        </div>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   const renderInlineContent = () => {
     switch (step) {
