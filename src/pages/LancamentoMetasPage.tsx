@@ -739,6 +739,7 @@ const LancamentoMetasPage = () => {
             <TabsTrigger value="lancar-metas">Lançamento de Metas</TabsTrigger>
             <TabsTrigger value="lancamento-rubricas">Lançamento de Rubricas</TabsTrigger>
             <TabsTrigger value="lancar-leitos">Movimentação de Leitos</TabsTrigger>
+            <TabsTrigger value="mapa-termico">Mapa Térmico Diário</TabsTrigger>
           </TabsList>
 
           {/* ── TAB: Lançamento de Metas ── */}
@@ -953,6 +954,176 @@ const LancamentoMetasPage = () => {
           {/* ── TAB: Movimentação de Leitos ── */}
           <TabsContent value="lancar-leitos">
             <BedMovementsTab selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} isAdmin={isAdmin} filterYear={filterYear} filterMonth={filterMonth} />
+          </TabsContent>
+
+          {/* ── TAB: Mapa Térmico Diário ── */}
+          <TabsContent value="mapa-termico">
+            {(() => {
+              const year = Number(filterYear);
+              const month = filterMonth === "todos" ? currentMonth : Number(filterMonth);
+              const daysInMonth = getDaysInMonth(new Date(year, month));
+              const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+              const monthLabel = FILTER_MONTHS.find(m => m.value === String(month))?.label || "";
+
+              // Build a map: goalId -> { day -> value }
+              const heatmapGoals = goals.filter(g => !selectedUnit || g.facility_unit === selectedUnit);
+              const goalDayMap: Record<string, Record<number, number>> = {};
+
+              heatmapGoals.forEach(g => {
+                goalDayMap[g.id] = {};
+                const gEntries = existingEntries[g.id] || [];
+                gEntries.forEach(e => {
+                  try {
+                    const d = parse(e.period, "dd/MM/yyyy", new Date());
+                    if (d.getFullYear() === year && d.getMonth() === month) {
+                      goalDayMap[g.id][d.getDate()] = e.value;
+                    }
+                  } catch {}
+                });
+              });
+
+              const getCellColor = (goal: Goal, value: number | undefined) => {
+                if (value === undefined) return "bg-muted/30 text-muted-foreground/50";
+                const pct = goal.target > 0 ? (value / goal.target) * 100 : 0;
+                // For goals where lower is better (e.g. "tempo", "taxa de infecção", "retorno")
+                const lowerIsBetter = goal.name.toLowerCase().includes("tempo") ||
+                  goal.name.toLowerCase().includes("infecção") ||
+                  goal.name.toLowerCase().includes("retorno") ||
+                  goal.name.toLowerCase().includes("mortalidade") ||
+                  goal.name.toLowerCase().includes("óbito");
+
+                if (lowerIsBetter) {
+                  if (pct <= 80) return "bg-emerald-500/80 text-white";
+                  if (pct <= 100) return "bg-amber-400/80 text-white";
+                  return "bg-destructive/80 text-white";
+                }
+                if (pct >= 90) return "bg-emerald-500/80 text-white";
+                if (pct >= 70) return "bg-amber-400/80 text-white";
+                if (pct >= 50) return "bg-orange-400/80 text-white";
+                return "bg-destructive/80 text-white";
+              };
+
+              if (heatmapGoals.length === 0) {
+                return <p className="text-muted-foreground text-center py-12">Nenhuma meta encontrada para esta unidade e período.</p>;
+              }
+
+              return (
+                <div className="space-y-4">
+                  <div className="kpi-card p-4">
+                    <h3 className="font-display font-semibold text-foreground text-sm mb-1">Mapa Térmico — {monthLabel} {filterYear}</h3>
+                    <p className="text-xs text-muted-foreground">Visualização diária do atingimento de cada meta. Células coloridas indicam lançamentos realizados.</p>
+                    <div className="flex gap-3 mt-3">
+                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">≥ 90%</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">70–89%</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">50–69%</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">&lt; 50%</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-muted/30 border border-border" /><span className="text-[10px] text-muted-foreground">Sem lançamento</span></div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-separate border-spacing-0.5">
+                      <thead>
+                        <tr>
+                          <th className="text-left font-semibold text-foreground p-1.5 min-w-[180px] sticky left-0 bg-background z-10">Meta</th>
+                          <th className="text-center font-semibold text-muted-foreground p-1 min-w-[28px]">Alvo</th>
+                          {days.map(d => (
+                            <th key={d} className={cn(
+                              "text-center font-medium p-1 min-w-[28px]",
+                              d === new Date().getDate() && month === currentMonth && year === currentYear ? "text-primary font-bold" : "text-muted-foreground"
+                            )}>{d}</th>
+                          ))}
+                          <th className="text-center font-semibold text-foreground p-1 min-w-[40px]">Total</th>
+                          <th className="text-center font-semibold text-foreground p-1 min-w-[40px]">%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {heatmapGoals.map((goal, gi) => {
+                          const dayEntries = goalDayMap[goal.id] || {};
+                          const totalValue = Object.values(dayEntries).reduce((s, v) => s + v, 0);
+                          const totalPct = goal.target > 0 ? Math.min(999, Math.round((totalValue / goal.target) * 100)) : 0;
+                          const entryCount = Object.keys(dayEntries).length;
+
+                          return (
+                            <motion.tr key={goal.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: gi * 0.02 }}
+                              className="group hover:bg-muted/20">
+                              <td className="p-1.5 sticky left-0 bg-background z-10">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                    totalPct >= 90 ? "bg-emerald-500" : totalPct >= 70 ? "bg-amber-400" : totalPct >= 50 ? "bg-orange-400" : "bg-destructive"
+                                  }`} />
+                                  <span className="font-medium text-foreground truncate max-w-[160px]" title={goal.name}>{goal.name}</span>
+                                </div>
+                                <span className={`status-badge text-[9px] mt-0.5 ${goal.type === "QNT" ? "bg-accent text-accent-foreground" : goal.type === "QLT" ? "status-success" : "status-warning"}`}>{goal.type}</span>
+                              </td>
+                              <td className="text-center p-1 text-muted-foreground font-medium">{goal.target}{goal.unit}</td>
+                              {days.map(d => {
+                                const val = dayEntries[d];
+                                return (
+                                  <td key={d} className="p-0.5">
+                                    <div className={cn(
+                                      "w-full h-7 rounded flex items-center justify-center text-[9px] font-medium transition-all",
+                                      getCellColor(goal, val),
+                                      val !== undefined && "shadow-sm"
+                                    )} title={val !== undefined ? `Dia ${d}: ${val}${goal.unit} (${goal.target > 0 ? Math.round((val / goal.target) * 100) : 0}%)` : `Dia ${d}: sem lançamento`}>
+                                      {val !== undefined ? val : "·"}
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                              <td className="text-center p-1 font-semibold text-foreground">{entryCount > 0 ? totalValue : "—"}</td>
+                              <td className={cn("text-center p-1 font-bold", totalPct >= 90 ? "text-emerald-600" : totalPct >= 70 ? "text-amber-500" : "text-destructive")}>{entryCount > 0 ? `${totalPct}%` : "—"}</td>
+                            </motion.tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Summary cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {(() => {
+                      const allEntryDays = new Set<number>();
+                      let totalGoalsWithEntries = 0;
+                      let sumPct = 0;
+                      heatmapGoals.forEach(g => {
+                        const dayEntries = goalDayMap[g.id] || {};
+                        const count = Object.keys(dayEntries).length;
+                        if (count > 0) {
+                          totalGoalsWithEntries++;
+                          const total = Object.values(dayEntries).reduce((s, v) => s + v, 0);
+                          sumPct += g.target > 0 ? Math.min(100, (total / g.target) * 100) : 0;
+                        }
+                        Object.keys(dayEntries).forEach(d => allEntryDays.add(Number(d)));
+                      });
+                      const avgPct = totalGoalsWithEntries > 0 ? Math.round(sumPct / totalGoalsWithEntries) : 0;
+                      const coverage = Math.round((allEntryDays.size / daysInMonth) * 100);
+
+                      return (
+                        <>
+                          <div className="kpi-card p-3 text-center">
+                            <p className="text-lg font-bold text-foreground">{totalGoalsWithEntries}/{heatmapGoals.length}</p>
+                            <p className="text-[10px] text-muted-foreground">Metas com lançamento</p>
+                          </div>
+                          <div className="kpi-card p-3 text-center">
+                            <p className={cn("text-lg font-bold", avgPct >= 90 ? "text-emerald-600" : avgPct >= 70 ? "text-amber-500" : "text-destructive")}>{avgPct}%</p>
+                            <p className="text-[10px] text-muted-foreground">Atingimento médio</p>
+                          </div>
+                          <div className="kpi-card p-3 text-center">
+                            <p className="text-lg font-bold text-foreground">{allEntryDays.size}/{daysInMonth}</p>
+                            <p className="text-[10px] text-muted-foreground">Dias com lançamento</p>
+                          </div>
+                          <div className="kpi-card p-3 text-center">
+                            <p className={cn("text-lg font-bold", coverage >= 80 ? "text-emerald-600" : coverage >= 50 ? "text-amber-500" : "text-destructive")}>{coverage}%</p>
+                            <p className="text-[10px] text-muted-foreground">Cobertura do mês</p>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>
 
