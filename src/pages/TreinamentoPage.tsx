@@ -307,7 +307,7 @@ const TreinamentoPage = () => {
       <TopBar />
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full mb-4">
-          ← Voltar
+          Voltar
         </Button>
 
         <div className="flex items-start justify-between gap-4 mb-6">
