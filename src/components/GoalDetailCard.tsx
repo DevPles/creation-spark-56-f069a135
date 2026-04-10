@@ -14,6 +14,7 @@ interface GoalDetail {
   history: number[];
   startDate?: string;
   endDate?: string;
+  facilityUnit?: string;
 }
 
 const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => void }) => {
@@ -41,7 +42,12 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
     <div className="kpi-card">
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="font-display font-semibold text-foreground text-sm">{goal.name}</h3>
+          <h3 className="font-display font-semibold text-foreground text-sm">
+            {goal.name}
+            {goal.facilityUnit && (
+              <span className="ml-2 text-xs font-normal text-muted-foreground">— {goal.facilityUnit}</span>
+            )}
+          </h3>
           <div className="flex items-center gap-2 mt-1">
             <span className={`status-badge ${goal.type === "QNT" ? "bg-accent text-accent-foreground" : goal.type === "QLT" ? "status-success" : "status-warning"}`}>
               {goal.type}
