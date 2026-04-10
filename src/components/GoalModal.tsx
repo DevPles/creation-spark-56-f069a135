@@ -25,6 +25,7 @@ interface GoalModalProps {
 }
 
 const GoalModal = ({ goal, open, onOpenChange }: GoalModalProps) => {
+  const { isAdmin } = useAuth();
   if (!goal) return null;
 
   const attainment = goal.type === "DOC"
