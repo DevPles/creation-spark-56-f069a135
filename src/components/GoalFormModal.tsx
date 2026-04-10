@@ -30,6 +30,7 @@ export interface GoalData {
   history: number[];
   glosaPct: number;
   facilityUnit?: string;
+  sector?: string;
   startDate?: string;
   endDate?: string;
 }
@@ -54,6 +55,12 @@ const TRENDS = [
   { value: "down", label: "Em queda" },
   { value: "stable", label: "Estável" },
 ];
+const FACILITY_UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
+const SECTORS = [
+  "Maternidade", "UTI Adulto", "UTI Neonatal", "Clínica Médica", "Clínica Cirúrgica",
+  "Pediatria", "Pronto Socorro", "Centro Cirúrgico", "Ambulatório", "Farmácia",
+  "Laboratório", "Radiologia", "Nutrição", "Fisioterapia", "Todos",
+];
 
 const DEFAULT_SCORING = [
   { min: 100, label: "Máximo", points: 1 },
@@ -71,6 +78,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
   const [weight, setWeight] = useState("");
   const [trend, setTrend] = useState<"up" | "down" | "stable">("stable");
   const [glosaPct, setGlosaPct] = useState("");
+  const [facilityUnit, setFacilityUnit] = useState("Hospital Geral");
+  const [sector, setSector] = useState("Todos");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -87,6 +96,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       setWeight(String(goal.weight * 100));
       setTrend(goal.trend);
       setGlosaPct(String((goal.glosaPct || 0.05) * 100));
+      setFacilityUnit(goal.facilityUnit || "Hospital Geral");
+      setSector(goal.sector || "Todos");
       setStartDate(goal.startDate || "");
       setEndDate(goal.endDate || "");
       if (goal.scoring?.length) setScoringRules(goal.scoring);
@@ -99,6 +110,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       setWeight("10");
       setTrend("stable");
       setGlosaPct("5");
+      setFacilityUnit("Hospital Geral");
+      setSector("Todos");
       setStartDate("");
       setEndDate("");
       setScoringRules(DEFAULT_SCORING);
@@ -136,6 +149,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       scoring: scoringRules,
       history: goal?.history || [0, 0, 0, 0],
       glosaPct: glosaPctNum,
+      facilityUnit: facilityUnit,
+      sector: sector === "Todos" ? undefined : sector,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
     };
@@ -156,6 +171,31 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
           <div className="space-y-2">
             <Label>Nome do indicador</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Taxa de ocupação de leitos" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Unidade hospitalar</Label>
+              <Select value={facilityUnit} onValueChange={setFacilityUnit}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FACILITY_UNITS.map((u) => (
+                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Setor</Label>
+              <Select value={sector} onValueChange={setSector}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SECTORS.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">

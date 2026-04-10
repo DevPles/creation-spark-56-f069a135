@@ -1,0 +1,1 @@
+ALTER TABLE public.goals ADD COLUMN sector text DEFAULT NULL;
