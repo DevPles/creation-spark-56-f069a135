@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import GoalRow from "@/components/GoalRow";
@@ -591,6 +592,35 @@ const RelatoriosPage = () => {
   const [selectedGoal, setSelectedGoal] = useState<GoalItem | null>(null);
   const [goalModalOpen, setGoalModalOpen] = useState(false);
 
+  // Bed data from DB
+  const [bedData, setBedData] = useState<{ facility_unit: string; category: string; specialty: string; quantity: number }[]>([]);
+  const [bedGoalEntries, setBedGoalEntries] = useState<{ goal_name: string; facility_unit: string; period: string; value: number; target: number }[]>([]);
+
+  useEffect(() => {
+    const fetchBedData = async () => {
+      const { data: beds } = await supabase.from("beds").select("*");
+      if (beds) setBedData(beds);
+
+      const { data: goals } = await supabase.from("goals").select("id, name, facility_unit, target");
+      if (!goals) return;
+      const bedGoals = goals.filter(g => {
+        const n = g.name.toLowerCase();
+        return n.includes("ocupa") || n.includes("intern") || n.includes("giro") || n.includes("rotat");
+      });
+      if (!bedGoals.length) return;
+
+      const { data: entries } = await supabase.from("goal_entries").select("goal_id, value, period").in("goal_id", bedGoals.map(g => g.id));
+      if (!entries) return;
+
+      const mapped = entries.map(e => {
+        const goal = bedGoals.find(g => g.id === e.goal_id)!;
+        return { goal_name: goal.name, facility_unit: goal.facility_unit, period: e.period, value: Number(e.value), target: Number(goal.target) };
+      });
+      setBedGoalEntries(mapped);
+    };
+    fetchBedData();
+  }, []);
+
   const contract = CONTRACTS.find(c => c.id === selectedContractId)!;
   const compareContract = CONTRACTS.find(c => c.id === compareContractId);
 
@@ -600,16 +630,53 @@ const RelatoriosPage = () => {
   const compareFilteredGoals = useMemo(() => compareContract ? filterGoals(compareContract.goals, typeFilter, statusFilter) : [], [compareContract, typeFilter, statusFilter]);
   const compareStats = useMemo(() => computeStats(compareFilteredGoals), [compareFilteredGoals]);
 
+  // Bed chart data - filtered by selected contract unit
+  const bedChartData = useMemo(() => {
+    const unit = contract.unit;
+    const totalInternacao = bedData.filter(b => b.facility_unit === unit && b.category === "internacao").reduce((s, b) => s + b.quantity, 0);
+    const totalComplementar = bedData.filter(b => b.facility_unit === unit && b.category === "complementar").reduce((s, b) => s + b.quantity, 0);
+    const totalLeitos = totalInternacao + totalComplementar;
+
+    // Group entries by period for this unit
+    const entriesByPeriod: Record<string, { internacoes: number; saidas: number }> = {};
+    bedGoalEntries.filter(e => e.facility_unit === unit).forEach(e => {
+      if (!entriesByPeriod[e.period]) entriesByPeriod[e.period] = { internacoes: 0, saidas: 0 };
+      const n = e.goal_name.toLowerCase();
+      if (n.includes("ocupa") || n.includes("intern")) {
+        entriesByPeriod[e.period].internacoes += e.value;
+      }
+      if (n.includes("giro") || n.includes("rotat")) {
+        entriesByPeriod[e.period].saidas += e.value;
+      }
+    });
+
+    const periods = Object.keys(entriesByPeriod).sort();
+    let accumulated = 0;
+    const timeline = periods.map(p => {
+      const d = entriesByPeriod[p];
+      const taxaOcupacao = totalInternacao > 0 ? Math.round((d.internacoes / totalInternacao) * 100) : 0;
+      const giro = totalInternacao > 0 ? parseFloat((d.internacoes / totalInternacao).toFixed(2)) : 0;
+      accumulated += d.internacoes;
+      return { period: p, taxaOcupacao, giro, internacoes: d.internacoes, leitos: totalInternacao };
+    });
+
+    return { totalInternacao, totalComplementar, totalLeitos, timeline, 
+      bedBreakdown: bedData.filter(b => b.facility_unit === unit) };
+  }, [contract.unit, bedData, bedGoalEntries]);
+
   const chartRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const [isCarouselFullscreen, setIsCarouselFullscreen] = useState(false);
 
-  const TOTAL_SLIDES = compareMode ? 11 : 10;
+  const hasBedData = bedChartData.totalLeitos > 0;
+  const TOTAL_SLIDES = (compareMode ? 11 : 10) + (hasBedData ? 2 : 0);
   const FULLSCREEN_GROUPS = useMemo(() => {
     const groups: number[][] = [[0, 9], [1, 2], [3, 4], [5, 6], [7, 8]];
-    if (compareMode) groups.push([10]);
+    if (hasBedData) groups.push([10, 11]);
+    const compIdx = hasBedData ? 12 : 10;
+    if (compareMode) groups.push([compIdx]);
     return groups;
-  }, [compareMode]);
+  }, [compareMode, hasBedData]);
   const TOTAL_FS_SLIDES = FULLSCREEN_GROUPS.length;
 
   const nextSlide = useCallback(() => setCurrentSlide(prev => {
@@ -967,36 +1034,188 @@ const RelatoriosPage = () => {
             </div>
           </div>
         );
-      case 10: // Comparison (only in compare mode)
-        if (!compareMode || !compareContract) return null;
+      case 10: // Bed occupancy & capacity
+        if (!hasBedData) {
+          // fallback to comparison if no bed data
+          if (!compareMode || !compareContract) return null;
+          return renderComparisonSlide();
+        }
         return (
           <div>
-            <h3 className="font-display font-semibold text-lg text-foreground mb-1">Comparativo entre contratos</h3>
-            <p className="text-xs text-muted-foreground mb-4">{contract.unit} vs {compareContract.unit}</p>
+            <h3 className="font-display font-semibold text-lg text-foreground mb-1">Capacidade & Taxa de Ocupação de Leitos</h3>
+            <p className="text-xs text-muted-foreground mb-4">Distribuição de leitos e ocupação por período — {contract.unit}</p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-card rounded-lg border border-border p-5">
-                <ResponsiveContainer width="100%" height={chartH}>
-                  <BarChart data={comparisonData} barGap={8}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                    <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                <p className="text-xs font-medium text-muted-foreground mb-3">Distribuição por especialidade</p>
+                <ResponsiveContainer width="100%" height={chartHSmall}>
+                  <BarChart data={bedChartData.bedBreakdown.filter(b => b.category === "internacao").map(b => ({ name: b.specialty.length > 18 ? b.specialty.slice(0, 18) + "…" : b.specialty, leitos: b.quantity }))} layout="vertical" barGap={2}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                     <Tooltip contentStyle={tooltipStyle} />
-                    <Bar dataKey={contract.unit} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} label={{ position: "top", fontSize: 10, fill: "hsl(var(--primary))" }} />
-                    <Bar dataKey={compareContract.unit} fill="hsl(38 92% 50%)" radius={[6, 6, 0, 0]} label={{ position: "top", fontSize: 10, fill: "hsl(38 92% 50%)" }} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <defs>
+                      <linearGradient id="gradientBar" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                        <stop offset="100%" stopColor="hsl(210 80% 55%)" stopOpacity={1} />
+                      </linearGradient>
+                    </defs>
+                    <Bar dataKey="leitos" fill="url(#gradientBar)" radius={[0, 8, 8, 0]} name="Leitos" label={{ position: "right", fontSize: 10, fill: "hsl(var(--foreground))", fontWeight: 600 }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="space-y-3">
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">{contract.unit} — Risco total</p><p className="text-xl font-bold text-destructive">{formatCurrency(stats.totalRisk)}</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">{compareContract.unit} — Risco total</p><p className="text-xl font-bold" style={{ color: "hsl(38 92% 50%)" }}>{formatCurrency(compareStats.totalRisk)}</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Diferença de atingimento</p><p className="text-xl font-bold text-foreground">{stats.avg - compareStats.avg > 0 ? "+" : ""}{stats.avg - compareStats.avg}pp</p></div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="kpi-card">
+                    <p className="text-[10px] text-muted-foreground">Internação</p>
+                    <p className="text-2xl font-bold text-primary">{bedChartData.totalInternacao}</p>
+                    <p className="text-[10px] text-muted-foreground">leitos</p>
+                  </div>
+                  <div className="kpi-card">
+                    <p className="text-[10px] text-muted-foreground">Complementar</p>
+                    <p className="text-2xl font-bold" style={{ color: "hsl(210 80% 55%)" }}>{bedChartData.totalComplementar}</p>
+                    <p className="text-[10px] text-muted-foreground">leitos</p>
+                  </div>
+                </div>
+                {bedChartData.timeline.length > 0 ? (
+                  <div className="bg-card rounded-lg border border-border p-4">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Taxa de Ocupação por período</p>
+                    <ResponsiveContainer width="100%" height={160}>
+                      <AreaChart data={bedChartData.timeline}>
+                        <defs>
+                          <linearGradient id="gradOcupacao" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(142 71% 45%)" stopOpacity={0.4} />
+                            <stop offset="95%" stopColor="hsl(142 71% 45%)" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="period" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                        <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}%`} />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
+                        <Area type="monotone" dataKey="taxaOcupacao" stroke="hsl(142 71% 45%)" strokeWidth={2.5} fill="url(#gradOcupacao)" name="Taxa de Ocupação %" dot={{ r: 4, fill: "hsl(142 71% 45%)", strokeWidth: 2, stroke: "#fff" }} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="bg-card rounded-lg border border-border p-6 flex items-center justify-center">
+                    <p className="text-sm text-muted-foreground">Nenhum lançamento registrado para esta unidade</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         );
+      case 11: // Bed turnover (giro)
+        if (!hasBedData) {
+          if (!compareMode || !compareContract) return null;
+          return renderComparisonSlide();
+        }
+        return (
+          <div>
+            <h3 className="font-display font-semibold text-lg text-foreground mb-1">Giro de Leitos & Internações</h3>
+            <p className="text-xs text-muted-foreground mb-4">Rotatividade e volume de internações por período — {contract.unit}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-card rounded-lg border border-border p-5">
+                <p className="text-xs font-medium text-muted-foreground mb-3">Volume de internações por período</p>
+                {bedChartData.timeline.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={chartH}>
+                    <BarChart data={bedChartData.timeline} barGap={4}>
+                      <defs>
+                        <linearGradient id="gradInternacoes" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="period" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip contentStyle={tooltipStyle} />
+                      <Bar dataKey="internacoes" fill="url(#gradInternacoes)" radius={[8, 8, 0, 0]} name="Internações" label={{ position: "top", fontSize: 10, fill: "hsl(var(--foreground))", fontWeight: 600 }} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px]">
+                    <p className="text-sm text-muted-foreground">Sem lançamentos</p>
+                  </div>
+                )}
+              </div>
+              <div className="bg-card rounded-lg border border-border p-5">
+                <p className="text-xs font-medium text-muted-foreground mb-3">Giro de leitos (rotatividade)</p>
+                {bedChartData.timeline.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={chartH}>
+                    <LineChart data={bedChartData.timeline}>
+                      <defs>
+                        <linearGradient id="gradGiro" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(38 92% 50%)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(38 92% 50%)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="period" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} domain={[0, 'auto']} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => v.toFixed(2)} />
+                      <Line type="monotone" dataKey="giro" stroke="hsl(38 92% 50%)" strokeWidth={3} name="Giro" dot={{ r: 5, fill: "hsl(38 92% 50%)", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 7 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px]">
+                    <p className="text-sm text-muted-foreground">Sem lançamentos</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            {bedChartData.totalLeitos > 0 && (
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="kpi-card">
+                  <p className="text-[10px] text-muted-foreground">Total de leitos</p>
+                  <p className="text-xl font-bold text-foreground">{bedChartData.totalLeitos}</p>
+                </div>
+                <div className="kpi-card">
+                  <p className="text-[10px] text-muted-foreground">Leitos internação</p>
+                  <p className="text-xl font-bold text-primary">{bedChartData.totalInternacao}</p>
+                </div>
+                <div className="kpi-card">
+                  <p className="text-[10px] text-muted-foreground">Leitos complementares</p>
+                  <p className="text-xl font-bold" style={{ color: "hsl(210 80% 55%)" }}>{bedChartData.totalComplementar}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case (hasBedData ? 12 : 10): // Comparison (only in compare mode)
+        if (!compareMode || !compareContract) return null;
+        return renderComparisonSlide();
       default: return null;
     }
+  };
+
+  const renderComparisonSlide = () => {
+    if (!compareContract) return null;
+    return (
+      <div>
+        <h3 className="font-display font-semibold text-lg text-foreground mb-1">Comparativo entre contratos</h3>
+        <p className="text-xs text-muted-foreground mb-4">{contract.unit} vs {compareContract.unit}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-card rounded-lg border border-border p-5">
+            <ResponsiveContainer width="100%" height={chartH}>
+              <BarChart data={comparisonData} barGap={8}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey={contract.unit} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} label={{ position: "top", fontSize: 10, fill: "hsl(var(--primary))" }} />
+                <Bar dataKey={compareContract.unit} fill="hsl(38 92% 50%)" radius={[6, 6, 0, 0]} label={{ position: "top", fontSize: 10, fill: "hsl(38 92% 50%)" }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="space-y-3">
+            <div className="kpi-card"><p className="text-xs text-muted-foreground">{contract.unit} — Risco total</p><p className="text-xl font-bold text-destructive">{formatCurrency(stats.totalRisk)}</p></div>
+            <div className="kpi-card"><p className="text-xs text-muted-foreground">{compareContract.unit} — Risco total</p><p className="text-xl font-bold" style={{ color: "hsl(38 92% 50%)" }}>{formatCurrency(compareStats.totalRisk)}</p></div>
+            <div className="kpi-card"><p className="text-xs text-muted-foreground">Diferença de atingimento</p><p className="text-xl font-bold text-foreground">{stats.avg - compareStats.avg > 0 ? "+" : ""}{stats.avg - compareStats.avg}pp</p></div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderFullscreenSlide = (groupIndex: number) => {
