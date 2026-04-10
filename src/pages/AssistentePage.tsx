@@ -526,10 +526,20 @@ const AssistentePage = () => {
           action: () => {
             if (r.id === "pdf-export") {
               setPdfModalOpen(true);
-            } else if (r.id === "assistencial") {
-              navigate("/relatorio-assistencial");
             } else {
-              navigate("/relatorios");
+              const routeMap: Record<string, string> = {
+                assistencial: "/relatorio-assistencial",
+                consolidado: "/relatorios",
+                rdqa: "/relatorios",
+                contrato: "/relatorios",
+                metas: "/relatorios",
+                risco: "/controle-rubrica",
+                evidencias: "/evidencias",
+              };
+              goToFinalizado(`Relatório: ${r.title}`, [
+                r.description,
+                "Clique abaixo para acessar o relatório selecionado.",
+              ]);
             }
           },
         }));
