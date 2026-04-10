@@ -281,6 +281,9 @@ const ControleRubricaPage = () => {
                 {MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Button variant="default" size="sm" className="h-9" onClick={handleGeneratePdf}>
+              <FileDown className="h-4 w-4 mr-1" /> Gerar PDF
+            </Button>
             <Button variant="outline" size="sm" className="h-9" onClick={() => handleOpenRubricaModal()}>
               Gerenciar Rubricas
             </Button>
