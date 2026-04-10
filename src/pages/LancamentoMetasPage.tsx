@@ -291,6 +291,9 @@ const LancamentoMetasPage = () => {
   useEffect(() => {
     if (!selectedUnit) return;
     loadGoals(selectedUnit);
+    // Load bed data for the selected unit
+    supabase.from("beds").select("category, specialty, quantity").eq("facility_unit", selectedUnit)
+      .then(({ data }) => setBedData((data as any[]) || []));
   }, [selectedUnit]);
 
   const loadGoals = async (unit: string) => {
