@@ -512,11 +512,11 @@ const AssistentePage = () => {
       case "consultar":
         return [
           { id: "ver-metas", title: "Ver Metas", description: "Consulte metas com atingimento, histórico de lançamentos e gauge.", action: () => goTo("consultar-metas-unit") },
-          { id: "ver-contratos", title: "Ver Contratos", description: "Contratos vigentes, valores, rubricas e status.", action: () => navigate("/contratos") },
-          { id: "ver-rubricas", title: "Ver Rubricas e Riscos", description: "Execução orçamentária e projeção de risco por contrato.", action: () => navigate("/controle-rubrica") },
-          { id: "ver-evidencias", title: "Ver Evidências", description: "Documentos enviados, pendentes e status de validação.", action: () => navigate("/evidencias") },
-          { id: "ver-sau", title: "Ver SAU", description: "Serviço de Atendimento ao Usuário — indicadores e ocorrências.", action: () => navigate("/sau") },
-          { id: "ver-relatorio", title: "Relatório Assistencial", description: "Indicadores e dados assistenciais detalhados por unidade.", action: () => navigate("/relatorio-assistencial") },
+          { id: "ver-contratos", title: "Ver Contratos", description: "Contratos vigentes, valores, rubricas e status.", action: () => goToFinalizado("Redirecionando para Contratos", ["Abrindo página de contratos de gestão.", "Consulte valores, rubricas e status de cada contrato."]) },
+          { id: "ver-rubricas", title: "Ver Rubricas e Riscos", description: "Execução orçamentária e projeção de risco por contrato.", action: () => goToFinalizado("Redirecionando para Rubricas", ["Abrindo controle de rubricas e análise de risco.", "Verifique a execução orçamentária por contrato."]) },
+          { id: "ver-evidencias", title: "Ver Evidências", description: "Documentos enviados, pendentes e status de validação.", action: () => goToFinalizado("Redirecionando para Evidências", ["Abrindo painel de evidências.", "Consulte documentos enviados e pendentes."]) },
+          { id: "ver-sau", title: "Ver SAU", description: "Serviço de Atendimento ao Usuário — indicadores e ocorrências.", action: () => goToFinalizado("Redirecionando para SAU", ["Abrindo Serviço de Atendimento ao Usuário.", "Consulte indicadores e ocorrências registradas."]) },
+          { id: "ver-relatorio", title: "Relatório Assistencial", description: "Indicadores e dados assistenciais detalhados por unidade.", action: () => goToFinalizado("Redirecionando para Relatório Assistencial", ["Abrindo relatório assistencial detalhado.", "Analise indicadores por unidade de saúde."]) },
         ];
       case "relatorio-select":
         return REPORT_OPTIONS.map(r => ({
