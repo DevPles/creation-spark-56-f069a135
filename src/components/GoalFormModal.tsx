@@ -30,6 +30,7 @@ export interface GoalData {
   history: number[];
   glosaPct: number;
   facilityUnit?: string;
+  sector?: string;
   startDate?: string;
   endDate?: string;
 }
