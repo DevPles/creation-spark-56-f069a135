@@ -63,8 +63,41 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<BedMovement[]>([]);
   const [daysWithData, setDaysWithData] = useState<Set<string>>(new Set());
+  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [editingValues, setEditingValues] = useState<MovementForm | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
-  useEffect(() => {
+  const handleSaveEdit = async (date: string) => {
+    if (!user || !editingValues) return;
+    setSavingEdit(true);
+    const dateMovements = history.filter(m => m.movement_date === date);
+    if (dateMovements.length === 1) {
+      await supabase.from("bed_movements").update({
+        occupied: editingValues.occupied, admissions: editingValues.admissions,
+        discharges: editingValues.discharges, deaths: editingValues.deaths, transfers: editingValues.transfers,
+      }).eq("id", dateMovements[0].id);
+    } else if (dateMovements.length > 1) {
+      for (let i = 0; i < dateMovements.length; i++) {
+        if (i === 0) {
+          await supabase.from("bed_movements").update({
+            occupied: editingValues.occupied, admissions: editingValues.admissions,
+            discharges: editingValues.discharges, deaths: editingValues.deaths, transfers: editingValues.transfers,
+          }).eq("id", dateMovements[i].id);
+        } else {
+          await supabase.from("bed_movements").update({
+            occupied: 0, admissions: 0, discharges: 0, deaths: 0, transfers: 0,
+          }).eq("id", dateMovements[i].id);
+        }
+      }
+    }
+    toast.success("Movimentação atualizada!");
+    setEditingDate(null);
+    setEditingValues(null);
+    setSavingEdit(false);
+    loadHistory();
+    loadMovements();
+  };
+
     if (!selectedUnit) return;
     supabase.from("beds").select("category, specialty, quantity").eq("facility_unit", selectedUnit)
       .then(({ data }) => setBeds((data as BedRow[]) || []));
