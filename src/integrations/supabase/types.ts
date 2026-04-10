@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      bed_movements: {
+        Row: {
+          admissions: number
+          category: string
+          created_at: string
+          deaths: number
+          discharges: number
+          facility_unit: string
+          id: string
+          movement_date: string
+          notes: string | null
+          occupied: number
+          specialty: string
+          transfers: number
+          user_id: string
+        }
+        Insert: {
+          admissions?: number
+          category?: string
+          created_at?: string
+          deaths?: number
+          discharges?: number
+          facility_unit: string
+          id?: string
+          movement_date: string
+          notes?: string | null
+          occupied?: number
+          specialty: string
+          transfers?: number
+          user_id: string
+        }
+        Update: {
+          admissions?: number
+          category?: string
+          created_at?: string
+          deaths?: number
+          discharges?: number
+          facility_unit?: string
+          id?: string
+          movement_date?: string
+          notes?: string | null
+          occupied?: number
+          specialty?: string
+          transfers?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       beds: {
         Row: {
           category: string
