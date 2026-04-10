@@ -114,7 +114,10 @@ const LancamentoMetasPage = () => {
     });
   };
 
-  const handleGeneratePdf = async () => {
+  const handleGeneratePdf = async (sections: { metas: boolean; rubricas: boolean; leitos: boolean }) => {
+    setPdfGenerating(true);
+    setPdfModalOpen(false);
+    try {
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
@@ -183,7 +186,8 @@ const LancamentoMetasPage = () => {
       return y + 11;
     };
 
-    // ═══ PAGE 1: METAS ═══
+    // ═══ PAGE: METAS ═══
+    if (sections.metas) {
     let startY = addHeader("Relatório de Lançamentos — Metas");
 
     const metaRows = goals.map(g => {
@@ -203,7 +207,6 @@ const LancamentoMetasPage = () => {
       { label: "Metas < 70%", value: String(metaRows.filter(r => r.pct < 70).length), color: metaRows.filter(r => r.pct < 70).length > 0 ? danger : success },
     ], startY);
 
-    // Second row of KPIs
     startY = drawKpiBoxes([
       { label: "Total Lançamentos", value: String(metaRows.reduce((s, r) => s + r.entries, 0)) },
       { label: "Peso Total", value: `${(totalWeight * 100).toFixed(0)}%` },
@@ -211,7 +214,6 @@ const LancamentoMetasPage = () => {
       { label: "Pior Meta", value: metaRows.length > 0 ? `${Math.min(...metaRows.map(r => r.pct))}%` : "—", color: danger },
     ], startY);
 
-    // Bar chart — compact
     startY = drawSectionTitle("Atingimento por Meta (%)", startY);
     const barAreaW = contentW - 55;
     const barH2 = metaRows.length > 0 ? Math.min(8, 40 / metaRows.length) : 8;
@@ -231,7 +233,6 @@ const LancamentoMetasPage = () => {
     });
     startY += metaRows.length * (barH2 + 2) + 4;
 
-    // Table with more columns
     autoTable(doc, {
       startY,
       head: [["Meta", "Tipo", "Alvo", "Realizado", "Faltam", "Atingimento", "Peso", "Lançam."]],
@@ -253,7 +254,6 @@ const LancamentoMetasPage = () => {
       },
     });
 
-    // Bed summary on metas page if there's space
     const lastTableY = (doc as any).lastAutoTable?.finalY || startY + 40;
     if (lastTableY < pageH - 50 && totalBedsByCategory.total > 0) {
       let bedY = lastTableY + 6;
@@ -270,9 +270,11 @@ const LancamentoMetasPage = () => {
       });
     }
     addFooter();
+    } // end metas
 
-    // ═══ PAGE 2: RUBRICAS ═══
-    startY = addHeader("Relatório de Lançamentos — Rubricas");
+    // ═══ PAGE: RUBRICAS ═══
+    if (sections.rubricas) {
+    let startY = addHeader("Relatório de Lançamentos — Rubricas");
 
     const contract = CONTRACTS.find(c => c.id === selectedContract);
     if (contract) {
@@ -303,7 +305,6 @@ const LancamentoMetasPage = () => {
         { label: "Contrato", value: contract.unit.substring(0, 12) },
       ], startY);
 
-      // Bar chart compact
       startY = drawSectionTitle("Execução por Rubrica (%)", startY);
       const colors: [number, number, number][] = [[26, 54, 71], [41, 128, 185], [46, 160, 67], [142, 68, 173], [231, 76, 60], [52, 152, 219]];
       const rubBarW = contentW - 55;
@@ -322,7 +323,6 @@ const LancamentoMetasPage = () => {
       });
       startY += rubRows.length * 7 + 4;
 
-      // Table with saldo
       autoTable(doc, {
         startY,
         head: [["Rubrica", "Alocado", "Executado", "Saldo", "% Exec", "Status"]],
@@ -349,7 +349,6 @@ const LancamentoMetasPage = () => {
         },
       });
 
-      // Totals row
       const rubTableY = (doc as any).lastAutoTable?.finalY || startY + 40;
       if (rubTableY < pageH - 30) {
         doc.setFillColor(...lightBg);
@@ -360,9 +359,11 @@ const LancamentoMetasPage = () => {
       }
     }
     addFooter();
+    } // end rubricas
 
-    // ═══ PAGE 3: MOVIMENTAÇÃO DE LEITOS ═══
-    startY = addHeader("Relatório de Lançamentos — Movimentação de Leitos");
+    // ═══ PAGE: MOVIMENTAÇÃO DE LEITOS ═══
+    if (sections.leitos) {
+    let startY = addHeader("Relatório de Lançamentos — Movimentação de Leitos");
 
     const year = Number(filterYear);
     const month = filterMonth === "todos" ? undefined : Number(filterMonth);
@@ -416,7 +417,6 @@ const LancamentoMetasPage = () => {
       { label: "Mín. Ocupados/Dia", value: String(minOcc) },
     ], startY);
 
-    // Additional KPIs
     startY = drawKpiBoxes([
       { label: "Transferências", value: String(totalTrans) },
       { label: "Óbitos", value: String(totalDea), color: totalDea > 0 ? danger : success },
@@ -424,8 +424,82 @@ const LancamentoMetasPage = () => {
       { label: "Total Leitos", value: String(totalBedsForUnit) },
     ], startY);
 
+    // ── Separate tables by category: Internação and Complementar ──
+    const internacaoBeds = bedData.filter(b => b.category === "internacao");
+    const complementarBeds = bedData.filter(b => b.category === "complementar");
+
+    const buildSpecialtyTable = (categoryBeds: typeof bedData, categoryLabel: string, movements: any[]) => {
+      if (categoryBeds.length === 0) return;
+      startY = drawSectionTitle(`${categoryLabel} — Ocupação por Clínica`, startY);
+
+      const specRows = categoryBeds.map(bed => {
+        const specMovements = movements.filter((m: any) => m.category === bed.category && m.specialty === bed.specialty);
+        const avgOcc = specMovements.length > 0 ? specMovements.reduce((s: number, m: any) => s + m.occupied, 0) / specMovements.length : 0;
+        const specAdm = specMovements.reduce((s: number, m: any) => s + m.admissions, 0);
+        const specDis = specMovements.reduce((s: number, m: any) => s + m.discharges, 0);
+        const specDea = specMovements.reduce((s: number, m: any) => s + m.deaths, 0);
+        const specTrans = specMovements.reduce((s: number, m: any) => s + m.transfers, 0);
+        const occRate = bed.quantity > 0 ? ((avgOcc / bed.quantity) * 100).toFixed(1) : "0.0";
+        return {
+          specialty: bed.specialty, qty: bed.quantity, avgOcc: avgOcc.toFixed(0),
+          admissions: specAdm, discharges: specDis, deaths: specDea, transfers: specTrans, occRate,
+        };
+      });
+
+      // Category total
+      const catTotalBeds = categoryBeds.reduce((s, b) => s + b.quantity, 0);
+      const catTotalOcc = specRows.reduce((s, r) => s + Number(r.avgOcc), 0);
+      const catOccRate = catTotalBeds > 0 ? ((catTotalOcc / catTotalBeds) * 100).toFixed(1) : "0.0";
+
+      autoTable(doc, {
+        startY,
+        head: [["Clínica", "Leitos", "Ocup. Média", "Intern.", "Altas", "Óbitos", "Transf.", "Taxa Ocup."]],
+        body: [
+          ...specRows.map(r => [
+            r.specialty, String(r.qty), r.avgOcc, String(r.admissions), String(r.discharges), String(r.deaths), String(r.transfers), `${r.occRate}%`,
+          ]),
+          // Total row
+          [`TOTAL ${categoryLabel.toUpperCase()}`, String(catTotalBeds), String(catTotalOcc), 
+           String(specRows.reduce((s, r) => s + r.admissions, 0)),
+           String(specRows.reduce((s, r) => s + r.discharges, 0)),
+           String(specRows.reduce((s, r) => s + r.deaths, 0)),
+           String(specRows.reduce((s, r) => s + r.transfers, 0)),
+           `${catOccRate}%`],
+        ],
+        headStyles: { fillColor: primary, textColor: [255, 255, 255], fontSize: 7, fontStyle: "bold", cellPadding: 2 },
+        bodyStyles: { fontSize: 7, textColor: [40, 40, 40], cellPadding: 2 },
+        alternateRowStyles: { fillColor: lightBg },
+        styles: { lineWidth: 0.1, lineColor: [200, 210, 220] },
+        margin: { left: margin, right: margin },
+        didParseCell: (data: any) => {
+          // Bold last row (total)
+          if (data.section === "body" && data.row.index === specRows.length) {
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.fillColor = [220, 228, 240];
+          }
+          // Color the occupancy rate column
+          if (data.section === "body" && data.column.index === 7) {
+            const val = parseFloat(data.cell.text[0]);
+            if (val >= 80) data.cell.styles.textColor = danger;
+            else if (val >= 50) data.cell.styles.textColor = [200, 150, 0];
+            else data.cell.styles.textColor = success;
+          }
+        },
+      });
+      startY = (doc as any).lastAutoTable?.finalY + 4 || startY + 30;
+    };
+
+    buildSpecialtyTable(internacaoBeds, "Internação", bedMovements);
+    buildSpecialtyTable(complementarBeds, "Complementar (PS/Urgência)", bedMovements);
+
     // Occupancy trend chart
     if (dateEntries.length > 0) {
+      // Check if we need a new page
+      if (startY > pageH - 80) {
+        addFooter();
+        startY = addHeader("Relatório de Lançamentos — Movimentação de Leitos (cont.)");
+      }
+
       const chartH = 35;
       startY = drawSectionTitle("Tendência de Ocupação (%)", startY);
 
@@ -441,7 +515,6 @@ const LancamentoMetasPage = () => {
         doc.text(`${100 - g * 25}%`, chartStartX - 1, gy + 1, { align: "right" });
       }
 
-      // Fill area under curve
       if (dateEntries.length > 1) {
         const step = chartW / (dateEntries.length - 1);
         doc.setDrawColor(...primary);
@@ -454,7 +527,6 @@ const LancamentoMetasPage = () => {
           const x2 = chartStartX + i * step;
           const y2 = startY + chartH - (currRate / 100) * chartH;
           doc.line(x1, y1, x2, y2);
-          // Dots
           doc.setFillColor(...primary);
           doc.circle(x2, y2, 0.8, "F");
           if (i === 1) doc.circle(x1, y1, 0.8, "F");
@@ -474,8 +546,15 @@ const LancamentoMetasPage = () => {
       startY += chartH + 10;
     }
 
-    // Movements table
+    // Daily movements table
     if (dateEntries.length > 0) {
+      if (startY > pageH - 60) {
+        addFooter();
+        startY = addHeader("Relatório de Lançamentos — Movimentação de Leitos (cont.)");
+      }
+
+      startY = drawSectionTitle("Histórico Diário", startY);
+
       autoTable(doc, {
         startY,
         head: [["Data", "Ocupados", "Intern.", "Altas", "Óbitos", "Transf.", "Saldo", "Ocupação"]],
@@ -501,7 +580,6 @@ const LancamentoMetasPage = () => {
         },
       });
 
-      // Totals row
       const movTableY = (doc as any).lastAutoTable?.finalY || startY + 20;
       if (movTableY < pageH - 30) {
         doc.setFillColor(...lightBg);
@@ -516,9 +594,13 @@ const LancamentoMetasPage = () => {
       doc.text("Nenhuma movimentação registrada no período.", margin, startY + 8);
     }
     addFooter();
+    } // end leitos
 
     doc.save(`lancamentos_${format(now, "yyyyMMdd_HHmm")}.pdf`);
     toast.success("PDF gerado com sucesso!");
+    } finally {
+      setPdfGenerating(false);
+    }
   };
 
   useEffect(() => {
