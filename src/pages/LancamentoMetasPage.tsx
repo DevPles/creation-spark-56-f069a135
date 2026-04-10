@@ -80,6 +80,7 @@ const LancamentoMetasPage = () => {
   ];
   const [bedData, setBedData] = useState<{ category: string; specialty: string; quantity: number }[]>([]);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [heatmapCompare, setHeatmapCompare] = useState<"global" | "meta">("global");
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
@@ -984,14 +985,31 @@ const LancamentoMetasPage = () => {
 
               const getCellColor = (goal: Goal, value: number | undefined) => {
                 if (value === undefined) return "bg-muted/30 text-muted-foreground/50";
-                const pct = goal.target > 0 ? (value / goal.target) * 100 : 0;
-                // For goals where lower is better (e.g. "tempo", "taxa de infecção", "retorno")
+
                 const lowerIsBetter = goal.name.toLowerCase().includes("tempo") ||
                   goal.name.toLowerCase().includes("infecção") ||
                   goal.name.toLowerCase().includes("retorno") ||
                   goal.name.toLowerCase().includes("mortalidade") ||
                   goal.name.toLowerCase().includes("óbito");
 
+                if (heatmapCompare === "meta") {
+                  // Compare against daily target (target / days in month)
+                  const dailyTarget = goal.target / daysInMonth;
+                  const pct = dailyTarget > 0 ? (value / dailyTarget) * 100 : 0;
+                  if (lowerIsBetter) {
+                    if (pct <= 80) return "bg-emerald-500/80 text-white";
+                    if (pct <= 100) return "bg-amber-400/80 text-white";
+                    if (pct <= 120) return "bg-orange-400/80 text-white";
+                    return "bg-destructive/80 text-white";
+                  }
+                  if (pct >= 100) return "bg-emerald-500/80 text-white";
+                  if (pct >= 80) return "bg-amber-400/80 text-white";
+                  if (pct >= 50) return "bg-orange-400/80 text-white";
+                  return "bg-destructive/80 text-white";
+                }
+
+                // Global fixed thresholds
+                const pct = goal.target > 0 ? (value / goal.target) * 100 : 0;
                 if (lowerIsBetter) {
                   if (pct <= 80) return "bg-emerald-500/80 text-white";
                   if (pct <= 100) return "bg-amber-400/80 text-white";
@@ -1010,13 +1028,40 @@ const LancamentoMetasPage = () => {
               return (
                 <div className="space-y-4">
                   <div className="kpi-card p-4">
-                    <h3 className="font-display font-semibold text-foreground text-sm mb-1">Mapa Térmico — {monthLabel} {filterYear}</h3>
-                    <p className="text-xs text-muted-foreground">Visualização diária do atingimento de cada meta. Células coloridas indicam lançamentos realizados.</p>
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div>
+                        <h3 className="font-display font-semibold text-foreground text-sm mb-1">Mapa Térmico — {monthLabel} {filterYear}</h3>
+                        <p className="text-xs text-muted-foreground">Visualização diária do atingimento de cada meta. Células coloridas indicam lançamentos realizados.</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] text-muted-foreground font-medium">Comparar:</span>
+                        <Select value={heatmapCompare} onValueChange={(v: "global" | "meta") => setHeatmapCompare(v)}>
+                          <SelectTrigger className="h-7 text-xs w-[160px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="global">Global (fixo)</SelectItem>
+                            <SelectItem value="meta">Própria meta (alvo)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <div className="flex gap-3 mt-3">
-                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">≥ 90%</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">70–89%</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">50–69%</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">&lt; 50%</span></div>
+                      {heatmapCompare === "global" ? (
+                        <>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">≥ 90%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">70–89%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">50–69%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">&lt; 50%</span></div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">Acima do alvo diário</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">Próximo (80–99%)</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">Parcial (50–79%)</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">Abaixo de 50%</span></div>
+                        </>
+                      )}
                       <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-muted/30 border border-border" /><span className="text-[10px] text-muted-foreground">Sem lançamento</span></div>
                     </div>
                   </div>
