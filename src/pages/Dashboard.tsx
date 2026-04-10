@@ -1,9 +1,11 @@
+import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import KpiCard from "@/components/KpiCard";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-
+import { ArrowDownAZ } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const MOCK_GOALS = [
   { id: "1", name: "Taxa de ocupação de leitos", target: 85, current: 78, unit: "%", type: "QNT" as const, risk: 12400, trend: "down" as const },
@@ -16,13 +18,11 @@ const MOCK_GOALS = [
   { id: "8", name: "Comissão de óbitos ativa", target: 1, current: 1, unit: "doc", type: "QLT" as const, risk: 0, trend: "stable" as const },
 ];
 
-/* IDs dos cards financeiros — visíveis apenas para admin */
 const FINANCIAL_CARD_IDS = ["contratos", "controle-rubrica"];
 
 const ALL_NAV_CARDS = [
   { id: "contratos", title: "Contratos", description: "Gerir contratos, valores e glosas", route: "/contratos" },
   { id: "metas", title: "Metas e indicadores", description: "Detalhamento e projeções por meta", route: "/metas" },
-  
   { id: "evidencias", title: "Evidências", description: "Upload e validação de documentos", route: "/evidencias" },
   { id: "relatorios", title: "Relatórios", description: "Gerar PDF consolidado por período", route: "/relatorios" },
   { id: "admin", title: "Administração", description: "Usuários, perfis e permissões", route: "/admin" },
@@ -32,19 +32,76 @@ const ALL_NAV_CARDS = [
   { id: "controle-rubrica", title: "Controle de Rubrica", description: "Gestão e acompanhamento de rubricas", route: "/controle-rubrica" },
 ];
 
+const STORAGE_KEY = "dashboard-card-order";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { profile, isAdmin } = useAuth();
 
   const allowedCards = profile?.allowed_cards;
-  let visibleNavCards = allowedCards && allowedCards.length > 0
+  let baseCards = allowedCards && allowedCards.length > 0
     ? ALL_NAV_CARDS.filter(card => allowedCards.includes(card.id))
     : ALL_NAV_CARDS;
 
-  // Non-admin users cannot see financial cards
   if (!isAdmin) {
-    visibleNavCards = visibleNavCards.filter(c => !FINANCIAL_CARD_IDS.includes(c.id));
+    baseCards = baseCards.filter(c => !FINANCIAL_CARD_IDS.includes(c.id));
   }
+
+  const nonAdminCards = baseCards.filter(c => c.id !== "admin");
+  const hasAdmin = baseCards.some(c => c.id === "admin");
+
+  // Persisted order
+  const getInitialOrder = (): string[] => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return nonAdminCards.map(c => c.id);
+  };
+
+  const [cardOrder, setCardOrder] = useState<string[]>(getInitialOrder);
+
+  // Ensure all visible cards are in order (handles new cards)
+  const orderedCards = (() => {
+    const visibleIds = new Set(nonAdminCards.map(c => c.id));
+    const ordered = cardOrder.filter(id => visibleIds.has(id));
+    const missing = nonAdminCards.filter(c => !ordered.includes(c.id)).map(c => c.id);
+    const finalOrder = [...ordered, ...missing];
+    return finalOrder.map(id => nonAdminCards.find(c => c.id === id)!).filter(Boolean);
+  })();
+
+  // Drag state
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
+
+  const handleDragStart = (idx: number) => {
+    dragItem.current = idx;
+    setDraggingIdx(idx);
+  };
+
+  const handleDragEnter = (idx: number) => {
+    dragOverItem.current = idx;
+  };
+
+  const handleDragEnd = () => {
+    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+      const newOrder = orderedCards.map(c => c.id);
+      const [removed] = newOrder.splice(dragItem.current, 1);
+      newOrder.splice(dragOverItem.current, 0, removed);
+      setCardOrder(newOrder);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newOrder));
+    }
+    dragItem.current = null;
+    dragOverItem.current = null;
+    setDraggingIdx(null);
+  };
+
+  const autoOrganize = useCallback(() => {
+    const sorted = [...nonAdminCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")).map(c => c.id);
+    setCardOrder(sorted);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted));
+  }, [nonAdminCards]);
 
   const totalRisk = MOCK_GOALS.reduce((s, g) => s + g.risk, 0);
   const goalsAtRisk = MOCK_GOALS.filter((g) => g.risk > 0).length;
@@ -55,7 +112,6 @@ const Dashboard = () => {
     }, 0) / MOCK_GOALS.length
   );
   const pendingEvidence = MOCK_GOALS.filter((g) => g.type === "DOC" && g.current < g.target).length;
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,18 +140,40 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
-
-
-
-        {/* Navigation Cards - filtered by permissions (excluding admin) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {visibleNavCards.filter(c => c.id !== "admin").map(card => (
-            <NavCard key={card.id} title={card.title} description={card.description} onClick={() => navigate(card.route)} />
-          ))}
+        {/* Auto Organize button */}
+        <div className="flex justify-end mb-3">
+          <Button variant="outline" size="sm" onClick={autoOrganize} className="gap-2 text-xs">
+            <ArrowDownAZ className="h-4 w-4" />
+            Auto Organizar
+          </Button>
         </div>
 
-        {/* Admin Card - centered in middle column */}
-        {visibleNavCards.some(c => c.id === "admin") && (
+        {/* Navigation Cards - draggable */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <AnimatePresence mode="popLayout">
+            {orderedCards.map((card, idx) => (
+              <motion.div
+                key={card.id}
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragEnter={() => handleDragEnter(idx)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+                className={`transition-shadow ${draggingIdx === idx ? "opacity-50 scale-95 ring-2 ring-primary/40 rounded-lg" : "cursor-grab active:cursor-grabbing"}`}
+              >
+                <NavCard title={card.title} description={card.description} onClick={() => navigate(card.route)} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* Admin Card - centered */}
+        {hasAdmin && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-32 lg:mt-40">
             <div className="hidden lg:block" />
             <NavCard title="Administração" description="Usuários, perfis e permissões" onClick={() => navigate("/admin")} />
@@ -107,7 +185,7 @@ const Dashboard = () => {
 };
 
 const NavCard = ({ title, description, onClick }: { title: string; description: string; onClick: () => void }) => (
-  <button onClick={onClick} className="kpi-card text-left cursor-pointer group">
+  <button onClick={onClick} className="kpi-card text-left cursor-pointer group w-full">
     <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
     <p className="text-sm text-muted-foreground mt-1">{description}</p>
   </button>
