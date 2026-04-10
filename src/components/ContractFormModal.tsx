@@ -407,12 +407,16 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
                           ))}
                         </SelectContent>
                       </Select>
-                      <Input
-                        className="h-8 text-xs"
-                        value={bed.specialty}
-                        onChange={(e) => updateBedRow(i, "specialty", e.target.value)}
-                        placeholder="Ex: Clínica Médica"
-                      />
+                      <Select value={bed.specialty || ""} onValueChange={(v) => updateBedRow(i, "specialty", v)}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Selecione a área" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sectors.map(s => (
+                            <SelectItem key={s.id || s.name} value={s.name}>{s.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Input
                         className="h-8 text-xs"
                         type="number"
