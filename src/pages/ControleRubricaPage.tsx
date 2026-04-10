@@ -4,7 +4,7 @@ import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, FileDown } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -13,6 +13,7 @@ import { useContracts } from "@/contexts/ContractsContext";
 import RubricaFormModal from "@/components/RubricaFormModal";
 import { ContractData } from "@/components/contract/types";
 import { MONTHS } from "@/data/rubricaData";
+import { toast } from "sonner";
 
 const formatCurrency = (v: number) => {
   if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;
