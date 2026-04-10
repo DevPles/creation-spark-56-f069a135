@@ -955,6 +955,13 @@ const LancamentoMetasPage = () => {
             <BedMovementsTab selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} isAdmin={isAdmin} filterYear={filterYear} filterMonth={filterMonth} />
           </TabsContent>
         </Tabs>
+
+        <PdfExportModal
+          open={pdfModalOpen}
+          onOpenChange={setPdfModalOpen}
+          onGenerate={handleGeneratePdf}
+          generating={pdfGenerating}
+        />
       </main>
     </div>
   );
