@@ -156,6 +156,15 @@ const AssistentePage = () => {
   const [trainingModalTitle, setTrainingModalTitle] = useState("");
   const [trainingModalDesc, setTrainingModalDesc] = useState("");
 
+  // AI search state
+  const [aiSearching, setAiSearching] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [aiRankedIds, setAiRankedIds] = useState<string[]>([]);
+  const [aiExplanations, setAiExplanations] = useState<Record<string, string>>({});
+  const [aiHasRelevant, setAiHasRelevant] = useState(true);
+  const [aiSearchDone, setAiSearchDone] = useState(false);
+  const searchTimerRef = useState<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (user) {
       supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => setIsAdmin(!!data));
