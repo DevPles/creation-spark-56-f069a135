@@ -55,7 +55,7 @@ const PIE_COLORS = ["hsl(var(--primary))", "hsl(38 92% 50%)", "hsl(142 71% 45%)"
 /* ── Component ────────────────────────────────── */
 const LancamentoMetasPage = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin: isAdminRole } = useAuth();
   const [activeTab, setActiveTab] = useState("lancar-metas");
 
   /* ── Metas state ── */
