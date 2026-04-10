@@ -136,7 +136,8 @@ const LancamentoMetasPage = () => {
     doc.text(`${selectedUnit} • ${format(now, "dd/MM/yyyy HH:mm")}`, pageW - margin, 34, { align: "right" });
 
     // Filter info
-    const filterLabel = dateFilter === "todos" ? "Todos os períodos" : dateFilter === "hoje" ? "Hoje" : dateFilter === "7d" ? "Últimos 7 dias" : dateFilter === "30d" ? "Últimos 30 dias" : "Este mês";
+    const monthLabel = filterMonth === "todos" ? "Todos os meses" : FILTER_MONTHS.find(m => m.value === filterMonth)?.label || "";
+    const filterLabel = `${filterYear} — ${monthLabel}`;
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(9);
     doc.text(`Filtro: ${filterLabel}`, margin, 48);
@@ -416,16 +417,17 @@ const LancamentoMetasPage = () => {
               </>
             )}
             <div>
-              <label className="text-[10px] text-muted-foreground block mb-1">Período</label>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="hoje">Hoje</SelectItem>
-                  <SelectItem value="7d">Últimos 7 dias</SelectItem>
-                  <SelectItem value="30d">Últimos 30 dias</SelectItem>
-                  <SelectItem value="mes">Este mês</SelectItem>
-                </SelectContent>
+              <label className="text-[10px] text-muted-foreground block mb-1">Ano</label>
+              <Select value={filterYear} onValueChange={setFilterYear}>
+                <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
+                <SelectContent>{FILTER_YEARS.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground block mb-1">Mês</label>
+              <Select value={filterMonth} onValueChange={setFilterMonth}>
+                <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                <SelectContent>{FILTER_MONTHS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <Button variant="outline" size="sm" className="h-9" onClick={handleGeneratePdf}>
