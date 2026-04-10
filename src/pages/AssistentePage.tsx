@@ -948,26 +948,68 @@ const AssistentePage = () => {
     );
   };
 
-  const renderFinalizado = () => (
-    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-lg mx-auto text-center">
-      <div className="kpi-card p-8">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-          <span className="text-3xl text-primary">✓</span>
+  const getFinalizadoActions = () => {
+    const title = finalizadoData.title.toLowerCase();
+    const actions: { label: string; action: () => void; variant?: "default" | "outline" | "ghost" }[] = [];
+
+    if (title.includes("meta cadastrada") || title.includes("lançamento de meta")) {
+      actions.push({ label: "Gerar relatório de metas", action: () => navigate("/relatorios"), variant: "default" });
+      actions.push({ label: "Lançar outra meta", action: () => goTo("lancar-meta-unit"), variant: "outline" });
+      actions.push({ label: "Consultar metas", action: () => goTo("consultar-metas-unit"), variant: "outline" });
+    } else if (title.includes("rubrica")) {
+      actions.push({ label: "Ver controle de rubricas", action: () => navigate("/controle-rubrica"), variant: "default" });
+      actions.push({ label: "Lançar outra rubrica", action: () => goTo("lancar-rubrica-unit"), variant: "outline" });
+      actions.push({ label: "Gerar relatório por contrato", action: () => navigate("/relatorios"), variant: "outline" });
+    } else if (title.includes("contrato")) {
+      actions.push({ label: "Ver contratos", action: () => navigate("/contratos"), variant: "default" });
+      actions.push({ label: "Cadastrar nova meta", action: () => setGoalModalOpen(true), variant: "outline" });
+      if (title.includes("redirecionando")) {
+        actions.push({ label: "Ir para Contratos", action: () => navigate("/contratos"), variant: "default" });
+      }
+    } else if (title.includes("evidência")) {
+      actions.push({ label: "Ver evidências enviadas", action: () => navigate("/evidencias"), variant: "default" });
+      actions.push({ label: "Enviar outra evidência", action: () => goTo("enviar-evidencia-contract"), variant: "outline" });
+    } else if (title.includes("relatório")) {
+      actions.push({ label: "Ir para Relatórios", action: () => navigate("/relatorios"), variant: "default" });
+      actions.push({ label: "Exportar outro PDF", action: () => setPdfModalOpen(true), variant: "outline" });
+    } else if (title.includes("redirecionando")) {
+      // Extract destination from title
+      if (title.includes("rubrica")) actions.push({ label: "Ir para Rubricas", action: () => navigate("/controle-rubrica"), variant: "default" });
+      else if (title.includes("evidência")) actions.push({ label: "Ir para Evidências", action: () => navigate("/evidencias"), variant: "default" });
+      else if (title.includes("sau")) actions.push({ label: "Ir para SAU", action: () => navigate("/sau"), variant: "default" });
+      else if (title.includes("assistencial")) actions.push({ label: "Ir para Relatório", action: () => navigate("/relatorio-assistencial"), variant: "default" });
+      actions.push({ label: "Gerar relatório", action: () => goTo("relatorio-select"), variant: "outline" });
+    }
+
+    actions.push({ label: "Voltar ao início do assistente", action: () => { setStep("inicio"); setHistory([]); }, variant: "ghost" });
+    actions.push({ label: "Ir para o Dashboard", action: () => navigate("/dashboard"), variant: "ghost" });
+    return actions;
+  };
+
+  const renderFinalizado = () => {
+    const actions = getFinalizadoActions();
+    return (
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-lg mx-auto text-center">
+        <div className="kpi-card p-8">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl text-primary">✓</span>
+          </div>
+          <h2 className="font-display font-bold text-xl text-foreground mb-2">{finalizadoData.title}</h2>
+          <p className="text-sm text-muted-foreground mb-6">Confira o resumo abaixo:</p>
+          <div className="bg-secondary/30 rounded-lg p-4 text-left space-y-1.5 mb-6">
+            {finalizadoData.details.map((detail, i) => (
+              <p key={i} className="text-sm text-foreground">{detail}</p>
+            ))}
+          </div>
+          <div className="flex flex-col gap-2">
+            {actions.map((a, i) => (
+              <Button key={i} variant={a.variant || "default"} className="w-full" onClick={a.action}>{a.label}</Button>
+            ))}
+          </div>
         </div>
-        <h2 className="font-display font-bold text-xl text-foreground mb-2">{finalizadoData.title}</h2>
-        <p className="text-sm text-muted-foreground mb-6">Confira o resumo abaixo:</p>
-        <div className="bg-secondary/30 rounded-lg p-4 text-left space-y-1.5 mb-6">
-          {finalizadoData.details.map((detail, i) => (
-            <p key={i} className="text-sm text-foreground">{detail}</p>
-          ))}
-        </div>
-        <div className="flex flex-col gap-2">
-          <Button className="w-full" onClick={() => { setStep("inicio"); setHistory([]); }}>Voltar ao início do assistente</Button>
-          <Button variant="outline" className="w-full" onClick={() => navigate("/dashboard")}>Ir para o Dashboard</Button>
-        </div>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   const renderInlineContent = () => {
     switch (step) {
