@@ -26,6 +26,8 @@ const ControleRubricaPage = () => {
   const navigate = useNavigate();
   const { contracts, updateContract } = useContracts();
   const [selectedContract, setSelectedContract] = useState("all");
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(String(currentYear));
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [rubricaModalOpen, setRubricaModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractData | null>(null);
