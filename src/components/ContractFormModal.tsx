@@ -30,6 +30,12 @@ interface BedRow {
   quantity: number;
 }
 
+interface SectorRow {
+  id?: string;
+  name: string;
+  isNew?: boolean;
+}
+
 const CATEGORY_OPTIONS = [
   { value: "internacao", label: "Internação" },
   { value: "complementar", label: "Complementar" },
