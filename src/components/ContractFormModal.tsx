@@ -335,6 +335,37 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
             </p>
           </div>
 
+          {/* ===== SECTOR MANAGEMENT SECTION ===== */}
+          <div className="space-y-3 border border-border rounded-lg p-4 bg-secondary/30">
+            <Label className="text-sm font-semibold">Setores / Áreas — {unit}</Label>
+            <div className="flex gap-2">
+              <Input
+                className="h-8 text-xs flex-1"
+                value={newSectorName}
+                onChange={(e) => setNewSectorName(e.target.value)}
+                placeholder="Nome do setor (ex: Nutrição, Farmácia)"
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSector())}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={addSector} className="gap-1 h-8">
+                <Plus className="h-3 w-3" /> Adicionar
+              </Button>
+            </div>
+            {sectors.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {sectors.map((s) => (
+                  <span key={s.id} className="inline-flex items-center gap-1 bg-background border border-border rounded-full px-3 py-1 text-xs">
+                    {s.name}
+                    <button type="button" onClick={() => s.id && removeSector(s.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Nenhum setor cadastrado. Adicione setores para vincular às metas.</p>
+            )}
+          </div>
+
           {/* ===== BED MANAGEMENT SECTION ===== */}
           <div className="space-y-3 border border-border rounded-lg p-4 bg-secondary/30">
             <div className="flex items-center justify-between">
