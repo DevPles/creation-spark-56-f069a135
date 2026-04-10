@@ -5,8 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-
-interface Goal {
+import { useAuth } from "@/contexts/AuthContext";
   id: string;
   name: string;
   target: number;
