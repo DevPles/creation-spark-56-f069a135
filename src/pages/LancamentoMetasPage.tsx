@@ -18,6 +18,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ALL_ENTRIES, CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
 import GoalGauge from "@/components/GoalGauge";
+import BedMovementsTab from "@/components/BedMovementsTab";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -440,6 +441,7 @@ const LancamentoMetasPage = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="lancar-metas">Lançamento de Metas</TabsTrigger>
             <TabsTrigger value="lancamento-rubricas">Lançamento de Rubricas</TabsTrigger>
+            <TabsTrigger value="lancar-leitos">Movimentação de Leitos</TabsTrigger>
           </TabsList>
 
           {/* ── TAB: Lançamento de Metas ── */}
@@ -649,6 +651,11 @@ const LancamentoMetasPage = () => {
                 </div>
               );
             })()}
+          </TabsContent>
+
+          {/* ── TAB: Movimentação de Leitos ── */}
+          <TabsContent value="lancar-leitos">
+            <BedMovementsTab selectedUnit={selectedUnit} filterYear={filterYear} filterMonth={filterMonth} />
           </TabsContent>
         </Tabs>
       </main>
