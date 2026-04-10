@@ -147,9 +147,25 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     toast.success("Permissões atualizadas", { description: `Cards de ${selectedOtherUser.name} salvos.` });
   };
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     if (!selectedOtherUser) { toast.error("Selecione um usuário"); return; }
-    toast.success("Senha resetada", { description: `E-mail enviado para ${selectedOtherUser.email}.` });
+    if (!newPassword || newPassword.length < 6) { toast.error("Digite uma senha com no mínimo 6 caracteres"); return; }
+    if (!isValidUuid(selectedOtherUser.id)) {
+      toast.success("Senha alterada (local)", { description: `Nova senha definida para ${selectedOtherUser.name}.` });
+      setNewPassword("");
+      return;
+    }
+    setResettingPassword(true);
+    const { error } = await supabase.functions.invoke("create-admin", {
+      body: { action: "reset-password", userId: selectedOtherUser.id, newPassword },
+    });
+    setResettingPassword(false);
+    if (error) {
+      toast.error("Erro ao resetar senha", { description: error.message });
+      return;
+    }
+    toast.success("Senha alterada", { description: `Senha de ${selectedOtherUser.name} foi redefinida.` });
+    setNewPassword("");
   };
 
   const initials = name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
