@@ -16,6 +16,9 @@ const MOCK_GOALS = [
   { id: "8", name: "Comissão de óbitos ativa", target: 1, current: 1, unit: "doc", type: "QLT" as const, risk: 0, trend: "stable" as const },
 ];
 
+/* IDs dos cards financeiros — visíveis apenas para admin */
+const FINANCIAL_CARD_IDS = ["contratos", "controle-rubrica"];
+
 const ALL_NAV_CARDS = [
   { id: "contratos", title: "Contratos", description: "Gerir contratos, valores e glosas", route: "/contratos" },
   { id: "metas", title: "Metas e indicadores", description: "Detalhamento e projeções por meta", route: "/metas" },
@@ -31,12 +34,17 @@ const ALL_NAV_CARDS = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
 
   const allowedCards = profile?.allowed_cards;
-  const visibleNavCards = allowedCards && allowedCards.length > 0
+  let visibleNavCards = allowedCards && allowedCards.length > 0
     ? ALL_NAV_CARDS.filter(card => allowedCards.includes(card.id))
     : ALL_NAV_CARDS;
+
+  // Non-admin users cannot see financial cards
+  if (!isAdmin) {
+    visibleNavCards = visibleNavCards.filter(c => !FINANCIAL_CARD_IDS.includes(c.id));
+  }
 
   const totalRisk = MOCK_GOALS.reduce((s, g) => s + g.risk, 0);
   const goalsAtRisk = MOCK_GOALS.filter((g) => g.risk > 0).length;
@@ -56,10 +64,12 @@ const Dashboard = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            onClick={() => navigate("/contratos")} className="cursor-pointer">
-            <KpiCard label="R$ em risco" value={`R$ ${(totalRisk / 1000).toFixed(1)}k`} status="critical" subtitle="Contrato vigente" />
-          </motion.div>
+          {isAdmin && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+              onClick={() => navigate("/contratos")} className="cursor-pointer">
+              <KpiCard label="R$ em risco" value={`R$ ${(totalRisk / 1000).toFixed(1)}k`} status="critical" subtitle="Contrato vigente" />
+            </motion.div>
+          )}
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             onClick={() => navigate("/metas")} className="cursor-pointer">
             <KpiCard label="Metas em risco" value={`${goalsAtRisk} de ${MOCK_GOALS.length}`} status="warning" subtitle="Abaixo do pactuado" />
