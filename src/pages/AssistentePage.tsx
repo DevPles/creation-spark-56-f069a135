@@ -870,36 +870,80 @@ const AssistentePage = () => {
   const renderConsultarMetasList = () => {
     if (loading) return <p className="text-muted-foreground text-center py-12">Carregando metas...</p>;
     if (goals.length === 0) return <p className="text-muted-foreground text-center py-12">Nenhuma meta cadastrada para {selectedUnit}.</p>;
+    const totalGoals = goals.length;
+    const totalEntries = goals.reduce((s, g) => s + (existingEntries[g.id]?.length || 0), 0);
+    const avgAttainment = goals.length > 0 ? Math.round(goals.reduce((s, g) => {
+      const entries = existingEntries[g.id] || [];
+      const val = entries.reduce((a, e) => a + e.value, 0);
+      return s + (g.target > 0 ? Math.min(100, (val / g.target) * 100) : 0);
+    }, 0) / goals.length) : 0;
+    const criticalGoals = goals.filter(g => {
+      const entries = existingEntries[g.id] || [];
+      const val = entries.reduce((a, e) => a + e.value, 0);
+      return g.target > 0 && (val / g.target) * 100 < 50;
+    });
     return (
-      <div className="grid grid-cols-1 gap-3">
-        {goals.map((goal, i) => {
-          const existing = existingEntries[goal.id] || [];
-          const currentVal = existing.reduce((s, e) => s + e.value, 0);
-          const attainment = goal.target > 0 ? Math.min(100, Math.round((currentVal / goal.target) * 100)) : 0;
-          const remaining = Math.max(0, goal.target - currentVal);
-          return (
-            <motion.div key={goal.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card p-5">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="font-display font-semibold text-foreground text-sm">{goal.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Meta: {goal.target}{goal.unit} — Peso: {(goal.weight * 100).toFixed(0)}% — {goal.type}</p>
-                </div>
-                <GoalGauge percent={attainment} size={70} />
-              </div>
-              <div className="bg-secondary/50 rounded-lg p-2 text-center mb-2">
-                <p className="text-xs text-muted-foreground">Realizado: <span className="font-semibold text-foreground">{currentVal.toFixed(1)}{goal.unit}</span> — Faltam: <span className="font-semibold text-foreground">{remaining.toFixed(1)}{goal.unit}</span></p>
-              </div>
-              {existing.length > 0 && (
-                <div className="p-2 bg-secondary/30 rounded">
-                  <p className="text-xs text-muted-foreground mb-1">Lançamentos ({existing.length}):</p>
-                  <div className="flex flex-wrap gap-1">
-                    {existing.map((e, idx) => <span key={idx} className="text-xs bg-background px-1.5 py-0.5 rounded border border-border">{e.period}: {e.value}{goal.unit}</span>)}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-3">
+          {goals.map((goal, i) => {
+            const existing = existingEntries[goal.id] || [];
+            const currentVal = existing.reduce((s, e) => s + e.value, 0);
+            const attainment = goal.target > 0 ? Math.min(100, Math.round((currentVal / goal.target) * 100)) : 0;
+            const remaining = Math.max(0, goal.target - currentVal);
+            return (
+              <motion.div key={goal.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="font-display font-semibold text-foreground text-sm">{goal.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Meta: {goal.target}{goal.unit} — Peso: {(goal.weight * 100).toFixed(0)}% — {goal.type}</p>
                   </div>
+                  <GoalGauge percent={attainment} size={70} />
                 </div>
-              )}
-            </motion.div>
-          );
-        })}
+                <div className="bg-secondary/50 rounded-lg p-2 text-center mb-2">
+                  <p className="text-xs text-muted-foreground">Realizado: <span className="font-semibold text-foreground">{currentVal.toFixed(1)}{goal.unit}</span> — Faltam: <span className="font-semibold text-foreground">{remaining.toFixed(1)}{goal.unit}</span></p>
+                </div>
+                {existing.length > 0 && (
+                  <div className="p-2 bg-secondary/30 rounded">
+                    <p className="text-xs text-muted-foreground mb-1">Lançamentos ({existing.length}):</p>
+                    <div className="flex flex-wrap gap-1">
+                      {existing.map((e, idx) => <span key={idx} className="text-xs bg-background px-1.5 py-0.5 rounded border border-border">{e.period}: {e.value}{goal.unit}</span>)}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Smart final actions */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="kpi-card p-6 mt-6 border-primary/20">
+          <div className="text-center mb-4">
+            <h3 className="font-display font-semibold text-foreground mb-1">Resumo — {selectedUnit}</h3>
+            <p className="text-xs text-muted-foreground">
+              {totalGoals} meta(s) cadastrada(s) · {totalEntries} lançamento(s) · Atingimento médio: {avgAttainment}%
+            </p>
+            {criticalGoals.length > 0 && (
+              <p className="text-xs text-destructive mt-1 font-medium">
+                ⚠ {criticalGoals.length} meta(s) com atingimento abaixo de 50%: {criticalGoals.map(g => g.name).join(", ")}
+              </p>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground text-center mb-4">O que deseja fazer agora?</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button variant="default" className="w-full" onClick={() => navigate("/relatorios")}>
+              Gerar relatório de {selectedUnit}
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => { goTo("lancar-meta-unit"); }}>
+              Lançar uma meta
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => setPdfModalOpen(true)}>
+              Exportar PDF personalizado
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => { setStep("inicio"); setHistory([]); }}>
+              Voltar ao início
+            </Button>
+          </div>
+        </motion.div>
       </div>
     );
   };
