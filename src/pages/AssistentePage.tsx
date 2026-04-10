@@ -45,6 +45,7 @@ type Step =
   | "consultar-metas-list"
   | "enviar-evidencia-contract"
   | "relatorio-select"
+  | "relatorio-config"
   | "finalizado";
 
 interface WizardCard {
@@ -99,6 +100,106 @@ const REPORT_OPTIONS = [
   { id: "pdf-export", title: "Exportar PDF Personalizado", description: "Monte um relatório customizado selecionando contratos e seções." },
 ];
 
+/* ── Mock contract data for PDF generation ── */
+interface ReportGoalItem {
+  id: string; name: string; target: number; current: number; unit: string;
+  type: "QNT" | "QLT" | "DOC"; risk: number; trend: "up" | "down" | "stable";
+  rubrica: string; pesoFinanceiro: number;
+}
+
+interface ReportContractData {
+  id: string; name: string; unit: string; valorGlobal: number;
+  rubricas: { name: string; pct: number; valor: number }[];
+  goals: ReportGoalItem[];
+  performance: { month: string; atingidas: number; parciais: number; naoAtingidas: number }[];
+  riskTrend: { month: string; risco: number; glosa: number }[];
+}
+
+const REPORT_CONTRACTS: ReportContractData[] = [
+  {
+    id: "c1", name: "Contrato de Gestão — Hospital Geral", unit: "Hospital Geral", valorGlobal: 2800000,
+    rubricas: [
+      { name: "RH", pct: 55, valor: 1540000 }, { name: "Insumos", pct: 20, valor: 560000 },
+      { name: "Equipamentos", pct: 10, valor: 280000 }, { name: "Metas Quantitativas", pct: 10, valor: 280000 },
+      { name: "Metas Qualitativas", pct: 5, valor: 140000 },
+    ],
+    goals: [
+      { id: "g1", name: "Taxa de ocupação de leitos", target: 85, current: 78, unit: "%", type: "QNT", risk: 12400, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 4.4 },
+      { id: "g2", name: "Tempo médio de espera", target: 30, current: 42, unit: "min", type: "QNT", risk: 8200, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.9 },
+      { id: "g3", name: "Satisfação do paciente (NPS)", target: 75, current: 71, unit: "pts", type: "QNT", risk: 5600, trend: "stable", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.0 },
+      { id: "g4", name: "Protocolo de higienização", target: 100, current: 92, unit: "%", type: "QLT", risk: 3100, trend: "up", rubrica: "Metas Qualitativas", pesoFinanceiro: 2.2 },
+      { id: "g5", name: "Relatório quadrimestral (RDQA)", target: 1, current: 0, unit: "doc", type: "DOC", risk: 15000, trend: "down", rubrica: "Metas Qualitativas", pesoFinanceiro: 5.4 },
+      { id: "g6", name: "Taxa de infecção hospitalar", target: 5, current: 6.2, unit: "%", type: "QNT", risk: 9800, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 3.5 },
+    ],
+    performance: [
+      { month: "Jan", atingidas: 65, parciais: 20, naoAtingidas: 15 }, { month: "Fev", atingidas: 70, parciais: 18, naoAtingidas: 12 },
+      { month: "Mar", atingidas: 68, parciais: 22, naoAtingidas: 10 }, { month: "Abr", atingidas: 75, parciais: 15, naoAtingidas: 10 },
+    ],
+    riskTrend: [
+      { month: "Jan", risco: 85000, glosa: 12000 }, { month: "Fev", risco: 72000, glosa: 9500 },
+      { month: "Mar", risco: 61800, glosa: 8200 }, { month: "Abr", risco: 54400, glosa: 7100 },
+    ],
+  },
+  {
+    id: "c2", name: "Contrato de Gestão — UPA Norte", unit: "UPA Norte", valorGlobal: 1200000,
+    rubricas: [
+      { name: "RH", pct: 60, valor: 720000 }, { name: "Insumos", pct: 18, valor: 216000 },
+      { name: "Equipamentos", pct: 7, valor: 84000 }, { name: "Metas Quantitativas", pct: 10, valor: 120000 },
+      { name: "Metas Qualitativas", pct: 5, valor: 60000 },
+    ],
+    goals: [
+      { id: "g9", name: "Tempo porta-médico", target: 15, current: 12, unit: "min", type: "QNT", risk: 0, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 0 },
+      { id: "g10", name: "Atendimentos/dia", target: 200, current: 185, unit: "un", type: "QNT", risk: 3200, trend: "stable", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.7 },
+      { id: "g11", name: "Classificação de risco (Manchester)", target: 100, current: 97, unit: "%", type: "QLT", risk: 0, trend: "up", rubrica: "Metas Qualitativas", pesoFinanceiro: 0 },
+      { id: "g12", name: "Taxa de retorno em 24h", target: 5, current: 7.8, unit: "%", type: "QNT", risk: 4100, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 3.4 },
+    ],
+    performance: [
+      { month: "Jan", atingidas: 72, parciais: 18, naoAtingidas: 10 }, { month: "Fev", atingidas: 78, parciais: 14, naoAtingidas: 8 },
+      { month: "Mar", atingidas: 80, parciais: 12, naoAtingidas: 8 }, { month: "Abr", atingidas: 85, parciais: 10, naoAtingidas: 5 },
+    ],
+    riskTrend: [
+      { month: "Jan", risco: 28000, glosa: 4200 }, { month: "Fev", risco: 22000, glosa: 3100 },
+      { month: "Mar", risco: 18000, glosa: 2600 }, { month: "Abr", risco: 10100, glosa: 1800 },
+    ],
+  },
+  {
+    id: "c3", name: "Contrato de Gestão — UBS Centro", unit: "UBS Centro", valorGlobal: 680000,
+    rubricas: [
+      { name: "RH", pct: 65, valor: 442000 }, { name: "Insumos", pct: 15, valor: 102000 },
+      { name: "Equipamentos", pct: 5, valor: 34000 }, { name: "Metas Quantitativas", pct: 10, valor: 68000 },
+      { name: "Metas Qualitativas", pct: 5, valor: 34000 },
+    ],
+    goals: [
+      { id: "g15", name: "Consultas agendadas realizadas", target: 90, current: 72, unit: "%", type: "QNT", risk: 5400, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 7.9 },
+      { id: "g16", name: "Cobertura vacinal", target: 95, current: 88, unit: "%", type: "QNT", risk: 3200, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 4.7 },
+      { id: "g17", name: "Visitas domiciliares ACS", target: 80, current: 65, unit: "%", type: "QNT", risk: 4600, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 6.8 },
+      { id: "g18", name: "Programa hiperdia atualizado", target: 1, current: 0, unit: "doc", type: "DOC", risk: 6200, trend: "down", rubrica: "Metas Qualitativas", pesoFinanceiro: 9.1 },
+    ],
+    performance: [
+      { month: "Jan", atingidas: 50, parciais: 30, naoAtingidas: 20 }, { month: "Fev", atingidas: 55, parciais: 25, naoAtingidas: 20 },
+      { month: "Mar", atingidas: 58, parciais: 27, naoAtingidas: 15 }, { month: "Abr", atingidas: 62, parciais: 23, naoAtingidas: 15 },
+    ],
+    riskTrend: [
+      { month: "Jan", risco: 32000, glosa: 5800 }, { month: "Fev", risco: 28000, glosa: 4900 },
+      { month: "Mar", risco: 24000, glosa: 4200 }, { month: "Abr", risco: 21500, glosa: 3600 },
+    ],
+  },
+];
+
+function getReportGoalPct(g: ReportGoalItem) {
+  if (g.type === "DOC") return g.current >= g.target ? 100 : 0;
+  return Math.min(100, (g.current / g.target) * 100);
+}
+
+function computeReportStats(goals: ReportGoalItem[]) {
+  const totalRisk = goals.reduce((s, g) => s + g.risk, 0);
+  const atingidas = goals.filter(g => getReportGoalPct(g) >= 90).length;
+  const parciais = goals.filter(g => { const p = getReportGoalPct(g); return p >= 60 && p < 90; }).length;
+  const criticas = goals.filter(g => getReportGoalPct(g) < 60).length;
+  const avg = goals.length ? Math.round(goals.reduce((s, g) => s + getReportGoalPct(g), 0) / goals.length) : 0;
+  return { totalRisk, atingidas, parciais, criticas, avg, total: goals.length };
+}
+
 const AssistentePage = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
@@ -140,6 +241,13 @@ const AssistentePage = () => {
 
   // Evidence contract selection
   const [evidenceContractId, setEvidenceContractId] = useState("");
+
+  // Report generation state
+  const [selectedReportType, setSelectedReportType] = useState("");
+  const [reportContractId, setReportContractId] = useState(REPORT_CONTRACTS[0].id);
+  const [reportIncludeCharts, setReportIncludeCharts] = useState(true);
+  const [reportIncludeDetails, setReportIncludeDetails] = useState(true);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   /* ══ Training state ══ */
   const [trainingModules, setTrainingModules] = useState<TrainingModule[]>([]);
@@ -474,6 +582,7 @@ const AssistentePage = () => {
       case "consultar": return { title: "Consultar informações", desc: "Acesse rapidamente as informações cadastradas.", progress: 40 };
       case "relatorios": return { title: "Gerar relatórios", desc: "Selecione o tipo de relatório desejado.", progress: 40 };
       case "relatorio-select": return { title: "Relatórios disponíveis", desc: "Escolha o relatório que deseja gerar ou consultar.", progress: 60 };
+      case "relatorio-config": return { title: `Gerar: ${REPORT_OPTIONS.find(r => r.id === selectedReportType)?.title || ""}`, desc: "Configure e gere o relatório diretamente.", progress: 80 };
       case "treinamento": return { title: "Treinamento do Sistema", desc: "Assista vídeos e aprenda a usar cada módulo.", progress: 40 };
       case "lancar-meta-unit": return { title: "Lançar meta — Selecione a unidade", desc: "De qual unidade deseja lançar?", progress: 40 };
       case "lancar-meta-select": return { title: `Lançar meta — ${selectedUnit}`, desc: "Selecione a meta.", progress: 60 };
@@ -526,20 +635,12 @@ const AssistentePage = () => {
           action: () => {
             if (r.id === "pdf-export") {
               setPdfModalOpen(true);
+            } else if (r.id === "assistencial") {
+              setSelectedReportType(r.id);
+              goTo("relatorio-config");
             } else {
-              const routeMap: Record<string, string> = {
-                assistencial: "/relatorio-assistencial",
-                consolidado: "/relatorios",
-                rdqa: "/relatorios",
-                contrato: "/relatorios",
-                metas: "/relatorios",
-                risco: "/controle-rubrica",
-                evidencias: "/evidencias",
-              };
-              goToFinalizado(`Relatório: ${r.title}`, [
-                r.description,
-                "Clique abaixo para acessar o relatório selecionado.",
-              ], routeMap[r.id] || "/relatorios");
+              setSelectedReportType(r.id);
+              goTo("relatorio-config");
             }
           },
         }));
@@ -575,7 +676,7 @@ const AssistentePage = () => {
   const newEvidenceTemplate: EvidenceData = { id: "", goalName: "", type: "PDF", fileName: "", status: "Pendente", dueDate: new Date().toISOString().split("T")[0], notes: "", contractId: evidenceContractId };
 
   /* ══ Inline renders ══ */
-  const isInlineStep = ["lancar-meta-select", "lancar-meta-form", "lancar-rubrica-select", "lancar-rubrica-form", "consultar-metas-list", "treinamento", "finalizado"].includes(step);
+  const isInlineStep = ["lancar-meta-select", "lancar-meta-form", "lancar-rubrica-select", "lancar-rubrica-form", "consultar-metas-list", "treinamento", "relatorio-config", "finalizado"].includes(step);
 
   const HeartRating = ({ moduleId }: { moduleId: string }) => {
     const myRating = trainingRatings[moduleId] || 0;
@@ -958,6 +1059,429 @@ const AssistentePage = () => {
     );
   };
 
+  const handleGenerateReport = async () => {
+    const contract = REPORT_CONTRACTS.find(c => c.id === reportContractId);
+    if (!contract) return;
+    const reportOption = REPORT_OPTIONS.find(r => r.id === selectedReportType);
+    if (!reportOption) return;
+
+    setGeneratingPdf(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const autoTableModule = await import("jspdf-autotable");
+      const autoTable = autoTableModule.default;
+
+      const reportLabel = reportOption.title;
+      const now = new Date().toLocaleDateString("pt-BR");
+      const goals = contract.goals;
+      const stats = computeReportStats(goals);
+
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      let y = margin;
+
+      const PRIMARY = [35, 66, 117];
+      const DARK = [30, 40, 50];
+      const MUTED = [120, 130, 140];
+      const RED = [220, 60, 60];
+      const GREEN = [40, 160, 90];
+      const AMBER = [230, 160, 30];
+      const WHITE = [255, 255, 255];
+      const LIGHT_BG = [235, 239, 245];
+
+      const addNewPageIfNeeded = (needed: number) => {
+        if (y + needed > H - 20) { doc.addPage(); y = margin; drawHeader(); }
+      };
+
+      const drawHeader = () => {
+        doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+        doc.rect(0, 0, W, 12, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.text("MOSS -- Métricas para Organizações de Serviço Social", margin, 8);
+        doc.text(now, W - margin, 8, { align: "right" });
+        doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+        y = 18;
+      };
+
+      const drawFooter = (pageNum: number, totalPages: number) => {
+        doc.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
+        doc.rect(0, H - 10, W, 10, "F");
+        doc.setFontSize(7);
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text("Gerado automaticamente pelo MOSS", margin, H - 4);
+        doc.text(`Pagina ${pageNum} de ${totalPages}`, W - margin, H - 4, { align: "right" });
+      };
+
+      const drawBar = (x: number, yPos: number, w: number, h: number, pct: number, color: number[]) => {
+        doc.setFillColor(230, 232, 236);
+        doc.roundedRect(x, yPos, w, h, 2, 2, "F");
+        const fillW = Math.max(0, (pct / 100) * w);
+        if (fillW > 0) {
+          doc.setFillColor(color[0], color[1], color[2]);
+          doc.roundedRect(x, yPos, fillW, h, 2, 2, "F");
+        }
+      };
+
+      const fmtCur = (v: number) => `R$ ${(v / 1000).toFixed(0)}k`;
+      const fmtFull = (v: number) => `R$ ${v.toLocaleString("pt-BR")}`;
+
+      // Cover page
+      doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+      doc.rect(0, 0, W, 45, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.setFont("helvetica", "bold");
+      doc.text("MOSS", margin, 20);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Metricas para Organizacoes de Servico Social", margin, 28);
+      doc.setFontSize(9);
+      doc.text(`${reportLabel}  |  ${now}`, margin, 38);
+      y = 55;
+
+      // Contract info
+      doc.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
+      doc.roundedRect(margin, y, W - 2 * margin, 18, 3, 3, "F");
+      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(contract.name, margin + 5, y + 7);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text(`Valor global: ${fmtFull(contract.valorGlobal)}/mes  |  ${goals.length} metas avaliadas`, margin + 5, y + 14);
+      y += 25;
+
+      // KPI cards
+      const cardW = (W - 2 * margin - 9) / 4;
+      const kpis = [
+        { label: "Risco financeiro", value: fmtCur(stats.totalRisk), color: RED, sub: `${((stats.totalRisk / contract.valorGlobal) * 100).toFixed(1)}% do contrato` },
+        { label: "Atingimento medio", value: `${stats.avg}%`, color: stats.avg >= 90 ? GREEN : stats.avg >= 70 ? AMBER : RED, sub: `${stats.atingidas} de ${stats.total} atingidas` },
+        { label: "Em alerta", value: `${stats.parciais}`, color: AMBER, sub: "Entre 60% e 89%" },
+        { label: "Criticas", value: `${stats.criticas}`, color: RED, sub: "Abaixo de 60%" },
+      ];
+      kpis.forEach((kpi, i) => {
+        const x = margin + i * (cardW + 3);
+        doc.setFillColor(WHITE[0], WHITE[1], WHITE[2]);
+        doc.setDrawColor(220, 222, 226);
+        doc.roundedRect(x, y, cardW, 28, 2, 2, "FD");
+        doc.setFontSize(7);
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text(kpi.label, x + 4, y + 7);
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+        doc.text(kpi.value, x + 4, y + 18);
+        doc.setFontSize(6);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text(kpi.sub, x + 4, y + 24);
+      });
+      y += 36;
+
+      // Charts section
+      if (reportIncludeCharts) {
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+        doc.text("Distribuicao por tipo de meta", margin, y);
+        y += 6;
+        const qnt = goals.filter(g => g.type === "QNT").length;
+        const qlt = goals.filter(g => g.type === "QLT").length;
+        const docType = goals.filter(g => g.type === "DOC").length;
+        const maxGoals = Math.max(qnt, qlt, docType, 1);
+        const barWidth = W - 2 * margin - 35;
+        [{ label: "Quantitativas", val: qnt, color: PRIMARY },
+         { label: "Qualitativas", val: qlt, color: AMBER },
+         { label: "Documentais", val: docType, color: MUTED }].forEach(item => {
+          doc.setFontSize(7);
+          doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+          doc.text(item.label, margin, y + 4);
+          drawBar(margin + 32, y, barWidth, 5, (item.val / maxGoals) * 100, item.color);
+          doc.text(`${item.val}`, margin + 34 + barWidth, y + 4);
+          y += 8;
+        });
+        y += 4;
+
+        // Risk bars
+        addNewPageIfNeeded(60);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text("Top riscos financeiros", margin, y);
+        y += 6;
+        const topRisks = [...goals].sort((a, b) => b.risk - a.risk).slice(0, 5);
+        const maxRisk = Math.max(...topRisks.map(g => g.risk), 1);
+        const riskBarW = W - 2 * margin - 65;
+        topRisks.forEach(g => {
+          const pct = getReportGoalPct(g);
+          const color = pct >= 90 ? GREEN : pct >= 60 ? AMBER : RED;
+          doc.setFontSize(7);
+          doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+          const truncName = g.name.length > 25 ? g.name.substring(0, 25) + "..." : g.name;
+          doc.text(truncName, margin, y + 4);
+          drawBar(margin + 52, y, riskBarW, 5, (g.risk / maxRisk) * 100, color);
+          doc.setTextColor(RED[0], RED[1], RED[2]);
+          doc.text(fmtCur(g.risk), margin + 54 + riskBarW, y + 4);
+          y += 8;
+        });
+        y += 6;
+
+        // Rubrica allocation
+        addNewPageIfNeeded(55);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+        doc.text("Alocacao por rubrica", margin, y);
+        y += 6;
+        const rubColors = [PRIMARY, GREEN, AMBER, [150, 100, 200], RED];
+        contract.rubricas.forEach((r, i) => {
+          const color = rubColors[i % rubColors.length];
+          doc.setFontSize(7);
+          doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+          doc.text(r.name, margin, y + 4);
+          drawBar(margin + 40, y, W - 2 * margin - 65, 5, r.pct, color);
+          doc.text(`${r.pct}%  (${fmtCur(r.valor)})`, W - margin - 22, y + 4);
+          y += 8;
+        });
+        y += 4;
+      }
+
+      // Goals detail table
+      if (reportIncludeDetails) {
+        addNewPageIfNeeded(30);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+        doc.text("Detalhamento por meta", margin, y);
+        y += 4;
+        const tableData = goals.map((g, i) => {
+          const pct = getReportGoalPct(g).toFixed(0);
+          return [`${i + 1}`, g.name, g.type, `${g.target}${g.unit}`, `${g.current}${g.unit}`, `${pct}%`, fmtCur(g.risk), `${g.pesoFinanceiro}%`];
+        });
+        autoTable(doc, {
+          startY: y,
+          head: [["#", "Meta", "Tipo", "Alvo", "Real", "Ating.", "Risco", "Peso"]],
+          body: tableData,
+          margin: { left: margin, right: margin },
+          styles: { fontSize: 7, cellPadding: 2, lineColor: [220, 222, 226], lineWidth: 0.2 },
+          headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 7 },
+          alternateRowStyles: { fillColor: [248, 249, 252] },
+          columnStyles: {
+            0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 45 }, 2: { cellWidth: 12, halign: "center" },
+            3: { cellWidth: 20, halign: "right" }, 4: { cellWidth: 20, halign: "right" }, 5: { cellWidth: 15, halign: "center" },
+            6: { cellWidth: 22, halign: "right" }, 7: { cellWidth: 15, halign: "center" },
+          },
+          didParseCell: (data: any) => {
+            if (data.section === "body" && data.column.index === 5) {
+              const val = parseFloat(data.cell.raw);
+              if (val >= 90) data.cell.styles.textColor = GREEN;
+              else if (val >= 60) data.cell.styles.textColor = AMBER;
+              else data.cell.styles.textColor = RED;
+              data.cell.styles.fontStyle = "bold";
+            }
+          },
+        });
+        y = (doc as any).lastAutoTable.finalY + 8;
+      }
+
+      // Performance table
+      addNewPageIfNeeded(30);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      doc.text("Evolucao mensal de desempenho", margin, y);
+      y += 4;
+      autoTable(doc, {
+        startY: y,
+        head: [["Mes", "Atingidas %", "Parciais %", "Nao atingidas %"]],
+        body: contract.performance.map(p => [p.month, `${p.atingidas}%`, `${p.parciais}%`, `${p.naoAtingidas}%`]),
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+        headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 249, 252] },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+
+      // Risk trend
+      addNewPageIfNeeded(30);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text("Tendencia de risco e glosa", margin, y);
+      y += 4;
+      autoTable(doc, {
+        startY: y,
+        head: [["Mes", "Risco (R$)", "Glosa (R$)"]],
+        body: contract.riskTrend.map(r => [r.month, fmtFull(r.risco), fmtFull(r.glosa)]),
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+        headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 249, 252] },
+      });
+
+      // Footers
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        drawFooter(i, totalPages);
+      }
+
+      // Download
+      const blob = doc.output("blob");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const fileName = `MOSS_${reportLabel.replace(/\s/g, "_")}_${contract.unit.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("Relatório PDF gerado!", { description: fileName });
+      setGeneratingPdf(false);
+      goToFinalizado(`Relatório gerado: ${reportLabel}`, [
+        `Contrato: ${contract.name}`,
+        `Unidade: ${contract.unit}`,
+        `Tipo: ${reportLabel}`,
+        reportIncludeCharts ? "Gráficos: incluídos" : "Gráficos: não incluídos",
+        reportIncludeDetails ? "Detalhamento por meta: incluído" : "Detalhamento por meta: não incluído",
+        `Arquivo: ${fileName}`,
+      ], "/relatorios");
+    } catch (err) {
+      console.error("PDF generation error:", err);
+      toast.error("Erro ao gerar PDF: " + (err instanceof Error ? err.message : String(err)));
+      setGeneratingPdf(false);
+    }
+  };
+
+  const renderReportConfig = () => {
+    const reportOption = REPORT_OPTIONS.find(r => r.id === selectedReportType);
+    if (!reportOption) return null;
+    const contract = REPORT_CONTRACTS.find(c => c.id === reportContractId);
+    const isAssistencial = selectedReportType === "assistencial";
+    const isEvidencias = selectedReportType === "evidencias";
+
+    const stats = contract ? computeReportStats(contract.goals) : null;
+
+    return (
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-lg mx-auto space-y-5">
+        {/* Report summary */}
+        <div className="kpi-card p-5">
+          <h3 className="font-display font-semibold text-foreground mb-1">{reportOption.title}</h3>
+          <p className="text-xs text-muted-foreground">{reportOption.description}</p>
+        </div>
+
+        {/* Contract selection */}
+        <div className="kpi-card p-5 space-y-3">
+          <label className="text-sm font-semibold text-foreground block">Selecione o contrato</label>
+          <div className="grid grid-cols-1 gap-2">
+            {REPORT_CONTRACTS.map(c => {
+              const cStats = computeReportStats(c.goals);
+              return (
+                <button key={c.id} onClick={() => setReportContractId(c.id)}
+                  className={`text-left p-4 rounded-lg border transition-all ${reportContractId === c.id ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border hover:border-primary/30"}`}>
+                  <p className="text-sm font-semibold text-foreground">{c.unit}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {c.goals.length} metas | Atingimento: {cStats.avg}% | Risco: R$ {(cStats.totalRisk / 1000).toFixed(0)}k
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Preview KPIs */}
+        {contract && stats && !isAssistencial && !isEvidencias && (
+          <div className="kpi-card p-5">
+            <p className="text-xs font-semibold text-foreground mb-3">Prévia — {contract.unit}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                <p className="text-lg font-bold" style={{ color: stats.avg >= 90 ? "hsl(142 71% 45%)" : stats.avg >= 70 ? "hsl(38 92% 50%)" : "hsl(var(--destructive))" }}>{stats.avg}%</p>
+                <p className="text-[10px] text-muted-foreground">Atingimento médio</p>
+              </div>
+              <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                <p className="text-lg font-bold text-destructive">R$ {(stats.totalRisk / 1000).toFixed(0)}k</p>
+                <p className="text-[10px] text-muted-foreground">Risco financeiro</p>
+              </div>
+              <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                <p className="text-lg font-bold" style={{ color: "hsl(142 71% 45%)" }}>{stats.atingidas}</p>
+                <p className="text-[10px] text-muted-foreground">Metas atingidas</p>
+              </div>
+              <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                <p className="text-lg font-bold text-destructive">{stats.criticas}</p>
+                <p className="text-[10px] text-muted-foreground">Metas críticas</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Options */}
+        {!isAssistencial && !isEvidencias && (
+          <div className="kpi-card p-5 space-y-3">
+            <p className="text-sm font-semibold text-foreground">Opções do relatório</p>
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
+              <input type="checkbox" id="rpt-charts" checked={reportIncludeCharts} onChange={e => setReportIncludeCharts(e.target.checked)} className="rounded" />
+              <label htmlFor="rpt-charts" className="flex-1 cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Incluir gráficos</span>
+                <p className="text-[10px] text-muted-foreground">Distribuição por tipo, riscos e alocação por rubrica</p>
+              </label>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
+              <input type="checkbox" id="rpt-details" checked={reportIncludeDetails} onChange={e => setReportIncludeDetails(e.target.checked)} className="rounded" />
+              <label htmlFor="rpt-details" className="flex-1 cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Detalhamento por meta</span>
+                <p className="text-[10px] text-muted-foreground">Tabela com alvo, realizado, atingimento e risco por meta</p>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex flex-col gap-2">
+          {isAssistencial ? (
+            <>
+              <Button className="w-full rounded-full" onClick={() => {
+                goToFinalizado("Relatório Assistencial", [
+                  "Abrindo o módulo de Relatório Assistencial completo.",
+                  "Inclui abas: Particularidades, Compilado, Cruzamento, Relatório Final, Personalização e Aprovação.",
+                ], "/relatorio-assistencial");
+              }}>
+                Abrir Relatório Assistencial
+              </Button>
+              <Button variant="outline" className="w-full rounded-full" onClick={() => goTo("relatorio-select")}>
+                Escolher outro relatório
+              </Button>
+            </>
+          ) : isEvidencias ? (
+            <>
+              <Button className="w-full rounded-full" onClick={() => {
+                goToFinalizado("Status de Evidências", [
+                  `Contrato: ${contract?.name || ""}`,
+                  "Abrindo painel de evidências para consultar documentos enviados e pendentes.",
+                ], "/evidencias");
+              }}>
+                Abrir painel de evidências
+              </Button>
+              <Button variant="outline" className="w-full rounded-full" onClick={() => goTo("relatorio-select")}>
+                Escolher outro relatório
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button className="w-full rounded-full" onClick={handleGenerateReport} disabled={generatingPdf}>
+                {generatingPdf ? "Gerando PDF..." : "Gerar e baixar PDF"}
+              </Button>
+              <Button variant="outline" className="w-full rounded-full" onClick={() => goTo("relatorio-select")}>
+                Escolher outro relatório
+              </Button>
+            </>
+          )}
+        </div>
+      </motion.div>
+    );
+  };
+
   const getFinalizadoActions = () => {
     const title = finalizadoData.title.toLowerCase();
     const actions: { label: string; action: () => void; variant?: "default" | "outline" | "ghost" }[] = [];
@@ -1029,6 +1553,7 @@ const AssistentePage = () => {
       case "lancar-rubrica-form": return renderLancarRubricaForm();
       case "consultar-metas-list": return renderConsultarMetasList();
       case "treinamento": return renderTrainamento();
+      case "relatorio-config": return renderReportConfig();
       case "finalizado": return renderFinalizado();
       default: return null;
     }
