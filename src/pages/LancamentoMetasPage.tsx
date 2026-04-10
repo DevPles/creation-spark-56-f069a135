@@ -491,6 +491,7 @@ const LancamentoMetasPage = () => {
             <p className="text-sm text-muted-foreground">Lançamento de metas e rubricas</p>
           </div>
           <div className="flex items-end gap-3 flex-wrap">
+            {/* Unidade — Metas e Leitos */}
             {(activeTab === "lancar-metas" || activeTab === "lancar-leitos") && (
               isAdmin ? (
                 <div>
@@ -507,24 +508,17 @@ const LancamentoMetasPage = () => {
                 </div>
               )
             )}
+            {/* Contrato — apenas Rubricas */}
             {activeTab === "lancamento-rubricas" && (
-              <>
-                <div>
-                  <label className="text-[10px] text-muted-foreground block mb-1">Contrato</label>
-                  <Select value={selectedContract} onValueChange={setSelectedContract}>
-                    <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>{CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.unit}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-[10px] text-muted-foreground block mb-1">Mês</label>
-                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                    <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>{MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-              </>
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-1">Contrato</label>
+                <Select value={selectedContract} onValueChange={setSelectedContract}>
+                  <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>{CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.unit}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             )}
+            {/* Ano — todas as abas */}
             <div>
               <label className="text-[10px] text-muted-foreground block mb-1">Ano</label>
               <Select value={filterYear} onValueChange={setFilterYear}>
@@ -532,9 +526,10 @@ const LancamentoMetasPage = () => {
                 <SelectContent>{FILTER_YEARS.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            {/* Mês — todas as abas (filtro único) */}
             <div>
               <label className="text-[10px] text-muted-foreground block mb-1">Mês</label>
-              <Select value={filterMonth} onValueChange={setFilterMonth}>
+              <Select value={filterMonth} onValueChange={(v) => { setFilterMonth(v); if (activeTab === "lancamento-rubricas") { const m = FILTER_MONTHS.find(fm => fm.value === v); if (m && m.value !== "todos") setSelectedMonth(m.label); } }}>
                 <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
                 <SelectContent>{FILTER_MONTHS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
               </Select>
