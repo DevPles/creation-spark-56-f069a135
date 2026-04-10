@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import KpiCard from "@/components/KpiCard";
-import { motion, Reorder } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowDownAZ } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,8 @@ const STORAGE_KEY = "dashboard-card-order";
 const Dashboard = () => {
   const navigate = useNavigate();
   const { profile, isAdmin } = useAuth();
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
 
   const allowedCards = profile?.allowed_cards;
   let baseCards = allowedCards && allowedCards.length > 0
@@ -54,7 +56,6 @@ const Dashboard = () => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as string[];
-        // Keep only valid IDs and add any new ones
         const validIds = baseCards.map(c => c.id);
         const ordered = parsed.filter(id => validIds.includes(id));
         const missing = validIds.filter(id => !ordered.includes(id));
@@ -69,7 +70,6 @@ const Dashboard = () => {
     .map(id => baseCards.find(c => c.id === id))
     .filter(Boolean) as typeof baseCards;
 
-  // Add any cards not in order yet
   const missingCards = baseCards.filter(c => !cardOrder.includes(c.id));
   const allOrderedCards = [...orderedCards, ...missingCards];
 
@@ -77,6 +77,30 @@ const Dashboard = () => {
     setCardOrder(ids);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
   }, []);
+
+  const handleDragStart = (index: number) => {
+    dragItem.current = index;
+  };
+
+  const handleDragEnter = (index: number) => {
+    dragOverItem.current = index;
+  };
+
+  const handleDragEnd = () => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    if (dragItem.current === dragOverItem.current) {
+      dragItem.current = null;
+      dragOverItem.current = null;
+      return;
+    }
+    const newOrder = [...allOrderedCards.map(c => c.id)];
+    const draggedId = newOrder[dragItem.current];
+    newOrder.splice(dragItem.current, 1);
+    newOrder.splice(dragOverItem.current, 0, draggedId);
+    saveOrder(newOrder);
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
 
   const autoOrganize = useCallback(() => {
     const sorted = [...baseCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")).map(c => c.id);
@@ -127,34 +151,6 @@ const Dashboard = () => {
             Auto Organizar
           </Button>
         </div>
-
-        {/* Navigation Cards - drag to reorder */}
-        <Reorder.Group
-          axis="y"
-          values={allOrderedCards.map(c => c.id)}
-          onReorder={(newOrder) => saveOrder(newOrder)}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-          as="div"
-        >
-          {allOrderedCards.map((card) => (
-            <Reorder.Item
-              key={card.id}
-              value={card.id}
-              as="div"
-              className="cursor-grab active:cursor-grabbing"
-              whileDrag={{ scale: 1.04, boxShadow: "0 12px 40px -8px rgba(0,0,0,0.18)", zIndex: 50 }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            >
-              <NavCard
-                title={card.title}
-                description={card.description}
-                onClick={() => navigate(card.route)}
-              />
-            </Reorder.Item>
-          ))}
-        </Reorder.Group>
-      </main>
-    </div>
   );
 };
 
