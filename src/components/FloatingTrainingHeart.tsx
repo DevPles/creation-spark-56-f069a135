@@ -14,7 +14,7 @@ const FloatingTrainingHeart = () => {
   return (
     <button
       type="button"
-      onClick={() => { if (!didDrag.current) navigate("/treinamento"); }}
+      onClick={() => { if (!didDrag.current) navigate("/assistente"); }}
       onPointerDown={(e) => {
         const r = e.currentTarget.getBoundingClientRect();
         dragRef.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };

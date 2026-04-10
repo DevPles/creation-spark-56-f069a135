@@ -77,21 +77,6 @@ const Dashboard = () => {
 
 
 
-        {/* Assistente Card - destaque central */}
-        <div className="flex justify-center mb-8">
-          <button
-            onClick={() => navigate("/assistente")}
-            className="kpi-card text-center cursor-pointer group p-8 w-full max-w-md hover:ring-2 hover:ring-primary/40 transition-all bg-gradient-to-br from-primary/5 to-primary/15"
-          >
-            <h3 className="font-display font-bold text-xl text-foreground group-hover:text-primary transition-colors mb-2">
-              Assistente
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Acesse o assistente guiado para cadastrar, consultar ou gerar relatórios de forma rápida.
-            </p>
-          </button>
-        </div>
-
         {/* Navigation Cards - filtered by permissions (excluding admin) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {visibleNavCards.filter(c => c.id !== "admin").map(card => (
