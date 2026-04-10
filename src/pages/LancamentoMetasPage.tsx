@@ -65,6 +65,7 @@ const LancamentoMetasPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("todos");
+  const [bedData, setBedData] = useState<{ category: string; specialty: string; quantity: number }[]>([]);
 
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
