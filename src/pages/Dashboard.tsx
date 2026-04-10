@@ -151,6 +151,33 @@ const Dashboard = () => {
             Auto Organizar
           </Button>
         </div>
+
+        {/* Navigation Cards - drag to reorder */}
+        <LayoutGroup>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allOrderedCards.map((card, index) => (
+              <motion.div
+                key={card.id}
+                layout
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragEnter={() => handleDragEnter(index)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+                className="cursor-grab active:cursor-grabbing"
+              >
+                <NavCard
+                  title={card.title}
+                  description={card.description}
+                  onClick={() => navigate(card.route)}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </LayoutGroup>
+      </main>
+    </div>
   );
 };
 
