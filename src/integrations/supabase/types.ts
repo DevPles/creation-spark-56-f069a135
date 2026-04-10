@@ -139,6 +139,7 @@ export type Database = {
           name: string
           risk: number
           scoring: Json
+          sector: string | null
           start_date: string | null
           target: number
           type: string
@@ -154,6 +155,7 @@ export type Database = {
           name: string
           risk?: number
           scoring?: Json
+          sector?: string | null
           start_date?: string | null
           target: number
           type?: string
@@ -169,6 +171,7 @@ export type Database = {
           name?: string
           risk?: number
           scoring?: Json
+          sector?: string | null
           start_date?: string | null
           target?: number
           type?: string
