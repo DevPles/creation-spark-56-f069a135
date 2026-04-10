@@ -45,6 +45,7 @@ type Step =
   | "consultar-metas-list"
   | "enviar-evidencia-contract"
   | "relatorio-select"
+  | "relatorio-config"
   | "finalizado";
 
 interface WizardCard {
