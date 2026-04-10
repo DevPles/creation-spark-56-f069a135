@@ -142,7 +142,7 @@ const LancamentoMetasPage = () => {
       doc.setFontSize(10);
       doc.text(title, margin, 29);
       doc.setFontSize(7);
-      doc.text(`${selectedUnit} • ${format(now, "dd/MM/yyyy HH:mm")} • Filtro: ${filterLabel}`, pageW - margin, 29, { align: "right" });
+      doc.text(`${selectedUnit} - ${format(now, "dd/MM/yyyy HH:mm")} - Filtro: ${filterLabel}`, pageW - margin, 29, { align: "right" });
       return 38;
     };
 
@@ -258,7 +258,7 @@ const LancamentoMetasPage = () => {
       bedY = drawSectionTitle("Capacidade de Leitos — " + selectedUnit, bedY);
       doc.setTextColor(60, 60, 60);
       doc.setFontSize(8);
-      doc.text(`Internação: ${totalBedsByCategory.internacao} leitos  •  Complementar: ${totalBedsByCategory.complementar} leitos  •  Total: ${totalBedsByCategory.total} leitos`, margin + 2, bedY + 4);
+      doc.text(`Internacao: ${totalBedsByCategory.internacao} leitos  |  Complementar: ${totalBedsByCategory.complementar} leitos  |  Total: ${totalBedsByCategory.total} leitos`, margin + 2, bedY + 4);
       bedData.forEach((b, i) => {
         const x = margin + 2 + (i % 3) * (contentW / 3);
         const row = Math.floor(i / 3);
