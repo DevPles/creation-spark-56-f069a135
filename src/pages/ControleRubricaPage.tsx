@@ -3,17 +3,28 @@ import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { AlertTriangle, FileDown } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
 import { useContracts } from "@/contexts/ContractsContext";
 import RubricaFormModal from "@/components/RubricaFormModal";
+import RiskModal from "@/components/RiskModal";
 import { ContractData } from "@/components/contract/types";
 import { MONTHS } from "@/data/rubricaData";
 import { toast } from "sonner";
+
+const RISK_DATA = [
+  { goal: "Relatório RDQA", risk: 15000, prob: 95, trend: "critical", projected: "Não entregue", unit: "UBS Centro" },
+  { goal: "Taxa de ocupação", risk: 12400, prob: 72, trend: "warning", projected: "78% (meta: 85%)", unit: "Hospital Geral" },
+  { goal: "Taxa de infecção", risk: 9800, prob: 68, trend: "warning", projected: "6.2% (meta: ≤5%)", unit: "UBS Centro" },
+  { goal: "Tempo de espera", risk: 8200, prob: 60, trend: "warning", projected: "42 min (meta: 30)", unit: "Hospital Geral" },
+  { goal: "Cirurgias eletivas", risk: 7300, prob: 55, trend: "warning", projected: "98 (meta: 120)", unit: "UPA Norte" },
+  { goal: "Satisfação NPS", risk: 5600, prob: 45, trend: "warning", projected: "71 (meta: 75)", unit: "UPA Norte" },
+];
 
 const formatCurrency = (v: number) => {
   if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;
@@ -32,6 +43,19 @@ const ControleRubricaPage = () => {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [rubricaModalOpen, setRubricaModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractData | null>(null);
+  const [selectedRisk, setSelectedRisk] = useState<typeof RISK_DATA[0] | null>(null);
+  const [riskModalOpen, setRiskModalOpen] = useState(false);
+
+  const filteredRisks =
+    selectedContract === "all"
+      ? RISK_DATA
+      : RISK_DATA.filter((item) => item.unit === selectedContract);
+  const totalRisk = filteredRisks.reduce((sum, item) => sum + item.risk, 0);
+
+  const handleRiskClick = (item: typeof RISK_DATA[0]) => {
+    setSelectedRisk(item);
+    setRiskModalOpen(true);
+  };
 
   // Build rubrica data from contracts
   const byRubrica = useMemo(() => {
@@ -290,207 +314,250 @@ const ControleRubricaPage = () => {
           </div>
         </div>
 
-        {/* Estouradas alert banner */}
-        {overBudget > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 p-4 mb-6 rounded-lg border border-destructive/30 bg-destructive/5"
-          >
-            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-destructive">
-                {overBudget} rubrica{overBudget > 1 ? "s" : ""} estourada{overBudget > 1 ? "s" : ""}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {byRubrica.filter(r => r.estourada).map(r => r.name).join(", ")} — pendência de evidência de justificativa em Evidências
-              </p>
-            </div>
-            <Button variant="outline" size="sm" className="rounded-full text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => navigate("/evidencias")}>
-              Ver Evidências
-            </Button>
-          </motion.div>
-        )}
+        <Tabs defaultValue="rubrica" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="rubrica">Controle de Rubrica</TabsTrigger>
+            <TabsTrigger value="risco">Projeção de Risco</TabsTrigger>
+          </TabsList>
 
-        {byRubrica.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground mb-2">Nenhuma rubrica cadastrada para este contrato.</p>
-            <Button onClick={() => handleOpenRubricaModal()}>
-              Cadastrar Rubricas
-            </Button>
-          </div>
-        ) : (
-          <>
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-                <div className="kpi-card">
-                  <p className="text-xs text-muted-foreground">Total alocado</p>
-                  <p className="font-display text-2xl font-bold text-foreground">{formatCurrency(totalAllocated)}</p>
-                  <p className="text-[10px] text-muted-foreground">{byRubrica.length} rubricas ativas</p>
+          <TabsContent value="rubrica">
+            {/* Estouradas alert banner */}
+            {overBudget > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 p-4 mb-6 rounded-lg border border-destructive/30 bg-destructive/5"
+              >
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-destructive">
+                    {overBudget} rubrica{overBudget > 1 ? "s" : ""} estourada{overBudget > 1 ? "s" : ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {byRubrica.filter(r => r.estourada).map(r => r.name).join(", ")} — pendência de evidência de justificativa em Evidências
+                  </p>
                 </div>
+                <Button variant="outline" size="sm" className="rounded-full text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => navigate("/evidencias")}>
+                  Ver Evidências
+                </Button>
               </motion.div>
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <div className="kpi-card">
-                  <p className="text-xs text-muted-foreground">Total executado</p>
-                  <p className="font-display text-2xl font-bold" style={{ color: avgExecution >= 90 ? "hsl(142 71% 45%)" : avgExecution >= 70 ? "hsl(38 92% 50%)" : "hsl(var(--destructive))" }}>{formatCurrency(totalExecuted)}</p>
-                  <p className="text-[10px] text-muted-foreground">{avgExecution}% de execução</p>
-                </div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-                <div className="kpi-card">
-                  <p className="text-xs text-muted-foreground">Saldo disponível</p>
-                  <p className="font-display text-2xl font-bold text-foreground">{formatCurrency(totalAllocated - totalExecuted)}</p>
-                  <p className="text-[10px] text-muted-foreground">{100 - avgExecution}% restante</p>
-                </div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                <div className="kpi-card">
-                  <p className="text-xs text-muted-foreground">Rubricas estouradas</p>
-                  <div className="flex items-center gap-2">
-                    <p className="font-display text-2xl font-bold text-destructive">{overBudget}</p>
-                    {overBudget > 0 && <AlertTriangle className="h-4 w-4 text-destructive animate-pulse" />}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">{underBudget} abaixo de 70%</p>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Charts row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="kpi-card">
-                <p className="text-sm font-medium text-foreground mb-3">Distribuição por rubrica</p>
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3}>
-                      {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v)} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="kpi-card">
-                <p className="text-sm font-medium text-foreground mb-3">Alocado vs Executado (R$ mil)</p>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={byMonth} barGap={4}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                    <YAxis tickFormatter={v => `${v}k`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v.toFixed(0)}k`} />
-                    <Bar dataKey="alocado" fill="hsl(var(--primary) / 0.3)" radius={[6, 6, 0, 0]} name="Alocado" />
-                    <Bar dataKey="executado" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Executado" />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Execution by rubrica */}
-            <div className="kpi-card mb-6">
-              <p className="text-sm font-medium text-foreground mb-3">Execução por rubrica</p>
-              <ResponsiveContainer width="100%" height={Math.max(200, byRubrica.length * 45)}>
-                <BarChart data={byRubrica.map(r => ({ name: r.name, execução: r.pctExec }))} layout="vertical" barGap={2}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                  <XAxis type="number" domain={[0, 120]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                  <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
-                  <Bar dataKey="execução" radius={[0, 6, 6, 0]} name="% Executado">
-                    {byRubrica.map((r, i) => (
-                      <Cell key={i} fill={r.estourada ? "hsl(var(--destructive))" : r.pctExec >= 70 ? "hsl(var(--primary))" : "hsl(38 92% 50%)"} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Detailed table */}
-            <div className="kpi-card">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-foreground">Detalhamento por rubrica</p>
-                <span className="text-xs text-muted-foreground">{byRubrica.length} rubricas</span>
-              </div>
-              <div className="bg-card rounded-lg border border-border overflow-hidden">
-                <div className="grid grid-cols-12 px-4 py-2.5 text-[10px] font-medium text-muted-foreground border-b border-border">
-                  <span className="col-span-3">Rubrica</span>
-                  <span className="col-span-2 text-right">Alocado</span>
-                  <span className="col-span-2 text-right">Executado</span>
-                  <span className="col-span-2 text-right">Saldo</span>
-                  <span className="col-span-2 text-right">Execução</span>
-                  <span className="col-span-1 text-right">Status</span>
-                </div>
-                {byRubrica.map((r, i) => {
-                  const saldo = r.allocated - r.executed;
-                  const statusClass = r.estourada ? "status-critical" : r.pctExec >= 70 ? "status-success" : "status-warning";
-                  const statusLabel = r.estourada ? "Estourada" : r.pctExec >= 70 ? "OK" : "Baixo";
-                  return (
-                    <motion.div
-                      key={r.name}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: i * 0.03 }}
-                      className={`grid grid-cols-12 px-4 py-3 text-sm items-center border-b border-border last:border-0 hover:bg-muted/30 transition-colors ${r.estourada ? "bg-destructive/5" : ""}`}
-                    >
-                      <span className="col-span-3 font-medium text-foreground text-xs flex items-center gap-1.5">
-                        {r.estourada && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />}
-                        {r.name}
-                      </span>
-                      <span className="col-span-2 text-right text-xs text-muted-foreground">{formatCurrency(r.allocated)}</span>
-                      <span className={`col-span-2 text-right text-xs font-medium ${r.estourada ? "text-destructive" : "text-foreground"}`}>{formatCurrency(r.executed)}</span>
-                      <span className={`col-span-2 text-right text-xs font-medium ${saldo < 0 ? "text-destructive" : "text-foreground"}`}>{formatCurrency(saldo)}</span>
-                      <span className="col-span-2 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full"
-                              style={{
-                                width: `${Math.min(r.pctExec, 100)}%`,
-                                background: r.estourada ? "hsl(var(--destructive))" : r.pctExec >= 70 ? "hsl(var(--primary))" : "hsl(38 92% 50%)",
-                              }}
-                            />
-                          </div>
-                          <span className="text-xs text-muted-foreground w-8 text-right">{r.pctExec}%</span>
-                        </div>
-                      </span>
-                      <span className="col-span-1 text-right">
-                        <span className={`status-badge text-[10px] ${statusClass}`}>{statusLabel}</span>
-                      </span>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Per-contract rubrica management */}
-            {selectedContract !== "all" && (
-              <div className="kpi-card mt-6">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-medium text-foreground">Rubricas do contrato: {selectedContract}</p>
-                  <Button variant="outline" size="sm" onClick={() => handleOpenRubricaModal()}>
-                    Editar
-                  </Button>
-                </div>
-                {(() => {
-                  const contract = contracts.find(c => c.unit === selectedContract);
-                  if (!contract?.rubricas?.length) return <p className="text-sm text-muted-foreground">Nenhuma rubrica cadastrada.</p>;
-                  return (
-                    <div className="space-y-2">
-                      {contract.rubricas.filter(r => r.percent > 0).map(r => (
-                        <div key={r.id} className="flex items-center justify-between p-2 bg-secondary/30 rounded-lg">
-                          <span className="text-sm text-foreground">{r.name}</span>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-muted-foreground">{r.percent}%</span>
-                            <span className="text-xs font-medium text-foreground">{formatCurrency(contract.value * (r.percent / 100))}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </div>
             )}
-          </>
-        )}
+
+            {byRubrica.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground mb-2">Nenhuma rubrica cadastrada para este contrato.</p>
+                <Button onClick={() => handleOpenRubricaModal()}>
+                  Cadastrar Rubricas
+                </Button>
+              </div>
+            ) : (
+              <>
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                    <div className="kpi-card">
+                      <p className="text-xs text-muted-foreground">Total alocado</p>
+                      <p className="font-display text-2xl font-bold text-foreground">{formatCurrency(totalAllocated)}</p>
+                      <p className="text-[10px] text-muted-foreground">{byRubrica.length} rubricas ativas</p>
+                    </div>
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <div className="kpi-card">
+                      <p className="text-xs text-muted-foreground">Total executado</p>
+                      <p className="font-display text-2xl font-bold" style={{ color: avgExecution >= 90 ? "hsl(142 71% 45%)" : avgExecution >= 70 ? "hsl(38 92% 50%)" : "hsl(var(--destructive))" }}>{formatCurrency(totalExecuted)}</p>
+                      <p className="text-[10px] text-muted-foreground">{avgExecution}% de execução</p>
+                    </div>
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                    <div className="kpi-card">
+                      <p className="text-xs text-muted-foreground">Saldo disponível</p>
+                      <p className="font-display text-2xl font-bold text-foreground">{formatCurrency(totalAllocated - totalExecuted)}</p>
+                      <p className="text-[10px] text-muted-foreground">{100 - avgExecution}% restante</p>
+                    </div>
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                    <div className="kpi-card">
+                      <p className="text-xs text-muted-foreground">Rubricas estouradas</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-display text-2xl font-bold text-destructive">{overBudget}</p>
+                        {overBudget > 0 && <AlertTriangle className="h-4 w-4 text-destructive animate-pulse" />}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">{underBudget} abaixo de 70%</p>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Charts row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <div className="kpi-card">
+                    <p className="text-sm font-medium text-foreground mb-3">Distribuição por rubrica</p>
+                    <ResponsiveContainer width="100%" height={260}>
+                      <PieChart>
+                        <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3}>
+                          {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v)} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="kpi-card">
+                    <p className="text-sm font-medium text-foreground mb-3">Alocado vs Executado (R$ mil)</p>
+                    <ResponsiveContainer width="100%" height={260}>
+                      <BarChart data={byMonth} barGap={4}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                        <YAxis tickFormatter={v => `${v}k`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v.toFixed(0)}k`} />
+                        <Bar dataKey="alocado" fill="hsl(var(--primary) / 0.3)" radius={[6, 6, 0, 0]} name="Alocado" />
+                        <Bar dataKey="executado" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Executado" />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Execution by rubrica */}
+                <div className="kpi-card mb-6">
+                  <p className="text-sm font-medium text-foreground mb-3">Execução por rubrica</p>
+                  <ResponsiveContainer width="100%" height={Math.max(200, byRubrica.length * 45)}>
+                    <BarChart data={byRubrica.map(r => ({ name: r.name, execução: r.pctExec }))} layout="vertical" barGap={2}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                      <XAxis type="number" domain={[0, 120]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
+                      <Bar dataKey="execução" radius={[0, 6, 6, 0]} name="% Executado">
+                        {byRubrica.map((r, i) => (
+                          <Cell key={i} fill={r.estourada ? "hsl(var(--destructive))" : r.pctExec >= 70 ? "hsl(var(--primary))" : "hsl(38 92% 50%)"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Detailed table */}
+                <div className="kpi-card">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-foreground">Detalhamento por rubrica</p>
+                    <span className="text-xs text-muted-foreground">{byRubrica.length} rubricas</span>
+                  </div>
+                  <div className="bg-card rounded-lg border border-border overflow-hidden">
+                    <div className="grid grid-cols-12 px-4 py-2.5 text-[10px] font-medium text-muted-foreground border-b border-border">
+                      <span className="col-span-3">Rubrica</span>
+                      <span className="col-span-2 text-right">Alocado</span>
+                      <span className="col-span-2 text-right">Executado</span>
+                      <span className="col-span-2 text-right">Saldo</span>
+                      <span className="col-span-2 text-right">Execução</span>
+                      <span className="col-span-1 text-right">Status</span>
+                    </div>
+                    {byRubrica.map((r, i) => {
+                      const saldo = r.allocated - r.executed;
+                      const statusClass = r.estourada ? "status-critical" : r.pctExec >= 70 ? "status-success" : "status-warning";
+                      const statusLabel = r.estourada ? "Estourada" : r.pctExec >= 70 ? "OK" : "Baixo";
+                      return (
+                        <motion.div
+                          key={r.name}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: i * 0.03 }}
+                          className={`grid grid-cols-12 px-4 py-3 text-sm items-center border-b border-border last:border-0 hover:bg-muted/30 transition-colors ${r.estourada ? "bg-destructive/5" : ""}`}
+                        >
+                          <span className="col-span-3 font-medium text-foreground text-xs flex items-center gap-1.5">
+                            {r.estourada && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />}
+                            {r.name}
+                          </span>
+                          <span className="col-span-2 text-right text-xs text-muted-foreground">{formatCurrency(r.allocated)}</span>
+                          <span className={`col-span-2 text-right text-xs font-medium ${r.estourada ? "text-destructive" : "text-foreground"}`}>{formatCurrency(r.executed)}</span>
+                          <span className={`col-span-2 text-right text-xs font-medium ${saldo < 0 ? "text-destructive" : "text-foreground"}`}>{formatCurrency(saldo)}</span>
+                          <span className="col-span-2 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${Math.min(r.pctExec, 100)}%`,
+                                    background: r.estourada ? "hsl(var(--destructive))" : r.pctExec >= 70 ? "hsl(var(--primary))" : "hsl(38 92% 50%)",
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground w-8 text-right">{r.pctExec}%</span>
+                            </div>
+                          </span>
+                          <span className="col-span-1 text-right">
+                            <span className={`status-badge text-[10px] ${statusClass}`}>{statusLabel}</span>
+                          </span>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Per-contract rubrica management */}
+                {selectedContract !== "all" && (
+                  <div className="kpi-card mt-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-medium text-foreground">Rubricas do contrato: {selectedContract}</p>
+                      <Button variant="outline" size="sm" onClick={() => handleOpenRubricaModal()}>
+                        Editar
+                      </Button>
+                    </div>
+                    {(() => {
+                      const contract = contracts.find(c => c.unit === selectedContract);
+                      if (!contract?.rubricas?.length) return <p className="text-sm text-muted-foreground">Nenhuma rubrica cadastrada.</p>;
+                      return (
+                        <div className="space-y-2">
+                          {contract.rubricas.filter(r => r.percent > 0).map(r => (
+                            <div key={r.id} className="flex items-center justify-between p-2 bg-secondary/30 rounded-lg">
+                              <span className="text-sm text-foreground">{r.name}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-muted-foreground">{r.percent}%</span>
+                                <span className="text-xs font-medium text-foreground">{formatCurrency(contract.value * (r.percent / 100))}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="risco">
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="kpi-card mb-6">
+              <p className="text-sm text-muted-foreground">Risco total estimado</p>
+              <p className="font-display text-3xl font-bold text-destructive mt-1">R$ {(totalRisk / 1000).toFixed(1)}k</p>
+              <p className="text-xs text-muted-foreground mt-1">Baseado nas projeções atuais para o período</p>
+            </motion.div>
+
+            <div className="bg-card rounded-lg border border-border overflow-hidden">
+              <div className="px-5 py-3 border-b border-border grid grid-cols-12 text-xs font-medium text-muted-foreground">
+                <span className="col-span-4">Meta</span>
+                <span className="col-span-2 text-right">R$ em risco</span>
+                <span className="col-span-2 text-right">Prob. perda</span>
+                <span className="col-span-4">Projeção</span>
+              </div>
+              {filteredRisks.map((item, i) => (
+                <motion.div
+                  key={item.goal}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => handleRiskClick(item)}
+                  className="px-5 py-3 grid grid-cols-12 items-center text-sm border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                >
+                  <span className="col-span-4 font-medium text-foreground">{item.goal}</span>
+                  <span className="col-span-2 text-right font-display font-bold text-destructive">R$ {(item.risk / 1000).toFixed(1)}k</span>
+                  <span className="col-span-2 text-right">
+                    <span className={`status-badge ${item.prob >= 70 ? "status-critical" : "status-warning"}`}>{item.prob}%</span>
+                  </span>
+                  <span className="col-span-4 text-muted-foreground">{item.projected}</span>
+                </motion.div>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {editingContract && (
@@ -501,6 +568,7 @@ const ControleRubricaPage = () => {
           onSave={handleSaveRubricas}
         />
       )}
+      <RiskModal item={selectedRisk} open={riskModalOpen} onOpenChange={setRiskModalOpen} />
     </div>
   );
 };
