@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      beds: {
+        Row: {
+          category: string
+          created_at: string
+          facility_unit: string
+          id: string
+          quantity: number
+          specialty: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          facility_unit: string
+          id?: string
+          quantity?: number
+          specialty: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          facility_unit?: string
+          id?: string
+          quantity?: number
+          specialty?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       goal_entries: {
         Row: {
           created_at: string
