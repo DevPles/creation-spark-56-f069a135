@@ -980,8 +980,10 @@ const AssistentePage = () => {
       actions.push({ label: "Ver evidências enviadas", action: () => navigate("/evidencias"), variant: "default" });
       actions.push({ label: "Enviar outra evidência", action: () => goTo("enviar-evidencia-contract"), variant: "outline" });
     } else if (title.includes("relatório")) {
-      actions.push({ label: "Ir para Relatórios", action: () => navigate("/relatorios"), variant: "default" });
-      actions.push({ label: "Exportar outro PDF", action: () => setPdfModalOpen(true), variant: "outline" });
+      const dest = finalizadoData.redirectTo || "/relatorios";
+      actions.push({ label: "Acessar relatório", action: () => navigate(dest), variant: "default" });
+      actions.push({ label: "Exportar PDF personalizado", action: () => setPdfModalOpen(true), variant: "outline" });
+      actions.push({ label: "Escolher outro relatório", action: () => goTo("relatorio-select"), variant: "outline" });
     } else if (title.includes("redirecionando")) {
       // Extract destination from title
       if (title.includes("rubrica")) actions.push({ label: "Ir para Rubricas", action: () => navigate("/controle-rubrica"), variant: "default" });
