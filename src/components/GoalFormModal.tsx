@@ -57,11 +57,6 @@ const TRENDS = [
   { value: "stable", label: "Estável" },
 ];
 const FACILITY_UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
-const SECTORS = [
-  "Maternidade", "UTI Adulto", "UTI Neonatal", "Clínica Médica", "Clínica Cirúrgica",
-  "Pediatria", "Pronto Socorro", "Centro Cirúrgico", "Ambulatório", "Farmácia",
-  "Laboratório", "Radiologia", "Nutrição", "Fisioterapia", "Todos",
-];
 
 const DEFAULT_SCORING = [
   { min: 100, label: "Máximo", points: 1 },
