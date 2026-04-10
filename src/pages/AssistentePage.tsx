@@ -1482,6 +1482,7 @@ const AssistentePage = () => {
     );
   };
 
+  const getFinalizadoActions = () => {
     const title = finalizadoData.title.toLowerCase();
     const actions: { label: string; action: () => void; variant?: "default" | "outline" | "ghost" }[] = [];
 
