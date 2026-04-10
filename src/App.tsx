@@ -11,7 +11,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MetasPage from "./pages/MetasPage";
 import ContratosPage from "./pages/ContratosPage";
-import RiscoPage from "./pages/RiscoPage";
+
 import AdminPage from "./pages/AdminPage";
 import EvidenciasPage from "./pages/EvidenciasPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
@@ -38,7 +38,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/metas" element={<ProtectedRoute><MetasPage /></ProtectedRoute>} />
             <Route path="/contratos" element={<ProtectedRoute><ContratosPage /></ProtectedRoute>} />
-            <Route path="/risco" element={<ProtectedRoute><RiscoPage /></ProtectedRoute>} />
+            
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             <Route path="/evidencias" element={<ProtectedRoute><EvidenciasPage /></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><RelatoriosPage /></ProtectedRoute>} />

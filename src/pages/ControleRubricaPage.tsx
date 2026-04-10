@@ -3,17 +3,28 @@ import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { AlertTriangle, FileDown } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
 import { useContracts } from "@/contexts/ContractsContext";
 import RubricaFormModal from "@/components/RubricaFormModal";
+import RiskModal from "@/components/RiskModal";
 import { ContractData } from "@/components/contract/types";
 import { MONTHS } from "@/data/rubricaData";
 import { toast } from "sonner";
+
+const RISK_DATA = [
+  { goal: "Relatório RDQA", risk: 15000, prob: 95, trend: "critical", projected: "Não entregue", unit: "UBS Centro" },
+  { goal: "Taxa de ocupação", risk: 12400, prob: 72, trend: "warning", projected: "78% (meta: 85%)", unit: "Hospital Geral" },
+  { goal: "Taxa de infecção", risk: 9800, prob: 68, trend: "warning", projected: "6.2% (meta: ≤5%)", unit: "UBS Centro" },
+  { goal: "Tempo de espera", risk: 8200, prob: 60, trend: "warning", projected: "42 min (meta: 30)", unit: "Hospital Geral" },
+  { goal: "Cirurgias eletivas", risk: 7300, prob: 55, trend: "warning", projected: "98 (meta: 120)", unit: "UPA Norte" },
+  { goal: "Satisfação NPS", risk: 5600, prob: 45, trend: "warning", projected: "71 (meta: 75)", unit: "UPA Norte" },
+];
 
 const formatCurrency = (v: number) => {
   if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;

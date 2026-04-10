@@ -19,7 +19,7 @@ const MOCK_GOALS = [
 const ALL_NAV_CARDS = [
   { id: "contratos", title: "Contratos", description: "Gerir contratos, valores e glosas", route: "/contratos" },
   { id: "metas", title: "Metas e indicadores", description: "Detalhamento e projeções por meta", route: "/metas" },
-  { id: "risco", title: "Projeção de risco", description: "Análise financeira e cenários", route: "/risco" },
+  
   { id: "evidencias", title: "Evidências", description: "Upload e validação de documentos", route: "/evidencias" },
   { id: "relatorios", title: "Relatórios", description: "Gerar PDF consolidado por período", route: "/relatorios" },
   { id: "admin", title: "Administração", description: "Usuários, perfis e permissões", route: "/admin" },
