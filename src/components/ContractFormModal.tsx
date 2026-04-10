@@ -60,6 +60,10 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   // Bed management
   const [beds, setBeds] = useState<BedRow[]>([]);
   const [loadingBeds, setLoadingBeds] = useState(false);
+  
+  // Sector management
+  const [sectors, setSectors] = useState<SectorRow[]>([]);
+  const [newSectorName, setNewSectorName] = useState("");
 
   // Load beds when unit changes or modal opens
   useEffect(() => {
