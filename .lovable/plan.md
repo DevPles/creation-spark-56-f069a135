@@ -1,63 +1,51 @@
-## Plano: Nova aba "Movimentação de Leitos" em /lancamento
+## Assistente Guiado (Wizard) - Central do Sistema
 
-### Objetivo
+### Conceito
 
-Criar uma terceira aba no módulo de lançamentos para registrar diariamente a movimentação de leitos (internações, altas, óbitos, transferências e ocupação), calculando automaticamente taxa de ocupação e giro de leitos com base nos dados cadastrados e crie um senso dos lancamentos igual calendario para porder gerir isso por unidade
+Criar um card central destacado no Dashboard chamado **"Assistente "** (ou similar). Ao clicar, o usuário é levado a uma página `/assistente` com um fluxo estilo SurveyMonkey - navegação por etapas com cards explicativos, onde cada escolha leva a sub-opções ou abre os modais já existentes no sistema, nao use icones!!!
 
-### 1. Nova tabela no banco de dados
+### Estrutura do Fluxo
 
-Criar tabela `bed_movements` para registrar a movimentação diária:
+```text
+Dashboard
+  └── Card "Central de Ações" (destaque central)
+        └── /assistente (página wizard)
+              ├── Etapa 1: "O que deseja fazer?"
+              │   ├── 📋 Cadastrar / Lançar dados
+              │   ├── 📊 Consultar informações
+              │   └── 📄 Gerar relatórios
+              │
+              ├── Se "Cadastrar / Lançar dados":
+              │   ├── Cadastrar Meta → abre GoalFormModal
+              │   ├── Lançar Rubrica → abre RubricaFormModal
+              │   ├── Registrar Leitos → abre modal de leitos
+              │   ├── Cadastrar Contrato → abre ContractFormModal
+              │   └── Enviar Evidência → abre EvidenceFormModal
+              │
+              ├── Se "Consultar informações":
+              │   ├── Ver Metas → abre GoalModal (leitura)
+              │   ├── Ver Contratos → abre ContractModal
+              │   ├── Ver Rubricas → navega inline
+              │   └── Ver Riscos → abre RiskModal
+              │
+              └── Se "Gerar relatórios":
+                  └── Abre PdfExportModal
+```
 
+### Detalhes Técnicos
 
-| Coluna        | Tipo        | Descrição                 |
-| ------------- | ----------- | ------------------------- |
-| id            | uuid (PK)   | Identificador             |
-| facility_unit | text        | Unidade                   |
-| category      | text        | internacao / complementar |
-| specialty     | text        | Especialidade do leito    |
-| movement_date | date        | Data do registro          |
-| occupied      | integer     | Leitos ocupados no dia    |
-| admissions    | integer     | Internações no dia        |
-| discharges    | integer     | Altas no dia              |
-| deaths        | integer     | Óbitos no dia             |
-| transfers     | integer     | Transferências no dia     |
-| user_id       | uuid        | Quem registrou            |
-| notes         | text        | Observações               |
-| created_at    | timestamptz | Criação                   |
+1. **Dashboard (`Dashboard.tsx`)**: Adicionar um card centralizado e visualmente destacado (gradiente, ícone, tamanho maior) entre os KPI cards e os nav cards, que navega para `/assistente`.
+2. **Nova página `src/pages/AssistentePage.tsx**`:
+  - Estado `step` controla a etapa atual e `history` permite voltar.
+  - Cada etapa renderiza cards animados (framer-motion) com título, descrição explicativa do que aquela ação faz.
+  - Botão "Voltar" para retornar à etapa anterior.
+  - Ao chegar na ação final, abre o modal correspondente (reutilizando `GoalFormModal`, `ContractFormModal`, `RubricaFormModal`, `EvidenceFormModal`, `PdfExportModal`, etc.).
+  - Barra de progresso visual mostrando em qual etapa o usuário está.
+3. **Rota (`App.tsx`)**: Adicionar `<Route path="/assistente" element={<ProtectedRoute><AssistentePage /></ProtectedRoute>} />`.
+4. **Estilo dos cards do wizard**: Cards grandes com ícone, título em negrito e descrição de 1-2 linhas explicando o que acontece ao clicar, com hover suave e animação de entrada.
 
+### Arquivos a Criar/Editar
 
-RLS: autenticados podem ler; inserir/atualizar apenas com `user_id = auth.uid()`; admins podem deletar.
-
-### 2. Interface — Nova aba "Movimentação de Leitos"
-
-- Adicionar aba `lancar-leitos` ao `TabsList` existente
-- A aba mostra os leitos cadastrados para a unidade selecionada, agrupados por **categoria** (Internação / Complementar)
-- Para cada especialidade, exibir uma linha com campos editáveis:
-  - **Ocupados** | **Internações** | **Altas** | **Óbitos** | **Transferências**
-- Seletor de data (dia) no topo da aba
-- Botão "Salvar movimentação" que persiste todos os registros do dia
-
-### 3. Indicadores calculados automaticamente
-
-Na mesma aba, exibir cards de resumo:
-
-- **Taxa de Ocupação** = (Total ocupados / Total leitos cadastrados) × 100
-- **Giro de Leitos** = (Altas + Óbitos) / Total leitos cadastrados (acumulado no mês)
-- **Saldo do dia** = Internações − (Altas + Óbitos + Transferências)
-
-### 4. Histórico visível e editável
-
-- Abaixo do formulário, mostrar tabela com os últimos lançamentos do mês filtrado
-- Permitir clicar em um registro para editar os valores daquele dia
-- Respeitar os filtros de Ano/Mês já existentes na página
-
-### 5. Integração com relatórios
-
-- Os gráficos de leitos em `/relatorios` passam a consumir dados reais da tabela `bed_movements` em vez de apenas `goal_entries`
-
-### Detalhes técnicos
-
-- Migração SQL para criar tabela + RLS policies
-- Atualizar `LancamentoMetasPage.tsx` adicionando a aba com formulário, lógica de fetch/save e cards de indicadores
-- Atualizar `RelatoriosPage.tsx` para buscar de `bed_movements`
-- Tipos serão gerados automaticamente após migração
+- **Criar**: `src/pages/AssistentePage.tsx`
+- **Editar**: `src/pages/Dashboard.tsx` (card central)
+- **Editar**: `src/App.tsx` (nova rota)
