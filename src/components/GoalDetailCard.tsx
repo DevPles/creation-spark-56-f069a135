@@ -14,6 +14,7 @@ interface GoalDetail {
   history: number[];
   startDate?: string;
   endDate?: string;
+  facilityUnit?: string;
 }
 
 const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => void }) => {
