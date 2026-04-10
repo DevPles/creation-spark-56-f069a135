@@ -582,6 +582,7 @@ const AssistentePage = () => {
       case "consultar": return { title: "Consultar informações", desc: "Acesse rapidamente as informações cadastradas.", progress: 40 };
       case "relatorios": return { title: "Gerar relatórios", desc: "Selecione o tipo de relatório desejado.", progress: 40 };
       case "relatorio-select": return { title: "Relatórios disponíveis", desc: "Escolha o relatório que deseja gerar ou consultar.", progress: 60 };
+      case "relatorio-config": return { title: `Gerar: ${REPORT_OPTIONS.find(r => r.id === selectedReportType)?.title || ""}`, desc: "Configure e gere o relatório diretamente.", progress: 80 };
       case "treinamento": return { title: "Treinamento do Sistema", desc: "Assista vídeos e aprenda a usar cada módulo.", progress: 40 };
       case "lancar-meta-unit": return { title: "Lançar meta — Selecione a unidade", desc: "De qual unidade deseja lançar?", progress: 40 };
       case "lancar-meta-select": return { title: `Lançar meta — ${selectedUnit}`, desc: "Selecione a meta.", progress: 60 };
