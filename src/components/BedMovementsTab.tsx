@@ -244,21 +244,6 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
 
   return (
     <div className="space-y-6">
-      {/* Unit filter for admin */}
-      {isAdmin ? (
-        <div>
-          <label className="text-[10px] text-muted-foreground block mb-1">Unidade</label>
-          <Select value={selectedUnit} onValueChange={onUnitChange}>
-            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-            <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      ) : (
-        <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2 w-fit">
-          <p className="text-xs text-muted-foreground">Unidade</p>
-          <p className="font-display font-semibold text-foreground text-sm">{profile?.facility_unit || selectedUnit}</p>
-        </div>
-      )}
 
       {/* Indicator cards — no icons */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
