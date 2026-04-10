@@ -306,12 +306,14 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
                   <TableHead className="text-[10px]">Altas</TableHead>
                   <TableHead className="text-[10px]">Óbitos</TableHead>
                   <TableHead className="text-[10px]">Transferências</TableHead>
+                  <TableHead className="text-[10px]">Taxa Ocupação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {categoryBeds.map(bed => {
                   const key = `${bed.category}-${bed.specialty}`;
                   const form = forms[key] || { occupied: 0, admissions: 0, discharges: 0, deaths: 0, transfers: 0 };
+                  const bedOccRate = bed.quantity > 0 ? ((form.occupied / bed.quantity) * 100).toFixed(1) : "0.0";
                   return (
                     <TableRow key={key}>
                       <TableCell className="text-xs font-medium">{bed.specialty}</TableCell>
@@ -321,6 +323,9 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
                           <Input type="number" min="0" value={form[field]} onChange={e => updateForm(key, field, e.target.value)} className="h-7 w-16 text-xs text-center" />
                         </TableCell>
                       ))}
+                      <TableCell className={cn("text-xs font-bold text-center", Number(bedOccRate) >= 80 ? "text-destructive" : Number(bedOccRate) >= 50 ? "text-amber-600" : "text-emerald-600")}>
+                        {bedOccRate}%
+                      </TableCell>
                     </TableRow>
                   );
                 })}
