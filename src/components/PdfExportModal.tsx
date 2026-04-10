@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { FileDown } from "lucide-react";
+
 
 interface Props {
   open: boolean;
@@ -25,8 +25,7 @@ const PdfExportModal = ({ open, onOpenChange, onGenerate, generating }: Props) =
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display flex items-center gap-2">
-            <FileDown className="h-5 w-5 text-primary" />
+          <DialogTitle className="font-display">
             Gerar Relatório PDF
           </DialogTitle>
         </DialogHeader>
