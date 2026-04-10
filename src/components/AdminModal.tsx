@@ -77,9 +77,14 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     }
   }, [user, open]);
 
+  const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
   useEffect(() => {
     if (selectedOtherUser) {
-      // Load allowed_cards from DB
+      if (!isValidUuid(selectedOtherUser.id)) {
+        setVisibleCards(selectedOtherUser.visibleCards || ALL_CARDS.map(c => c.id));
+        return;
+      }
       const loadCards = async () => {
         const { data } = await supabase
           .from("profiles")
@@ -123,15 +128,18 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
   const handleSavePermissions = async () => {
     if (!selectedOtherUser) { toast.error("Selecione um usuário"); return; }
     setSavingPermissions(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ allowed_cards: visibleCards } as any)
-      .eq("id", selectedOtherUser.id);
-    setSavingPermissions(false);
-    if (error) {
-      toast.error("Erro ao salvar permissões", { description: error.message });
-      return;
+    if (isValidUuid(selectedOtherUser.id)) {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ allowed_cards: visibleCards } as any)
+        .eq("id", selectedOtherUser.id);
+      if (error) {
+        setSavingPermissions(false);
+        toast.error("Erro ao salvar permissões", { description: error.message });
+        return;
+      }
     }
+    setSavingPermissions(false);
     onSaveOtherUser({ ...selectedOtherUser, visibleCards });
     toast.success("Permissões atualizadas", { description: `Cards de ${selectedOtherUser.name} salvos.` });
   };
