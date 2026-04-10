@@ -126,8 +126,12 @@ const AdminPage = () => {
           ) : (
             filteredUsers.map((user, i) => (
               <motion.div key={user.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }} onClick={() => handleUserClick(user)} className="px-5 py-3 grid grid-cols-12 items-center text-sm border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer">
-                <div className="col-span-3 flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground shrink-0">{user.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}</div>
+              <div className="col-span-3 flex items-center gap-2">
+                  {user.photo ? (
+                    <img src={user.photo} alt={user.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground shrink-0">{user.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}</div>
+                  )}
                   <span className="font-medium text-foreground truncate">{user.name}</span>
                 </div>
                 <span className="col-span-3 text-muted-foreground truncate">{user.email}</span>
