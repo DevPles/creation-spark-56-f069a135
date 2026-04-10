@@ -63,6 +63,40 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<BedMovement[]>([]);
   const [daysWithData, setDaysWithData] = useState<Set<string>>(new Set());
+  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [editingValues, setEditingValues] = useState<MovementForm | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const handleSaveEdit = async (date: string) => {
+    if (!user || !editingValues) return;
+    setSavingEdit(true);
+    const dateMovements = history.filter(m => m.movement_date === date);
+    if (dateMovements.length === 1) {
+      await supabase.from("bed_movements").update({
+        occupied: editingValues.occupied, admissions: editingValues.admissions,
+        discharges: editingValues.discharges, deaths: editingValues.deaths, transfers: editingValues.transfers,
+      }).eq("id", dateMovements[0].id);
+    } else if (dateMovements.length > 1) {
+      for (let i = 0; i < dateMovements.length; i++) {
+        if (i === 0) {
+          await supabase.from("bed_movements").update({
+            occupied: editingValues.occupied, admissions: editingValues.admissions,
+            discharges: editingValues.discharges, deaths: editingValues.deaths, transfers: editingValues.transfers,
+          }).eq("id", dateMovements[i].id);
+        } else {
+          await supabase.from("bed_movements").update({
+            occupied: 0, admissions: 0, discharges: 0, deaths: 0, transfers: 0,
+          }).eq("id", dateMovements[i].id);
+        }
+      }
+    }
+    toast.success("Movimentação atualizada!");
+    setEditingDate(null);
+    setEditingValues(null);
+    setSavingEdit(false);
+    loadHistory();
+    loadMovements();
+  };
 
   useEffect(() => {
     if (!selectedUnit) return;
@@ -365,14 +399,14 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
         </div>
       )}
 
-      {/* History table */}
+      {/* History table with inline edit */}
       {historyByDate.length > 0 && (
         <div className="kpi-card p-0 overflow-hidden">
           <div className="bg-primary/5 px-4 py-2 border-b border-border">
             <h3 className="font-display font-semibold text-sm text-foreground">Histórico de Movimentação</h3>
-            <p className="text-[10px] text-muted-foreground">Clique em uma data para editar</p>
+            <p className="text-[10px] text-muted-foreground">Clique em uma data para editar os valores</p>
           </div>
-          <div className="overflow-auto max-h-[300px]">
+          <div className="overflow-auto max-h-[400px]">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -383,14 +417,57 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
                   <TableHead className="text-[10px]">Óbitos</TableHead>
                   <TableHead className="text-[10px]">Transf.</TableHead>
                   <TableHead className="text-[10px]">Ocupação</TableHead>
+                  <TableHead className="text-[10px]">Ação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {[...historyByDate].reverse().map(row => {
                   const occRate = totalBeds > 0 ? ((row.occupied / totalBeds) * 100).toFixed(1) : "0";
                   const dateFormatted = format(new Date(row.date + "T00:00:00"), "dd/MM/yyyy");
+                  const isEditing = editingDate === row.date;
+                  const editRow = editingValues || { occupied: row.occupied, admissions: row.admissions, discharges: row.discharges, deaths: row.deaths, transfers: row.transfers };
+
+                  if (isEditing) {
+                    return (
+                      <TableRow key={row.date} className="bg-primary/5">
+                        <TableCell className="text-xs font-semibold text-primary">{dateFormatted}</TableCell>
+                        {(["occupied", "admissions", "discharges", "deaths", "transfers"] as const).map(field => (
+                          <TableCell key={field} className="p-1">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={editRow[field]}
+                              onChange={e => setEditingValues(prev => prev ? { ...prev, [field]: Math.max(0, parseInt(e.target.value) || 0) } : null)}
+                              className="h-7 w-16 text-xs text-center"
+                            />
+                          </TableCell>
+                        ))}
+                        <TableCell className="text-xs font-semibold">
+                          {totalBeds > 0 ? ((editRow.occupied / totalBeds) * 100).toFixed(1) : "0"}%
+                        </TableCell>
+                        <TableCell className="p-1">
+                          <div className="flex gap-1">
+                            <Button size="sm" className="h-6 text-[10px] px-2" disabled={savingEdit} onClick={() => handleSaveEdit(row.date)}>
+                              {savingEdit ? "..." : "Salvar"}
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2" onClick={() => { setEditingDate(null); setEditingValues(null); }}>
+                              Cancelar
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+
                   return (
-                    <TableRow key={row.date} className="cursor-pointer hover:bg-primary/5" onClick={() => setMovementDate(new Date(row.date + "T00:00:00"))}>
+                    <TableRow
+                      key={row.date}
+                      className="cursor-pointer hover:bg-primary/5"
+                      onClick={() => {
+                        setEditingDate(row.date);
+                        setEditingValues({ occupied: row.occupied, admissions: row.admissions, discharges: row.discharges, deaths: row.deaths, transfers: row.transfers });
+                      }}
+                    >
                       <TableCell className="text-xs font-medium">{dateFormatted}</TableCell>
                       <TableCell className="text-xs">{row.occupied}</TableCell>
                       <TableCell className="text-xs">{row.admissions}</TableCell>
@@ -398,6 +475,7 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
                       <TableCell className="text-xs">{row.deaths}</TableCell>
                       <TableCell className="text-xs">{row.transfers}</TableCell>
                       <TableCell className="text-xs font-semibold">{occRate}%</TableCell>
+                      <TableCell className="text-[10px] text-muted-foreground">Editar</TableCell>
                     </TableRow>
                   );
                 })}
