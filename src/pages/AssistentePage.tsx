@@ -1553,6 +1553,7 @@ const AssistentePage = () => {
       case "lancar-rubrica-form": return renderLancarRubricaForm();
       case "consultar-metas-list": return renderConsultarMetasList();
       case "treinamento": return renderTrainamento();
+      case "relatorio-config": return renderReportConfig();
       case "finalizado": return renderFinalizado();
       default: return null;
     }
