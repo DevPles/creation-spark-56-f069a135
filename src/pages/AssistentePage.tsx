@@ -676,7 +676,7 @@ const AssistentePage = () => {
   const newEvidenceTemplate: EvidenceData = { id: "", goalName: "", type: "PDF", fileName: "", status: "Pendente", dueDate: new Date().toISOString().split("T")[0], notes: "", contractId: evidenceContractId };
 
   /* ══ Inline renders ══ */
-  const isInlineStep = ["lancar-meta-select", "lancar-meta-form", "lancar-rubrica-select", "lancar-rubrica-form", "consultar-metas-list", "treinamento", "finalizado"].includes(step);
+  const isInlineStep = ["lancar-meta-select", "lancar-meta-form", "lancar-rubrica-select", "lancar-rubrica-form", "consultar-metas-list", "treinamento", "relatorio-config", "finalizado"].includes(step);
 
   const HeartRating = ({ moduleId }: { moduleId: string }) => {
     const myRating = trainingRatings[moduleId] || 0;
