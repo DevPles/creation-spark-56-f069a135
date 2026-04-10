@@ -110,6 +110,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       setWeight("10");
       setTrend("stable");
       setGlosaPct("5");
+      setFacilityUnit("Hospital Geral");
+      setSector("Todos");
       setStartDate("");
       setEndDate("");
       setScoringRules(DEFAULT_SCORING);
