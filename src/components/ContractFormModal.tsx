@@ -171,7 +171,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       toast.error("Erro ao adicionar setor");
       return;
     }
-    setSectors(prev => [...prev, { id: data.id, name: data.name }]);
+    setSectors(prev => [...prev, { id: data.id, name: data.name }].sort((a, b) => a.name.localeCompare(b.name)));
     setNewSectorName("");
     toast.success(`Setor "${trimmed}" adicionado`);
   };
@@ -407,16 +407,23 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
                           ))}
                         </SelectContent>
                       </Select>
-                      <Select value={bed.specialty || ""} onValueChange={(v) => updateBedRow(i, "specialty", v)}>
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Selecione a área" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sectors.map(s => (
-                            <SelectItem key={s.id || s.name} value={s.name}>{s.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {(() => {
+                        const sectorNames = sectors.map(s => s.name);
+                        const extraNames = bed.specialty && !sectorNames.includes(bed.specialty) ? [bed.specialty] : [];
+                        const allOptions = [...sectorNames, ...extraNames].sort((a, b) => a.localeCompare(b));
+                        return (
+                          <Select value={bed.specialty || ""} onValueChange={(v) => updateBedRow(i, "specialty", v)}>
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Selecione a área" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {allOptions.map(name => (
+                                <SelectItem key={name} value={name}>{name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        );
+                      })()}
                       <Input
                         className="h-8 text-xs"
                         type="number"
