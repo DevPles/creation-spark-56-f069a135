@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import KpiCard from "@/components/KpiCard";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowDownAZ } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,17 +32,13 @@ const ALL_NAV_CARDS = [
   { id: "controle-rubrica", title: "Controle de Rubrica", description: "Gestão e acompanhamento de rubricas", route: "/controle-rubrica" },
 ];
 
-const STORAGE_KEY = "dashboard-card-positions";
-
-interface CardPosition {
-  x: number;
-  y: number;
-}
+const STORAGE_KEY = "dashboard-card-order";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { profile, isAdmin } = useAuth();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
 
   const allowedCards = profile?.allowed_cards;
   let baseCards = allowedCards && allowedCards.length > 0
@@ -53,54 +49,63 @@ const Dashboard = () => {
     baseCards = baseCards.filter(c => !FINANCIAL_CARD_IDS.includes(c.id));
   }
 
-  const visibleCards = baseCards;
+  const [cardOrder, setCardOrder] = useState<string[]>([]);
 
-  // Positions: { [cardId]: { x, y } } — relative to grid container
-  const [positions, setPositions] = useState<Record<string, CardPosition>>({});
-  const [isDragging, setIsDragging] = useState(false);
-
-  // Load saved positions
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setPositions(JSON.parse(saved));
+      if (saved) {
+        const parsed = JSON.parse(saved) as string[];
+        const validIds = baseCards.map(c => c.id);
+        const ordered = parsed.filter(id => validIds.includes(id));
+        const missing = validIds.filter(id => !ordered.includes(id));
+        setCardOrder([...ordered, ...missing]);
+        return;
+      }
     } catch {}
+    setCardOrder(baseCards.map(c => c.id));
   }, []);
 
-  const savePositions = useCallback((pos: Record<string, CardPosition>) => {
-    setPositions(pos);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
+  const orderedCards = cardOrder
+    .map(id => baseCards.find(c => c.id === id))
+    .filter(Boolean) as typeof baseCards;
+
+  const missingCards = baseCards.filter(c => !cardOrder.includes(c.id));
+  const allOrderedCards = [...orderedCards, ...missingCards];
+
+  const saveOrder = useCallback((ids: string[]) => {
+    setCardOrder(ids);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
   }, []);
 
-  // Calculate grid positions for auto-organize
-  const getGridPositions = useCallback((): Record<string, CardPosition> => {
-    const cols = 3;
-    const gap = 24;
-    const containerWidth = containerRef.current?.offsetWidth || 1100;
-    const cardWidth = (containerWidth - gap * (cols - 1)) / cols;
-    const cardHeight = 90;
-    const result: Record<string, CardPosition> = {};
-    
-    const sorted = [...visibleCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
-    sorted.forEach((card, i) => {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      result[card.id] = { x: col * (cardWidth + gap), y: row * (cardHeight + gap) };
-    });
-    return result;
-  }, [visibleCards]);
+  const handleDragStart = (index: number) => {
+    dragItem.current = index;
+  };
+
+  const handleDragEnter = (index: number) => {
+    dragOverItem.current = index;
+  };
+
+  const handleDragEnd = () => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    if (dragItem.current === dragOverItem.current) {
+      dragItem.current = null;
+      dragOverItem.current = null;
+      return;
+    }
+    const newOrder = [...allOrderedCards.map(c => c.id)];
+    const draggedId = newOrder[dragItem.current];
+    newOrder.splice(dragItem.current, 1);
+    newOrder.splice(dragOverItem.current, 0, draggedId);
+    saveOrder(newOrder);
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
 
   const autoOrganize = useCallback(() => {
-    const gridPos = getGridPositions();
-    savePositions(gridPos);
-  }, [getGridPositions, savePositions]);
-
-  // Reset to no custom positions (natural grid flow)
-  const resetPositions = useCallback(() => {
-    savePositions({});
-  }, [savePositions]);
-
-  const hasCustomPositions = Object.keys(positions).length > 0;
+    const sorted = [...baseCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")).map(c => c.id);
+    saveOrder(sorted);
+  }, [baseCards, saveOrder]);
 
   const totalRisk = MOCK_GOALS.reduce((s, g) => s + g.risk, 0);
   const goalsAtRisk = MOCK_GOALS.filter((g) => g.risk > 0).length;
@@ -141,108 +146,36 @@ const Dashboard = () => {
 
         {/* Auto Organize button */}
         <div className="flex justify-end gap-2 mb-3">
-          {hasCustomPositions && (
-            <Button variant="ghost" size="sm" onClick={resetPositions} className="gap-2 text-xs text-muted-foreground">
-              Resetar
-            </Button>
-          )}
           <Button variant="outline" size="sm" onClick={autoOrganize} className="gap-2 text-xs">
             <ArrowDownAZ className="h-4 w-4" />
             Auto Organizar
           </Button>
         </div>
 
-        {/* Navigation Cards - free draggable */}
-        <div
-          ref={containerRef}
-          className="relative"
-          style={{ minHeight: hasCustomPositions ? `${Math.max(400, Math.max(...Object.values(positions).map(p => p.y)) + 120)}px` : "auto" }}
-        >
-          {hasCustomPositions ? (
-            // Absolute positioning mode
-            visibleCards.map((card) => {
-              const pos = positions[card.id] || { x: 0, y: 0 };
-              return (
-                <motion.div
-                  key={card.id}
-                  drag
-                  dragMomentum={false}
-                  dragElastic={0}
-                  onDragStart={() => setIsDragging(true)}
-                  onDragEnd={(_, info) => {
-                    setTimeout(() => setIsDragging(false), 100);
-                    const newPos = {
-                      ...positions,
-                      [card.id]: {
-                        x: pos.x + info.offset.x,
-                        y: pos.y + info.offset.y,
-                      },
-                    };
-                    savePositions(newPos);
-                  }}
-                  initial={false}
-                  animate={{ x: pos.x, y: pos.y }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  style={{ position: "absolute", width: "calc(33.333% - 11px)", zIndex: isDragging ? 50 : 1 }}
-                  className="cursor-grab active:cursor-grabbing"
-                  whileDrag={{ scale: 1.04, boxShadow: "0 12px 40px -8px rgba(0,0,0,0.2)", zIndex: 50 }}
-                >
-                  <NavCard
-                    title={card.title}
-                    description={card.description}
-                    onClick={() => { if (!isDragging) navigate(card.route); }}
-                  />
-                </motion.div>
-              );
-            })
-          ) : (
-            // Normal grid mode — still draggable to initiate free mode
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {visibleCards.map((card) => (
-                <motion.div
-                  key={card.id}
-                  drag
-                  dragMomentum={false}
-                  dragElastic={0}
-                  dragSnapToOrigin
-                  onDragStart={() => setIsDragging(true)}
-                  onDragEnd={(_, info) => {
-                    setTimeout(() => setIsDragging(false), 100);
-                    if (Math.abs(info.offset.x) > 30 || Math.abs(info.offset.y) > 30) {
-                      const cols = 3;
-                      const gap = 24;
-                      const containerWidth = containerRef.current?.offsetWidth || 1100;
-                      const cardWidth = (containerWidth - gap * (cols - 1)) / cols;
-                      const cardHeight = 90;
-                      const newPositions: Record<string, CardPosition> = {};
-                      visibleCards.forEach((c, i) => {
-                        const col = i % cols;
-                        const row = Math.floor(i / cols);
-                        newPositions[c.id] = {
-                          x: col * (cardWidth + gap),
-                          y: row * (cardHeight + gap),
-                        };
-                      });
-                      newPositions[card.id] = {
-                        x: newPositions[card.id].x + info.offset.x,
-                        y: newPositions[card.id].y + info.offset.y,
-                      };
-                      savePositions(newPositions);
-                    }
-                  }}
-                  className="cursor-grab active:cursor-grabbing"
-                  whileDrag={{ scale: 1.04, boxShadow: "0 12px 40px -8px rgba(0,0,0,0.2)", zIndex: 50 }}
-                >
-                  <NavCard
-                    title={card.title}
-                    description={card.description}
-                    onClick={() => { if (!isDragging) navigate(card.route); }}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Navigation Cards - drag to reorder */}
+        <LayoutGroup>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allOrderedCards.map((card, index) => (
+              <motion.div
+                key={card.id}
+                layout
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragEnter={() => handleDragEnter(index)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+                className="cursor-grab active:cursor-grabbing"
+              >
+                <NavCard
+                  title={card.title}
+                  description={card.description}
+                  onClick={() => navigate(card.route)}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </LayoutGroup>
       </main>
     </div>
   );
