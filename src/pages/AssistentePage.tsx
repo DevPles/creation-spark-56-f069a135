@@ -402,8 +402,8 @@ const AssistentePage = () => {
     setRubricaValue(""); setRubricaDate(""); setRubricaNotes("");
   };
 
-  const goToFinalizado = (title: string, details: string[]) => {
-    setFinalizadoData({ title, details });
+  const goToFinalizado = (title: string, details: string[], redirectTo?: string) => {
+    setFinalizadoData({ title, details, redirectTo });
     goTo("finalizado");
   };
 
