@@ -1010,13 +1010,40 @@ const LancamentoMetasPage = () => {
               return (
                 <div className="space-y-4">
                   <div className="kpi-card p-4">
-                    <h3 className="font-display font-semibold text-foreground text-sm mb-1">Mapa Térmico — {monthLabel} {filterYear}</h3>
-                    <p className="text-xs text-muted-foreground">Visualização diária do atingimento de cada meta. Células coloridas indicam lançamentos realizados.</p>
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div>
+                        <h3 className="font-display font-semibold text-foreground text-sm mb-1">Mapa Térmico — {monthLabel} {filterYear}</h3>
+                        <p className="text-xs text-muted-foreground">Visualização diária do atingimento de cada meta. Células coloridas indicam lançamentos realizados.</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] text-muted-foreground font-medium">Comparar:</span>
+                        <Select value={heatmapCompare} onValueChange={(v: "global" | "meta") => setHeatmapCompare(v)}>
+                          <SelectTrigger className="h-7 text-xs w-[160px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="global">Global (fixo)</SelectItem>
+                            <SelectItem value="meta">Própria meta (alvo)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <div className="flex gap-3 mt-3">
-                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">≥ 90%</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">70–89%</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">50–69%</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">&lt; 50%</span></div>
+                      {heatmapCompare === "global" ? (
+                        <>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">≥ 90%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">70–89%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">50–69%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">&lt; 50%</span></div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">Acima do alvo diário</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">Próximo (80–99%)</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">Parcial (50–79%)</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">Abaixo de 50%</span></div>
+                        </>
+                      )}
                       <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-muted/30 border border-border" /><span className="text-[10px] text-muted-foreground">Sem lançamento</span></div>
                     </div>
                   </div>
