@@ -306,6 +306,7 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
                   <TableHead className="text-[10px]">Altas</TableHead>
                   <TableHead className="text-[10px]">Óbitos</TableHead>
                   <TableHead className="text-[10px]">Transferências</TableHead>
+                  <TableHead className="text-[10px]">Taxa Ocupação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
