@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface GoalData {
   id: string;
@@ -56,11 +57,6 @@ const TRENDS = [
   { value: "stable", label: "Estável" },
 ];
 const FACILITY_UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
-const SECTORS = [
-  "Maternidade", "UTI Adulto", "UTI Neonatal", "Clínica Médica", "Clínica Cirúrgica",
-  "Pediatria", "Pronto Socorro", "Centro Cirúrgico", "Ambulatório", "Farmácia",
-  "Laboratório", "Radiologia", "Nutrição", "Fisioterapia", "Todos",
-];
 
 const DEFAULT_SCORING = [
   { min: 100, label: "Máximo", points: 1 },
@@ -85,7 +81,17 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
 
   // Scoring rules
   const [scoringRules, setScoringRules] = useState(DEFAULT_SCORING);
-
+  
+  // Dynamic sectors from DB
+  const [sectorOptions, setSectorOptions] = useState<string[]>([]);
+  
+  useEffect(() => {
+    const loadSectors = async () => {
+      const { data } = await supabase.from("sectors").select("name").eq("facility_unit", facilityUnit).order("name");
+      setSectorOptions(["Todos", ...(data || []).map((s: any) => s.name)]);
+    };
+    loadSectors();
+  }, [facilityUnit]);
   useEffect(() => {
     if (goal && !isNew) {
       setName(goal.name);
@@ -190,7 +196,7 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
               <Select value={sector} onValueChange={setSector}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {SECTORS.map((s) => (
+                  {sectorOptions.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>

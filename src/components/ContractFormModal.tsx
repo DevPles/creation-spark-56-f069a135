@@ -30,6 +30,12 @@ interface BedRow {
   quantity: number;
 }
 
+interface SectorRow {
+  id?: string;
+  name: string;
+  isNew?: boolean;
+}
+
 const CATEGORY_OPTIONS = [
   { value: "internacao", label: "Internação" },
   { value: "complementar", label: "Complementar" },
@@ -54,8 +60,12 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   // Bed management
   const [beds, setBeds] = useState<BedRow[]>([]);
   const [loadingBeds, setLoadingBeds] = useState(false);
+  
+  // Sector management
+  const [sectors, setSectors] = useState<SectorRow[]>([]);
+  const [newSectorName, setNewSectorName] = useState("");
 
-  // Load beds when unit changes or modal opens
+  // Load beds and sectors when unit changes or modal opens
   useEffect(() => {
     if (!open) return;
     const loadBeds = async () => {
@@ -74,7 +84,16 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       }
       setLoadingBeds(false);
     };
+    const loadSectors = async () => {
+      const { data } = await supabase
+        .from("sectors")
+        .select("id, name")
+        .eq("facility_unit", unit)
+        .order("name");
+      setSectors((data || []).map(s => ({ id: s.id, name: s.name })));
+    };
     loadBeds();
+    loadSectors();
   }, [unit, open]);
 
   useEffect(() => {
@@ -139,6 +158,34 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
     setPdfUrl("");
   };
 
+  // Sector helpers
+  const addSector = async () => {
+    const trimmed = newSectorName.trim();
+    if (!trimmed) return;
+    if (sectors.some(s => s.name.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error("Setor já cadastrado");
+      return;
+    }
+    const { data, error } = await supabase.from("sectors").insert({ name: trimmed, facility_unit: unit }).select("id, name").single();
+    if (error) {
+      toast.error("Erro ao adicionar setor");
+      return;
+    }
+    setSectors(prev => [...prev, { id: data.id, name: data.name }]);
+    setNewSectorName("");
+    toast.success(`Setor "${trimmed}" adicionado`);
+  };
+
+  const removeSector = async (sectorId: string) => {
+    const { error } = await supabase.from("sectors").delete().eq("id", sectorId);
+    if (error) {
+      toast.error("Erro ao remover setor");
+      return;
+    }
+    setSectors(prev => prev.filter(s => s.id !== sectorId));
+    toast.success("Setor removido");
+  };
+
   // Bed CRUD helpers
   const addBedRow = () => {
     setBeds(prev => [...prev, { category: "internacao", specialty: "", quantity: 0 }]);
@@ -153,7 +200,6 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   };
 
   const saveBeds = async (facilityUnit: string) => {
-    // Delete all existing beds for this unit, then re-insert
     const { error: delError } = await supabase.from("beds").delete().eq("facility_unit", facilityUnit);
     if (delError) {
       console.error("Error deleting beds:", delError);
@@ -287,6 +333,37 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
             <p className="text-[10px] text-muted-foreground">
               Recebe alertas semanais quando o atingimento médio das metas ficar abaixo da fração semanal esperada. O cálculo divide a meta mensal por 4 semanas e compara com o realizado acumulado.
             </p>
+          </div>
+
+          {/* ===== SECTOR MANAGEMENT SECTION ===== */}
+          <div className="space-y-3 border border-border rounded-lg p-4 bg-secondary/30">
+            <Label className="text-sm font-semibold">Setores / Áreas — {unit}</Label>
+            <div className="flex gap-2">
+              <Input
+                className="h-8 text-xs flex-1"
+                value={newSectorName}
+                onChange={(e) => setNewSectorName(e.target.value)}
+                placeholder="Nome do setor (ex: Nutrição, Farmácia)"
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSector())}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={addSector} className="gap-1 h-8">
+                <Plus className="h-3 w-3" /> Adicionar
+              </Button>
+            </div>
+            {sectors.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {sectors.map((s) => (
+                  <span key={s.id} className="inline-flex items-center gap-1 bg-background border border-border rounded-full px-3 py-1 text-xs">
+                    {s.name}
+                    <button type="button" onClick={() => s.id && removeSector(s.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Nenhum setor cadastrado. Adicione setores para vincular às metas.</p>
+            )}
           </div>
 
           {/* ===== BED MANAGEMENT SECTION ===== */}
