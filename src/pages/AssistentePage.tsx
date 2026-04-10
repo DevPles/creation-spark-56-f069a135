@@ -590,13 +590,71 @@ const AssistentePage = () => {
 
   const renderTrainamento = () => (
     <div>
-      <div className="flex items-center gap-2 mb-6 flex-wrap">
-        <Input placeholder="Buscar módulo ou pessoa..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="flex-1 min-w-[200px]" />
-        {searchQuery && <Button variant="outline" size="sm" onClick={() => setSearchQuery("")}>Limpar</Button>}
-        {isAdmin && <Button size="sm" onClick={openTrainingCreate}>Novo card</Button>}
+      {/* AI-powered search */}
+      <div className="kpi-card p-5 mb-6">
+        <p className="text-sm font-semibold text-foreground mb-1">Qual sua dúvida?</p>
+        <p className="text-xs text-muted-foreground mb-3">
+          Descreva o que você precisa aprender e vamos direcioná-lo para o conteúdo mais relevante.
+        </p>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Ex: Como faço para lançar metas? Como funciona o controle de rubrica?"
+            value={searchQuery}
+            onChange={e => handleSearchChange(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") handleSearchSubmit(); }}
+            className="flex-1"
+          />
+          <Button size="sm" onClick={handleSearchSubmit} disabled={aiSearching || !searchQuery.trim()}>
+            {aiSearching ? "Buscando..." : "Buscar"}
+          </Button>
+          {searchQuery && (
+            <Button variant="outline" size="sm" onClick={() => { handleSearchChange(""); setAiSearchDone(false); setAiSuggestion(""); setAiRankedIds([]); setAiExplanations({}); }}>
+              Limpar
+            </Button>
+          )}
+        </div>
       </div>
 
-      {showContacts && (
+      {/* AI suggestion banner */}
+      {aiSearchDone && aiSuggestion && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="kpi-card p-4 mb-6 border-primary/20 bg-primary/5">
+          <p className="text-xs font-semibold text-primary mb-1">Sugestão do assistente</p>
+          <p className="text-sm text-foreground">{aiSuggestion}</p>
+        </motion.div>
+      )}
+
+      {/* Loading state */}
+      {aiSearching && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-8">
+          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
+          <p className="text-sm text-muted-foreground">Analisando sua dúvida com inteligência artificial...</p>
+        </motion.div>
+      )}
+
+      {/* No relevant results - show contacts */}
+      {aiSearchDone && !aiHasRelevant && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="kpi-card mb-6">
+          <p className="text-sm font-medium text-foreground mb-1">Nenhum módulo diretamente relacionado encontrado</p>
+          <p className="text-xs text-muted-foreground mb-3">Entre em contato com alguém da equipe para tirar sua dúvida:</p>
+          <div className="space-y-2">
+            {(matchedContacts.length > 0 ? matchedContacts : contacts.slice(0, 5)).map(c => (
+              <div key={c.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{c.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{c.cargo || "Sem cargo"} • {c.facility_unit}</p>
+                </div>
+                <div className="flex gap-2">
+                  <a href={`mailto:${c.name.toLowerCase().replace(/\s/g, ".")}@moss.org?subject=Dúvida sobre ${searchQuery}`} className="px-3 py-1.5 text-xs rounded-full bg-primary text-primary-foreground hover:brightness-110 transition">Email</a>
+                  <a href={`https://wa.me/?text=${encodeURIComponent(`Olá ${c.name}, tenho uma dúvida sobre: ${searchQuery}`)}`} target="_blank" rel="noreferrer" className="px-3 py-1.5 text-xs rounded-full bg-[hsl(142_71%_45%)] text-white hover:brightness-110 transition">WhatsApp</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Admin + fallback contacts (old behavior preserved) */}
+      {!aiSearchDone && showContacts && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="kpi-card mb-6">
           <p className="text-sm font-medium text-foreground mb-1">Nenhum módulo encontrado para "{searchQuery}"</p>
           <p className="text-xs text-muted-foreground mb-3">Entre em contato com alguém da equipe:</p>
@@ -617,32 +675,60 @@ const AssistentePage = () => {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {visibleModules.map((mod, i) => (
-          <motion.div key={mod.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="kpi-card flex flex-col gap-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1">
-                <h2 className="text-sm font-bold text-foreground">{mod.title}</h2>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-1">{mod.description}</p>
-              </div>
-              {isAdmin && <Button variant="outline" size="sm" className="rounded-full text-[10px] shrink-0" onClick={() => openTrainingEdit(mod)}>Editar</Button>}
-            </div>
-            {mod.video_url ? (
-              <div className="space-y-1">
-                <button type="button" onClick={() => setPlayModule(mod)} className="w-full aspect-video bg-muted rounded-lg flex items-center justify-center hover:bg-muted/70 transition-colors border border-border">
-                  <span className="text-2xl">▶</span>
-                </button>
-                {mod.video_uploaded_at && <p className="text-[10px] text-muted-foreground">Enviado em {new Date(mod.video_uploaded_at).toLocaleDateString("pt-BR")}</p>}
-              </div>
-            ) : (
-              <div className="w-full aspect-video bg-muted/50 rounded-lg flex items-center justify-center border border-dashed border-border">
-                <span className="text-xs text-muted-foreground">Sem vídeo</span>
-              </div>
-            )}
-            <HeartRating moduleId={mod.id} />
-          </motion.div>
-        ))}
-      </div>
+      {/* Admin actions */}
+      {isAdmin && (
+        <div className="flex justify-end mb-4">
+          <Button size="sm" onClick={openTrainingCreate}>Novo card</Button>
+        </div>
+      )}
+
+      {/* Modules grid */}
+      {!aiSearching && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {visibleModules.map((mod, i) => {
+            const isTopRecommendation = aiSearchDone && aiRankedIds.indexOf(mod.id) < 3 && aiRankedIds.indexOf(mod.id) >= 0;
+            const explanation = aiExplanations[mod.id];
+            return (
+              <motion.div
+                key={mod.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                className={`kpi-card flex flex-col gap-3 ${isTopRecommendation ? "ring-2 ring-primary/30 border-primary/20" : ""}`}
+              >
+                {isTopRecommendation && (
+                  <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full self-start">
+                    Recomendado para você
+                  </span>
+                )}
+                {explanation && (
+                  <p className="text-[11px] text-primary/80 leading-snug">{explanation}</p>
+                )}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <h2 className="text-sm font-bold text-foreground">{mod.title}</h2>
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-1">{mod.description}</p>
+                  </div>
+                  {isAdmin && <Button variant="outline" size="sm" className="rounded-full text-[10px] shrink-0" onClick={() => openTrainingEdit(mod)}>Editar</Button>}
+                </div>
+                {mod.video_url ? (
+                  <div className="space-y-1">
+                    <button type="button" onClick={() => setPlayModule(mod)} className="w-full aspect-video bg-muted rounded-lg flex items-center justify-center hover:bg-muted/70 transition-colors border border-border">
+                      <span className="text-2xl">▶</span>
+                    </button>
+                    {mod.video_uploaded_at && <p className="text-[10px] text-muted-foreground">Enviado em {new Date(mod.video_uploaded_at).toLocaleDateString("pt-BR")}</p>}
+                  </div>
+                ) : (
+                  <div className="w-full aspect-video bg-muted/50 rounded-lg flex items-center justify-center border border-dashed border-border">
+                    <span className="text-xs text-muted-foreground">Sem vídeo</span>
+                  </div>
+                )}
+                <HeartRating moduleId={mod.id} />
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 
