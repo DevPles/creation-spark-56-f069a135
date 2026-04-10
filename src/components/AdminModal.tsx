@@ -63,6 +63,9 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
   const [visibleCards, setVisibleCards] = useState<string[]>(ALL_CARDS.map(c => c.id));
   const [savingPermissions, setSavingPermissions] = useState(false);
 
+  const [newPassword, setNewPassword] = useState("");
+  const [resettingPassword, setResettingPassword] = useState(false);
+
   const nonAdminUsers = users.filter(u => u.role !== "Administrador");
   const selectedOtherUser = nonAdminUsers.find(u => u.id === selectedUserId);
 
