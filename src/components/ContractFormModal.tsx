@@ -65,7 +65,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   const [sectors, setSectors] = useState<SectorRow[]>([]);
   const [newSectorName, setNewSectorName] = useState("");
 
-  // Load beds when unit changes or modal opens
+  // Load beds and sectors when unit changes or modal opens
   useEffect(() => {
     if (!open) return;
     const loadBeds = async () => {
@@ -84,7 +84,16 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       }
       setLoadingBeds(false);
     };
+    const loadSectors = async () => {
+      const { data } = await supabase
+        .from("sectors")
+        .select("id, name")
+        .eq("facility_unit", unit)
+        .order("name");
+      setSectors((data || []).map(s => ({ id: s.id, name: s.name })));
+    };
     loadBeds();
+    loadSectors();
   }, [unit, open]);
 
   useEffect(() => {
