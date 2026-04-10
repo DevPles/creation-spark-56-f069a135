@@ -728,7 +728,7 @@ const LancamentoMetasPage = () => {
                 <SelectContent>{FILTER_MONTHS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <Button variant="outline" size="sm" className="h-9" onClick={handleGeneratePdf}>
+            <Button variant="outline" size="sm" className="h-9" onClick={() => setPdfModalOpen(true)}>
               Gerar PDF
             </Button>
           </div>
