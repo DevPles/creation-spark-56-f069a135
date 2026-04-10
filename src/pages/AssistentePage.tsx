@@ -539,7 +539,7 @@ const AssistentePage = () => {
               goToFinalizado(`Relatório: ${r.title}`, [
                 r.description,
                 "Clique abaixo para acessar o relatório selecionado.",
-              ]);
+              ], routeMap[r.id] || "/relatorios");
             }
           },
         }));
