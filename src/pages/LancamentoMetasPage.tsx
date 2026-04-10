@@ -21,6 +21,7 @@ import GoalGauge from "@/components/GoalGauge";
 import BedMovementsTab from "@/components/BedMovementsTab";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import PdfExportModal from "@/components/PdfExportModal";
 
 /* ── Types ────────────────────────────────────── */
 interface Goal {
