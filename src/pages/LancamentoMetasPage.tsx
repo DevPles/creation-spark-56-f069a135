@@ -1060,10 +1060,10 @@ const LancamentoMetasPage = () => {
                     <div className="flex gap-3 mt-3">
                       {heatmapCompare === "global" ? (
                         <>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">≥ 90%</span></div>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">70–89%</span></div>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">50–69%</span></div>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">&lt; 50%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">Top 25% (melhor)</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">50–75%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">25–50%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">Bottom 25% (pior)</span></div>
                         </>
                       ) : (
                         <>
