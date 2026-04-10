@@ -292,10 +292,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
           {/* ===== BED MANAGEMENT SECTION ===== */}
           <div className="space-y-3 border border-border rounded-lg p-4 bg-secondary/30">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <BedDouble className="h-4 w-4 text-primary" />
-                <Label className="text-sm font-semibold">Cadastro de Leitos — {unit}</Label>
-              </div>
+              <Label className="text-sm font-semibold">Cadastro de Leitos — {unit}</Label>
               <Button type="button" variant="outline" size="sm" onClick={addBedRow} className="gap-1">
                 <Plus className="h-3 w-3" /> Adicionar leito
               </Button>
