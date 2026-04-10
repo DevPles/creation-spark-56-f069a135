@@ -80,6 +80,7 @@ const LancamentoMetasPage = () => {
   ];
   const [bedData, setBedData] = useState<{ category: string; specialty: string; quantity: number }[]>([]);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [heatmapCompare, setHeatmapCompare] = useState<"global" | "meta">("global");
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
