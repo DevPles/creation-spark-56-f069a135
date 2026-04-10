@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import GoalRow from "@/components/GoalRow";
