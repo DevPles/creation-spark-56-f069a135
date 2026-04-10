@@ -98,6 +98,7 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
     loadMovements();
   };
 
+  useEffect(() => {
     if (!selectedUnit) return;
     supabase.from("beds").select("category, specialty, quantity").eq("facility_unit", selectedUnit)
       .then(({ data }) => setBeds((data as BedRow[]) || []));
