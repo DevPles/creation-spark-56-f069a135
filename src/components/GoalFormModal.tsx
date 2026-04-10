@@ -149,6 +149,8 @@ const GoalFormModal = ({ goal, open, onOpenChange, onSave, isNew = false }: Goal
       scoring: scoringRules,
       history: goal?.history || [0, 0, 0, 0],
       glosaPct: glosaPctNum,
+      facilityUnit: facilityUnit,
+      sector: sector === "Todos" ? undefined : sector,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
     };
