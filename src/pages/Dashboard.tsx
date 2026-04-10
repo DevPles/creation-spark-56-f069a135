@@ -53,8 +53,7 @@ const Dashboard = () => {
     baseCards = baseCards.filter(c => !FINANCIAL_CARD_IDS.includes(c.id));
   }
 
-  const nonAdminCards = baseCards.filter(c => c.id !== "admin");
-  const hasAdmin = baseCards.some(c => c.id === "admin");
+  const visibleCards = baseCards;
 
   // Positions: { [cardId]: { x, y } } — relative to grid container
   const [positions, setPositions] = useState<Record<string, CardPosition>>({});
