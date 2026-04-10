@@ -737,7 +737,7 @@ const LancamentoMetasPage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="lancar-metas">Lançamento de Metas</TabsTrigger>
-            <TabsTrigger value="lancamento-rubricas">Lançamento de Rubricas</TabsTrigger>
+            {isAdminRole && <TabsTrigger value="lancamento-rubricas">Lançamento de Rubricas</TabsTrigger>}
             <TabsTrigger value="lancar-leitos">Movimentação de Leitos</TabsTrigger>
             <TabsTrigger value="mapa-termico">Mapa Térmico Diário</TabsTrigger>
           </TabsList>
