@@ -19,9 +19,21 @@ import { ContractData, ContractFormModalProps, Rubrica, STATUSES, UNITS_LIST, DE
 import RubricaSection from "./contract/RubricaSection";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload, FileText, X, Loader2 } from "lucide-react";
+import { Upload, FileText, X, Loader2, Plus, Trash2, BedDouble } from "lucide-react";
 
 export type { ContractData } from "./contract/types";
+
+interface BedRow {
+  id?: string;
+  category: string;
+  specialty: string;
+  quantity: number;
+}
+
+const CATEGORY_OPTIONS = [
+  { value: "internacao", label: "Internação" },
+  { value: "complementar", label: "Complementar" },
+];
 
 const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false }: ContractFormModalProps) => {
   const [name, setName] = useState("");
@@ -38,6 +50,32 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   const [notificationEmail, setNotificationEmail] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Bed management
+  const [beds, setBeds] = useState<BedRow[]>([]);
+  const [loadingBeds, setLoadingBeds] = useState(false);
+
+  // Load beds when unit changes or modal opens
+  useEffect(() => {
+    if (!open) return;
+    const loadBeds = async () => {
+      setLoadingBeds(true);
+      const currentUnit = unit;
+      const { data, error } = await supabase
+        .from("beds")
+        .select("id, category, specialty, quantity")
+        .eq("facility_unit", currentUnit)
+        .order("category")
+        .order("specialty");
+      if (!error && data) {
+        setBeds(data);
+      } else {
+        setBeds([]);
+      }
+      setLoadingBeds(false);
+    };
+    loadBeds();
+  }, [unit, open]);
 
   useEffect(() => {
     if (contract && !isNew) {
@@ -101,7 +139,46 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
     setPdfUrl("");
   };
 
-  const handleSave = () => {
+  // Bed CRUD helpers
+  const addBedRow = () => {
+    setBeds(prev => [...prev, { category: "internacao", specialty: "", quantity: 0 }]);
+  };
+
+  const updateBedRow = (index: number, field: keyof BedRow, val: string | number) => {
+    setBeds(prev => prev.map((b, i) => i === index ? { ...b, [field]: val } : b));
+  };
+
+  const removeBedRow = (index: number) => {
+    setBeds(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const saveBeds = async (facilityUnit: string) => {
+    // Delete all existing beds for this unit, then re-insert
+    const { error: delError } = await supabase.from("beds").delete().eq("facility_unit", facilityUnit);
+    if (delError) {
+      console.error("Error deleting beds:", delError);
+      toast.error("Erro ao salvar leitos");
+      return;
+    }
+
+    const validBeds = beds.filter(b => b.specialty.trim() !== "" && b.quantity > 0);
+    if (validBeds.length === 0) return;
+
+    const { error: insError } = await supabase.from("beds").insert(
+      validBeds.map(b => ({
+        facility_unit: facilityUnit,
+        category: b.category,
+        specialty: b.specialty.trim(),
+        quantity: b.quantity,
+      }))
+    );
+    if (insError) {
+      console.error("Error inserting beds:", insError);
+      toast.error("Erro ao salvar leitos");
+    }
+  };
+
+  const handleSave = async () => {
     const data: ContractData = {
       id: contract?.id || crypto.randomUUID(),
       name: name || `Contrato de Gestão — ${unit}`,
@@ -116,11 +193,21 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       notificationEmail,
       rubricas: rubricas.filter((r) => r.percent > 0),
     };
+    
+    // Save beds to DB
+    await saveBeds(unit);
+    
     onSave(data);
     onOpenChange(false);
   };
 
   const totalValue = Number(value) || 0;
+
+  const bedTotals = beds.reduce((acc, b) => {
+    if (b.category === "internacao") acc.internacao += b.quantity;
+    else acc.complementar += b.quantity;
+    return acc;
+  }, { internacao: 0, complementar: 0 });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -200,6 +287,86 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
             <p className="text-[10px] text-muted-foreground">
               Recebe alertas semanais quando o atingimento médio das metas ficar abaixo da fração semanal esperada. O cálculo divide a meta mensal por 4 semanas e compara com o realizado acumulado.
             </p>
+          </div>
+
+          {/* ===== BED MANAGEMENT SECTION ===== */}
+          <div className="space-y-3 border border-border rounded-lg p-4 bg-secondary/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BedDouble className="h-4 w-4 text-primary" />
+                <Label className="text-sm font-semibold">Cadastro de Leitos — {unit}</Label>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={addBedRow} className="gap-1">
+                <Plus className="h-3 w-3" /> Adicionar leito
+              </Button>
+            </div>
+
+            {loadingBeds ? (
+              <div className="flex items-center justify-center py-4 gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Carregando leitos...</span>
+              </div>
+            ) : beds.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-3">
+                Nenhum leito cadastrado para esta unidade. Clique em "Adicionar leito" para começar.
+              </p>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="grid grid-cols-[1fr_2fr_80px_36px] gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                  <span>Tipo</span>
+                  <span>Especialidade</span>
+                  <span>Qtd</span>
+                  <span></span>
+                </div>
+
+                <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
+                  {beds.map((bed, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_2fr_80px_36px] gap-2 items-center">
+                      <Select value={bed.category} onValueChange={(v) => updateBedRow(i, "category", v)}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORY_OPTIONS.map(c => (
+                            <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        className="h-8 text-xs"
+                        value={bed.specialty}
+                        onChange={(e) => updateBedRow(i, "specialty", e.target.value)}
+                        placeholder="Ex: Clínica Médica"
+                      />
+                      <Input
+                        className="h-8 text-xs"
+                        type="number"
+                        min={0}
+                        value={bed.quantity || ""}
+                        onChange={(e) => updateBedRow(i, "quantity", Number(e.target.value) || 0)}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        onClick={() => removeBedRow(i)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Totals */}
+                <div className="flex gap-4 pt-2 border-t border-border text-xs">
+                  <span className="text-muted-foreground">Internação: <strong className="text-primary">{bedTotals.internacao}</strong></span>
+                  <span className="text-muted-foreground">Complementar: <strong style={{ color: "hsl(35 90% 55%)" }}>{bedTotals.complementar}</strong></span>
+                  <span className="text-muted-foreground">Total: <strong className="text-foreground">{bedTotals.internacao + bedTotals.complementar}</strong></span>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="space-y-2">
