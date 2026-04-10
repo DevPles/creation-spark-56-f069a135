@@ -655,7 +655,7 @@ const LancamentoMetasPage = () => {
 
           {/* ── TAB: Movimentação de Leitos ── */}
           <TabsContent value="lancar-leitos">
-            <BedMovementsTab selectedUnit={selectedUnit} filterYear={filterYear} filterMonth={filterMonth} />
+            <BedMovementsTab selectedUnit={selectedUnit} onUnitChange={setSelectedUnit} isAdmin={isAdmin} filterYear={filterYear} filterMonth={filterMonth} />
           </TabsContent>
         </Tabs>
       </main>
