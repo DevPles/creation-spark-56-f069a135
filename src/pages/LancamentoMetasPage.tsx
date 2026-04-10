@@ -69,6 +69,17 @@ const LancamentoMetasPage = () => {
 
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
+  const totalBedsByCategory = useMemo(() => {
+    const internacao = bedData.filter(b => b.category === "internacao").reduce((s, b) => s + b.quantity, 0);
+    const complementar = bedData.filter(b => b.category === "complementar").reduce((s, b) => s + b.quantity, 0);
+    return { internacao, complementar, total: internacao + complementar };
+  }, [bedData]);
+
+  const isBedRelatedGoal = (name: string) => {
+    const lower = name.toLowerCase();
+    return lower.includes("ocupação") || lower.includes("internação") || lower.includes("internacao") || lower.includes("rotatividade") || lower.includes("leito");
+  };
+
   const getDateRange = (filter: string): { start: Date; end: Date } | null => {
     const now = new Date();
     switch (filter) {
