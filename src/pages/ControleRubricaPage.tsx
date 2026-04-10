@@ -124,8 +124,16 @@ const ControleRubricaPage = () => {
                 {contracts.map(c => <SelectItem key={c.id} value={c.unit}>{c.unit}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {[currentYear - 2, currentYear - 1, currentYear, currentYear + 1].map(y => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 {MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
