@@ -568,6 +568,7 @@ const ControleRubricaPage = () => {
           onSave={handleSaveRubricas}
         />
       )}
+      <RiskModal item={selectedRisk} open={riskModalOpen} onOpenChange={setRiskModalOpen} />
     </div>
   );
 };
