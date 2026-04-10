@@ -112,190 +112,298 @@ const LancamentoMetasPage = () => {
     });
   };
 
-  const handleGeneratePdf = () => {
+  const handleGeneratePdf = async () => {
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
-    const primary: [number, number, number] = [35, 66, 117]; // hsl(214 55% 30%)
-    const accent: [number, number, number] = [55, 95, 155];
+    const pageH = doc.internal.pageSize.getHeight();
+    const primary: [number, number, number] = [35, 66, 117];
     const lightBg: [number, number, number] = [235, 239, 245];
     const now = new Date();
-
     const margin = 14;
     const contentW = pageW - margin * 2;
+    let pageNum = 0;
 
-    // Header band
-    doc.setFillColor(...primary);
-    doc.rect(0, 0, pageW, 38, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
-    doc.text("MOSS", margin, 18);
-    doc.setFontSize(9);
-    doc.text("Métricas para Organizações de Serviço Social", margin, 26);
-    doc.setFontSize(11);
-    doc.text("Relatório de Lançamentos", margin, 34);
-    doc.setFontSize(8);
-    doc.text(`${selectedUnit} • ${format(now, "dd/MM/yyyy HH:mm")}`, pageW - margin, 34, { align: "right" });
-
-    // Filter info
     const monthLabel = filterMonth === "todos" ? "Todos os meses" : FILTER_MONTHS.find(m => m.value === filterMonth)?.label || "";
     const filterLabel = `${filterYear} — ${monthLabel}`;
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(9);
-    doc.text(`Filtro: ${filterLabel}`, margin, 48);
 
-    let startY = 54;
+    const addHeader = (title: string) => {
+      pageNum++;
+      if (pageNum > 1) doc.addPage();
+      doc.setFillColor(...primary);
+      doc.rect(0, 0, pageW, 38, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.text("MOSS", margin, 18);
+      doc.setFontSize(9);
+      doc.text("Métricas para Organizações de Serviço Social", margin, 26);
+      doc.setFontSize(11);
+      doc.text(title, margin, 34);
+      doc.setFontSize(8);
+      doc.text(`${selectedUnit} • ${format(now, "dd/MM/yyyy HH:mm")}`, pageW - margin, 34, { align: "right" });
+      doc.setTextColor(100, 100, 100);
+      doc.setFontSize(9);
+      doc.text(`Filtro: ${filterLabel}`, margin, 48);
+      return 54;
+    };
 
-    if (activeTab === "lancar-metas") {
-      // KPI summary cards
-      const metaRows = goals.map(g => {
-        const existing = filterEntriesByDate(existingEntries[g.id] || []);
-        const total = existing.reduce((s, e) => s + e.value, 0);
-        const pct = g.target > 0 ? Math.round((total / g.target) * 100) : 0;
-        return { name: g.name, target: g.target, unit: g.unit, total, pct, weight: g.weight };
-      });
+    const addFooter = () => {
+      doc.setDrawColor(200, 210, 220);
+      doc.line(margin, pageH - 14, pageW - margin, pageH - 14);
+      doc.setTextColor(150, 150, 150);
+      doc.setFontSize(7);
+      doc.text("MOSS — Métricas para Organizações de Serviço Social", margin, pageH - 8);
+      doc.text(`Página ${pageNum}`, pageW - margin, pageH - 8, { align: "right" });
+    };
 
-      const totalPct = metaRows.length > 0 ? Math.round(metaRows.reduce((s, r) => s + r.pct * r.weight, 0) / Math.max(metaRows.reduce((s, r) => s + r.weight, 0), 0.01)) : 0;
-
-      // KPI boxes
-      const kpis = [
-        { label: "Total de Metas", value: String(metaRows.length) },
-        { label: "Atingimento Médio", value: `${totalPct}%` },
-        { label: "Metas ≥ 100%", value: String(metaRows.filter(r => r.pct >= 100).length) },
-        { label: "Metas < 70%", value: String(metaRows.filter(r => r.pct < 70).length) },
-      ];
+    const drawKpiBoxes = (kpis: { label: string; value: string }[], y: number) => {
       const boxW = (contentW - 18) / 4;
       kpis.forEach((kpi, i) => {
         const x = margin + i * (boxW + 6);
         doc.setFillColor(...lightBg);
-        doc.roundedRect(x, startY, boxW, 22, 3, 3, "F");
+        doc.roundedRect(x, y, boxW, 22, 3, 3, "F");
         doc.setTextColor(100, 100, 100);
         doc.setFontSize(8);
-        doc.text(kpi.label, x + 4, startY + 8);
+        doc.text(kpi.label, x + 4, y + 8);
         doc.setTextColor(...primary);
         doc.setFontSize(16);
-        doc.text(kpi.value, x + 4, startY + 18);
+        doc.text(kpi.value, x + 4, y + 18);
       });
-      startY += 30;
+      return y + 30;
+    };
 
-      // Bar chart simulation
+    // ═══ PAGE 1: METAS ═══
+    let startY = addHeader("Relatório de Lançamentos — Metas");
+
+    const metaRows = goals.map(g => {
+      const existing = filterEntriesByDate(existingEntries[g.id] || []);
+      const total = existing.reduce((s, e) => s + e.value, 0);
+      const pct = g.target > 0 ? Math.round((total / g.target) * 100) : 0;
+      return { name: g.name, target: g.target, unit: g.unit, total, pct, weight: g.weight };
+    });
+    const totalPct = metaRows.length > 0 ? Math.round(metaRows.reduce((s, r) => s + r.pct * r.weight, 0) / Math.max(metaRows.reduce((s, r) => s + r.weight, 0), 0.01)) : 0;
+
+    startY = drawKpiBoxes([
+      { label: "Total de Metas", value: String(metaRows.length) },
+      { label: "Atingimento Médio", value: `${totalPct}%` },
+      { label: "Metas ≥ 100%", value: String(metaRows.filter(r => r.pct >= 100).length) },
+      { label: "Metas < 70%", value: String(metaRows.filter(r => r.pct < 70).length) },
+    ], startY);
+
+    // Bar chart
+    doc.setFillColor(...lightBg);
+    doc.roundedRect(margin, startY, contentW, 50, 3, 3, "F");
+    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(9);
+    doc.text("Atingimento por Meta (%)", margin + 4, startY + 10);
+    const labelW = 46;
+    const barAreaW = contentW - labelW - 30;
+    const barH = metaRows.length > 0 ? Math.min(6, 30 / metaRows.length) : 6;
+    metaRows.forEach((r, i) => {
+      const y = startY + 16 + i * (barH + 2);
+      if (y + barH > startY + 48) return;
+      const barX = margin + labelW;
+      doc.setFillColor(220, 225, 230);
+      doc.roundedRect(barX, y, barAreaW, barH, 1, 1, "F");
+      const fillW = Math.min(Math.min(r.pct / 100, 1.2) * barAreaW, barAreaW);
+      doc.setFillColor(r.pct >= 100 ? 46 : r.pct >= 70 ? 41 : 231, r.pct >= 100 ? 160 : r.pct >= 70 ? 128 : 76, r.pct >= 100 ? 67 : r.pct >= 70 ? 185 : 60);
+      doc.roundedRect(barX, y, Math.max(fillW, 2), barH, 1, 1, "F");
+      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(7);
+      doc.text(r.name.substring(0, 18), margin + 4, y + barH - 1);
+      doc.text(`${r.pct}%`, barX + barAreaW + 2, y + barH - 1);
+    });
+    startY += 56;
+
+    autoTable(doc, {
+      startY,
+      head: [["Meta", "Alvo", "Realizado", "Atingimento", "Peso"]],
+      body: metaRows.map(r => [r.name, `${r.target}${r.unit}`, `${r.total.toFixed(1)}${r.unit}`, `${r.pct}%`, `${(r.weight * 100).toFixed(0)}%`]),
+      headStyles: { fillColor: primary, textColor: [255, 255, 255], fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8, textColor: [40, 40, 40] },
+      alternateRowStyles: { fillColor: lightBg },
+      styles: { cellPadding: 4, lineWidth: 0.1, lineColor: [200, 210, 220] },
+      margin: { left: margin, right: margin },
+    });
+    addFooter();
+
+    // ═══ PAGE 2: RUBRICAS ═══
+    startY = addHeader("Relatório de Lançamentos — Rubricas");
+
+    const contract = CONTRACTS.find(c => c.id === selectedContract);
+    if (contract) {
+      const rubRows = RUBRICA_NAMES.map(r => {
+        const entry = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === r);
+        const alloc = entry?.valorAllocated || 0;
+        const exec = entry?.valorExecuted || 0;
+        const pct = alloc > 0 ? Math.round((exec / alloc) * 100) : 0;
+        return { name: r, alloc, exec, pct };
+      });
+      const totalAlloc = rubRows.reduce((s, r) => s + r.alloc, 0);
+      const totalExec = rubRows.reduce((s, r) => s + r.exec, 0);
+      const avgPct = totalAlloc > 0 ? Math.round((totalExec / totalAlloc) * 100) : 0;
+
+      startY = drawKpiBoxes([
+        { label: "Total Alocado", value: formatCurrency(totalAlloc) },
+        { label: "Total Executado", value: formatCurrency(totalExec) },
+        { label: "Execução", value: `${avgPct}%` },
+        { label: "Estouradas", value: String(rubRows.filter(r => r.pct > 100).length) },
+      ], startY);
+
       doc.setFillColor(...lightBg);
       doc.roundedRect(margin, startY, contentW, 50, 3, 3, "F");
       doc.setTextColor(60, 60, 60);
       doc.setFontSize(9);
-      doc.text("Atingimento por Meta (%)", margin + 4, startY + 10);
-
-      const chartStartY = startY + 16;
-      const labelW = 46;
-      const barAreaW = contentW - labelW - 30;
-      const barH = metaRows.length > 0 ? Math.min(6, 30 / metaRows.length) : 6;
-      metaRows.forEach((r, i) => {
-        const y = chartStartY + i * (barH + 2);
-        if (y + barH > startY + 48) return;
-        const barX = margin + labelW;
-        // Background bar
-        doc.setFillColor(220, 225, 230);
-        doc.roundedRect(barX, y, barAreaW, barH, 1, 1, "F");
-        // Fill bar (clamped to barAreaW)
-        const fillW = Math.min(Math.min(r.pct / 100, 1.2) * barAreaW, barAreaW);
-        doc.setFillColor(r.pct >= 100 ? 46 : r.pct >= 70 ? 41 : 231, r.pct >= 100 ? 160 : r.pct >= 70 ? 128 : 76, r.pct >= 100 ? 67 : r.pct >= 70 ? 185 : 60);
-        doc.roundedRect(barX, y, Math.max(fillW, 2), barH, 1, 1, "F");
-        // Label
+      doc.text("Execução por Rubrica (%)", margin + 4, startY + 10);
+      const colors: [number, number, number][] = [[26, 54, 71], [41, 128, 185], [46, 160, 67], [142, 68, 173], [231, 76, 60], [52, 152, 219]];
+      const rubBarAreaW2 = contentW - 80;
+      rubRows.forEach((r, i) => {
+        const y = startY + 16 + i * 5;
+        if (y > startY + 46) return;
+        doc.setFillColor(...(colors[i % colors.length]));
+        const barW2 = Math.min((r.pct / 120) * rubBarAreaW2, rubBarAreaW2);
+        doc.roundedRect(margin + 4, y, Math.max(barW2, 2), 3.5, 1, 1, "F");
         doc.setTextColor(60, 60, 60);
-        doc.setFontSize(7);
-        doc.text(r.name.substring(0, 18), margin + 4, y + barH - 1);
-        doc.text(`${r.pct}%`, barX + barAreaW + 2, y + barH - 1);
+        doc.setFontSize(6.5);
+        doc.text(`${r.name} (${r.pct}%)`, margin + 8 + barW2, y + 3);
       });
       startY += 56;
 
-      // Table
-      const rows = metaRows.map(r => [r.name, `${r.target}${r.unit}`, `${r.total.toFixed(1)}${r.unit}`, `${r.pct}%`, `${(r.weight * 100).toFixed(0)}%`]);
       autoTable(doc, {
         startY,
-        head: [["Meta", "Alvo", "Realizado", "Atingimento", "Peso"]],
-        body: rows,
+        head: [["Rubrica", "Alocado", "Executado", "% Exec"]],
+        body: rubRows.map(r => [r.name, formatCurrency(r.alloc), formatCurrency(r.exec), `${r.pct}%`]),
         headStyles: { fillColor: primary, textColor: [255, 255, 255], fontSize: 9, fontStyle: "bold" },
         bodyStyles: { fontSize: 8, textColor: [40, 40, 40] },
         alternateRowStyles: { fillColor: lightBg },
         styles: { cellPadding: 4, lineWidth: 0.1, lineColor: [200, 210, 220] },
         margin: { left: margin, right: margin },
       });
-    } else {
-      const contract = CONTRACTS.find(c => c.id === selectedContract);
-      if (contract) {
-        const rows = RUBRICA_NAMES.map(r => {
-          const entry = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === r);
-          const alloc = entry?.valorAllocated || 0;
-          const exec = entry?.valorExecuted || 0;
-          const pct = alloc > 0 ? Math.round((exec / alloc) * 100) : 0;
-          return { name: r, alloc, exec, pct };
-        });
+    }
+    addFooter();
 
-        // KPI boxes
-        const totalAlloc = rows.reduce((s, r) => s + r.alloc, 0);
-        const totalExec = rows.reduce((s, r) => s + r.exec, 0);
-        const avgPct = totalAlloc > 0 ? Math.round((totalExec / totalAlloc) * 100) : 0;
-        const kpis = [
-          { label: "Total Alocado", value: formatCurrency(totalAlloc) },
-          { label: "Total Executado", value: formatCurrency(totalExec) },
-          { label: "Execução", value: `${avgPct}%` },
-          { label: "Estouradas", value: String(rows.filter(r => r.pct > 100).length) },
-        ];
-        const boxW = (contentW - 18) / 4;
-        kpis.forEach((kpi, i) => {
-          const x = margin + i * (boxW + 6);
-          doc.setFillColor(...lightBg);
-          doc.roundedRect(x, startY, boxW, 22, 3, 3, "F");
-          doc.setTextColor(100, 100, 100);
-          doc.setFontSize(8);
-          doc.text(kpi.label, x + 4, startY + 8);
-          doc.setTextColor(...primary);
-          doc.setFontSize(16);
-          doc.text(kpi.value, x + 4, startY + 18);
-        });
-        startY += 30;
+    // ═══ PAGE 3: MOVIMENTAÇÃO DE LEITOS ═══
+    startY = addHeader("Relatório de Lançamentos — Movimentação de Leitos");
 
-        // Bar chart simulation
-        doc.setFillColor(...lightBg);
-        doc.roundedRect(margin, startY, contentW, 50, 3, 3, "F");
-        doc.setTextColor(60, 60, 60);
-        doc.setFontSize(9);
-        doc.text("Execução por Rubrica (%)", margin + 4, startY + 10);
-        const colors: [number, number, number][] = [[26, 54, 71], [41, 128, 185], [46, 160, 67], [142, 68, 173], [231, 76, 60], [52, 152, 219]];
-        const rubBarAreaW = contentW - 80;
-        rows.forEach((r, i) => {
-          const y = startY + 16 + i * 5;
-          if (y > startY + 46) return;
-          doc.setFillColor(...(colors[i % colors.length]));
-          const barW = Math.min((r.pct / 120) * rubBarAreaW, rubBarAreaW);
-          doc.roundedRect(margin + 4, y, Math.max(barW, 2), 3.5, 1, 1, "F");
-          doc.setTextColor(60, 60, 60);
-          doc.setFontSize(6.5);
-          doc.text(`${r.name} (${r.pct}%)`, margin + 8 + barW, y + 3);
-        });
-        startY += 56;
+    // Fetch bed movements for the filtered period
+    const year = Number(filterYear);
+    const month = filterMonth === "todos" ? undefined : Number(filterMonth);
+    const startDate = month !== undefined ? `${year}-${String(month + 1).padStart(2, "0")}-01` : `${year}-01-01`;
+    const endDate = month !== undefined
+      ? `${year}-${String(month + 1).padStart(2, "0")}-${getDaysInMonth(new Date(year, month))}`
+      : `${year}-12-31`;
 
-        // Table
-        autoTable(doc, {
-          startY,
-          head: [["Rubrica", "Alocado", "Executado", "% Exec"]],
-          body: rows.map(r => [r.name, formatCurrency(r.alloc), formatCurrency(r.exec), `${r.pct}%`]),
-          headStyles: { fillColor: primary, textColor: [255, 255, 255], fontSize: 9, fontStyle: "bold" },
-          bodyStyles: { fontSize: 8, textColor: [40, 40, 40] },
-          alternateRowStyles: { fillColor: lightBg },
-          styles: { cellPadding: 4, lineWidth: 0.1, lineColor: [200, 210, 220] },
-          margin: { left: margin, right: margin },
-        });
+    const { data: bedMovData } = await supabase.from("bed_movements").select("*")
+      .eq("facility_unit", selectedUnit)
+      .gte("movement_date", startDate)
+      .lte("movement_date", endDate)
+      .order("movement_date", { ascending: true });
+
+    const bedMovements = (bedMovData || []) as any[];
+    const totalBedsForUnit = bedData.reduce((s, b) => s + b.quantity, 0);
+    const totalInternacaoForUnit = bedData.filter(b => b.category === "internacao").reduce((s, b) => s + b.quantity, 0);
+
+    // Aggregate by date
+    const byDate = new Map<string, { occupied: number; admissions: number; discharges: number; deaths: number; transfers: number }>();
+    bedMovements.forEach((m: any) => {
+      const existing = byDate.get(m.movement_date) || { occupied: 0, admissions: 0, discharges: 0, deaths: 0, transfers: 0 };
+      existing.occupied += m.occupied; existing.admissions += m.admissions;
+      existing.discharges += m.discharges; existing.deaths += m.deaths; existing.transfers += m.transfers;
+      byDate.set(m.movement_date, existing);
+    });
+
+    const dateEntries = Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    const totalOcc = dateEntries.length > 0 ? dateEntries.reduce((s, [, d]) => s + d.occupied, 0) / dateEntries.length : 0;
+    const totalAdm = dateEntries.reduce((s, [, d]) => s + d.admissions, 0);
+    const totalDis = dateEntries.reduce((s, [, d]) => s + d.discharges, 0);
+    const totalDea = dateEntries.reduce((s, [, d]) => s + d.deaths, 0);
+    const avgOccRate = totalBedsForUnit > 0 ? ((totalOcc / totalBedsForUnit) * 100).toFixed(1) : "0";
+    const giro = totalInternacaoForUnit > 0 ? ((totalDis + totalDea) / totalInternacaoForUnit).toFixed(2) : "0";
+
+    startY = drawKpiBoxes([
+      { label: "Ocupação Média", value: `${avgOccRate}%` },
+      { label: "Giro de Leitos", value: giro },
+      { label: "Total Internações", value: String(totalAdm) },
+      { label: "Total Saídas", value: String(totalDis + totalDea) },
+    ], startY);
+
+    // Occupancy trend chart simulation
+    if (dateEntries.length > 0) {
+      const chartH = 45;
+      doc.setFillColor(...lightBg);
+      doc.roundedRect(margin, startY, contentW, chartH + 15, 3, 3, "F");
+      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(9);
+      doc.text("Tendência de Ocupação (%)", margin + 4, startY + 10);
+
+      const chartStartX = margin + 8;
+      const chartW = contentW - 16;
+      const chartStartY2 = startY + 14;
+      const maxVal = 100;
+
+      // Grid lines
+      doc.setDrawColor(210, 215, 220);
+      for (let g = 0; g <= 4; g++) {
+        const gy = chartStartY2 + (chartH / 4) * g;
+        doc.line(chartStartX, gy, chartStartX + chartW, gy);
+        doc.setTextColor(160, 160, 160);
+        doc.setFontSize(6);
+        doc.text(`${100 - g * 25}%`, chartStartX - 1, gy + 1, { align: "right" });
       }
+
+      // Plot line
+      if (dateEntries.length > 1) {
+        const step = chartW / (dateEntries.length - 1);
+        doc.setDrawColor(...primary);
+        doc.setLineWidth(0.8);
+        for (let i = 1; i < dateEntries.length; i++) {
+          const prevRate = totalBedsForUnit > 0 ? (dateEntries[i - 1][1].occupied / totalBedsForUnit) * 100 : 0;
+          const currRate = totalBedsForUnit > 0 ? (dateEntries[i][1].occupied / totalBedsForUnit) * 100 : 0;
+          const x1 = chartStartX + (i - 1) * step;
+          const y1 = chartStartY2 + chartH - (prevRate / maxVal) * chartH;
+          const x2 = chartStartX + i * step;
+          const y2 = chartStartY2 + chartH - (currRate / maxVal) * chartH;
+          doc.line(x1, y1, x2, y2);
+        }
+        doc.setLineWidth(0.2);
+      }
+
+      // X-axis labels (first, mid, last)
+      doc.setTextColor(120, 120, 120);
+      doc.setFontSize(6);
+      if (dateEntries.length > 0) {
+        doc.text(format(new Date(dateEntries[0][0] + "T00:00:00"), "dd/MM"), chartStartX, chartStartY2 + chartH + 6);
+        if (dateEntries.length > 2) {
+          const mid = Math.floor(dateEntries.length / 2);
+          doc.text(format(new Date(dateEntries[mid][0] + "T00:00:00"), "dd/MM"), chartStartX + chartW / 2, chartStartY2 + chartH + 6, { align: "center" });
+        }
+        doc.text(format(new Date(dateEntries[dateEntries.length - 1][0] + "T00:00:00"), "dd/MM"), chartStartX + chartW, chartStartY2 + chartH + 6, { align: "right" });
+      }
+
+      startY += chartH + 22;
     }
 
-    // Footer
-    const pageH = doc.internal.pageSize.getHeight();
-    doc.setDrawColor(200, 210, 220);
-    doc.line(margin, pageH - 14, pageW - margin, pageH - 14);
-    doc.setTextColor(150, 150, 150);
-    doc.setFontSize(7);
-    doc.text("MOSS — Métricas para Organizações de Serviço Social", margin, pageH - 8);
-    doc.text(`Página 1 de 1`, pageW - margin, pageH - 8, { align: "right" });
+    // Movements table
+    if (dateEntries.length > 0) {
+      autoTable(doc, {
+        startY,
+        head: [["Data", "Ocupados", "Internações", "Altas", "Óbitos", "Transf.", "Ocupação"]],
+        body: dateEntries.map(([date, d]) => [
+          format(new Date(date + "T00:00:00"), "dd/MM/yyyy"),
+          String(d.occupied), String(d.admissions), String(d.discharges), String(d.deaths), String(d.transfers),
+          totalBedsForUnit > 0 ? `${((d.occupied / totalBedsForUnit) * 100).toFixed(1)}%` : "0%",
+        ]),
+        headStyles: { fillColor: primary, textColor: [255, 255, 255], fontSize: 9, fontStyle: "bold" },
+        bodyStyles: { fontSize: 8, textColor: [40, 40, 40] },
+        alternateRowStyles: { fillColor: lightBg },
+        styles: { cellPadding: 3, lineWidth: 0.1, lineColor: [200, 210, 220] },
+        margin: { left: margin, right: margin },
+      });
+    } else {
+      doc.setTextColor(120, 120, 120);
+      doc.setFontSize(10);
+      doc.text("Nenhuma movimentação registrada no período.", margin, startY + 10);
+    }
+    addFooter();
 
     doc.save(`lancamentos_${format(now, "yyyyMMdd_HHmm")}.pdf`);
     toast.success("PDF gerado com sucesso!");
