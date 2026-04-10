@@ -158,6 +158,34 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
     setPdfUrl("");
   };
 
+  // Sector helpers
+  const addSector = async () => {
+    const trimmed = newSectorName.trim();
+    if (!trimmed) return;
+    if (sectors.some(s => s.name.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error("Setor já cadastrado");
+      return;
+    }
+    const { data, error } = await supabase.from("sectors").insert({ name: trimmed, facility_unit: unit }).select("id, name").single();
+    if (error) {
+      toast.error("Erro ao adicionar setor");
+      return;
+    }
+    setSectors(prev => [...prev, { id: data.id, name: data.name }]);
+    setNewSectorName("");
+    toast.success(`Setor "${trimmed}" adicionado`);
+  };
+
+  const removeSector = async (sectorId: string) => {
+    const { error } = await supabase.from("sectors").delete().eq("id", sectorId);
+    if (error) {
+      toast.error("Erro ao remover setor");
+      return;
+    }
+    setSectors(prev => prev.filter(s => s.id !== sectorId));
+    toast.success("Setor removido");
+  };
+
   // Bed CRUD helpers
   const addBedRow = () => {
     setBeds(prev => [...prev, { category: "internacao", specialty: "", quantity: 0 }]);
@@ -172,7 +200,6 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   };
 
   const saveBeds = async (facilityUnit: string) => {
-    // Delete all existing beds for this unit, then re-insert
     const { error: delError } = await supabase.from("beds").delete().eq("facility_unit", facilityUnit);
     if (delError) {
       console.error("Error deleting beds:", delError);
