@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface GoalData {
   id: string;
