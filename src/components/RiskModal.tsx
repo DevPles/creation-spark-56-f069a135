@@ -4,8 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-interface RiskItem {
+import { useAuth } from "@/contexts/AuthContext";
   goal: string;
   risk: number;
   prob: number;
