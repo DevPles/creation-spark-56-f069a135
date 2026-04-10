@@ -567,7 +567,7 @@ const LancamentoMetasPage = () => {
                   const entry = entries[goal.id] || { value: "", period: "", notes: "" };
                   const existing = filterEntriesByDate(existingEntries[goal.id] || []);
                   return (
-                    <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card">
+                    <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card flex flex-col">
                       {/* Gauge + header */}
                       {(() => {
                         const currentVal = existing.reduce((sum, e) => sum + e.value, 0);
@@ -630,7 +630,7 @@ const LancamentoMetasPage = () => {
                           </div>
                         </div>
                       )}
-                      <div className="space-y-2">
+                      <div className="space-y-2 mt-auto">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="text-[10px] text-muted-foreground">Valor realizado</label>
