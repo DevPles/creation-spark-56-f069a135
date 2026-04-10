@@ -235,21 +235,9 @@ const BedMovementsTab = ({ selectedUnit, onUnitChange, isAdmin, filterYear, filt
 
   if (beds.length === 0) {
     return (
-      <div className="space-y-4">
-        {/* Unit filter */}
-        {isAdmin && (
-          <div>
-            <label className="text-[10px] text-muted-foreground block mb-1">Unidade</label>
-            <Select value={selectedUnit} onValueChange={onUnitChange}>
-              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-              <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-        )}
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Nenhum leito cadastrado para {selectedUnit}.</p>
-          <p className="text-sm text-muted-foreground mt-1">Cadastre leitos em Contratos antes de lançar movimentação.</p>
-        </div>
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Nenhum leito cadastrado para {selectedUnit}.</p>
+        <p className="text-sm text-muted-foreground mt-1">Cadastre leitos em Contratos antes de lançar movimentação.</p>
       </div>
     );
   }
