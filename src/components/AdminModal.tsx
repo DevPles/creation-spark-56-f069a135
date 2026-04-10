@@ -63,6 +63,9 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
   const [visibleCards, setVisibleCards] = useState<string[]>(ALL_CARDS.map(c => c.id));
   const [savingPermissions, setSavingPermissions] = useState(false);
 
+  const [newPassword, setNewPassword] = useState("");
+  const [resettingPassword, setResettingPassword] = useState(false);
+
   const nonAdminUsers = users.filter(u => u.role !== "Administrador");
   const selectedOtherUser = nonAdminUsers.find(u => u.id === selectedUserId);
 
@@ -144,9 +147,25 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     toast.success("Permissões atualizadas", { description: `Cards de ${selectedOtherUser.name} salvos.` });
   };
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     if (!selectedOtherUser) { toast.error("Selecione um usuário"); return; }
-    toast.success("Senha resetada", { description: `E-mail enviado para ${selectedOtherUser.email}.` });
+    if (!newPassword || newPassword.length < 6) { toast.error("Digite uma senha com no mínimo 6 caracteres"); return; }
+    if (!isValidUuid(selectedOtherUser.id)) {
+      toast.success("Senha alterada (local)", { description: `Nova senha definida para ${selectedOtherUser.name}.` });
+      setNewPassword("");
+      return;
+    }
+    setResettingPassword(true);
+    const { error } = await supabase.functions.invoke("create-admin", {
+      body: { action: "reset-password", userId: selectedOtherUser.id, newPassword },
+    });
+    setResettingPassword(false);
+    if (error) {
+      toast.error("Erro ao resetar senha", { description: error.message });
+      return;
+    }
+    toast.success("Senha alterada", { description: `Senha de ${selectedOtherUser.name} foi redefinida.` });
+    setNewPassword("");
   };
 
   const initials = name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
@@ -261,9 +280,15 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
 
               <div className="border border-border rounded-lg p-4 space-y-3">
                 <Label className="text-sm font-semibold">Segurança</Label>
-                <p className="text-[10px] text-muted-foreground -mt-1">Enviar e-mail de redefinição para {selectedOtherUser.email}</p>
-                <Button variant="outline" className="w-full" onClick={handleResetPassword}>
-                  Resetar senha de {selectedOtherUser.name.split(" ")[0]}
+                <p className="text-[10px] text-muted-foreground -mt-1">Definir nova senha para {selectedOtherUser.name}</p>
+                <Input
+                  type="password"
+                  placeholder="Nova senha (mín. 6 caracteres)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <Button variant="outline" className="w-full" onClick={handleResetPassword} disabled={resettingPassword}>
+                  {resettingPassword ? "Salvando..." : `Redefinir senha de ${selectedOtherUser.name.split(" ")[0]}`}
                 </Button>
               </div>
             </>
