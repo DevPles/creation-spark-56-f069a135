@@ -1086,7 +1086,7 @@ const RelatoriosPage = () => {
                 </ResponsiveContainer>
               </div>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="kpi-card">
                     <p className="text-[10px] text-muted-foreground">Internação</p>
                     <p className="text-2xl font-bold text-primary">{bedChartData.totalInternacao}</p>
@@ -1094,7 +1094,12 @@ const RelatoriosPage = () => {
                   </div>
                   <div className="kpi-card">
                     <p className="text-[10px] text-muted-foreground">Complementar</p>
-                    <p className="text-2xl font-bold" style={{ color: "hsl(210 80% 55%)" }}>{bedChartData.totalComplementar}</p>
+                    <p className="text-2xl font-bold" style={{ color: "hsl(35 90% 55%)" }}>{bedChartData.totalComplementar}</p>
+                    <p className="text-[10px] text-muted-foreground">leitos</p>
+                  </div>
+                  <div className="kpi-card">
+                    <p className="text-[10px] text-muted-foreground">Total Geral</p>
+                    <p className="text-2xl font-bold text-foreground">{bedChartData.totalLeitos}</p>
                     <p className="text-[10px] text-muted-foreground">leitos</p>
                   </div>
                 </div>
