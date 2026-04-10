@@ -20,6 +20,7 @@ import SauPage from "./pages/SauPage";
 import RelatorioAssistencialPage from "./pages/RelatorioAssistencialPage";
 import ControleRubricaPage from "./pages/ControleRubricaPage";
 import TreinamentoPage from "./pages/TreinamentoPage";
+import AssistentePage from "./pages/AssistentePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
