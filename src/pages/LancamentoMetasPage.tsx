@@ -686,7 +686,7 @@ const LancamentoMetasPage = () => {
           </div>
           <div className="flex items-end gap-3 flex-wrap">
             {/* Unidade — Metas e Leitos */}
-            {(activeTab === "lancar-metas" || activeTab === "lancar-leitos") && (
+            {(activeTab === "lancar-metas" || activeTab === "lancar-leitos" || activeTab === "mapa-termico") && (
               isAdmin ? (
                 <div>
                   <label className="text-[10px] text-muted-foreground block mb-1">Unidade</label>
