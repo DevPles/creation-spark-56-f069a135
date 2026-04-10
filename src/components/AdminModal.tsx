@@ -33,29 +33,22 @@ interface AdminModalProps {
   onSaveOtherUser: (user: User) => void;
 }
 
-const ROLES = ["Administrador", "Gestor", "Analista", "Clínico"];
-const UNITS_LIST = ["Hospital Geral", "UPA Norte", "UBS Centro", "Todas"];
-const STATUSES = ["Ativo", "Suspenso", "Bloqueado"];
-
 const ALL_CARDS = [
   { id: "contratos", label: "Contratos" },
   { id: "metas", label: "Metas e Indicadores" },
-  { id: "risco", label: "Projeção de Risco" },
-  { id: "evidencias", label: "Evidências" },
-  { id: "relatorios", label: "Relatórios" },
-  { id: "admin", label: "Administração" },
-  { id: "lancamento", label: "Lançar Metas" },
+  { id: "risco", label: "Projecao de Risco" },
+  { id: "evidencias", label: "Evidencias" },
+  { id: "relatorios", label: "Relatorios" },
+  { id: "admin", label: "Administracao" },
+  { id: "lancamento", label: "Lancar Metas" },
   { id: "sau", label: "SAU" },
-  { id: "relatorio-assistencial", label: "Relatório Assistencial" },
+  { id: "relatorio-assistencial", label: "Relatorio Assistencial" },
   { id: "controle-rubrica", label: "Controle de Rubrica" },
 ];
 
 const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }: AdminModalProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("Administrador");
-  const [unit, setUnit] = useState("Todas");
-  const [status, setStatus] = useState("Ativo");
   const [photo, setPhoto] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -73,21 +66,12 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     if (user && open) {
       setName(user.name);
       setEmail(user.email);
-      setRole(user.role);
-      setUnit(user.unit);
-      setStatus(user.status);
       setPhoto(user.photo);
     }
   }, [user, open]);
 
-  const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-
   useEffect(() => {
     if (selectedOtherUser) {
-      if (!isValidUuid(selectedOtherUser.id)) {
-        setVisibleCards(selectedOtherUser.visibleCards || ALL_CARDS.map(c => c.id));
-        return;
-      }
       const loadCards = async () => {
         const { data } = await supabase
           .from("profiles")
@@ -105,22 +89,28 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
   }, [selectedUserId]);
 
   useEffect(() => {
-    if (open) setSelectedUserId("");
+    if (open) { setSelectedUserId(""); setNewPassword(""); }
   }, [open]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { toast.error("Arquivo muito grande", { description: "Máximo 2MB." }); return; }
-    if (!["image/jpeg", "image/png"].includes(file.type)) { toast.error("Formato inválido", { description: "Use JPG ou PNG." }); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Arquivo muito grande", { description: "Maximo 2MB." }); return; }
+    if (!["image/jpeg", "image/png"].includes(file.type)) { toast.error("Formato invalido", { description: "Use JPG ou PNG." }); return; }
     const reader = new FileReader();
     reader.onload = (ev) => { setPhoto(ev.target?.result as string); toast.success("Foto carregada"); };
     reader.readAsDataURL(file);
   };
 
-  const handleSaveAdmin = () => {
+  const handleSaveAdmin = async () => {
     if (!name || !email) { toast.error("Preencha nome e e-mail"); return; }
-    onSave({ id: user?.id || crypto.randomUUID(), name, email, role, unit, status, photo });
+    // Update own profile via edge function
+    if (user?.id) {
+      await supabase.functions.invoke("create-admin", {
+        body: { action: "update-profile", userId: user.id, updates: { name } },
+      });
+    }
+    onSave({ id: user?.id || "", name, email, role: "Administrador", unit: "Todas", status: "Ativo", photo });
     toast.success("Dados do administrador salvos");
   };
 
@@ -129,39 +119,31 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
   };
 
   const handleSavePermissions = async () => {
-    if (!selectedOtherUser) { toast.error("Selecione um usuário"); return; }
+    if (!selectedOtherUser) { toast.error("Selecione um usuario"); return; }
     setSavingPermissions(true);
-    if (isValidUuid(selectedOtherUser.id)) {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ allowed_cards: visibleCards } as any)
-        .eq("id", selectedOtherUser.id);
-      if (error) {
-        setSavingPermissions(false);
-        toast.error("Erro ao salvar permissões", { description: error.message });
-        return;
-      }
-    }
+    // Use edge function to bypass RLS
+    const { data, error } = await supabase.functions.invoke("create-admin", {
+      body: { action: "update-profile", userId: selectedOtherUser.id, updates: { allowed_cards: visibleCards } },
+    });
     setSavingPermissions(false);
+    if (error || data?.error) {
+      toast.error("Erro ao salvar permissoes", { description: data?.error || error?.message });
+      return;
+    }
     onSaveOtherUser({ ...selectedOtherUser, visibleCards });
-    toast.success("Permissões atualizadas", { description: `Cards de ${selectedOtherUser.name} salvos.` });
+    toast.success("Permissoes atualizadas", { description: `Cards de ${selectedOtherUser.name} salvos.` });
   };
 
   const handleResetPassword = async () => {
-    if (!selectedOtherUser) { toast.error("Selecione um usuário"); return; }
-    if (!newPassword || newPassword.length < 6) { toast.error("Digite uma senha com no mínimo 6 caracteres"); return; }
-    if (!isValidUuid(selectedOtherUser.id)) {
-      toast.success("Senha alterada (local)", { description: `Nova senha definida para ${selectedOtherUser.name}.` });
-      setNewPassword("");
-      return;
-    }
+    if (!selectedOtherUser) { toast.error("Selecione um usuario"); return; }
+    if (!newPassword || newPassword.length < 6) { toast.error("Digite uma senha com no minimo 6 caracteres"); return; }
     setResettingPassword(true);
-    const { error } = await supabase.functions.invoke("create-admin", {
+    const { data, error } = await supabase.functions.invoke("create-admin", {
       body: { action: "reset-password", userId: selectedOtherUser.id, newPassword },
     });
     setResettingPassword(false);
-    if (error) {
-      toast.error("Erro ao resetar senha", { description: error.message });
+    if (error || data?.error) {
+      toast.error("Erro ao resetar senha", { description: data?.error || error?.message });
       return;
     }
     toast.success("Senha alterada", { description: `Senha de ${selectedOtherUser.name} foi redefinida.` });
@@ -174,9 +156,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display">
-            Painel do Administrador
-          </DialogTitle>
+          <DialogTitle className="font-display">Painel do Administrador</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
@@ -192,7 +172,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
             <input ref={fileInputRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={handlePhotoUpload} />
             <div>
               <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Enviar foto</Button>
-              <p className="text-[10px] text-muted-foreground mt-1">JPG ou PNG, até 2MB</p>
+              <p className="text-[10px] text-muted-foreground mt-1">JPG ou PNG, ate 2MB</p>
             </div>
           </div>
 
@@ -202,30 +182,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
           </div>
           <div className="space-y-2">
             <Label htmlFor="admin-email">E-mail institucional</Label>
-            <Input id="admin-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@saude.gov.br" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Perfil</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Unidade</Label>
-              <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{UNITS_LIST.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-            </Select>
+            <Input id="admin-email" type="email" value={email} disabled placeholder="admin@saude.gov.br" />
           </div>
 
           <Button className="w-full" onClick={handleSaveAdmin}>Salvar meus dados</Button>
@@ -233,19 +190,15 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
           <Separator />
 
           {/* ── MANAGE OTHER USERS ── */}
-          <div>
-            <h3 className="font-display font-semibold text-foreground">Gerenciar usuários</h3>
-          </div>
+          <h3 className="font-display font-semibold text-foreground">Gerenciar usuarios</h3>
 
           <div className="space-y-2">
-            <Label>Selecionar usuário</Label>
+            <Label>Selecionar usuario</Label>
             <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Escolha um usuário para gerenciar" />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Escolha um usuario para gerenciar" /></SelectTrigger>
               <SelectContent>
                 {nonAdminUsers.map(u => (
-                  <SelectItem key={u.id} value={u.id}>{u.name} — {u.role} ({u.unit})</SelectItem>
+                  <SelectItem key={u.id} value={u.id}>{u.name} - {u.role} ({u.unit})</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -263,8 +216,8 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
               </div>
 
               <div className="space-y-3 border border-border rounded-lg p-4">
-                <Label className="text-sm font-semibold">Cards visíveis para {selectedOtherUser.name}</Label>
-                <p className="text-[10px] text-muted-foreground -mt-1">Selecione quais módulos este usuário poderá acessar no dashboard.</p>
+                <Label className="text-sm font-semibold">Cards visiveis para {selectedOtherUser.name}</Label>
+                <p className="text-[10px] text-muted-foreground -mt-1">Selecione quais modulos este usuario podera acessar no dashboard.</p>
                 <div className="grid grid-cols-2 gap-2">
                   {ALL_CARDS.map(card => (
                     <div key={card.id} className="flex items-center gap-2">
@@ -274,16 +227,16 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
                   ))}
                 </div>
                 <Button className="w-full mt-2" onClick={handleSavePermissions} disabled={savingPermissions}>
-                  {savingPermissions ? "Salvando..." : "Salvar permissões"}
+                  {savingPermissions ? "Salvando..." : "Salvar permissoes"}
                 </Button>
               </div>
 
               <div className="border border-border rounded-lg p-4 space-y-3">
-                <Label className="text-sm font-semibold">Segurança</Label>
+                <Label className="text-sm font-semibold">Seguranca</Label>
                 <p className="text-[10px] text-muted-foreground -mt-1">Definir nova senha para {selectedOtherUser.name}</p>
                 <Input
                   type="password"
-                  placeholder="Nova senha (mín. 6 caracteres)"
+                  placeholder="Nova senha (min. 6 caracteres)"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                 />
@@ -295,7 +248,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
           )}
 
           {!selectedOtherUser && selectedUserId === "" && (
-            <p className="text-center py-4 text-sm text-muted-foreground">Selecione um usuário acima para gerenciar permissões e segurança.</p>
+            <p className="text-center py-4 text-sm text-muted-foreground">Selecione um usuario acima para gerenciar permissoes e seguranca.</p>
           )}
         </div>
       </DialogContent>
