@@ -491,7 +491,7 @@ const LancamentoMetasPage = () => {
             <p className="text-sm text-muted-foreground">Lançamento de metas e rubricas</p>
           </div>
           <div className="flex items-end gap-3 flex-wrap">
-            {activeTab === "lancar-metas" && (
+            {(activeTab === "lancar-metas" || activeTab === "lancar-leitos") && (
               isAdmin ? (
                 <div>
                   <label className="text-[10px] text-muted-foreground block mb-1">Unidade</label>
