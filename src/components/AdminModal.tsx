@@ -176,6 +176,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
   };
 
   const initials = name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
