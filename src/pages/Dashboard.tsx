@@ -4,7 +4,7 @@ import TopBar from "@/components/TopBar";
 import KpiCard from "@/components/KpiCard";
 import { motion, LayoutGroup } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowDownAZ, Check, GripVertical, RotateCcw } from "lucide-react";
+import { ArrowDownAZ, GripVertical, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const MOCK_GOALS = [
@@ -39,9 +39,9 @@ const Dashboard = () => {
   const { profile, isAdmin } = useAuth();
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
+  const suppressNavigationUntil = useRef(0);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [isOrganizeMode, setIsOrganizeMode] = useState(false);
 
   const allowedCards = profile?.allowed_cards;
 
@@ -50,9 +50,7 @@ const Dashboard = () => {
       ? ALL_NAV_CARDS.filter((card) => allowedCards.includes(card.id))
       : ALL_NAV_CARDS;
 
-    return isAdmin
-      ? scoped
-      : scoped.filter((card) => !FINANCIAL_CARD_IDS.includes(card.id));
+    return isAdmin ? scoped : scoped.filter((card) => !FINANCIAL_CARD_IDS.includes(card.id));
   }, [allowedCards, isAdmin]);
 
   const defaultOrder = useMemo(() => baseCards.map((card) => card.id), [baseCards]);
@@ -98,33 +96,28 @@ const Dashboard = () => {
   }, []);
 
   const handleDragStart = useCallback((event: DragEvent<HTMLDivElement>, index: number) => {
-    if (!isOrganizeMode) return;
-
     dragItem.current = index;
     setDraggingIndex(index);
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", orderedCards[index]?.id ?? "");
-  }, [isOrganizeMode, orderedCards]);
+    event.dataTransfer.setDragImage(event.currentTarget, event.currentTarget.clientWidth / 2, 24);
+  }, [orderedCards]);
 
   const handleDragEnter = useCallback((index: number) => {
-    if (!isOrganizeMode || dragItem.current === null || dragItem.current === index) return;
-
+    if (dragItem.current === null || dragItem.current === index) return;
     dragOverItem.current = index;
     setDragOverIndex(index);
-  }, [isOrganizeMode]);
+  }, []);
 
   const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
-    if (!isOrganizeMode) return;
-
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
-  }, [isOrganizeMode]);
+  }, []);
 
   const handleDrop = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
 
     if (
-      !isOrganizeMode ||
       dragItem.current === null ||
       dragOverItem.current === null ||
       dragItem.current === dragOverItem.current
@@ -135,22 +128,22 @@ const Dashboard = () => {
 
     const nextOrder = orderedCards.map((card) => card.id);
     const draggedId = nextOrder[dragItem.current];
-
     nextOrder.splice(dragItem.current, 1);
     nextOrder.splice(dragOverItem.current, 0, draggedId);
-
     saveOrder(nextOrder);
+    suppressNavigationUntil.current = Date.now() + 180;
     resetDragState();
-  }, [isOrganizeMode, orderedCards, resetDragState, saveOrder]);
+  }, [orderedCards, resetDragState, saveOrder]);
 
   const handleDragEnd = useCallback(() => {
+    suppressNavigationUntil.current = Date.now() + 180;
     resetDragState();
   }, [resetDragState]);
 
-  const toggleOrganizeMode = useCallback(() => {
-    setIsOrganizeMode((prev) => !prev);
-    resetDragState();
-  }, [resetDragState]);
+  const handleCardClick = useCallback((route: string) => {
+    if (Date.now() < suppressNavigationUntil.current) return;
+    navigate(route);
+  }, [navigate]);
 
   const autoOrganize = useCallback(() => {
     const sorted = [...baseCards]
@@ -201,27 +194,15 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
-        <div className="flex flex-col gap-3 mb-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
-            {isOrganizeMode
-              ? "Modo organização ativo: arraste um card e solte sobre outro para trocar de posição."
-              : "Clique em Organizar cards para ativar o arraste sem misturar com a navegação."}
-          </div>
-
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button variant={isOrganizeMode ? "default" : "outline"} size="sm" onClick={toggleOrganizeMode} className="gap-2 text-xs">
-              {isOrganizeMode ? <Check className="h-4 w-4" /> : <GripVertical className="h-4 w-4" />}
-              {isOrganizeMode ? "Concluir organização" : "Organizar cards"}
-            </Button>
-            <Button variant="outline" size="sm" onClick={resetLayout} className="gap-2 text-xs">
-              <RotateCcw className="h-4 w-4" />
-              Resetar padrão
-            </Button>
-            <Button variant="outline" size="sm" onClick={autoOrganize} className="gap-2 text-xs">
-              <ArrowDownAZ className="h-4 w-4" />
-              Auto Organizar
-            </Button>
-          </div>
+        <div className="flex justify-end gap-2 mb-3">
+          <Button variant="outline" size="sm" onClick={resetLayout} className="gap-2 text-xs">
+            <RotateCcw className="h-4 w-4" />
+            Resetar padrão
+          </Button>
+          <Button variant="outline" size="sm" onClick={autoOrganize} className="gap-2 text-xs">
+            <ArrowDownAZ className="h-4 w-4" />
+            Auto Organizar
+          </Button>
         </div>
 
         <LayoutGroup>
@@ -229,15 +210,13 @@ const Dashboard = () => {
             {orderedCards.map((card, index) => (
               <div
                 key={card.id}
-                draggable={isOrganizeMode}
+                draggable
                 onDragStart={(event) => handleDragStart(event, index)}
                 onDragEnter={() => handleDragEnter(index)}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 onDragEnd={handleDragEnd}
-                className={`transition-all duration-150 ${
-                  isOrganizeMode ? "cursor-grab active:cursor-grabbing" : ""
-                } ${
+                className={`cursor-grab active:cursor-grabbing transition-all duration-150 ${
                   draggingIndex === index ? "opacity-45 scale-[0.98]" : ""
                 } ${
                   dragOverIndex === index && draggingIndex !== index
@@ -245,15 +224,11 @@ const Dashboard = () => {
                     : ""
                 }`}
               >
-                <motion.div
-                  layout
-                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                >
+                <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 32 }}>
                   <NavCard
                     title={card.title}
                     description={card.description}
-                    onClick={() => navigate(card.route)}
-                    isOrganizeMode={isOrganizeMode}
+                    onClick={() => handleCardClick(card.route)}
                   />
                 </motion.div>
               </div>
@@ -269,28 +244,14 @@ interface NavCardProps {
   title: string;
   description: string;
   onClick: () => void;
-  isOrganizeMode: boolean;
 }
 
-const NavCard = ({ title, description, onClick, isOrganizeMode }: NavCardProps) => (
-  <div
-    onClick={() => {
-      if (!isOrganizeMode) onClick();
-    }}
-    className={`kpi-card group w-full select-none text-left transition-all ${
-      isOrganizeMode ? "border-primary/20" : "cursor-pointer"
-    }`}
-  >
+const NavCard = ({ title, description, onClick }: NavCardProps) => (
+  <div onClick={onClick} className="kpi-card group w-full cursor-pointer select-none text-left">
     <div className="flex items-start gap-3">
-      <div className={`shrink-0 rounded-full p-1 ${isOrganizeMode ? "bg-muted text-foreground" : "text-muted-foreground/40"}`}>
-        <GripVertical className={`h-4 w-4 ${isOrganizeMode ? "opacity-100" : "opacity-50 group-hover:opacity-80"}`} />
-      </div>
-
+      <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground/70" />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
-          {isOrganizeMode && <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Arraste</span>}
-        </div>
+        <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
     </div>
