@@ -242,6 +242,20 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
               </div>
 
               <div className="border border-border rounded-lg p-4 space-y-3">
+                <Label className="text-sm font-semibold">E-mail</Label>
+                <p className="text-[10px] text-muted-foreground -mt-1">Alterar e-mail de {selectedOtherUser.name}</p>
+                <Input
+                  type="email"
+                  placeholder="novo@email.com"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                />
+                <Button variant="outline" className="w-full" onClick={handleChangeEmail} disabled={savingEmail}>
+                  {savingEmail ? "Salvando..." : "Alterar e-mail"}
+                </Button>
+              </div>
+
+              <div className="border border-border rounded-lg p-4 space-y-3">
                 <Label className="text-sm font-semibold">Seguranca</Label>
                 <p className="text-[10px] text-muted-foreground -mt-1">Definir nova senha para {selectedOtherUser.name}</p>
                 <Input
