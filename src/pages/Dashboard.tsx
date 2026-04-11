@@ -56,11 +56,15 @@ const Dashboard = () => {
   const allowedCards = profile?.allowed_cards;
 
   const baseCards = useMemo(() => {
-    const scoped = allowedCards && allowedCards.length > 0
-      ? ALL_NAV_CARDS.filter((card) => allowedCards.includes(card.id))
-      : ALL_NAV_CARDS;
+    if (isAdmin) return ALL_NAV_CARDS;
 
-    return isAdmin ? scoped : scoped.filter((card) => !ADMIN_ONLY_CARD_IDS.includes(card.id));
+    // Non-admin: if allowed_cards is set, use it as the single source of truth
+    if (allowedCards && allowedCards.length > 0) {
+      return ALL_NAV_CARDS.filter((card) => allowedCards.includes(card.id));
+    }
+
+    // No allowed_cards configured: show all except admin-only
+    return ALL_NAV_CARDS.filter((card) => !ADMIN_ONLY_CARD_IDS.includes(card.id));
   }, [allowedCards, isAdmin]);
 
   const defaultOrder = useMemo(() => baseCards.map((card) => card.id), [baseCards]);
