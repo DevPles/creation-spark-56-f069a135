@@ -55,6 +55,7 @@ interface EvidenceFormModalProps {
 
 const EVIDENCE_TYPES = ["PDF", "Planilha", "Ata de reunião", "Relatório", "Checklist", "Pesquisa", "Justificativa Interna", "Outro"];
 const STATUSES: EvidenceData["status"][] = ["Pendente", "Enviada", "Validada", "Rejeitada"];
+const ACTION_STATUSES: EvidenceData["statusAcao"][] = ["Não iniciada", "Em andamento", "Concluída"];
 
 const CATEGORY_OPTIONS: { value: EvidenceCategory; label: string; description: string }[] = [
   { value: "meta", label: "Meta / Indicador", description: "Evidência vinculada a uma meta qualitativa ou quantitativa" },
