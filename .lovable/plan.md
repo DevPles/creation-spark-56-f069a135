@@ -1,51 +1,58 @@
-## Assistente Guiado (Wizard) - Central do Sistema
 
-### Conceito
 
-Criar um card central destacado no Dashboard chamado **"Assistente "** (ou similar). Ao clicar, o usuário é levado a uma página `/assistente` com um fluxo estilo SurveyMonkey - navegação por etapas com cards explicativos, onde cada escolha leva a sub-opções ou abre os modais já existentes no sistema, nao use icones!!!
+## Plano: Sistema Inteligente de Plano de Ação
 
-### Estrutura do Fluxo
+### Problema atual
+O módulo é 100% client-side com dados hardcoded. Não há persistência, histórico de tratativas, acompanhamento de evolução, análise por área/tipo, nem geração de relatórios. Ao recarregar a página, tudo se perde.
 
-```text
-Dashboard
-  └── Card "Central de Ações" (destaque central)
-        └── /assistente (página wizard)
-              ├── Etapa 1: "O que deseja fazer?"
-              │   ├── 📋 Cadastrar / Lançar dados
-              │   ├── 📊 Consultar informações
-              │   └── 📄 Gerar relatórios
-              │
-              ├── Se "Cadastrar / Lançar dados":
-              │   ├── Cadastrar Meta → abre GoalFormModal
-              │   ├── Lançar Rubrica → abre RubricaFormModal
-              │   ├── Registrar Leitos → abre modal de leitos
-              │   ├── Cadastrar Contrato → abre ContractFormModal
-              │   └── Enviar Evidência → abre EvidenceFormModal
-              │
-              ├── Se "Consultar informações":
-              │   ├── Ver Metas → abre GoalModal (leitura)
-              │   ├── Ver Contratos → abre ContractModal
-              │   ├── Ver Rubricas → navega inline
-              │   └── Ver Riscos → abre RiskModal
-              │
-              └── Se "Gerar relatórios":
-                  └── Abre PdfExportModal
-```
+### Visão geral da solução
 
-### Detalhes Técnicos
+Criar um sistema completo e persistente de Plano de Ação com 5 pilares:
 
-1. **Dashboard (`Dashboard.tsx`)**: Adicionar um card centralizado e visualmente destacado (gradiente, ícone, tamanho maior) entre os KPI cards e os nav cards, que navega para `/assistente`.
-2. **Nova página `src/pages/AssistentePage.tsx**`:
-  - Estado `step` controla a etapa atual e `history` permite voltar.
-  - Cada etapa renderiza cards animados (framer-motion) com título, descrição explicativa do que aquela ação faz.
-  - Botão "Voltar" para retornar à etapa anterior.
-  - Ao chegar na ação final, abre o modal correspondente (reutilizando `GoalFormModal`, `ContractFormModal`, `RubricaFormModal`, `EvidenceFormModal`, `PdfExportModal`, etc.).
-  - Barra de progresso visual mostrando em qual etapa o usuário está.
-3. **Rota (`App.tsx`)**: Adicionar `<Route path="/assistente" element={<ProtectedRoute><AssistentePage /></ProtectedRoute>} />`.
-4. **Estilo dos cards do wizard**: Cards grandes com ícone, título em negrito e descrição de 1-2 linhas explicando o que acontece ao clicar, com hover suave e animação de entrada.
+1. **Persistência no banco de dados** — tabela `action_plans` + `action_plan_history` para registrar cada mudança de status/tratativa
+2. **Painel analítico com abas** — substituir a listagem simples por abas: Tratativas, Acompanhamento, Análise por Área, Relatórios
+3. **Timeline de histórico** — cada plano terá uma timeline mostrando todas as alterações (quem, quando, o quê)
+4. **Dashboard analítico** — gráficos de incidência/reincidência por tipo, área, unidade e período
+5. **Relatórios inteligentes** — geração de relatório consolidado com IA que resume o cenário, destaca padrões e sugere prioridades
 
-### Arquivos a Criar/Editar
+---
 
-- **Criar**: `src/pages/AssistentePage.tsx`
-- **Editar**: `src/pages/Dashboard.tsx` (card central)
-- **Editar**: `src/App.tsx` (nova rota)
+### Detalhes técnicos
+
+#### 1. Novas tabelas (migrações)
+
+**`action_plans`** — registro principal:
+- `id`, `facility_unit`, `category` (meta/rubrica/justificativa/relatório), `reference_name` (meta ou rubrica vinculada), `reference_id` (goal_id opcional)
+- `analise_critica`, `causa_raiz`, `acao_corretiva`, `responsavel`, `prazo`, `status_acao` (não iniciada/em andamento/concluída/cancelada)
+- `status_evidencia` (pendente/enviada/validada/rejeitada), `tipo_evidencia`, `arquivo_url`
+- `area` (setor/departamento), `tipo_problema` (enum: processo, equipamento, rh, insumo, infraestrutura, outro)
+- `prioridade` (baixa/média/alta/crítica), `risco_financeiro` (valor numérico)
+- `created_by`, `created_at`, `updated_at`
+
+**`action_plan_history`** — log de cada alteração:
+- `id`, `action_plan_id` (FK), `field_changed`, `old_value`, `new_value`, `changed_by`, `changed_at`, `notes`
+
+RLS: autenticados podem ler; inserção/edição vinculada ao `created_by` ou admin.
+
+#### 2. Página reestruturada com abas
+
+- **Tratativas** (tab principal): listagem com filtros por status, prioridade, área, tipo de problema. Cards KPI no topo (total, pendentes, em andamento, concluídas, vencidas)
+- **Acompanhamento**: visão Kanban ou timeline das tratativas agrupadas por status, com indicador de prazo (no prazo / atrasado / vencido)
+- **Análise**: gráficos de barras/donut mostrando incidência por tipo de problema, por área/setor, por unidade; ranking de reincidência (mesma meta/rubrica com múltiplos planos); evolução mensal
+- **Relatórios**: geração de relatório consolidado via IA que analisa os dados e produz um resumo executivo com padrões identificados, áreas críticas e recomendações
+
+#### 3. Modal aprimorado
+
+- Adicionar campos: `tipo_problema` (select), `área/setor` (select dinâmico da tabela sectors), `prioridade` (select)
+- Seção de histórico dentro do modal: timeline com todas as alterações anteriores
+- Ao salvar, registrar automaticamente em `action_plan_history`
+
+#### 4. Edge function para relatório inteligente
+
+- `supabase/functions/action-plan-report/index.ts` — recebe filtros (unidade, período), consulta os planos do banco, envia para Lovable AI e retorna um relatório estruturado com: resumo executivo, padrões de incidência, áreas com maior reincidência, recomendações priorizadas
+
+#### 5. Arquivos impactados
+
+- **Criar**: migração SQL, `src/pages/EvidenciasPage.tsx` (reestruturar), `src/components/ActionPlanTable.tsx`, `src/components/ActionPlanTimeline.tsx`, `src/components/ActionPlanAnalytics.tsx`, `src/components/ActionPlanReportTab.tsx`, `supabase/functions/action-plan-report/index.ts`
+- **Editar**: `src/components/EvidenceFormModal.tsx` (novos campos + histórico inline)
+
