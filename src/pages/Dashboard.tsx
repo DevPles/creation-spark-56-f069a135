@@ -227,10 +227,8 @@ const Dashboard = () => {
         <LayoutGroup>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {orderedCards.map((card, index) => (
-              <motion.div
+              <div
                 key={card.id}
-                layout
-                transition={{ type: "spring", stiffness: 400, damping: 32 }}
                 draggable={isOrganizeMode}
                 onDragStart={(event) => handleDragStart(event, index)}
                 onDragEnter={() => handleDragEnter(index)}
@@ -247,13 +245,18 @@ const Dashboard = () => {
                     : ""
                 }`}
               >
-                <NavCard
-                  title={card.title}
-                  description={card.description}
-                  onClick={() => navigate(card.route)}
-                  isOrganizeMode={isOrganizeMode}
-                />
-              </motion.div>
+                <motion.div
+                  layout
+                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                >
+                  <NavCard
+                    title={card.title}
+                    description={card.description}
+                    onClick={() => navigate(card.route)}
+                    isOrganizeMode={isOrganizeMode}
+                  />
+                </motion.div>
+              </div>
             ))}
           </div>
         </LayoutGroup>
