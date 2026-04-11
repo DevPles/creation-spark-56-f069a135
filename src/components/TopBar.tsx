@@ -7,10 +7,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+import ProfileModal from "@/components/ProfileModal";
 
 const TopBar = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const initials = profile?.name
     ? profile.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -48,10 +51,11 @@ const TopBar = () => {
                 <p className="text-sm font-medium text-foreground">{profile?.name || user?.email}</p>
                 <p className="text-xs text-muted-foreground">{profile?.facility_unit}</p>
               </div>
-              <DropdownMenuItem onClick={() => navigate("/admin")}>Meu perfil</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setProfileOpen(true)}>Meu perfil</DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut}>Sair</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <ProfileModal open={profileOpen} onOpenChange={setProfileOpen} />
         </div>
       </div>
     </header>
