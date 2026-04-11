@@ -83,9 +83,14 @@ serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      const ROLE_MAP: Record<string, string> = {
+        "Administrador": "admin", "Gestor": "gestor", "Analista": "analista",
+        "Clinico": "clinico", "Clínico": "clinico", "Funcionário": "funcionario", "Funcionario": "funcionario",
+      };
+      const dbRole = ROLE_MAP[role] || role;
       // Delete existing roles then insert new one
       await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
-      const { error } = await supabaseAdmin.from("user_roles").insert({ user_id: userId, role });
+      const { error } = await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: dbRole });
       if (error) {
         return new Response(JSON.stringify({ error: error.message }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
