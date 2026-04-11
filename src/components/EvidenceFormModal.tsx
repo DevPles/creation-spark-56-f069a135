@@ -1,23 +1,18 @@
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useContracts } from "@/contexts/ContractsContext";
+import { supabase } from "@/integrations/supabase/client";
+import { AlertTriangle } from "lucide-react";
 
 export type EvidenceCategory = "meta" | "rubrica" | "justificativa_interna" | "relatorio_assistencial";
 
@@ -35,13 +30,21 @@ export interface EvidenceData {
   activities?: string[];
   module?: string;
   contractId?: string;
-  // Action plan fields
   analiseCritica?: string;
   causaRaiz?: string;
   acaoCorretiva?: string;
   responsavel?: string;
   prazoAcao?: string;
   statusAcao?: "Não iniciada" | "Em andamento" | "Concluída";
+}
+
+interface GoalRisk {
+  name: string;
+  facility_unit: string;
+  risk: number;
+  target: number;
+  unit: string;
+  type: string;
 }
 
 interface EvidenceFormModalProps {
@@ -56,12 +59,13 @@ interface EvidenceFormModalProps {
 const EVIDENCE_TYPES = ["PDF", "Planilha", "Ata de reunião", "Relatório", "Checklist", "Pesquisa", "Justificativa Interna", "Outro"];
 const STATUSES: EvidenceData["status"][] = ["Pendente", "Enviada", "Validada", "Rejeitada"];
 const ACTION_STATUSES: EvidenceData["statusAcao"][] = ["Não iniciada", "Em andamento", "Concluída"];
+const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
-const CATEGORY_OPTIONS: { value: EvidenceCategory; label: string; description: string }[] = [
-  { value: "meta", label: "Meta / Indicador", description: "Evidência vinculada a uma meta qualitativa ou quantitativa" },
-  { value: "rubrica", label: "Rubrica orçamentária", description: "Justificativa de execução orçamentária" },
-  { value: "justificativa_interna", label: "Justificativa interna", description: "Documentação interna para auditoria" },
-  { value: "relatorio_assistencial", label: "Relatório assistencial", description: "Usa o contrato de gestão enviado no cadastro do contrato para análise dos pontos relevantes" },
+const CATEGORY_OPTIONS: { value: EvidenceCategory; label: string }[] = [
+  { value: "meta", label: "Meta / Indicador" },
+  { value: "rubrica", label: "Rubrica orçamentária" },
+  { value: "justificativa_interna", label: "Justificativa interna" },
+  { value: "relatorio_assistencial", label: "Relatório assistencial" },
 ];
 
 const inferCategory = (evidence: EvidenceData | null): EvidenceCategory => {
@@ -74,6 +78,7 @@ const inferCategory = (evidence: EvidenceData | null): EvidenceCategory => {
 const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false, goalNames = [] }: EvidenceFormModalProps) => {
   const { contracts } = useContracts();
   const [category, setCategory] = useState<EvidenceCategory>("meta");
+  const [facilityUnit, setFacilityUnit] = useState("Hospital Geral");
   const [goalName, setGoalName] = useState("");
   const [type, setType] = useState("PDF");
   const [fileName, setFileName] = useState("");
@@ -90,11 +95,29 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
   const [prazoAcao, setPrazoAcao] = useState("");
   const [statusAcao, setStatusAcao] = useState<EvidenceData["statusAcao"]>("Não iniciada");
 
-  const contractsWithPdf = contracts.filter(c => c.pdfUrl);
+  const [goalsAtRisk, setGoalsAtRisk] = useState<GoalRisk[]>([]);
+
+  // Fetch goals with risk from DB
+  useEffect(() => {
+    if (!open) return;
+    const fetchGoals = async () => {
+      const { data } = await supabase
+        .from("goals")
+        .select("name, facility_unit, risk, target, unit, type")
+        .gt("risk", 0)
+        .order("risk", { ascending: false });
+      if (data) setGoalsAtRisk(data as GoalRisk[]);
+    };
+    fetchGoals();
+  }, [open]);
+
+  const filteredGoals = goalsAtRisk.filter(g => g.facility_unit === facilityUnit);
+  const selectedGoalData = goalsAtRisk.find(g => g.name === goalName);
 
   useEffect(() => {
     if (evidence && !isNew) {
       setCategory(inferCategory(evidence));
+      setFacilityUnit(evidence.facilityUnit || "Hospital Geral");
       setGoalName(evidence.goalName);
       setType(evidence.type);
       setFileName(evidence.fileName);
@@ -111,7 +134,8 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
       setStatusAcao(evidence.statusAcao || "Não iniciada");
     } else if (isNew) {
       setCategory("meta");
-      setGoalName(goalNames[0] || "");
+      setFacilityUnit("Hospital Geral");
+      setGoalName("");
       setType("PDF");
       setFileName("");
       setStatus("Pendente");
@@ -150,6 +174,7 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
       dueDate,
       submittedAt: status === "Enviada" || status === "Validada" ? new Date().toLocaleDateString("pt-BR") : undefined,
       notes,
+      facilityUnit,
       category,
       activities: activities.length > 0 ? activities : undefined,
       module: category === "relatorio_assistencial" ? "relatorio" : "evidencias",
@@ -165,176 +190,188 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
     onOpenChange(false);
   };
 
-  const selectedCat = CATEGORY_OPTIONS.find((c) => c.value === category);
   const selectedContract = contracts.find(c => c.id === selectedContractId);
 
-  const referenceLabel = category === "meta" ? "Meta vinculada" : category === "rubrica" ? "Rubrica vinculada" : category === "justificativa_interna" ? "Referência interna" : "Seção do relatório";
+  const referenceLabel = category === "meta" ? "Meta em risco" : category === "rubrica" ? "Rubrica vinculada" : category === "justificativa_interna" ? "Referência interna" : "Seção do relatório";
+
+  const formatRisk = (risk: number) => risk >= 1000 ? `R$ ${(risk / 1000).toFixed(0)}k` : `R$ ${risk}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display">
+          <DialogTitle className="font-display text-base">
             {isNew ? "Novo Plano de Ação" : "Editar Plano de Ação"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-5">
-          {/* Category selector */}
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categoria</Label>
-            <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-3">
+          {/* Category selector - compact */}
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Categoria</Label>
+            <div className="grid grid-cols-4 gap-1.5">
               {CATEGORY_OPTIONS.map((cat) => (
                 <button
                   key={cat.value}
                   type="button"
                   onClick={() => setCategory(cat.value)}
-                  className={`flex items-center gap-2 p-3 rounded-lg border text-left text-sm transition-all ${
+                  className={`px-2 py-1.5 rounded-md border text-[11px] font-medium transition-all ${
                     category === cat.value
-                      ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
-                      : "border-border hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <span className="font-medium text-xs leading-tight">{cat.label}</span>
+                  {cat.label}
                 </button>
               ))}
             </div>
-            {selectedCat && (
-              <p className="text-[11px] text-muted-foreground">{selectedCat.description}</p>
-            )}
+          </div>
+
+          {/* Unit selector */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Unidade</Label>
+            <Select value={facilityUnit} onValueChange={(v) => { setFacilityUnit(v); setGoalName(""); }}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Contract selector for relatório assistencial */}
           {category === "relatorio_assistencial" && (
-            <div className="space-y-2">
-              <Label>Contrato de gestão vinculado</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Contrato de gestão</Label>
               <Select value={selectedContractId} onValueChange={setSelectedContractId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o contrato" /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Selecione o contrato" /></SelectTrigger>
                 <SelectContent>
                   {contracts.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {selectedContract && selectedContract.pdfUrl && (
-                <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-1">
-                  <p className="text-xs font-medium text-foreground">PDF do contrato disponível</p>
-                  <p className="text-[11px] text-muted-foreground">{selectedContract.pdfName || "Contrato.pdf"}</p>
-                  <a
-                    href={selectedContract.pdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary underline hover:no-underline"
-                  >
-                    Abrir contrato para análise →
-                  </a>
-                </div>
-              )}
-              {selectedContract && !selectedContract.pdfUrl && (
-                <p className="text-[11px] text-destructive">Este contrato não possui PDF anexado. Faça upload no cadastro do contrato.</p>
+              {selectedContract?.pdfUrl && (
+                <a href={selectedContract.pdfUrl} target="_blank" rel="noopener noreferrer"
+                  className="text-[11px] text-primary underline hover:no-underline">
+                  Abrir contrato para análise →
+                </a>
               )}
             </div>
           )}
 
-          {/* Reference field */}
-          <div className="space-y-2">
-            <Label>{referenceLabel}</Label>
-            {category === "meta" && goalNames.length > 0 ? (
+          {/* Reference field - goals at risk */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">{referenceLabel}</Label>
+            {category === "meta" && filteredGoals.length > 0 ? (
               <Select value={goalName} onValueChange={setGoalName}>
-                <SelectTrigger><SelectValue placeholder="Selecione a meta" /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Selecione a meta em risco" /></SelectTrigger>
                 <SelectContent>
-                  {goalNames.map((g) => (
-                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                  {filteredGoals.map((g) => (
+                    <SelectItem key={g.name} value={g.name}>
+                      <span className="flex items-center gap-2">
+                        <AlertTriangle className="h-3 w-3 text-destructive shrink-0" />
+                        {g.name}
+                        <span className="text-[10px] text-muted-foreground ml-auto">{formatRisk(g.risk)}</span>
+                      </span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            ) : category === "meta" && filteredGoals.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground py-2">Nenhuma meta em risco para {facilityUnit}</p>
             ) : (
-              <Input value={goalName} onChange={(e) => setGoalName(e.target.value)} placeholder={
-                category === "rubrica" ? "Ex: Rubrica de RH — Hospital Geral" :
-                category === "justificativa_interna" ? "Ex: Justificativa de aquisição emergencial" :
-                category === "relatorio_assistencial" ? "Ex: Seção de indicadores assistenciais" :
-                "Nome da meta"
+              <Input className="h-9" value={goalName} onChange={(e) => setGoalName(e.target.value)} placeholder={
+                category === "rubrica" ? "Ex: Rubrica de RH" :
+                category === "justificativa_interna" ? "Ex: Aquisição emergencial" :
+                "Ex: Seção de indicadores"
               } />
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Tipo de evidência</Label>
+          {/* Scenario card when goal selected */}
+          {category === "meta" && selectedGoalData && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                <span className="text-xs font-semibold text-destructive">Cenário de risco</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-[11px]">
+                <div>
+                  <span className="text-muted-foreground">Meta:</span>{" "}
+                  <span className="font-medium text-foreground">{selectedGoalData.target}{selectedGoalData.unit}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Tipo:</span>{" "}
+                  <span className="font-medium text-foreground">{selectedGoalData.type}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Impacto:</span>{" "}
+                  <span className="font-semibold text-destructive">{formatRisk(selectedGoalData.risk)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Tipo evidência</Label>
               <Select value={type} onValueChange={setType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {EVIDENCE_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
+                  {EVIDENCE_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Status</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as EvidenceData["status"])}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
+                  {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Prazo de entrega</Label>
-            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-          </div>
-
-          {/* File upload */}
-          <div className="space-y-2">
-            <Label>Arquivo / Anexo</Label>
-            <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-              {fileName ? (
-                <div>
-                  <p className="text-sm text-foreground">{fileName}</p>
-                  <Button variant="outline" size="sm" className="mt-2" onClick={() => setFileName("")}>Remover</Button>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-sm text-muted-foreground">Arraste ou selecione o arquivo</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">PDF, DOC, XLS até 10MB</p>
-                  <Button variant="outline" size="sm" className="mt-2" onClick={() => setFileName(`evidencia_${Date.now()}.pdf`)}>
-                    Selecionar arquivo
-                  </Button>
-                </div>
-              )}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Prazo</Label>
+              <Input className="h-9" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             </div>
           </div>
 
-          {/* Activities section */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-1.5">
-              Atividades realizadas
-              <span className="text-[10px] text-muted-foreground font-normal">(opcional)</span>
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                value={newActivity}
-                onChange={(e) => setNewActivity(e.target.value)}
-                placeholder="Descreva a atividade..."
+          {/* File upload - compact */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Arquivo / Anexo</Label>
+            {fileName ? (
+              <div className="flex items-center gap-2 text-sm border border-border rounded-md px-3 py-2">
+                <span className="flex-1 truncate text-foreground">{fileName}</span>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setFileName("")}>✕</Button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setFileName(`evidencia_${Date.now()}.pdf`)}
+                className="w-full border-2 border-dashed border-border rounded-md px-3 py-3 text-center hover:border-muted-foreground/40 transition-colors"
+              >
+                <p className="text-xs text-muted-foreground">Arraste ou clique para selecionar</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">PDF, DOC, XLS até 10MB</p>
+              </button>
+            )}
+          </div>
+
+          {/* Activities - compact */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Atividades realizadas <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+            <div className="flex gap-1.5">
+              <Input className="h-8 text-xs flex-1" value={newActivity} onChange={(e) => setNewActivity(e.target.value)} placeholder="Descreva a atividade..."
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddActivity(); } }}
-                className="flex-1"
               />
-              <Button type="button" size="sm" variant="outline" onClick={handleAddActivity} disabled={!newActivity.trim()}>
-                +
-              </Button>
+              <Button type="button" size="sm" variant="outline" className="h-8 w-8 p-0" onClick={handleAddActivity} disabled={!newActivity.trim()}>+</Button>
             </div>
             {activities.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
+              <div className="flex flex-wrap gap-1 mt-1">
                 {activities.map((act, idx) => (
-                  <Badge key={idx} variant="secondary" className="text-xs flex items-center gap-1 pr-1">
+                  <Badge key={idx} variant="secondary" className="text-[10px] py-0.5 flex items-center gap-0.5 pr-1">
                     {act}
-                    <button type="button" onClick={() => handleRemoveActivity(act)} className="ml-0.5 hover:text-destructive">
-                      ✕
-                    </button>
+                    <button type="button" onClick={() => handleRemoveActivity(act)} className="hover:text-destructive">✕</button>
                   </Badge>
                 ))}
               </div>
@@ -342,57 +379,60 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
           </div>
 
           {/* Action Plan Section */}
-          <div className="space-y-3 border-t border-border pt-4">
-            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plano de Ação</Label>
-            
-            <div className="space-y-2">
-              <Label>Análise crítica</Label>
-              <Textarea value={analiseCritica} onChange={(e) => setAnaliseCritica(e.target.value)} placeholder="Qual a situação atual? O que os dados mostram?" rows={3} />
+          <div className="space-y-2 border-t border-border pt-3">
+            <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Plano de Ação</Label>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Análise crítica</Label>
+              <Textarea value={analiseCritica} onChange={(e) => setAnaliseCritica(e.target.value)}
+                placeholder={selectedGoalData
+                  ? `A meta "${selectedGoalData.name}" apresenta risco de ${formatRisk(selectedGoalData.risk)}. Descreva o cenário atual e o que os dados mostram...`
+                  : "Qual a situação atual? O que os dados mostram?"}
+                rows={2} className="text-xs" />
             </div>
 
-            <div className="space-y-2">
-              <Label>Causa raiz</Label>
-              <Textarea value={causaRaiz} onChange={(e) => setCausaRaiz(e.target.value)} placeholder="Por que o resultado está abaixo do esperado?" rows={2} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Ação corretiva</Label>
-              <Textarea value={acaoCorretiva} onChange={(e) => setAcaoCorretiva(e.target.value)} placeholder="O que será feito para corrigir?" rows={2} />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label>Responsável</Label>
-                <Input value={responsavel} onChange={(e) => setResponsavel(e.target.value)} placeholder="Nome" />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Causa raiz</Label>
+                <Textarea value={causaRaiz} onChange={(e) => setCausaRaiz(e.target.value)} placeholder="Por que está abaixo?" rows={2} className="text-xs" />
               </div>
-              <div className="space-y-2">
-                <Label>Prazo da ação</Label>
-                <Input type="date" value={prazoAcao} onChange={(e) => setPrazoAcao(e.target.value)} />
+              <div className="space-y-1.5">
+                <Label className="text-xs">Ação corretiva</Label>
+                <Textarea value={acaoCorretiva} onChange={(e) => setAcaoCorretiva(e.target.value)} placeholder="O que será feito?" rows={2} className="text-xs" />
               </div>
-              <div className="space-y-2">
-                <Label>Status da ação</Label>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Responsável</Label>
+                <Input className="h-8 text-xs" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} placeholder="Nome" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prazo da ação</Label>
+                <Input className="h-8 text-xs" type="date" value={prazoAcao} onChange={(e) => setPrazoAcao(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Status</Label>
                 <Select value={statusAcao} onValueChange={(v) => setStatusAcao(v as EvidenceData["statusAcao"])}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {ACTION_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s!}>{s}</SelectItem>
-                    ))}
+                    {ACTION_STATUSES.map((s) => <SelectItem key={s} value={s!}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Observações</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionais..." rows={3} />
+          <div className="space-y-1.5">
+            <Label className="text-xs">Observações</Label>
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionais..." rows={2} className="text-xs" />
           </div>
 
-          <div className="flex gap-2 pt-2">
-            <Button className="flex-1" onClick={handleSave}>
+          <div className="flex gap-2 pt-1">
+            <Button className="flex-1 h-9" onClick={handleSave}>
               {isNew ? "Criar plano de ação" : "Salvar alterações"}
             </Button>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button variant="outline" className="h-9" onClick={() => onOpenChange(false)}>Cancelar</Button>
           </div>
         </div>
       </DialogContent>
