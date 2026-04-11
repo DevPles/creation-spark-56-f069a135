@@ -181,11 +181,11 @@ const EvidenciasPage = () => {
                   {isRubrica && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />}
                   {ev.goalName}
                 </span>
-                <span className="col-span-2 text-muted-foreground truncate">{ev.acaoCorretiva || "—"}</span>
-                <span className="col-span-2 text-muted-foreground truncate">{ev.responsavel || "—"}</span>
-                <span className="col-span-2 text-muted-foreground">{ev.prazoAcao || ev.dueDate}</span>
+                <span className="col-span-2 text-muted-foreground truncate">{"acaoCorretiva" in ev ? (ev as EvidenceData).acaoCorretiva || "—" : "—"}</span>
+                <span className="col-span-2 text-muted-foreground truncate">{"responsavel" in ev ? (ev as EvidenceData).responsavel || "—" : "—"}</span>
+                <span className="col-span-2 text-muted-foreground">{"prazoAcao" in ev ? (ev as EvidenceData).prazoAcao || ev.dueDate : ev.dueDate}</span>
                 <span className="col-span-1 text-muted-foreground text-xs">
-                  {ev.statusAcao === "Concluída" ? "✅" : ev.statusAcao === "Em andamento" ? "🔄" : "⏳"}
+                  {("statusAcao" in ev && (ev as EvidenceData).statusAcao === "Concluída") ? "✅" : ("statusAcao" in ev && (ev as EvidenceData).statusAcao === "Em andamento") ? "🔄" : "⏳"}
                 </span>
                 <span className="col-span-2"><span className={`status-badge ${STATUS_STYLES[ev.status]}`}>{ev.status}</span></span>
               </motion.div>
