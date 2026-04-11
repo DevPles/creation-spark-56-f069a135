@@ -7,10 +7,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+import ProfileModal from "@/components/ProfileModal";
 
 const TopBar = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const initials = profile?.name
     ? profile.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
