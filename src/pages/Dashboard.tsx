@@ -232,7 +232,7 @@ const Dashboard = () => {
             const pos = resolvedPositions[card.id] ?? { x: 0, y: 0 };
             return (
               <motion.div
-                key={card.id}
+                key={`${card.id}-${layoutVersion}`}
                 drag
                 dragMomentum={false}
                 dragElastic={0}
