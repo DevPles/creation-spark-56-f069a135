@@ -222,14 +222,12 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
-        <div className="flex justify-end gap-2 mb-3">
-          <Button variant="outline" size="sm" onClick={resetLayout} className="gap-2 text-xs">
-            <RotateCcw className="h-4 w-4" />
-            Resetar padrão
+        <div className="flex justify-end gap-1.5 mb-3">
+          <Button variant="ghost" size="icon" onClick={resetLayout} className="h-7 w-7 text-muted-foreground hover:text-foreground" title="Resetar padrão">
+            <RotateCcw className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="outline" size="sm" onClick={autoOrganize} className="gap-2 text-xs">
-            <ArrowDownAZ className="h-4 w-4" />
-            Auto Organizar
+          <Button variant="ghost" size="icon" onClick={autoOrganize} className="h-7 w-7 text-muted-foreground hover:text-foreground" title="Auto Organizar">
+            <ArrowDownAZ className="h-3.5 w-3.5" />
           </Button>
         </div>
 
