@@ -36,13 +36,12 @@ interface AdminModalProps {
 const ALL_CARDS = [
   { id: "contratos", label: "Contratos" },
   { id: "metas", label: "Metas e Indicadores" },
-  { id: "risco", label: "Projecao de Risco" },
-  { id: "evidencias", label: "Evidencias" },
-  { id: "relatorios", label: "Relatorios" },
-  { id: "admin", label: "Administracao" },
-  { id: "lancamento", label: "Lancar Metas" },
+  { id: "evidencias", label: "Plano de Ação" },
+  { id: "relatorios", label: "Relatórios" },
+  { id: "admin", label: "Administração" },
+  { id: "lancamento", label: "Lançamentos" },
   { id: "sau", label: "SAU" },
-  { id: "relatorio-assistencial", label: "Relatorio Assistencial" },
+  { id: "relatorio-assistencial", label: "Relatório Assistencial" },
   { id: "controle-rubrica", label: "Controle de Rubrica" },
 ];
 
