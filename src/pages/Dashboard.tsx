@@ -47,25 +47,40 @@ const DRAG_THRESHOLD = 6;
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, role } = useAuth();
   const dragRef = useRef<ActiveDrag | null>(null);
   const didDrag = useRef(false);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [cardOffsets, setCardOffsets] = useState<Record<string, CardOffset>>({});
 
   const allowedCards = profile?.allowed_cards;
+  const hasFinancialAccess = isAdmin || role === "gestor";
 
   const baseCards = useMemo(() => {
     if (isAdmin) return ALL_NAV_CARDS;
 
-    // Non-admin: if allowed_cards is set, use it as the single source of truth
+    // If allowed_cards is configured, use it as base
     if (allowedCards && allowedCards.length > 0) {
-      return ALL_NAV_CARDS.filter((card) => allowedCards.includes(card.id));
+      let cards = ALL_NAV_CARDS.filter((card) => allowedCards.includes(card.id));
+      // Gestores also get financial cards even if not in allowed_cards
+      if (hasFinancialAccess) {
+        const financialIds = ADMIN_ONLY_CARD_IDS.filter(id => id !== "admin");
+        financialIds.forEach(id => {
+          if (!cards.find(c => c.id === id)) {
+            const card = ALL_NAV_CARDS.find(c => c.id === id);
+            if (card) cards.push(card);
+          }
+        });
+      }
+      return cards;
     }
 
-    // No allowed_cards configured: show all except admin-only
+    // No allowed_cards: gestores see everything except admin, others see non-financial
+    if (hasFinancialAccess) {
+      return ALL_NAV_CARDS.filter((card) => card.id !== "admin");
+    }
     return ALL_NAV_CARDS.filter((card) => !ADMIN_ONLY_CARD_IDS.includes(card.id));
-  }, [allowedCards, isAdmin]);
+  }, [allowedCards, isAdmin, hasFinancialAccess]);
 
   const defaultOrder = useMemo(() => baseCards.map((card) => card.id), [baseCards]);
   const [cardOrder, setCardOrder] = useState<string[]>(defaultOrder);
