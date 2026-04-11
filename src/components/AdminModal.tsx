@@ -81,7 +81,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
 
   useEffect(() => {
     if (selectedOtherUser) {
-      const loadCards = async () => {
+      const loadUserData = async () => {
         const { data } = await supabase
           .from("profiles")
           .select("allowed_cards")
@@ -92,8 +92,9 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
         } else {
           setVisibleCards(ALL_CARDS.map(c => c.id));
         }
+        setNewEmail(selectedOtherUser.email);
       };
-      loadCards();
+      loadUserData();
     }
   }, [selectedUserId]);
 
