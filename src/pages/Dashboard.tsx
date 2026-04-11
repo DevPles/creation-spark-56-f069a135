@@ -110,6 +110,7 @@ const Dashboard = () => {
   const clearCustomPositions = useCallback(() => {
     setCustomPositions({});
     localStorage.removeItem(POSITION_STORAGE_KEY);
+    setLayoutVersion((v) => v + 1);
   }, []);
 
   const orderedCards = useMemo(() => {
