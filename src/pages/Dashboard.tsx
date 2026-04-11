@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef, type DragEvent } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import KpiCard from "@/components/KpiCard";
@@ -32,16 +32,26 @@ const ALL_NAV_CARDS = [
   { id: "controle-rubrica", title: "Controle de Rubrica", description: "Gestão e acompanhamento de rubricas", route: "/controle-rubrica" },
 ];
 
+type CardOffset = { x: number; y: number };
+type ActiveDrag = {
+  cardId: string;
+  startX: number;
+  startY: number;
+  baseX: number;
+  baseY: number;
+};
+
 const ORDER_STORAGE_KEY = "dashboard-card-order";
+const POSITION_STORAGE_KEY = "dashboard-card-positions";
+const DRAG_THRESHOLD = 6;
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { profile, isAdmin } = useAuth();
-  const dragItem = useRef<number | null>(null);
-  const dragOverItem = useRef<number | null>(null);
-  const suppressNavigationUntil = useRef(0);
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragRef = useRef<ActiveDrag | null>(null);
+  const didDrag = useRef(false);
+  const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [cardOffsets, setCardOffsets] = useState<Record<string, CardOffset>>({});
 
   const allowedCards = profile?.allowed_cards;
 
@@ -74,6 +84,25 @@ const Dashboard = () => {
     setCardOrder(defaultOrder);
   }, [defaultOrder]);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(POSITION_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Record<string, CardOffset>;
+        const validIds = new Set(defaultOrder);
+        const filtered = Object.fromEntries(
+          Object.entries(parsed).filter(([id]) => validIds.has(id))
+        ) as Record<string, CardOffset>;
+        setCardOffsets(filtered);
+        return;
+      }
+    } catch {
+      // no-op
+    }
+
+    setCardOffsets({});
+  }, [defaultOrder]);
+
   const orderedCards = useMemo(() => {
     const ordered = cardOrder
       .map((id) => baseCards.find((card) => card.id === id))
@@ -88,61 +117,60 @@ const Dashboard = () => {
     localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(ids));
   }, []);
 
-  const resetDragState = useCallback(() => {
-    setDraggingIndex(null);
-    setDragOverIndex(null);
-    dragItem.current = null;
-    dragOverItem.current = null;
+  const updateCardOffset = useCallback((cardId: string, nextOffset: CardOffset) => {
+    setCardOffsets((prev) => {
+      const next = { ...prev, [cardId]: nextOffset };
+      localStorage.setItem(POSITION_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
   }, []);
 
-  const handleDragStart = useCallback((event: DragEvent<HTMLDivElement>, index: number) => {
-    dragItem.current = index;
-    setDraggingIndex(index);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", orderedCards[index]?.id ?? "");
-    event.dataTransfer.setDragImage(event.currentTarget, event.currentTarget.clientWidth / 2, 24);
-  }, [orderedCards]);
-
-  const handleDragEnter = useCallback((index: number) => {
-    if (dragItem.current === null || dragItem.current === index) return;
-    dragOverItem.current = index;
-    setDragOverIndex(index);
+  const clearCardOffsets = useCallback(() => {
+    setCardOffsets({});
+    localStorage.removeItem(POSITION_STORAGE_KEY);
   }, []);
 
-  const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, []);
+  const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>, cardId: string) => {
+    if (event.button !== 0) return;
 
-  const handleDrop = useCallback((event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
+    const currentOffset = cardOffsets[cardId] ?? { x: 0, y: 0 };
+    dragRef.current = {
+      cardId,
+      startX: event.clientX,
+      startY: event.clientY,
+      baseX: currentOffset.x,
+      baseY: currentOffset.y,
+    };
+    didDrag.current = false;
+    setActiveCardId(cardId);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, [cardOffsets]);
 
-    if (
-      dragItem.current === null ||
-      dragOverItem.current === null ||
-      dragItem.current === dragOverItem.current
-    ) {
-      resetDragState();
-      return;
+  const handlePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>, cardId: string) => {
+    if (!dragRef.current || dragRef.current.cardId !== cardId) return;
+
+    const deltaX = event.clientX - dragRef.current.startX;
+    const deltaY = event.clientY - dragRef.current.startY;
+
+    if (!didDrag.current && (Math.abs(deltaX) > DRAG_THRESHOLD || Math.abs(deltaY) > DRAG_THRESHOLD)) {
+      didDrag.current = true;
     }
 
-    const nextOrder = orderedCards.map((card) => card.id);
-    const draggedId = nextOrder[dragItem.current];
-    nextOrder.splice(dragItem.current, 1);
-    nextOrder.splice(dragOverItem.current, 0, draggedId);
-    saveOrder(nextOrder);
-    suppressNavigationUntil.current = Date.now() + 180;
-    resetDragState();
-  }, [orderedCards, resetDragState, saveOrder]);
+    updateCardOffset(cardId, {
+      x: dragRef.current.baseX + deltaX,
+      y: dragRef.current.baseY + deltaY,
+    });
+  }, [updateCardOffset]);
 
-  const handleDragEnd = useCallback(() => {
-    suppressNavigationUntil.current = Date.now() + 180;
-    resetDragState();
-  }, [resetDragState]);
+  const finishDrag = useCallback(() => {
+    dragRef.current = null;
+    setActiveCardId(null);
+  }, []);
 
   const handleCardClick = useCallback((route: string) => {
-    if (Date.now() < suppressNavigationUntil.current) return;
-    navigate(route);
+    if (!didDrag.current) {
+      navigate(route);
+    }
   }, [navigate]);
 
   const autoOrganize = useCallback(() => {
@@ -151,13 +179,13 @@ const Dashboard = () => {
       .map((card) => card.id);
 
     saveOrder(sorted);
-    resetDragState();
-  }, [baseCards, resetDragState, saveOrder]);
+    clearCardOffsets();
+  }, [baseCards, clearCardOffsets, saveOrder]);
 
   const resetLayout = useCallback(() => {
     saveOrder(defaultOrder);
-    resetDragState();
-  }, [defaultOrder, resetDragState, saveOrder]);
+    clearCardOffsets();
+  }, [clearCardOffsets, defaultOrder, saveOrder]);
 
   const totalRisk = MOCK_GOALS.reduce((sum, goal) => sum + goal.risk, 0);
   const goalsAtRisk = MOCK_GOALS.filter((goal) => goal.risk > 0).length;
@@ -207,32 +235,31 @@ const Dashboard = () => {
 
         <LayoutGroup>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {orderedCards.map((card, index) => (
-              <div
-                key={card.id}
-                draggable
-                onDragStart={(event) => handleDragStart(event, index)}
-                onDragEnter={() => handleDragEnter(index)}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onDragEnd={handleDragEnd}
-                className={`cursor-grab active:cursor-grabbing transition-all duration-150 ${
-                  draggingIndex === index ? "opacity-45 scale-[0.98]" : ""
-                } ${
-                  dragOverIndex === index && draggingIndex !== index
-                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                    : ""
-                }`}
-              >
-                <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 32 }}>
-                  <NavCard
-                    title={card.title}
-                    description={card.description}
+            {orderedCards.map((card) => {
+              const offset = cardOffsets[card.id] ?? { x: 0, y: 0 };
+              const isDragging = activeCardId === card.id;
+
+              return (
+                <motion.div key={card.id} layout transition={{ type: "spring", stiffness: 400, damping: 32 }}>
+                  <div
+                    onPointerDown={(event) => handlePointerDown(event, card.id)}
+                    onPointerMove={(event) => handlePointerMove(event, card.id)}
+                    onPointerUp={finishDrag}
+                    onPointerCancel={finishDrag}
                     onClick={() => handleCardClick(card.route)}
-                  />
+                    className={`touch-none select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+                    style={{
+                      transform: `translate(${offset.x}px, ${offset.y}px)`,
+                      transition: isDragging ? "none" : "transform 160ms ease",
+                      position: "relative",
+                      zIndex: isDragging ? 30 : 1,
+                    }}
+                  >
+                    <NavCard title={card.title} description={card.description} />
+                  </div>
                 </motion.div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </LayoutGroup>
       </main>
@@ -243,11 +270,10 @@ const Dashboard = () => {
 interface NavCardProps {
   title: string;
   description: string;
-  onClick: () => void;
 }
 
-const NavCard = ({ title, description, onClick }: NavCardProps) => (
-  <div onClick={onClick} className="kpi-card group w-full cursor-pointer select-none text-left">
+const NavCard = ({ title, description }: NavCardProps) => (
+  <div className="kpi-card group w-full cursor-pointer text-left">
     <div className="flex items-start gap-3">
       <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground/70" />
       <div className="min-w-0 flex-1">
