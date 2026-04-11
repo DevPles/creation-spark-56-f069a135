@@ -18,7 +18,7 @@ const MOCK_GOALS = [
   { id: "8", name: "Comissão de óbitos ativa", target: 1, current: 1, unit: "doc", type: "QLT" as const, risk: 0, trend: "stable" as const },
 ];
 
-const FINANCIAL_CARD_IDS = ["contratos", "controle-rubrica"];
+const ADMIN_ONLY_CARD_IDS = ["contratos", "controle-rubrica", "admin"];
 
 const ALL_NAV_CARDS = [
   { id: "contratos", title: "Contratos", description: "Gerir contratos, valores e glosas", route: "/contratos" },
@@ -60,7 +60,7 @@ const Dashboard = () => {
       ? ALL_NAV_CARDS.filter((card) => allowedCards.includes(card.id))
       : ALL_NAV_CARDS;
 
-    return isAdmin ? scoped : scoped.filter((card) => !FINANCIAL_CARD_IDS.includes(card.id));
+    return isAdmin ? scoped : scoped.filter((card) => !ADMIN_ONLY_CARD_IDS.includes(card.id));
   }, [allowedCards, isAdmin]);
 
   const defaultOrder = useMemo(() => baseCards.map((card) => card.id), [baseCards]);
