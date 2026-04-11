@@ -175,7 +175,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     toast.success("E-mail alterado", { description: `E-mail de ${selectedOtherUser.name} atualizado.` });
   };
 
-  return (
+  const initials = name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
