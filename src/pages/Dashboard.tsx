@@ -23,7 +23,7 @@ const FINANCIAL_CARD_IDS = ["contratos", "controle-rubrica"];
 const ALL_NAV_CARDS = [
   { id: "contratos", title: "Contratos", description: "Gerir contratos, valores e glosas", route: "/contratos" },
   { id: "metas", title: "Metas e indicadores", description: "Detalhamento e projeções por meta", route: "/metas" },
-  { id: "evidencias", title: "Evidências", description: "Upload e validação de documentos", route: "/evidencias" },
+  { id: "evidencias", title: "Plano de Ação", description: "Análise crítica, ações corretivas e evidências", route: "/evidencias" },
   { id: "relatorios", title: "Relatórios", description: "Gerar PDF consolidado por período", route: "/relatorios" },
   { id: "admin", title: "Administração", description: "Usuários, perfis e permissões", route: "/admin" },
   { id: "lancamento", title: "Lançamentos", description: "Lançamento de metas e rubricas", route: "/lancamento" },
@@ -140,7 +140,7 @@ const Dashboard = () => {
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             onClick={() => navigate("/evidencias")} className="cursor-pointer">
-            <KpiCard label="Evidências pendentes" value={String(pendingEvidence)} status={pendingEvidence > 0 ? "warning" : "success"} subtitle="Documentos a enviar" />
+            <KpiCard label="Planos de ação pendentes" value={String(pendingEvidence)} status={pendingEvidence > 0 ? "warning" : "success"} subtitle="Ações a tratar" />
           </motion.div>
         </div>
 

@@ -123,11 +123,11 @@ const EvidenciasPage = () => {
         </Button>
 
         <PageHeader
-          title="Evidências"
-          subtitle="Upload e validação de documentos comprobatórios"
+          title="Plano de Ação"
+          subtitle="Análise crítica, ações corretivas e evidências comprobatórias"
           selectedUnit={selectedUnit}
           onUnitChange={setSelectedUnit}
-          action={<Button onClick={handleNew}>Nova evidência</Button>}
+          action={<Button onClick={handleNew}>Novo plano de ação</Button>}
         />
 
         {/* Rubrica estourada alert */}
@@ -164,7 +164,7 @@ const EvidenciasPage = () => {
 
         <div className="bg-card rounded-lg border border-border overflow-hidden">
           <div className="px-5 py-3 border-b border-border grid grid-cols-12 text-xs font-medium text-muted-foreground">
-            <span className="col-span-3">Meta / Rubrica vinculada</span><span className="col-span-2">Tipo</span><span className="col-span-2">Arquivo</span><span className="col-span-2">Prazo</span><span className="col-span-1">Envio</span><span className="col-span-2">Status</span>
+            <span className="col-span-3">Meta / Rubrica vinculada</span><span className="col-span-2">Ação corretiva</span><span className="col-span-2">Responsável</span><span className="col-span-2">Prazo</span><span className="col-span-1">Ação</span><span className="col-span-2">Status</span>
           </div>
           {filteredEvidences.map((ev, i) => {
             const isRubrica = "isRubricaPendencia" in ev;
@@ -181,10 +181,12 @@ const EvidenciasPage = () => {
                   {isRubrica && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />}
                   {ev.goalName}
                 </span>
-                <span className={`col-span-2 ${isRubrica ? "text-destructive font-medium" : "text-muted-foreground"}`}>{ev.type}</span>
-                <span className="col-span-2 text-muted-foreground truncate">{ev.fileName || "—"}</span>
-                <span className="col-span-2 text-muted-foreground">{ev.dueDate}</span>
-                <span className="col-span-1 text-muted-foreground text-xs">{ev.submittedAt || "—"}</span>
+                <span className="col-span-2 text-muted-foreground truncate">{"acaoCorretiva" in ev ? (ev as EvidenceData).acaoCorretiva || "—" : "—"}</span>
+                <span className="col-span-2 text-muted-foreground truncate">{"responsavel" in ev ? (ev as EvidenceData).responsavel || "—" : "—"}</span>
+                <span className="col-span-2 text-muted-foreground">{"prazoAcao" in ev ? (ev as EvidenceData).prazoAcao || ev.dueDate : ev.dueDate}</span>
+                <span className="col-span-1 text-muted-foreground text-xs">
+                  {("statusAcao" in ev && (ev as EvidenceData).statusAcao === "Concluída") ? "✅" : ("statusAcao" in ev && (ev as EvidenceData).statusAcao === "Em andamento") ? "🔄" : "⏳"}
+                </span>
                 <span className="col-span-2"><span className={`status-badge ${STATUS_STYLES[ev.status]}`}>{ev.status}</span></span>
               </motion.div>
             );
