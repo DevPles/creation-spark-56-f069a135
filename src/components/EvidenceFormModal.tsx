@@ -172,10 +172,10 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">
-            {isNew ? "Nova evidência" : "Editar evidência"}
+            {isNew ? "Novo Plano de Ação" : "Editar Plano de Ação"}
           </DialogTitle>
         </DialogHeader>
 
@@ -341,14 +341,56 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
             )}
           </div>
 
+          {/* Action Plan Section */}
+          <div className="space-y-3 border-t border-border pt-4">
+            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plano de Ação</Label>
+            
+            <div className="space-y-2">
+              <Label>Análise crítica</Label>
+              <Textarea value={analiseCritica} onChange={(e) => setAnaliseCritica(e.target.value)} placeholder="Qual a situação atual? O que os dados mostram?" rows={3} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Causa raiz</Label>
+              <Textarea value={causaRaiz} onChange={(e) => setCausaRaiz(e.target.value)} placeholder="Por que o resultado está abaixo do esperado?" rows={2} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Ação corretiva</Label>
+              <Textarea value={acaoCorretiva} onChange={(e) => setAcaoCorretiva(e.target.value)} placeholder="O que será feito para corrigir?" rows={2} />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Responsável</Label>
+                <Input value={responsavel} onChange={(e) => setResponsavel(e.target.value)} placeholder="Nome" />
+              </div>
+              <div className="space-y-2">
+                <Label>Prazo da ação</Label>
+                <Input type="date" value={prazoAcao} onChange={(e) => setPrazoAcao(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Status da ação</Label>
+                <Select value={statusAcao} onValueChange={(v) => setStatusAcao(v as EvidenceData["statusAcao"])}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ACTION_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s!}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Observações</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionais sobre a evidência..." rows={3} />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionais..." rows={3} />
           </div>
 
           <div className="flex gap-2 pt-2">
             <Button className="flex-1" onClick={handleSave}>
-              {isNew ? "Enviar evidência" : "Salvar alterações"}
+              {isNew ? "Criar plano de ação" : "Salvar alterações"}
             </Button>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           </div>
