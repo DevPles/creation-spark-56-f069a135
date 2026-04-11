@@ -58,6 +58,8 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
 
   const [newPassword, setNewPassword] = useState("");
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
 
   const nonAdminUsers = users.filter(u => u.role !== "Administrador");
   const selectedOtherUser = nonAdminUsers.find(u => u.id === selectedUserId);
