@@ -1,6 +1,7 @@
 import { Tables } from "@/integrations/supabase/types";
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart3 } from "lucide-react";
 
 type ActionPlan = Tables<"action_plans">;
 
@@ -20,6 +21,13 @@ const TIPO_LABELS: Record<string, string> = {
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--destructive))", "hsl(var(--warning))", "hsl(var(--accent))", "hsl(var(--muted))", "hsl(var(--secondary))"];
 
+const ChartCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="bg-card rounded-xl border border-border p-5">
+    <h3 className="text-sm font-semibold font-display mb-4">{title}</h3>
+    {children}
+  </div>
+);
+
 const ActionPlanAnalytics = ({ plans, selectedUnit }: Props) => {
   const filtered = selectedUnit === "Todas as unidades" ? plans : plans.filter(p => p.facility_unit === selectedUnit);
 
@@ -30,8 +38,7 @@ const ActionPlanAnalytics = ({ plans, selectedUnit }: Props) => {
       counts[key] = (counts[key] || 0) + 1;
     });
     return Object.entries(counts).map(([key, value]) => ({
-      name: TIPO_LABELS[key] || key,
-      value,
+      name: TIPO_LABELS[key] || key, value,
     }));
   }, [filtered]);
 
@@ -79,31 +86,28 @@ const ActionPlanAnalytics = ({ plans, selectedUnit }: Props) => {
 
   if (filtered.length === 0) {
     return (
-      <div className="py-12 text-center text-muted-foreground text-sm">
+      <div className="py-12 text-center text-muted-foreground text-sm flex flex-col items-center gap-2">
+        <BarChart3 className="h-8 w-8 text-muted-foreground/40" />
         Nenhum dado para análise. Crie planos de ação para visualizar os gráficos.
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* By tipo problema */}
-      <div className="bg-card rounded-lg border border-border p-4">
-        <h3 className="text-sm font-semibold mb-3">Incidência por Tipo de Problema</h3>
-        <ResponsiveContainer width="100%" height={220}>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <ChartCard title="Incidência por Tipo de Problema">
+        <ResponsiveContainer width="100%" height={240}>
           <PieChart>
-            <Pie data={byTipo} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, value }) => `${name}: ${value}`}>
+            <Pie data={byTipo} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={85} label={({ name, value }) => `${name}: ${value}`}>
               {byTipo.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
             </Pie>
             <Tooltip />
           </PieChart>
         </ResponsiveContainer>
-      </div>
+      </ChartCard>
 
-      {/* By area */}
-      <div className="bg-card rounded-lg border border-border p-4">
-        <h3 className="text-sm font-semibold mb-3">Incidência por Área / Setor</h3>
-        <ResponsiveContainer width="100%" height={220}>
+      <ChartCard title="Incidência por Área / Setor">
+        <ResponsiveContainer width="100%" height={240}>
           <BarChart data={byArea} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis type="number" />
@@ -112,12 +116,10 @@ const ActionPlanAnalytics = ({ plans, selectedUnit }: Props) => {
             <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </ChartCard>
 
-      {/* By unit */}
-      <div className="bg-card rounded-lg border border-border p-4">
-        <h3 className="text-sm font-semibold mb-3">Distribuição por Unidade</h3>
-        <ResponsiveContainer width="100%" height={220}>
+      <ChartCard title="Distribuição por Unidade">
+        <ResponsiveContainer width="100%" height={240}>
           <BarChart data={byUnit}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -126,28 +128,24 @@ const ActionPlanAnalytics = ({ plans, selectedUnit }: Props) => {
             <Bar dataKey="value" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </ChartCard>
 
-      {/* Prioridade */}
-      <div className="bg-card rounded-lg border border-border p-4">
-        <h3 className="text-sm font-semibold mb-3">Distribuição por Prioridade</h3>
-        <ResponsiveContainer width="100%" height={220}>
+      <ChartCard title="Distribuição por Prioridade">
+        <ResponsiveContainer width="100%" height={240}>
           <PieChart>
-            <Pie data={byPrioridade} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+            <Pie data={byPrioridade} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={85} label>
               {byPrioridade.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
             </Pie>
             <Tooltip />
             <Legend />
           </PieChart>
         </ResponsiveContainer>
-      </div>
+      </ChartCard>
 
-      {/* Reincidência */}
       {reincidencia.length > 0 && (
-        <div className="bg-card rounded-lg border border-border p-4 md:col-span-2">
-          <h3 className="text-sm font-semibold mb-3">Ranking de Reincidência</h3>
-          <p className="text-xs text-muted-foreground mb-3">Metas/rubricas com múltiplos planos de ação registrados</p>
-          <ResponsiveContainer width="100%" height={200}>
+        <ChartCard title="Ranking de Reincidência">
+          <p className="text-xs text-muted-foreground mb-3 -mt-2">Metas/rubricas com múltiplos planos de ação</p>
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={reincidencia}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-15} textAnchor="end" height={60} />
@@ -156,7 +154,7 @@ const ActionPlanAnalytics = ({ plans, selectedUnit }: Props) => {
               <Bar dataKey="value" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </ChartCard>
       )}
     </div>
   );
