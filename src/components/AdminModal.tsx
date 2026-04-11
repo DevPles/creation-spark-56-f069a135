@@ -63,12 +63,19 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
   const selectedOtherUser = nonAdminUsers.find(u => u.id === selectedUserId);
 
   useEffect(() => {
-    if (user && open) {
-      setName(user.name);
-      setEmail(user.email);
-      setPhoto(user.photo);
-    }
-  }, [user, open]);
+    if (!open) return;
+    const loadAdmin = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+      setEmail(authUser.email || "");
+      const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("id", authUser.id).single();
+      if (profile) {
+        setName(profile.name || "");
+        setPhoto(profile.avatar_url || undefined);
+      }
+    };
+    loadAdmin();
+  }, [open]);
 
   useEffect(() => {
     if (selectedOtherUser) {
