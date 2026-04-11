@@ -160,7 +160,20 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     setNewPassword("");
   };
 
-  const initials = name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
+  const handleChangeEmail = async () => {
+    if (!selectedOtherUser) { toast.error("Selecione um usuario"); return; }
+    if (!newEmail || !newEmail.includes("@")) { toast.error("Digite um e-mail valido"); return; }
+    setSavingEmail(true);
+    const { data, error } = await supabase.functions.invoke("create-admin", {
+      body: { action: "update-email", userId: selectedOtherUser.id, newEmail },
+    });
+    setSavingEmail(false);
+    if (error || data?.error) {
+      toast.error("Erro ao alterar e-mail", { description: data?.error || error?.message });
+      return;
+    }
+    toast.success("E-mail alterado", { description: `E-mail de ${selectedOtherUser.name} atualizado.` });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
