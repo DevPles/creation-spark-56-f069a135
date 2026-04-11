@@ -36,7 +36,7 @@ interface UserModalProps {
   onSave?: (user: User) => void;
 }
 
-const ROLES = ["Administrador", "Gestor", "Analista", "Clínico"];
+const ROLES = ["Administrador", "Gestor", "Analista", "Clínico", "Funcionário"];
 const UNITS_LIST = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 const STATUSES = ["Ativo", "Suspenso", "Bloqueado"];
 
@@ -158,8 +158,8 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
         supervisor_id: supervisorId === "none" ? undefined : supervisorId,
       };
 
-      // Update profile via edge function (bypasses RLS)
       if (user?.id) {
+        // Update profile via edge function (bypasses RLS)
         await supabase.functions.invoke("create-admin", {
           body: {
             action: "update-profile",
@@ -171,6 +171,13 @@ const UserModal = ({ user, open, onOpenChange, isNew = false, onSave }: UserModa
             },
           },
         });
+
+        // Update role if changed
+        if (role !== user.role) {
+          await supabase.functions.invoke("create-admin", {
+            body: { action: "update-role", userId: user.id, role },
+          });
+        }
       }
 
       onSave?.(userData);
