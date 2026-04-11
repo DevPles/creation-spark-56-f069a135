@@ -60,6 +60,7 @@ const Dashboard = () => {
   const [cardOrder, setCardOrder] = useState<string[]>(defaultOrder);
   const [customPositions, setCustomPositions] = useState<Record<string, CardPosition>>({});
   const [containerWidth, setContainerWidth] = useState(960);
+  const [layoutVersion, setLayoutVersion] = useState(0);
 
   useEffect(() => {
     const update = () => {
@@ -109,6 +110,7 @@ const Dashboard = () => {
   const clearCustomPositions = useCallback(() => {
     setCustomPositions({});
     localStorage.removeItem(POSITION_STORAGE_KEY);
+    setLayoutVersion((v) => v + 1);
   }, []);
 
   const orderedCards = useMemo(() => {
@@ -230,7 +232,7 @@ const Dashboard = () => {
             const pos = resolvedPositions[card.id] ?? { x: 0, y: 0 };
             return (
               <motion.div
-                key={card.id}
+                key={`${card.id}-${layoutVersion}`}
                 drag
                 dragMomentum={false}
                 dragElastic={0}
