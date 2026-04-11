@@ -14,6 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_plan_history: {
+        Row: {
+          action_plan_id: string
+          changed_at: string
+          changed_by: string
+          field_changed: string
+          id: string
+          new_value: string | null
+          notes: string | null
+          old_value: string | null
+        }
+        Insert: {
+          action_plan_id: string
+          changed_at?: string
+          changed_by: string
+          field_changed: string
+          id?: string
+          new_value?: string | null
+          notes?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          action_plan_id?: string
+          changed_at?: string
+          changed_by?: string
+          field_changed?: string
+          id?: string
+          new_value?: string | null
+          notes?: string | null
+          old_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_plan_history_action_plan_id_fkey"
+            columns: ["action_plan_id"]
+            isOneToOne: false
+            referencedRelation: "action_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      action_plans: {
+        Row: {
+          acao_corretiva: string | null
+          analise_critica: string | null
+          area: string | null
+          arquivo_url: string | null
+          category: string
+          causa_raiz: string | null
+          created_at: string
+          created_by: string
+          facility_unit: string
+          id: string
+          notes: string | null
+          prazo: string | null
+          prioridade: Database["public"]["Enums"]["action_priority"]
+          reference_id: string | null
+          reference_name: string
+          responsavel: string | null
+          risco_financeiro: number | null
+          status_acao: Database["public"]["Enums"]["action_status"]
+          status_evidencia: Database["public"]["Enums"]["evidence_status"]
+          tipo_evidencia: string | null
+          tipo_problema: Database["public"]["Enums"]["problem_type"]
+          updated_at: string
+        }
+        Insert: {
+          acao_corretiva?: string | null
+          analise_critica?: string | null
+          area?: string | null
+          arquivo_url?: string | null
+          category?: string
+          causa_raiz?: string | null
+          created_at?: string
+          created_by: string
+          facility_unit: string
+          id?: string
+          notes?: string | null
+          prazo?: string | null
+          prioridade?: Database["public"]["Enums"]["action_priority"]
+          reference_id?: string | null
+          reference_name: string
+          responsavel?: string | null
+          risco_financeiro?: number | null
+          status_acao?: Database["public"]["Enums"]["action_status"]
+          status_evidencia?: Database["public"]["Enums"]["evidence_status"]
+          tipo_evidencia?: string | null
+          tipo_problema?: Database["public"]["Enums"]["problem_type"]
+          updated_at?: string
+        }
+        Update: {
+          acao_corretiva?: string | null
+          analise_critica?: string | null
+          area?: string | null
+          arquivo_url?: string | null
+          category?: string
+          causa_raiz?: string | null
+          created_at?: string
+          created_by?: string
+          facility_unit?: string
+          id?: string
+          notes?: string | null
+          prazo?: string | null
+          prioridade?: Database["public"]["Enums"]["action_priority"]
+          reference_id?: string | null
+          reference_name?: string
+          responsavel?: string | null
+          risco_financeiro?: number | null
+          status_acao?: Database["public"]["Enums"]["action_status"]
+          status_evidencia?: Database["public"]["Enums"]["evidence_status"]
+          tipo_evidencia?: string | null
+          tipo_problema?: Database["public"]["Enums"]["problem_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_plans_reference_id_fkey"
+            columns: ["reference_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bed_movements: {
         Row: {
           admissions: number
@@ -346,8 +470,18 @@ export type Database = {
       }
     }
     Enums: {
+      action_priority: "baixa" | "media" | "alta" | "critica"
+      action_status: "nao_iniciada" | "em_andamento" | "concluida" | "cancelada"
       app_role: "admin" | "gestor" | "analista" | "clinico" | "funcionario"
+      evidence_status: "pendente" | "enviada" | "validada" | "rejeitada"
       facility_unit: "Hospital Geral" | "UPA Norte" | "UBS Centro"
+      problem_type:
+        | "processo"
+        | "equipamento"
+        | "rh"
+        | "insumo"
+        | "infraestrutura"
+        | "outro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -475,8 +609,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      action_priority: ["baixa", "media", "alta", "critica"],
+      action_status: ["nao_iniciada", "em_andamento", "concluida", "cancelada"],
       app_role: ["admin", "gestor", "analista", "clinico", "funcionario"],
+      evidence_status: ["pendente", "enviada", "validada", "rejeitada"],
       facility_unit: ["Hospital Geral", "UPA Norte", "UBS Centro"],
+      problem_type: [
+        "processo",
+        "equipamento",
+        "rh",
+        "insumo",
+        "infraestrutura",
+        "outro",
+      ],
     },
   },
 } as const
