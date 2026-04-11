@@ -83,6 +83,12 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
   const [activities, setActivities] = useState<string[]>([]);
   const [newActivity, setNewActivity] = useState("");
   const [selectedContractId, setSelectedContractId] = useState("");
+  const [analiseCritica, setAnaliseCritica] = useState("");
+  const [causaRaiz, setCausaRaiz] = useState("");
+  const [acaoCorretiva, setAcaoCorretiva] = useState("");
+  const [responsavel, setResponsavel] = useState("");
+  const [prazoAcao, setPrazoAcao] = useState("");
+  const [statusAcao, setStatusAcao] = useState<EvidenceData["statusAcao"]>("Não iniciada");
 
   const contractsWithPdf = contracts.filter(c => c.pdfUrl);
 
