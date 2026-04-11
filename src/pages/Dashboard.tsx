@@ -60,6 +60,7 @@ const Dashboard = () => {
   const [cardOrder, setCardOrder] = useState<string[]>(defaultOrder);
   const [customPositions, setCustomPositions] = useState<Record<string, CardPosition>>({});
   const [containerWidth, setContainerWidth] = useState(960);
+  const [layoutVersion, setLayoutVersion] = useState(0);
 
   useEffect(() => {
     const update = () => {
