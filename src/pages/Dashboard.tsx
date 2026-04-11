@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import KpiCard from "@/components/KpiCard";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { motion, type PanInfo } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowDownAZ } from "lucide-react";
+import { ArrowDownAZ, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const MOCK_GOALS = [
@@ -32,80 +32,191 @@ const ALL_NAV_CARDS = [
   { id: "controle-rubrica", title: "Controle de Rubrica", description: "Gestão e acompanhamento de rubricas", route: "/controle-rubrica" },
 ];
 
-const STORAGE_KEY = "dashboard-card-order";
+type CardPosition = { x: number; y: number };
+
+type NavCardItem = (typeof ALL_NAV_CARDS)[number];
+
+const ORDER_STORAGE_KEY = "dashboard-card-order";
+const POSITION_STORAGE_KEY = "dashboard-card-positions";
+const CARD_HEIGHT = 144;
+const CARD_GAP = 24;
+const EXTRA_CANVAS_SPACE = CARD_HEIGHT + CARD_GAP;
+const DRAG_THRESHOLD = 6;
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { profile, isAdmin } = useAuth();
-  const dragItem = useRef<number | null>(null);
-  const dragOverItem = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const suppressClickUntil = useRef(0);
 
   const allowedCards = profile?.allowed_cards;
-  let baseCards = allowedCards && allowedCards.length > 0
-    ? ALL_NAV_CARDS.filter(card => allowedCards.includes(card.id))
-    : ALL_NAV_CARDS;
 
-  if (!isAdmin) {
-    baseCards = baseCards.filter(c => !FINANCIAL_CARD_IDS.includes(c.id));
-  }
+  const baseCards = useMemo(() => {
+    const scopedCards = allowedCards && allowedCards.length > 0
+      ? ALL_NAV_CARDS.filter((card) => allowedCards.includes(card.id))
+      : ALL_NAV_CARDS;
 
-  const [cardOrder, setCardOrder] = useState<string[]>([]);
+    return isAdmin
+      ? scopedCards
+      : scopedCards.filter((card) => !FINANCIAL_CARD_IDS.includes(card.id));
+  }, [allowedCards, isAdmin]);
+
+  const defaultOrder = useMemo(() => baseCards.map((card) => card.id), [baseCards]);
+
+  const [cardOrder, setCardOrder] = useState<string[]>(defaultOrder);
+  const [customPositions, setCustomPositions] = useState<Record<string, CardPosition>>({});
+  const [containerWidth, setContainerWidth] = useState(960);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as string[];
-        const validIds = baseCards.map(c => c.id);
-        const ordered = parsed.filter(id => validIds.includes(id));
-        const missing = validIds.filter(id => !ordered.includes(id));
-        setCardOrder([...ordered, ...missing]);
-        return;
-      }
-    } catch {}
-    setCardOrder(baseCards.map(c => c.id));
+    const updateContainerWidth = () => {
+      if (!containerRef.current) return;
+      setContainerWidth(containerRef.current.clientWidth);
+    };
+
+    updateContainerWidth();
+    window.addEventListener("resize", updateContainerWidth);
+
+    return () => window.removeEventListener("resize", updateContainerWidth);
   }, []);
 
-  const orderedCards = cardOrder
-    .map(id => baseCards.find(c => c.id === id))
-    .filter(Boolean) as typeof baseCards;
+  useEffect(() => {
+    const validIds = new Set(defaultOrder);
 
-  const missingCards = baseCards.filter(c => !cardOrder.includes(c.id));
-  const allOrderedCards = [...orderedCards, ...missingCards];
+    let nextOrder = defaultOrder;
+    try {
+      const savedOrder = localStorage.getItem(ORDER_STORAGE_KEY);
+      if (savedOrder) {
+        const parsedOrder = JSON.parse(savedOrder) as string[];
+        const orderedIds = parsedOrder.filter((id) => validIds.has(id));
+        const missingIds = defaultOrder.filter((id) => !orderedIds.includes(id));
+        nextOrder = [...orderedIds, ...missingIds];
+      }
+    } catch {
+      nextOrder = defaultOrder;
+    }
+    setCardOrder(nextOrder);
+
+    try {
+      const savedPositions = localStorage.getItem(POSITION_STORAGE_KEY);
+      if (!savedPositions) {
+        setCustomPositions({});
+        return;
+      }
+
+      const parsedPositions = JSON.parse(savedPositions) as Record<string, CardPosition>;
+      const sanitizedPositions = Object.fromEntries(
+        Object.entries(parsedPositions).filter(([id]) => validIds.has(id))
+      ) as Record<string, CardPosition>;
+
+      setCustomPositions(sanitizedPositions);
+    } catch {
+      setCustomPositions({});
+    }
+  }, [defaultOrder]);
 
   const saveOrder = useCallback((ids: string[]) => {
     setCardOrder(ids);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+    localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(ids));
   }, []);
 
-  const handleDragStart = (index: number) => {
-    dragItem.current = index;
-  };
+  const savePositions = useCallback((updater: (prev: Record<string, CardPosition>) => Record<string, CardPosition>) => {
+    setCustomPositions((prev) => {
+      const next = updater(prev);
+      localStorage.setItem(POSITION_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
-  const handleDragEnter = (index: number) => {
-    dragOverItem.current = index;
-  };
+  const clearCustomPositions = useCallback(() => {
+    setCustomPositions({});
+    localStorage.removeItem(POSITION_STORAGE_KEY);
+  }, []);
 
-  const handleDragEnd = () => {
-    if (dragItem.current === null || dragOverItem.current === null) return;
-    if (dragItem.current === dragOverItem.current) {
-      dragItem.current = null;
-      dragOverItem.current = null;
-      return;
-    }
-    const newOrder = [...allOrderedCards.map(c => c.id)];
-    const draggedId = newOrder[dragItem.current];
-    newOrder.splice(dragItem.current, 1);
-    newOrder.splice(dragOverItem.current, 0, draggedId);
-    saveOrder(newOrder);
-    dragItem.current = null;
-    dragOverItem.current = null;
-  };
+  const orderedCards = useMemo(() => {
+    const ordered = cardOrder
+      .map((id) => baseCards.find((card) => card.id === id))
+      .filter(Boolean) as NavCardItem[];
+
+    const missing = baseCards.filter((card) => !cardOrder.includes(card.id));
+    return [...ordered, ...missing];
+  }, [cardOrder, baseCards]);
+
+  const columns = containerWidth >= 1024 ? 3 : containerWidth >= 640 ? 2 : 1;
+  const cardWidth = Math.max(220, (containerWidth - CARD_GAP * (columns - 1)) / columns);
+
+  const layoutPositions = useMemo(() => {
+    const positions: Record<string, CardPosition> = {};
+
+    orderedCards.forEach((card, index) => {
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+
+      positions[card.id] = {
+        x: column * (cardWidth + CARD_GAP),
+        y: row * (CARD_HEIGHT + CARD_GAP),
+      };
+    });
+
+    return positions;
+  }, [orderedCards, columns, cardWidth]);
+
+  const resolvedPositions = useMemo(() => {
+    const positions: Record<string, CardPosition> = {};
+
+    orderedCards.forEach((card) => {
+      positions[card.id] = customPositions[card.id] ?? layoutPositions[card.id] ?? { x: 0, y: 0 };
+    });
+
+    return positions;
+  }, [orderedCards, customPositions, layoutPositions]);
+
+  const baseRows = Math.max(1, Math.ceil(orderedCards.length / columns));
+  const baseCanvasHeight = baseRows * CARD_HEIGHT + (baseRows - 1) * CARD_GAP;
+  const furthestCardY = orderedCards.reduce(
+    (maxY, card) => Math.max(maxY, resolvedPositions[card.id]?.y ?? 0),
+    0
+  );
+  const canvasHeight = Math.max(baseCanvasHeight, furthestCardY + CARD_HEIGHT + EXTRA_CANVAS_SPACE);
+
+  const handleCardClick = useCallback((route: string) => {
+    if (Date.now() < suppressClickUntil.current) return;
+    navigate(route);
+  }, [navigate]);
+
+  const handleDragEnd = useCallback((cardId: string, info: PanInfo) => {
+    const movedEnough = Math.abs(info.offset.x) > DRAG_THRESHOLD || Math.abs(info.offset.y) > DRAG_THRESHOLD;
+    if (!movedEnough) return;
+
+    suppressClickUntil.current = Date.now() + 220;
+
+    const currentPosition = resolvedPositions[cardId] ?? { x: 0, y: 0 };
+    const maxX = Math.max(0, containerWidth - cardWidth);
+    const maxY = Math.max(0, canvasHeight - CARD_HEIGHT);
+
+    const nextPosition = {
+      x: Math.min(Math.max(currentPosition.x + info.offset.x, 0), maxX),
+      y: Math.min(Math.max(currentPosition.y + info.offset.y, 0), maxY),
+    };
+
+    savePositions((prev) => ({
+      ...prev,
+      [cardId]: nextPosition,
+    }));
+  }, [resolvedPositions, containerWidth, cardWidth, canvasHeight, savePositions]);
 
   const autoOrganize = useCallback(() => {
-    const sorted = [...baseCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")).map(c => c.id);
+    const sorted = [...baseCards]
+      .sort((a, b) => a.title.localeCompare(b.title, "pt-BR"))
+      .map((card) => card.id);
+
     saveOrder(sorted);
-  }, [baseCards, saveOrder]);
+    clearCustomPositions();
+  }, [baseCards, saveOrder, clearCustomPositions]);
+
+  const resetLayout = useCallback(() => {
+    saveOrder(defaultOrder);
+    clearCustomPositions();
+  }, [defaultOrder, saveOrder, clearCustomPositions]);
 
   const totalRisk = MOCK_GOALS.reduce((s, g) => s + g.risk, 0);
   const goalsAtRisk = MOCK_GOALS.filter((g) => g.risk > 0).length;
@@ -122,67 +233,73 @@ const Dashboard = () => {
       <TopBar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {isAdmin && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-              onClick={() => navigate("/contratos")} className="cursor-pointer">
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} onClick={() => navigate("/contratos")} className="cursor-pointer">
               <KpiCard label="R$ em risco" value={`R$ ${(totalRisk / 1000).toFixed(1)}k`} status="critical" subtitle="Contrato vigente" />
             </motion.div>
           )}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            onClick={() => navigate("/metas")} className="cursor-pointer">
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} onClick={() => navigate("/metas")} className="cursor-pointer">
             <KpiCard label="Metas em risco" value={`${goalsAtRisk} de ${MOCK_GOALS.length}`} status="warning" subtitle="Abaixo do pactuado" />
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            onClick={() => navigate("/relatorios")} className="cursor-pointer">
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} onClick={() => navigate("/relatorios")} className="cursor-pointer">
             <KpiCard label="Atingimento médio" value={`${avgAttainment}%`} status={avgAttainment >= 90 ? "success" : avgAttainment >= 70 ? "warning" : "critical"} subtitle="Todas as metas" />
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            onClick={() => navigate("/evidencias")} className="cursor-pointer">
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} onClick={() => navigate("/evidencias")} className="cursor-pointer">
             <KpiCard label="Planos de ação pendentes" value={String(pendingEvidence)} status={pendingEvidence > 0 ? "warning" : "success"} subtitle="Ações a tratar" />
           </motion.div>
         </div>
 
-        {/* Auto Organize button */}
         <div className="flex justify-end gap-2 mb-3">
+          <Button variant="outline" size="sm" onClick={resetLayout} className="gap-2 text-xs">
+            <RotateCcw className="h-4 w-4" />
+            Resetar padrão
+          </Button>
           <Button variant="outline" size="sm" onClick={autoOrganize} className="gap-2 text-xs">
             <ArrowDownAZ className="h-4 w-4" />
             Auto Organizar
           </Button>
         </div>
 
-        {/* Navigation Cards - drag to reorder */}
-        <LayoutGroup>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {allOrderedCards.map((card, index) => (
+        <div
+          ref={containerRef}
+          className="relative w-full"
+          style={{ height: canvasHeight }}
+        >
+          {orderedCards.map((card) => {
+            const position = resolvedPositions[card.id] ?? { x: 0, y: 0 };
+
+            return (
               <motion.div
                 key={card.id}
-                layout
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                draggable
-                onDragStart={() => handleDragStart(index)}
-                onDragEnter={() => handleDragEnter(index)}
-                onDragEnd={handleDragEnd}
-                onDragOver={(e) => e.preventDefault()}
-                className="cursor-grab active:cursor-grabbing"
+                drag
+                dragMomentum={false}
+                dragElastic={0}
+                dragConstraints={containerRef}
+                initial={false}
+                animate={{ x: position.x, y: position.y }}
+                transition={{ type: "spring", stiffness: 320, damping: 28 }}
+                whileDrag={{ scale: 1.02, zIndex: 30 }}
+                onDragEnd={(_, info) => handleDragEnd(card.id, info)}
+                className="absolute left-0 top-0 cursor-grab active:cursor-grabbing touch-none"
+                style={{ width: cardWidth }}
               >
                 <NavCard
                   title={card.title}
                   description={card.description}
-                  onClick={() => navigate(card.route)}
+                  onClick={() => handleCardClick(card.route)}
                 />
               </motion.div>
-            ))}
-          </div>
-        </LayoutGroup>
+            );
+          })}
+        </div>
       </main>
     </div>
   );
 };
 
 const NavCard = ({ title, description, onClick }: { title: string; description: string; onClick: () => void }) => (
-  <button onClick={onClick} className="kpi-card text-left cursor-pointer group w-full">
+  <button onClick={onClick} className="kpi-card text-left cursor-pointer group w-full min-h-[144px] h-full select-none">
     <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
     <p className="text-sm text-muted-foreground mt-1">{description}</p>
   </button>
