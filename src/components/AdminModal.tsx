@@ -34,15 +34,10 @@ interface AdminModalProps {
 }
 
 const ALL_CARDS = [
-  { id: "contratos", label: "Contratos" },
   { id: "metas", label: "Metas e Indicadores" },
   { id: "evidencias", label: "Plano de Ação" },
-  { id: "relatorios", label: "Relatórios" },
-  { id: "admin", label: "Administração" },
   { id: "lancamento", label: "Lançamentos" },
   { id: "sau", label: "SAU" },
-  { id: "relatorio-assistencial", label: "Relatório Assistencial" },
-  { id: "controle-rubrica", label: "Controle de Rubrica" },
 ];
 
 const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }: AdminModalProps) => {

@@ -18,7 +18,7 @@ const MOCK_GOALS = [
   { id: "8", name: "Comissão de óbitos ativa", target: 1, current: 1, unit: "doc", type: "QLT" as const, risk: 0, trend: "stable" as const },
 ];
 
-const ADMIN_ONLY_CARD_IDS = ["contratos", "controle-rubrica", "admin", "relatorios", "risco"];
+const ADMIN_ONLY_CARD_IDS = ["contratos", "controle-rubrica", "admin", "relatorios", "relatorio-assistencial"];
 
 const ALL_NAV_CARDS = [
   { id: "contratos", title: "Contratos", description: "Gerir contratos, valores e glosas", route: "/contratos" },
