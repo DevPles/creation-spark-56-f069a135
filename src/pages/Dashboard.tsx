@@ -33,21 +33,18 @@ const ALL_NAV_CARDS = [
 ];
 
 type CardPosition = { x: number; y: number };
-
 type NavCardItem = (typeof ALL_NAV_CARDS)[number];
 
 const ORDER_STORAGE_KEY = "dashboard-card-order";
 const POSITION_STORAGE_KEY = "dashboard-card-positions";
-const CARD_HEIGHT = 144;
+const CARD_HEIGHT = 100;
 const CARD_GAP = 24;
-const EXTRA_CANVAS_SPACE = CARD_HEIGHT + CARD_GAP;
-const DRAG_THRESHOLD = 6;
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { profile, isAdmin } = useAuth();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const suppressClickUntil = useRef(0);
+  const isDragging = useRef(false);
 
   const allowedCards = profile?.allowed_cards;
 
@@ -55,10 +52,7 @@ const Dashboard = () => {
     const scopedCards = allowedCards && allowedCards.length > 0
       ? ALL_NAV_CARDS.filter((card) => allowedCards.includes(card.id))
       : ALL_NAV_CARDS;
-
-    return isAdmin
-      ? scopedCards
-      : scopedCards.filter((card) => !FINANCIAL_CARD_IDS.includes(card.id));
+    return isAdmin ? scopedCards : scopedCards.filter((card) => !FINANCIAL_CARD_IDS.includes(card.id));
   }, [allowedCards, isAdmin]);
 
   const defaultOrder = useMemo(() => baseCards.map((card) => card.id), [baseCards]);
@@ -68,50 +62,35 @@ const Dashboard = () => {
   const [containerWidth, setContainerWidth] = useState(960);
 
   useEffect(() => {
-    const updateContainerWidth = () => {
-      if (!containerRef.current) return;
-      setContainerWidth(containerRef.current.clientWidth);
+    const update = () => {
+      if (containerRef.current) setContainerWidth(containerRef.current.clientWidth);
     };
-
-    updateContainerWidth();
-    window.addEventListener("resize", updateContainerWidth);
-
-    return () => window.removeEventListener("resize", updateContainerWidth);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   useEffect(() => {
     const validIds = new Set(defaultOrder);
-
     let nextOrder = defaultOrder;
     try {
-      const savedOrder = localStorage.getItem(ORDER_STORAGE_KEY);
-      if (savedOrder) {
-        const parsedOrder = JSON.parse(savedOrder) as string[];
-        const orderedIds = parsedOrder.filter((id) => validIds.has(id));
-        const missingIds = defaultOrder.filter((id) => !orderedIds.includes(id));
-        nextOrder = [...orderedIds, ...missingIds];
+      const saved = localStorage.getItem(ORDER_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as string[];
+        const ordered = parsed.filter((id) => validIds.has(id));
+        const missing = defaultOrder.filter((id) => !ordered.includes(id));
+        nextOrder = [...ordered, ...missing];
       }
-    } catch {
-      nextOrder = defaultOrder;
-    }
+    } catch { /* */ }
     setCardOrder(nextOrder);
 
     try {
-      const savedPositions = localStorage.getItem(POSITION_STORAGE_KEY);
-      if (!savedPositions) {
-        setCustomPositions({});
-        return;
+      const saved = localStorage.getItem(POSITION_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Record<string, CardPosition>;
+        setCustomPositions(Object.fromEntries(Object.entries(parsed).filter(([id]) => validIds.has(id))));
       }
-
-      const parsedPositions = JSON.parse(savedPositions) as Record<string, CardPosition>;
-      const sanitizedPositions = Object.fromEntries(
-        Object.entries(parsedPositions).filter(([id]) => validIds.has(id))
-      ) as Record<string, CardPosition>;
-
-      setCustomPositions(sanitizedPositions);
-    } catch {
-      setCustomPositions({});
-    }
+    } catch { /* */ }
   }, [defaultOrder]);
 
   const saveOrder = useCallback((ids: string[]) => {
@@ -133,11 +112,8 @@ const Dashboard = () => {
   }, []);
 
   const orderedCards = useMemo(() => {
-    const ordered = cardOrder
-      .map((id) => baseCards.find((card) => card.id === id))
-      .filter(Boolean) as NavCardItem[];
-
-    const missing = baseCards.filter((card) => !cardOrder.includes(card.id));
+    const ordered = cardOrder.map((id) => baseCards.find((c) => c.id === id)).filter(Boolean) as NavCardItem[];
+    const missing = baseCards.filter((c) => !cardOrder.includes(c.id));
     return [...ordered, ...missing];
   }, [cardOrder, baseCards]);
 
@@ -145,70 +121,59 @@ const Dashboard = () => {
   const cardWidth = Math.max(220, (containerWidth - CARD_GAP * (columns - 1)) / columns);
 
   const layoutPositions = useMemo(() => {
-    const positions: Record<string, CardPosition> = {};
-
-    orderedCards.forEach((card, index) => {
-      const column = index % columns;
-      const row = Math.floor(index / columns);
-
-      positions[card.id] = {
-        x: column * (cardWidth + CARD_GAP),
-        y: row * (CARD_HEIGHT + CARD_GAP),
+    const pos: Record<string, CardPosition> = {};
+    orderedCards.forEach((card, i) => {
+      pos[card.id] = {
+        x: (i % columns) * (cardWidth + CARD_GAP),
+        y: Math.floor(i / columns) * (CARD_HEIGHT + CARD_GAP),
       };
     });
-
-    return positions;
+    return pos;
   }, [orderedCards, columns, cardWidth]);
 
   const resolvedPositions = useMemo(() => {
-    const positions: Record<string, CardPosition> = {};
-
+    const pos: Record<string, CardPosition> = {};
     orderedCards.forEach((card) => {
-      positions[card.id] = customPositions[card.id] ?? layoutPositions[card.id] ?? { x: 0, y: 0 };
+      pos[card.id] = customPositions[card.id] ?? layoutPositions[card.id] ?? { x: 0, y: 0 };
     });
-
-    return positions;
+    return pos;
   }, [orderedCards, customPositions, layoutPositions]);
 
   const baseRows = Math.max(1, Math.ceil(orderedCards.length / columns));
   const baseCanvasHeight = baseRows * CARD_HEIGHT + (baseRows - 1) * CARD_GAP;
-  const furthestCardY = orderedCards.reduce(
-    (maxY, card) => Math.max(maxY, resolvedPositions[card.id]?.y ?? 0),
-    0
-  );
-  const canvasHeight = Math.max(baseCanvasHeight, furthestCardY + CARD_HEIGHT + EXTRA_CANVAS_SPACE);
+  const furthestY = orderedCards.reduce((max, c) => Math.max(max, resolvedPositions[c.id]?.y ?? 0), 0);
+  const canvasHeight = Math.max(baseCanvasHeight, furthestY + CARD_HEIGHT + CARD_GAP);
 
-  const handleCardClick = useCallback((route: string) => {
-    if (Date.now() < suppressClickUntil.current) return;
-    navigate(route);
-  }, [navigate]);
+  const handleDragStart = useCallback(() => {
+    isDragging.current = true;
+  }, []);
 
   const handleDragEnd = useCallback((cardId: string, info: PanInfo) => {
-    const movedEnough = Math.abs(info.offset.x) > DRAG_THRESHOLD || Math.abs(info.offset.y) > DRAG_THRESHOLD;
-    if (!movedEnough) return;
+    // Keep isDragging true briefly to block the click
+    setTimeout(() => { isDragging.current = false; }, 200);
 
-    suppressClickUntil.current = Date.now() + 220;
+    if (Math.abs(info.offset.x) < 5 && Math.abs(info.offset.y) < 5) return;
 
-    const currentPosition = resolvedPositions[cardId] ?? { x: 0, y: 0 };
+    const cur = resolvedPositions[cardId] ?? { x: 0, y: 0 };
     const maxX = Math.max(0, containerWidth - cardWidth);
     const maxY = Math.max(0, canvasHeight - CARD_HEIGHT);
 
-    const nextPosition = {
-      x: Math.min(Math.max(currentPosition.x + info.offset.x, 0), maxX),
-      y: Math.min(Math.max(currentPosition.y + info.offset.y, 0), maxY),
-    };
-
     savePositions((prev) => ({
       ...prev,
-      [cardId]: nextPosition,
+      [cardId]: {
+        x: Math.min(Math.max(cur.x + info.offset.x, 0), maxX),
+        y: Math.min(Math.max(cur.y + info.offset.y, 0), maxY),
+      },
     }));
   }, [resolvedPositions, containerWidth, cardWidth, canvasHeight, savePositions]);
 
-  const autoOrganize = useCallback(() => {
-    const sorted = [...baseCards]
-      .sort((a, b) => a.title.localeCompare(b.title, "pt-BR"))
-      .map((card) => card.id);
+  const handleCardClick = useCallback((route: string) => {
+    if (isDragging.current) return;
+    navigate(route);
+  }, [navigate]);
 
+  const autoOrganize = useCallback(() => {
+    const sorted = [...baseCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")).map((c) => c.id);
     saveOrder(sorted);
     clearCustomPositions();
   }, [baseCards, saveOrder, clearCustomPositions]);
@@ -231,7 +196,6 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {isAdmin && (
@@ -261,14 +225,9 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        <div
-          ref={containerRef}
-          className="relative w-full"
-          style={{ height: canvasHeight }}
-        >
+        <div ref={containerRef} className="relative w-full" style={{ height: canvasHeight }}>
           {orderedCards.map((card) => {
-            const position = resolvedPositions[card.id] ?? { x: 0, y: 0 };
-
+            const pos = resolvedPositions[card.id] ?? { x: 0, y: 0 };
             return (
               <motion.div
                 key={card.id}
@@ -277,18 +236,17 @@ const Dashboard = () => {
                 dragElastic={0}
                 dragConstraints={containerRef}
                 initial={false}
-                animate={{ x: position.x, y: position.y }}
+                animate={{ x: pos.x, y: pos.y }}
                 transition={{ type: "spring", stiffness: 320, damping: 28 }}
-                whileDrag={{ scale: 1.02, zIndex: 30 }}
+                whileDrag={{ scale: 1.04, zIndex: 30, boxShadow: "0 8px 30px rgba(0,0,0,0.15)" }}
+                onDragStart={handleDragStart}
                 onDragEnd={(_, info) => handleDragEnd(card.id, info)}
                 className="absolute left-0 top-0 cursor-grab active:cursor-grabbing touch-none"
                 style={{ width: cardWidth }}
               >
-                <NavCard
-                  title={card.title}
-                  description={card.description}
-                  onClick={() => handleCardClick(card.route)}
-                />
+                <div onClick={() => handleCardClick(card.route)}>
+                  <NavCard title={card.title} description={card.description} />
+                </div>
               </motion.div>
             );
           })}
@@ -298,11 +256,11 @@ const Dashboard = () => {
   );
 };
 
-const NavCard = ({ title, description, onClick }: { title: string; description: string; onClick: () => void }) => (
-  <button onClick={onClick} className="kpi-card text-left cursor-pointer group w-full min-h-[144px] h-full select-none">
+const NavCard = ({ title, description }: { title: string; description: string }) => (
+  <div className="kpi-card text-left group w-full select-none">
     <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
     <p className="text-sm text-muted-foreground mt-1">{description}</p>
-  </button>
+  </div>
 );
 
 export default Dashboard;
