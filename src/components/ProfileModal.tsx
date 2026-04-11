@@ -15,8 +15,8 @@ interface ProfileModalProps {
 const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
   const { user, profile } = useAuth();
   const [name, setName] = useState("");
-  const [photo, setPhoto] = useState<string | undefined>(undefined);
-  const [currentPassword, setCurrentPassword] = useState("");
+  const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -25,8 +25,8 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
   useEffect(() => {
     if (profile && open) {
       setName(profile.name);
-      setPhoto(profile.avatar_url || undefined);
-      setCurrentPassword("");
+      setPhotoPreview(profile.avatar_url || undefined);
+      setPhotoFile(null);
       setNewPassword("");
     }
   }, [profile, open]);
@@ -36,8 +36,9 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) { toast.error("Arquivo muito grande (máx 2MB)"); return; }
     if (!["image/jpeg", "image/png"].includes(file.type)) { toast.error("Use JPG ou PNG"); return; }
+    setPhotoFile(file);
     const reader = new FileReader();
-    reader.onload = (ev) => { setPhoto(ev.target?.result as string); };
+    reader.onload = (ev) => { setPhotoPreview(ev.target?.result as string); };
     reader.readAsDataURL(file);
   };
 
@@ -45,10 +46,32 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
     if (!name.trim()) { toast.error("Preencha o nome"); return; }
     if (!user) return;
     setSaving(true);
+
+    let avatarUrl = profile?.avatar_url || null;
+
+    // Upload photo to storage if changed
+    if (photoFile) {
+      const ext = photoFile.name.split(".").pop() || "jpg";
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, photoFile, { upsert: true });
+
+      if (uploadError) {
+        toast.error("Erro ao enviar foto", { description: uploadError.message });
+        setSaving(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      avatarUrl = urlData.publicUrl + "?t=" + Date.now(); // cache bust
+    }
+
     const { error } = await supabase
       .from("profiles")
-      .update({ name: name.trim(), avatar_url: photo || null })
+      .update({ name: name.trim(), avatar_url: avatarUrl })
       .eq("id", user.id);
+
     setSaving(false);
     if (error) {
       toast.error("Erro ao salvar perfil", { description: error.message });
@@ -70,7 +93,6 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
       return;
     }
     toast.success("Senha alterada com sucesso");
-    setCurrentPassword("");
     setNewPassword("");
   };
 
@@ -93,8 +115,8 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
               onClick={() => fileInputRef.current?.click()}
               className="relative w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden group shrink-0 border-2 border-border hover:border-primary transition-colors"
             >
-              {photo ? (
-                <img src={photo} alt="Avatar" className="w-full h-full object-cover" />
+              {photoPreview ? (
+                <img src={photoPreview} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-lg font-semibold text-muted-foreground">{initials}</span>
               )}
