@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef, type DragEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import KpiCard from "@/components/KpiCard";
 import { motion, LayoutGroup } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowDownAZ, RotateCcw, GripVertical } from "lucide-react";
+import { ArrowDownAZ, Check, GripVertical, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const MOCK_GOALS = [
@@ -41,18 +41,21 @@ const Dashboard = () => {
   const dragOverItem = useRef<number | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isOrganizeMode, setIsOrganizeMode] = useState(false);
 
   const allowedCards = profile?.allowed_cards;
 
   const baseCards = useMemo(() => {
     const scoped = allowedCards && allowedCards.length > 0
-      ? ALL_NAV_CARDS.filter((c) => allowedCards.includes(c.id))
+      ? ALL_NAV_CARDS.filter((card) => allowedCards.includes(card.id))
       : ALL_NAV_CARDS;
-    return isAdmin ? scoped : scoped.filter((c) => !FINANCIAL_CARD_IDS.includes(c.id));
+
+    return isAdmin
+      ? scoped
+      : scoped.filter((card) => !FINANCIAL_CARD_IDS.includes(card.id));
   }, [allowedCards, isAdmin]);
 
-  const defaultOrder = useMemo(() => baseCards.map((c) => c.id), [baseCards]);
-
+  const defaultOrder = useMemo(() => baseCards.map((card) => card.id), [baseCards]);
   const [cardOrder, setCardOrder] = useState<string[]>(defaultOrder);
 
   useEffect(() => {
@@ -66,13 +69,19 @@ const Dashboard = () => {
         setCardOrder([...ordered, ...missing]);
         return;
       }
-    } catch { /* */ }
+    } catch {
+      // no-op
+    }
+
     setCardOrder(defaultOrder);
   }, [defaultOrder]);
 
   const orderedCards = useMemo(() => {
-    const ordered = cardOrder.map((id) => baseCards.find((c) => c.id === id)).filter(Boolean) as typeof baseCards;
-    const missing = baseCards.filter((c) => !cardOrder.includes(c.id));
+    const ordered = cardOrder
+      .map((id) => baseCards.find((card) => card.id === id))
+      .filter(Boolean) as typeof baseCards;
+
+    const missing = baseCards.filter((card) => !cardOrder.includes(card.id));
     return [...ordered, ...missing];
   }, [cardOrder, baseCards]);
 
@@ -81,83 +90,100 @@ const Dashboard = () => {
     localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(ids));
   }, []);
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
+  const resetDragState = useCallback(() => {
+    setDraggingIndex(null);
+    setDragOverIndex(null);
+    dragItem.current = null;
+    dragOverItem.current = null;
+  }, []);
+
+  const handleDragStart = useCallback((event: DragEvent<HTMLDivElement>, index: number) => {
+    if (!isOrganizeMode) return;
+
     dragItem.current = index;
     setDraggingIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-    // Make the drag image semi-transparent
-    if (e.currentTarget instanceof HTMLElement) {
-      e.dataTransfer.setDragImage(e.currentTarget, e.currentTarget.offsetWidth / 2, 20);
-    }
-  };
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", orderedCards[index]?.id ?? "");
+  }, [isOrganizeMode, orderedCards]);
 
-  const handleDragEnter = (index: number) => {
+  const handleDragEnter = useCallback((index: number) => {
+    if (!isOrganizeMode || dragItem.current === null || dragItem.current === index) return;
+
     dragOverItem.current = index;
     setDragOverIndex(index);
-  };
+  }, [isOrganizeMode]);
 
-  const handleDragLeave = () => {
-    setDragOverIndex(null);
-  };
+  const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
+    if (!isOrganizeMode) return;
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, [isOrganizeMode]);
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) {
-      setDraggingIndex(null);
-      setDragOverIndex(null);
-      dragItem.current = null;
-      dragOverItem.current = null;
+  const handleDrop = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    if (
+      !isOrganizeMode ||
+      dragItem.current === null ||
+      dragOverItem.current === null ||
+      dragItem.current === dragOverItem.current
+    ) {
+      resetDragState();
       return;
     }
 
-    const newOrder = orderedCards.map((c) => c.id);
-    const draggedId = newOrder[dragItem.current];
-    newOrder.splice(dragItem.current, 1);
-    newOrder.splice(dragOverItem.current, 0, draggedId);
-    saveOrder(newOrder);
+    const nextOrder = orderedCards.map((card) => card.id);
+    const draggedId = nextOrder[dragItem.current];
 
-    setDraggingIndex(null);
-    setDragOverIndex(null);
-    dragItem.current = null;
-    dragOverItem.current = null;
-  };
+    nextOrder.splice(dragItem.current, 1);
+    nextOrder.splice(dragOverItem.current, 0, draggedId);
 
-  const handleDragEnd = () => {
-    setDraggingIndex(null);
-    setDragOverIndex(null);
-    dragItem.current = null;
-    dragOverItem.current = null;
-  };
+    saveOrder(nextOrder);
+    resetDragState();
+  }, [isOrganizeMode, orderedCards, resetDragState, saveOrder]);
+
+  const handleDragEnd = useCallback(() => {
+    resetDragState();
+  }, [resetDragState]);
+
+  const toggleOrganizeMode = useCallback(() => {
+    setIsOrganizeMode((prev) => !prev);
+    resetDragState();
+  }, [resetDragState]);
 
   const autoOrganize = useCallback(() => {
-    const sorted = [...baseCards].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")).map((c) => c.id);
+    const sorted = [...baseCards]
+      .sort((a, b) => a.title.localeCompare(b.title, "pt-BR"))
+      .map((card) => card.id);
+
     saveOrder(sorted);
-  }, [baseCards, saveOrder]);
+    resetDragState();
+  }, [baseCards, resetDragState, saveOrder]);
 
   const resetLayout = useCallback(() => {
     saveOrder(defaultOrder);
-  }, [defaultOrder, saveOrder]);
+    resetDragState();
+  }, [defaultOrder, resetDragState, saveOrder]);
 
-  const totalRisk = MOCK_GOALS.reduce((s, g) => s + g.risk, 0);
-  const goalsAtRisk = MOCK_GOALS.filter((g) => g.risk > 0).length;
+  const totalRisk = MOCK_GOALS.reduce((sum, goal) => sum + goal.risk, 0);
+  const goalsAtRisk = MOCK_GOALS.filter((goal) => goal.risk > 0).length;
   const avgAttainment = Math.round(
-    MOCK_GOALS.reduce((s, g) => {
-      const att = g.type === "DOC" ? (g.current >= g.target ? 100 : 0) : Math.min(100, (g.current / g.target) * 100);
-      return s + att;
+    MOCK_GOALS.reduce((sum, goal) => {
+      const attainment = goal.type === "DOC"
+        ? (goal.current >= goal.target ? 100 : 0)
+        : Math.min(100, (goal.current / goal.target) * 100);
+
+      return sum + attainment;
     }, 0) / MOCK_GOALS.length
   );
-  const pendingEvidence = MOCK_GOALS.filter((g) => g.type === "DOC" && g.current < g.target).length;
+  const pendingEvidence = MOCK_GOALS.filter((goal) => goal.type === "DOC" && goal.current < goal.target).length;
 
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {isAdmin && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} onClick={() => navigate("/contratos")} className="cursor-pointer">
@@ -175,47 +201,62 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
-        {/* Controls */}
-        <div className="flex justify-end gap-2 mb-3">
-          <Button variant="outline" size="sm" onClick={resetLayout} className="gap-2 text-xs">
-            <RotateCcw className="h-4 w-4" />
-            Resetar padrão
-          </Button>
-          <Button variant="outline" size="sm" onClick={autoOrganize} className="gap-2 text-xs">
-            <ArrowDownAZ className="h-4 w-4" />
-            Auto Organizar
-          </Button>
+        <div className="flex flex-col gap-3 mb-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+            {isOrganizeMode
+              ? "Modo organização ativo: arraste um card e solte sobre outro para trocar de posição."
+              : "Clique em Organizar cards para ativar o arraste sem misturar com a navegação."}
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant={isOrganizeMode ? "default" : "outline"} size="sm" onClick={toggleOrganizeMode} className="gap-2 text-xs">
+              {isOrganizeMode ? <Check className="h-4 w-4" /> : <GripVertical className="h-4 w-4" />}
+              {isOrganizeMode ? "Concluir organização" : "Organizar cards"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={resetLayout} className="gap-2 text-xs">
+              <RotateCcw className="h-4 w-4" />
+              Resetar padrão
+            </Button>
+            <Button variant="outline" size="sm" onClick={autoOrganize} className="gap-2 text-xs">
+              <ArrowDownAZ className="h-4 w-4" />
+              Auto Organizar
+            </Button>
+          </div>
         </div>
 
-        {/* Navigation Cards with drag-to-reorder */}
         <LayoutGroup>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {orderedCards.map((card, index) => (
-              <motion.div
+              <div
                 key={card.id}
-                layout
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                draggable
-                onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, index)}
+                draggable={isOrganizeMode}
+                onDragStart={(event) => handleDragStart(event, index)}
                 onDragEnter={() => handleDragEnter(index)}
-                onDragLeave={handleDragLeave}
-                onDragOver={(e) => handleDragOver(e as unknown as React.DragEvent)}
-                onDrop={(e) => handleDrop(e as unknown as React.DragEvent)}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
                 onDragEnd={handleDragEnd}
                 className={`transition-all duration-150 ${
-                  draggingIndex === index ? "opacity-40 scale-95" : ""
+                  isOrganizeMode ? "cursor-grab active:cursor-grabbing" : ""
+                } ${
+                  draggingIndex === index ? "opacity-45 scale-[0.98]" : ""
                 } ${
                   dragOverIndex === index && draggingIndex !== index
-                    ? "ring-2 ring-primary/40 ring-offset-2 scale-[1.02]"
+                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
                     : ""
                 }`}
               >
-                <NavCard
-                  title={card.title}
-                  description={card.description}
-                  onClick={() => navigate(card.route)}
-                />
-              </motion.div>
+                <motion.div
+                  layout
+                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                >
+                  <NavCard
+                    title={card.title}
+                    description={card.description}
+                    onClick={() => navigate(card.route)}
+                    isOrganizeMode={isOrganizeMode}
+                  />
+                </motion.div>
+              </div>
             ))}
           </div>
         </LayoutGroup>
@@ -224,15 +265,34 @@ const Dashboard = () => {
   );
 };
 
-const NavCard = ({ title, description, onClick }: { title: string; description: string; onClick: () => void }) => (
+interface NavCardProps {
+  title: string;
+  description: string;
+  onClick: () => void;
+  isOrganizeMode: boolean;
+}
+
+const NavCard = ({ title, description, onClick, isOrganizeMode }: NavCardProps) => (
   <div
-    onClick={onClick}
-    className="kpi-card text-left cursor-pointer group w-full select-none flex items-start gap-3"
+    onClick={() => {
+      if (!isOrganizeMode) onClick();
+    }}
+    className={`kpi-card group w-full select-none text-left transition-all ${
+      isOrganizeMode ? "border-primary/20" : "cursor-pointer"
+    }`}
   >
-    <GripVertical className="h-4 w-4 mt-0.5 text-muted-foreground/40 shrink-0 cursor-grab" />
-    <div className="flex-1 min-w-0">
-      <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
-      <p className="text-sm text-muted-foreground mt-1">{description}</p>
+    <div className="flex items-start gap-3">
+      <div className={`shrink-0 rounded-full p-1 ${isOrganizeMode ? "bg-muted text-foreground" : "text-muted-foreground/40"}`}>
+        <GripVertical className={`h-4 w-4 ${isOrganizeMode ? "opacity-100" : "opacity-50 group-hover:opacity-80"}`} />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
+          {isOrganizeMode && <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Arraste</span>}
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      </div>
     </div>
   </div>
 );
