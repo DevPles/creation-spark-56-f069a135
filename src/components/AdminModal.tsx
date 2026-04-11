@@ -42,6 +42,7 @@ const ALL_CARDS = [
   { id: "sau", label: "SAU" },
   { id: "relatorio-assistencial", label: "Relatório Assistencial" },
   { id: "controle-rubrica", label: "Controle de Rubrica" },
+  { id: "admin", label: "Administração" },
 ];
 
 const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }: AdminModalProps) => {
