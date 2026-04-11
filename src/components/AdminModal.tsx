@@ -58,6 +58,8 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
 
   const [newPassword, setNewPassword] = useState("");
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
 
   const nonAdminUsers = users.filter(u => u.role !== "Administrador");
   const selectedOtherUser = nonAdminUsers.find(u => u.id === selectedUserId);
@@ -79,7 +81,7 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
 
   useEffect(() => {
     if (selectedOtherUser) {
-      const loadCards = async () => {
+      const loadUserData = async () => {
         const { data } = await supabase
           .from("profiles")
           .select("allowed_cards")
@@ -90,8 +92,9 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
         } else {
           setVisibleCards(ALL_CARDS.map(c => c.id));
         }
+        setNewEmail(selectedOtherUser.email);
       };
-      loadCards();
+      loadUserData();
     }
   }, [selectedUserId]);
 
@@ -157,8 +160,22 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
     setNewPassword("");
   };
 
-  const initials = name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
+  const handleChangeEmail = async () => {
+    if (!selectedOtherUser) { toast.error("Selecione um usuario"); return; }
+    if (!newEmail || !newEmail.includes("@")) { toast.error("Digite um e-mail valido"); return; }
+    setSavingEmail(true);
+    const { data, error } = await supabase.functions.invoke("create-admin", {
+      body: { action: "update-email", userId: selectedOtherUser.id, newEmail },
+    });
+    setSavingEmail(false);
+    if (error || data?.error) {
+      toast.error("Erro ao alterar e-mail", { description: data?.error || error?.message });
+      return;
+    }
+    toast.success("E-mail alterado", { description: `E-mail de ${selectedOtherUser.name} atualizado.` });
+  };
 
+  const initials = name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -235,6 +252,20 @@ const AdminModal = ({ user, users, open, onOpenChange, onSave, onSaveOtherUser }
                 </div>
                 <Button className="w-full mt-2" onClick={handleSavePermissions} disabled={savingPermissions}>
                   {savingPermissions ? "Salvando..." : "Salvar permissoes"}
+                </Button>
+              </div>
+
+              <div className="border border-border rounded-lg p-4 space-y-3">
+                <Label className="text-sm font-semibold">E-mail</Label>
+                <p className="text-[10px] text-muted-foreground -mt-1">Alterar e-mail de {selectedOtherUser.name}</p>
+                <Input
+                  type="email"
+                  placeholder="novo@email.com"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                />
+                <Button variant="outline" className="w-full" onClick={handleChangeEmail} disabled={savingEmail}>
+                  {savingEmail ? "Salvando..." : "Alterar e-mail"}
                 </Button>
               </div>
 

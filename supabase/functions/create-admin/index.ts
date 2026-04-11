@@ -18,6 +18,25 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
+    // ── Update email ──
+    if (action === "update-email") {
+      const { userId, newEmail } = body;
+      if (!userId || !newEmail) {
+        return new Response(JSON.stringify({ error: "userId e newEmail obrigatorios" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { email: newEmail, email_confirm: true });
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ── Reset password ──
     if (action === "reset-password") {
       const { userId, newPassword } = body;
