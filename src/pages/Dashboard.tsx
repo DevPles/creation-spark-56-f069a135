@@ -274,13 +274,8 @@ interface NavCardProps {
 
 const NavCard = ({ title, description }: NavCardProps) => (
   <div className="kpi-card group w-full cursor-pointer text-left">
-    <div className="flex items-start gap-3">
-      <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground/70" />
-      <div className="min-w-0 flex-1">
-        <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      </div>
-    </div>
+    <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
+    <p className="mt-1 text-sm text-muted-foreground">{description}</p>
   </div>
 );
 
