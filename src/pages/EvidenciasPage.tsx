@@ -123,8 +123,8 @@ const EvidenciasPage = () => {
         </Button>
 
         <PageHeader
-          title="Evidências"
-          subtitle="Upload e validação de documentos comprobatórios"
+          title="Plano de Ação"
+          subtitle="Análise crítica, ações corretivas e evidências comprobatórias"
           selectedUnit={selectedUnit}
           onUnitChange={setSelectedUnit}
           action={<Button onClick={handleNew}>Nova evidência</Button>}

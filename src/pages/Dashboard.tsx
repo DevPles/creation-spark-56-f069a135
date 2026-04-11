@@ -23,7 +23,7 @@ const FINANCIAL_CARD_IDS = ["contratos", "controle-rubrica"];
 const ALL_NAV_CARDS = [
   { id: "contratos", title: "Contratos", description: "Gerir contratos, valores e glosas", route: "/contratos" },
   { id: "metas", title: "Metas e indicadores", description: "Detalhamento e projeções por meta", route: "/metas" },
-  { id: "evidencias", title: "Evidências", description: "Upload e validação de documentos", route: "/evidencias" },
+  { id: "evidencias", title: "Plano de Ação", description: "Análise crítica, ações corretivas e evidências", route: "/evidencias" },
   { id: "relatorios", title: "Relatórios", description: "Gerar PDF consolidado por período", route: "/relatorios" },
   { id: "admin", title: "Administração", description: "Usuários, perfis e permissões", route: "/admin" },
   { id: "lancamento", title: "Lançamentos", description: "Lançamento de metas e rubricas", route: "/lancamento" },

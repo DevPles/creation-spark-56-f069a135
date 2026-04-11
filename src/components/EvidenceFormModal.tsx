@@ -35,6 +35,13 @@ export interface EvidenceData {
   activities?: string[];
   module?: string;
   contractId?: string;
+  // Action plan fields
+  analiseCritica?: string;
+  causaRaiz?: string;
+  acaoCorretiva?: string;
+  responsavel?: string;
+  prazoAcao?: string;
+  statusAcao?: "Não iniciada" | "Em andamento" | "Concluída";
 }
 
 interface EvidenceFormModalProps {
