@@ -51,10 +51,11 @@ const TopBar = () => {
                 <p className="text-sm font-medium text-foreground">{profile?.name || user?.email}</p>
                 <p className="text-xs text-muted-foreground">{profile?.facility_unit}</p>
               </div>
-              <DropdownMenuItem onClick={() => navigate("/admin")}>Meu perfil</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setProfileOpen(true)}>Meu perfil</DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut}>Sair</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <ProfileModal open={profileOpen} onOpenChange={setProfileOpen} />
         </div>
       </div>
     </header>
