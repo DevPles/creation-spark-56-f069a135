@@ -15,21 +15,24 @@ interface ProfileModalProps {
 const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
   const { user, profile } = useAuth();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (profile && open) {
-      setName(profile.name);
-      setPhotoPreview(profile.avatar_url || undefined);
+    if (open) {
+      setName(profile?.name || "");
+      setEmail(user?.email || "");
+      setPhotoPreview(profile?.avatar_url || undefined);
       setPhotoFile(null);
       setNewPassword("");
     }
-  }, [profile, open]);
+  }, [profile, user, open]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,7 +52,6 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
 
     let avatarUrl = profile?.avatar_url || null;
 
-    // Upload photo to storage if changed
     if (photoFile) {
       const ext = photoFile.name.split(".").pop() || "jpg";
       const path = `${user.id}/avatar.${ext}`;
@@ -64,7 +66,7 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
       }
 
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-      avatarUrl = urlData.publicUrl + "?t=" + Date.now(); // cache bust
+      avatarUrl = urlData.publicUrl + "?t=" + Date.now();
     }
 
     const { error } = await supabase
@@ -78,6 +80,21 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
       return;
     }
     toast.success("Perfil atualizado");
+  };
+
+  const handleChangeEmail = async () => {
+    if (!email.trim() || !user) return;
+    if (email.trim() === user.email) { toast.info("E-mail não foi alterado"); return; }
+    setSavingEmail(true);
+    const { data, error } = await supabase.functions.invoke("create-admin", {
+      body: { action: "update-email", userId: user.id, newEmail: email.trim() },
+    });
+    setSavingEmail(false);
+    if (error || data?.error) {
+      toast.error("Erro ao alterar e-mail", { description: data?.error || error?.message });
+      return;
+    }
+    toast.success("E-mail atualizado com sucesso");
   };
 
   const handleChangePassword = async () => {
@@ -137,16 +154,18 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" />
           </div>
 
-          {/* Email (read-only) */}
-          <div className="space-y-2">
-            <Label>E-mail</Label>
-            <Input value={user?.email || ""} disabled />
-            <p className="text-[10px] text-muted-foreground">O e-mail não pode ser alterado.</p>
-          </div>
-
           <Button className="w-full" onClick={handleSaveProfile} disabled={saving}>
             {saving ? "Salvando..." : "Salvar perfil"}
           </Button>
+
+          {/* Email */}
+          <div className="border border-border rounded-lg p-4 space-y-3">
+            <Label className="text-sm font-semibold">E-mail</Label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
+            <Button variant="outline" className="w-full" onClick={handleChangeEmail} disabled={savingEmail}>
+              {savingEmail ? "Salvando..." : "Alterar e-mail"}
+            </Button>
+          </div>
 
           {/* Password */}
           <div className="border border-border rounded-lg p-4 space-y-3">
