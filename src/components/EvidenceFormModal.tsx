@@ -154,6 +154,12 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
       activities: activities.length > 0 ? activities : undefined,
       module: category === "relatorio_assistencial" ? "relatorio" : "evidencias",
       contractId: category === "relatorio_assistencial" ? selectedContractId : undefined,
+      analiseCritica: analiseCritica || undefined,
+      causaRaiz: causaRaiz || undefined,
+      acaoCorretiva: acaoCorretiva || undefined,
+      responsavel: responsavel || undefined,
+      prazoAcao: prazoAcao || undefined,
+      statusAcao,
     };
     onSave(data);
     onOpenChange(false);
