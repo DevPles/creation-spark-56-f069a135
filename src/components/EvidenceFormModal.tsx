@@ -103,6 +103,12 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
       setNotes(evidence.notes);
       setActivities(evidence.activities || []);
       setSelectedContractId(evidence.contractId || "");
+      setAnaliseCritica(evidence.analiseCritica || "");
+      setCausaRaiz(evidence.causaRaiz || "");
+      setAcaoCorretiva(evidence.acaoCorretiva || "");
+      setResponsavel(evidence.responsavel || "");
+      setPrazoAcao(evidence.prazoAcao || "");
+      setStatusAcao(evidence.statusAcao || "Não iniciada");
     } else if (isNew) {
       setCategory("meta");
       setGoalName(goalNames[0] || "");
@@ -113,6 +119,12 @@ const EvidenceFormModal = ({ evidence, open, onOpenChange, onSave, isNew = false
       setNotes("");
       setActivities([]);
       setSelectedContractId("");
+      setAnaliseCritica("");
+      setCausaRaiz("");
+      setAcaoCorretiva("");
+      setResponsavel("");
+      setPrazoAcao("");
+      setStatusAcao("Não iniciada");
     }
   }, [evidence, isNew, open]);
 
