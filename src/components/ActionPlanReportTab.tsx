@@ -225,79 +225,39 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       });
       y += 26;
 
-      // Summary tables: by status, priority, type
-      addNewPageIfNeeded(50);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text("Distribuicao por Status", margin, y);
-      y += 4;
+      // ═══ Summary tables ═══
+      const tableStyles = {
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: [215, 218, 225] as [number, number, number], lineWidth: 0.15 },
+        headStyles: { fillColor: PRIMARY, textColor: WHITE, fontStyle: "bold" as const, fontSize: 7.5 },
+        alternateRowStyles: { fillColor: [246, 248, 252] as [number, number, number] },
+      };
 
+      drawSectionTitle("Distribuicao por Status");
       const statusData = Object.entries(
         filtered.reduce((acc, p) => { acc[p.status_acao] = (acc[p.status_acao] || 0) + 1; return acc; }, {} as Record<string, number>)
       ).map(([k, v]) => [STATUS_LABELS[k] || k, `${v}`, `${total > 0 ? ((v / total) * 100).toFixed(1) : 0}%`]);
+      autoTable(doc, { startY: y, head: [["Status", "Quantidade", "Percentual"]], body: statusData, ...tableStyles });
+      y = (doc as any).lastAutoTable.finalY + 6;
 
-      autoTable(doc, {
-        startY: y,
-        head: [["Status", "Quantidade", "Percentual"]],
-        body: statusData,
-        margin: { left: margin, right: margin },
-        styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
-        headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [248, 249, 252] },
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-
-      // By priority
-      addNewPageIfNeeded(40);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text("Distribuicao por Prioridade", margin, y);
-      y += 4;
-
+      drawSectionTitle("Distribuicao por Prioridade");
       const prioData = Object.entries(
         filtered.reduce((acc, p) => { acc[p.prioridade] = (acc[p.prioridade] || 0) + 1; return acc; }, {} as Record<string, number>)
       ).map(([k, v]) => [PRIORIDADE_LABELS[k] || k, `${v}`, `${total > 0 ? ((v / total) * 100).toFixed(1) : 0}%`]);
+      autoTable(doc, { startY: y, head: [["Prioridade", "Quantidade", "Percentual"]], body: prioData, ...tableStyles });
+      y = (doc as any).lastAutoTable.finalY + 6;
 
-      autoTable(doc, {
-        startY: y,
-        head: [["Prioridade", "Quantidade", "Percentual"]],
-        body: prioData,
-        margin: { left: margin, right: margin },
-        styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
-        headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [248, 249, 252] },
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-
-      // By type
-      addNewPageIfNeeded(40);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text("Distribuicao por Tipo de Problema", margin, y);
-      y += 4;
-
+      drawSectionTitle("Distribuicao por Tipo de Problema");
       const tipoData = Object.entries(
         filtered.reduce((acc, p) => { acc[p.tipo_problema] = (acc[p.tipo_problema] || 0) + 1; return acc; }, {} as Record<string, number>)
       ).map(([k, v]) => [TIPO_LABELS[k] || k, `${v}`, `${total > 0 ? ((v / total) * 100).toFixed(1) : 0}%`]);
-
-      autoTable(doc, {
-        startY: y,
-        head: [["Tipo de Problema", "Quantidade", "Percentual"]],
-        body: tipoData,
-        margin: { left: margin, right: margin },
-        styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
-        headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [248, 249, 252] },
-      });
+      autoTable(doc, { startY: y, head: [["Tipo de Problema", "Quantidade", "Percentual"]], body: tipoData, ...tableStyles });
       y = (doc as any).lastAutoTable.finalY + 8;
 
       // ═══════════════════════════════════════════════
       // PARETO CHART — Incidência por Tipo de Problema
       // ═══════════════════════════════════════════════
-      doc.addPage();
+      addNewPageIfNeeded(110);
       y = margin;
       drawPageHeader();
 
