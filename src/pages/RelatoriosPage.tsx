@@ -476,6 +476,7 @@ const RelatoriosPage = () => {
   // DB data
   const [dbGoals, setDbGoals] = useState<any[]>([]);
   const [dbEntries, setDbEntries] = useState<any[]>([]);
+  const [dbRubricaEntries, setDbRubricaEntries] = useState<any[]>([]);
 
   // Contract & comparison
   const [selectedContractId, setSelectedContractId] = useState("");
