@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { useContracts } from "@/contexts/ContractsContext";
 import RubricaFormModal from "@/components/RubricaFormModal";
 import RiskModal from "@/components/RiskModal";
 import { ContractData } from "@/components/contract/types";
-import { MONTHS } from "@/data/rubricaData";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const RISK_DATA = [
