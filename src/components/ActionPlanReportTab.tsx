@@ -886,22 +886,43 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
         </p>
         <div className="flex flex-wrap items-end gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Data inicial</Label>
-            <Input
-              type="date"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className="w-40 h-9 text-xs"
-            />
+            <Label className="text-xs text-muted-foreground">Unidade</Label>
+            <Select value={reportUnit} onValueChange={setReportUnit}>
+              <SelectTrigger className="w-48 h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableUnits.length > 1 && <SelectItem value="Todas as unidades">Todas as unidades</SelectItem>}
+                {availableUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Data final</Label>
-            <Input
-              type="date"
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              className="w-40 h-9 text-xs"
-            />
+            <Label className="text-xs text-muted-foreground">Período</Label>
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger className="w-44 h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PERIOD_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Plano de ação</Label>
+            <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+              <SelectTrigger className="w-56 h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os planos ({plansForSelection.length})</SelectItem>
+                {plansForSelection.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.reference_name.length > 35 ? p.reference_name.substring(0, 32) + "..." : p.reference_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button onClick={generatePdfReport} disabled={loading || total === 0} size="sm">
             {loading ? "Gerando PDF..." : "Gerar relatório PDF"}
