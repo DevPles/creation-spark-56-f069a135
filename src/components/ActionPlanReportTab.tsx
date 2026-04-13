@@ -258,18 +258,8 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       // PARETO CHART — Incidência por Tipo de Problema
       // ═══════════════════════════════════════════════
       addNewPageIfNeeded(110);
-      y = margin;
-      drawPageHeader();
 
-      doc.setFontSize(13);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.text("Diagrama de Pareto - Incidencia por Tipo de Problema", margin, y);
-      y += 3;
-      doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, W - margin, y);
-      y += 10;
+      drawSectionTitle("Diagrama de Pareto — Incidencia por Tipo de Problema");
 
       // Build sorted data
       const paretoRaw = filtered.reduce((acc, p) => {
