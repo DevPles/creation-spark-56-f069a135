@@ -231,6 +231,13 @@ const AssistentePage = () => {
   const [rubricaDate, setRubricaDate] = useState("");
   const [rubricaNotes, setRubricaNotes] = useState("");
 
+  // Load rubrica entries when contract changes
+  useEffect(() => {
+    if (!selectedContract) return;
+    supabase.from("rubrica_entries").select("*").eq("contract_id", selectedContract)
+      .then(({ data }) => setSavedRubricaEntries(data || []));
+  }, [selectedContract]);
+
   // Modals
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [contractModalOpen, setContractModalOpen] = useState(false);
