@@ -619,12 +619,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       ).filter(([, v]) => v > 1).sort((a, b) => b[1] - a[1]);
 
       if (reincidencias.length > 0) {
-        addNewPageIfNeeded(40);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(RED[0], RED[1], RED[2]);
-        doc.text("Reincidencias Identificadas", margin, y);
-        y += 4;
+        drawSectionTitle("Reincidencias Identificadas");
 
         autoTable(doc, {
           startY: y,
@@ -639,11 +634,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       }
 
       // Full plans table
-      addNewPageIfNeeded(30);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text("Detalhamento dos Planos de Acao", margin, y);
+      drawSectionTitle("Detalhamento dos Planos de Acao");
       y += 4;
 
       const plansTableData = filtered.map((p, i) => [
