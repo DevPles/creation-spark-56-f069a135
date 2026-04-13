@@ -1079,7 +1079,7 @@ const RelatoriosPage = () => {
   const handleDownloadReport = async (report: typeof GENERATED_REPORTS[0]) => {
     toast.info("Gerando PDF...");
     try {
-      const blob = await generatePdfBlob(filteredGoals, contract.name, report.type, true, true, contract, chartRef);
+      const blob = await generatePdfBlob(filteredGoals, contract.name, report.type, true, true, contract, chartRef, { dbGoals, dbEntries, dbRubricaEntries, actionPlans });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = `MOSS_${report.name.replace(/\s/g, "_")}.pdf`;
