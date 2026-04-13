@@ -892,14 +892,28 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Período</Label>
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-44 h-9 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PERIOD_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-64 h-9 justify-start text-left text-xs font-normal")}>
+                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                  {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} — {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={{ from: dateRange.from, to: dateRange.to }}
+                  onSelect={(range) => {
+                    if (range?.from && range?.to) setDateRange({ from: range.from, to: range.to });
+                    else if (range?.from) setDateRange({ from: range.from, to: range.from });
+                  }}
+                  numberOfMonths={2}
+                  locale={ptBR}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Plano de ação</Label>
