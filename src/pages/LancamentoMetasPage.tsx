@@ -277,15 +277,15 @@ const LancamentoMetasPage = () => {
     if (sections.rubricas) {
     let startY = addHeader("Relatório de Lançamentos — Rubricas");
 
-    const contract = CONTRACTS.find(c => c.id === selectedContract);
+    const contract = realContracts.find(c => c.id === selectedContract);
     if (contract) {
-      const rubRows = RUBRICA_NAMES.map(r => {
-        const entry = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === r);
-        const alloc = entry?.valorAllocated || 0;
-        const exec = entry?.valorExecuted || 0;
-        const pct = alloc > 0 ? Math.round((exec / alloc) * 100) : 0;
-        const saldo = alloc - exec;
-        return { name: r, alloc, exec, pct, saldo };
+      const rubNames = (contract.rubricas || []).filter(r => r.percent > 0).map(r => r.name);
+      const rubRows = rubNames.map(r => {
+        const allocated = contract.value * ((contract.rubricas || []).find(rb => rb.name === r)?.percent || 0) / 100;
+        const executed = savedRubricaEntries.filter(e => e.rubrica_name === r).reduce((s: number, e: any) => s + Number(e.value_executed), 0);
+        const pct = allocated > 0 ? Math.round((executed / allocated) * 100) : 0;
+        const saldo = allocated - executed;
+        return { name: r, alloc: allocated, exec: executed, pct, saldo };
       });
       const totalAlloc = rubRows.reduce((s, r) => s + r.alloc, 0);
       const totalExec = rubRows.reduce((s, r) => s + r.exec, 0);
@@ -745,7 +745,7 @@ const LancamentoMetasPage = () => {
                 <label className="text-[10px] text-muted-foreground block mb-1">Contrato</label>
                 <Select value={selectedContract} onValueChange={setSelectedContract}>
                   <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>{CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.unit}</SelectItem>)}</SelectContent>
+                  <SelectContent>{realContracts.map(c => <SelectItem key={c.id} value={c.id}>{c.unit}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             )}
@@ -894,22 +894,28 @@ const LancamentoMetasPage = () => {
           <TabsContent value="lancamento-rubricas">
 
             {(() => {
-              const contract = CONTRACTS.find(c => c.id === selectedContract);
+              const contract = realContracts.find(c => c.id === selectedContract);
               if (!contract) return <p className="text-muted-foreground text-center py-12">Selecione um contrato</p>;
 
-              // Get current entries for this contract+month
-              const currentEntries = ALL_ENTRIES.filter(e => e.unit === contract.unit && e.month === selectedMonth);
+              const rubNames = (contract.rubricas || []).filter(r => r.percent > 0).map(r => r.name);
+              if (rubNames.length === 0) return (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Nenhuma rubrica cadastrada para este contrato.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Cadastre rubricas no módulo de Contratos.</p>
+                </div>
+              );
 
               return (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {RUBRICA_NAMES.map((rubName, i) => {
-                    const existing = currentEntries.find(e => e.rubrica === rubName);
-                    const allocated = existing?.valorAllocated || 0;
-                    const executed = existing?.valorExecuted || 0;
+                  {rubNames.map((rubName, i) => {
+                    const rubrica = (contract.rubricas || []).find(r => r.name === rubName);
+                    const allocated = contract.value * ((rubrica?.percent || 0) / 100);
+                    const executed = savedRubricaEntries.filter(e => e.rubrica_name === rubName).reduce((s: number, e: any) => s + Number(e.value_executed), 0);
                     const pctExec = allocated > 0 ? Math.round((executed / allocated) * 100) : 0;
                     const estourada = executed > allocated;
                     const rubEntryKey = `${selectedContract}-${rubName}-${selectedMonth}`;
                     const rubEntry = rubricaEntries[rubEntryKey] || { value: "", period: "", notes: "" };
+                    const previousEntries = savedRubricaEntries.filter(e => e.rubrica_name === rubName);
 
                     return (
                       <motion.div key={rubName} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="kpi-card">
@@ -917,7 +923,7 @@ const LancamentoMetasPage = () => {
                           <div>
                             <h3 className="font-display font-semibold text-foreground text-sm">{rubName}</h3>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              Alocado: {formatCurrency(allocated)} — {existing?.percentAllocated || 0}% do contrato
+                              Alocado: {formatCurrency(allocated)} — {rubrica?.percent || 0}% do contrato
                             </p>
                           </div>
                           <span className={`status-badge text-[10px] ${estourada ? "status-critical" : pctExec >= 70 ? "status-success" : "status-warning"}`}>
@@ -925,7 +931,6 @@ const LancamentoMetasPage = () => {
                           </span>
                         </div>
 
-                        {/* Gauge */}
                         <div className="flex justify-center">
                           <GoalGauge percent={pctExec} size={100} />
                         </div>
@@ -936,6 +941,17 @@ const LancamentoMetasPage = () => {
                             {" • "}Saldo: <span className={`font-semibold ${estourada ? "text-destructive" : "text-foreground"}`}>{formatCurrency(allocated - executed)}</span>
                           </p>
                         </div>
+
+                        {previousEntries.length > 0 && (
+                          <div className="mb-3 p-2 bg-secondary/50 rounded">
+                            <p className="text-[10px] text-muted-foreground mb-1">Lançamentos anteriores:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {previousEntries.map((e: any, idx: number) => (
+                                <span key={idx} className="text-[10px] bg-background px-1.5 py-0.5 rounded border border-border">{e.period}: {formatCurrency(Number(e.value_executed))}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         <div className="space-y-2">
                           <div className="grid grid-cols-2 gap-2">
@@ -975,7 +991,7 @@ const LancamentoMetasPage = () => {
                             size="sm"
                             className="w-full"
                             disabled={rubricaSubmitting === rubEntryKey}
-                            onClick={() => handleRubricaSubmit(rubEntryKey, rubName, contract)}
+                            onClick={() => handleRubricaSubmit(rubEntryKey, rubName, contract.id, contract.unit)}
                           >
                             {rubricaSubmitting === rubEntryKey ? "Salvando..." : "Lançar"}
                           </Button>
