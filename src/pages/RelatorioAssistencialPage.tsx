@@ -76,14 +76,7 @@ const RelatorioAssistencialPage = () => {
     fileName?: string;
   }
 
-  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([
-    { id: "tl1", title: "Campanha de vacinação sazonal", category: "acao_promocao", date: "2024-03-15", description: "Realizada campanha de vacinação contra gripe com 320 doses aplicadas na unidade.", status: "aprovado", fileName: "relatorio_vacinacao.pdf" },
-    { id: "tl2", title: "Justificativa: tempo de espera elevado", category: "justificativa", date: "2024-03-10", description: "Aumento no tempo de espera devido a reforma na ala B, reduzindo capacidade operacional em 30%.", status: "pendente" },
-    { id: "tl3", title: "Palestra sobre higienização", category: "acao_promocao", date: "2024-02-28", description: "Treinamento sobre protocolo de higienização de mãos com 45 participantes.", status: "aprovado", fileName: "lista_presenca_higiene.pdf" },
-    { id: "tl4", title: "Justificativa: rubrica RH estourada", category: "rubrica", date: "2024-02-20", description: "Contratação emergencial de 3 enfermeiros devido a afastamentos por COVID.", status: "rejeitado" },
-    { id: "tl5", title: "Mutirão cirúrgico", category: "acao_promocao", date: "2024-02-10", description: "Mutirão de cirurgias eletivas: 28 procedimentos realizados em 3 dias.", status: "pendente", fileName: "relatorio_mutirao.pdf" },
-    { id: "tl6", title: "Meta NPS: pesquisa de satisfação", category: "meta", date: "2024-01-30", description: "Aplicação de pesquisa NPS com 180 pacientes. Resultado: 72 pontos.", status: "aprovado", fileName: "pesquisa_nps_q1.xlsx" },
-  ]);
+  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
