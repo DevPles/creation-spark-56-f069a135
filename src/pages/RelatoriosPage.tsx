@@ -51,11 +51,7 @@ const REPORT_TYPES = [
   { id: "evidencias", label: "Status de evidências", description: "Listagem de documentos enviados e pendentes" },
 ];
 
-const GENERATED_REPORTS = [
-  { id: "1", name: "Consolidado Q1 2024 — Hospital Geral", date: "15/04/2024", type: "consolidado", size: "1.2 MB" },
-  { id: "2", name: "RDQA 1º Quadrimestre 2024", date: "30/04/2024", type: "rdqa", size: "3.4 MB" },
-  { id: "3", name: "Risco financeiro — Mar 2024", date: "01/04/2024", type: "risco", size: "0.8 MB" },
-];
+const GENERATED_REPORTS: { id: string; name: string; date: string; type: string; size: string }[] = [];
 
 const formatCurrency = (v: number) => `R$ ${(v / 1000).toFixed(0)}k`;
 const formatFullCurrency = (v: number) => `R$ ${v.toLocaleString("pt-BR")}`;
