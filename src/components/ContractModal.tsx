@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeScoringRules, findGlosaPct, ScoringRule } from "@/lib/riskCalculation";
 
 interface Contract {
   id: string;
@@ -31,6 +32,7 @@ interface GoalRow {
   name: string;
   weight: number;
   attainment: number;
+  scoring: ScoringRule[];
 }
 
 const ContractModal = ({ contract, open, onOpenChange }: ContractModalProps) => {
@@ -42,7 +44,7 @@ const ContractModal = ({ contract, open, onOpenChange }: ContractModalProps) => 
       const unit = contract.unit || "";
       const { data: goalsData } = await supabase
         .from("goals")
-        .select("id, name, target, type, weight")
+        .select("id, name, target, type, weight, scoring")
         .eq("facility_unit", unit as any);
 
       const { data: entriesData } = await supabase
@@ -60,7 +62,8 @@ const ContractModal = ({ contract, open, onOpenChange }: ContractModalProps) => 
         const attainment = g.type === "DOC"
           ? (current >= target ? 100 : 0)
           : target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
-        return { name: g.name, weight: Number(g.weight), attainment };
+        const scoring = normalizeScoringRules((g.scoring as any[]) || []);
+        return { name: g.name, weight: Number(g.weight), attainment, scoring };
       }));
     };
     fetchGoals();
@@ -71,7 +74,8 @@ const ContractModal = ({ contract, open, onOpenChange }: ContractModalProps) => 
   const variableAmount = contract.value * contract.variable;
   const totalRisk = goalRows.reduce((sum, g) => {
     const goalVar = variableAmount * g.weight;
-    return sum + (g.attainment < 100 ? goalVar * (1 - g.attainment / 100) : 0);
+    const glosaPct = findGlosaPct(g.attainment, g.scoring);
+    return sum + (glosaPct > 0 ? goalVar * (glosaPct / 100) : 0);
   }, 0);
 
   return (
@@ -123,7 +127,8 @@ const ContractModal = ({ contract, open, onOpenChange }: ContractModalProps) => 
                 </div>
               ) : goalRows.map((goal, i) => {
                 const goalVar = variableAmount * goal.weight;
-                const goalRisk = goal.attainment < 100 ? goalVar * (1 - goal.attainment / 100) : 0;
+                const glosaPct = findGlosaPct(goal.attainment, goal.scoring);
+                const goalRisk = glosaPct > 0 ? goalVar * (glosaPct / 100) : 0;
                 const statusClass = goal.attainment >= 90 ? "status-success" : goal.attainment >= 70 ? "status-warning" : "status-critical";
 
                 return (
