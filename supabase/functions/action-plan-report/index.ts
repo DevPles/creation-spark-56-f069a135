@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { facility_unit, period, start_date, end_date } = await req.json();
+    const { facility_unit, period, start_date, end_date, plan_ids } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -38,6 +38,10 @@ serve(async (req) => {
     if (facility_unit) query = query.eq("facility_unit", facility_unit);
     if (dateFilterStart) query = query.gte("created_at", dateFilterStart);
     if (dateFilterEnd) query = query.lte("created_at", dateFilterEnd);
+    // Filter by specific plan IDs if provided
+    if (plan_ids && Array.isArray(plan_ids) && plan_ids.length > 0) {
+      query = query.in("id", plan_ids);
+    }
 
     const { data: plans, error } = await query.order("created_at", { ascending: false });
     if (error) throw error;

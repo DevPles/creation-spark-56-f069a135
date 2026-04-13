@@ -96,13 +96,15 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
   const generatePdfReport = async () => {
     setLoading(true);
     try {
-      // 1. Get AI report
+      // 1. Get AI report — pass filtered plan IDs so the edge function only analyzes what's visible
+      const filteredIds = filtered.map(p => p.id);
       const { data, error } = await supabase.functions.invoke("action-plan-report", {
         body: {
           facility_unit: reportUnit === "Todas as unidades" ? null : reportUnit,
           period: "custom",
           start_date: startDate || "2020-01-01",
           end_date: endDate,
+          plan_ids: filteredIds.length < plans.length ? filteredIds : undefined,
         },
       });
       if (error) throw error;
