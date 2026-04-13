@@ -115,7 +115,7 @@ const LancamentoMetasPage = () => {
     });
   };
 
-  const handleGeneratePdf = async (sections: { metas: boolean; rubricas: boolean; leitos: boolean }) => {
+  const handleGeneratePdf = async (sections: { metas: boolean; rubricas: boolean; leitos: boolean; mapaTermico: boolean }) => {
     setPdfGenerating(true);
     setPdfModalOpen(false);
     try {
