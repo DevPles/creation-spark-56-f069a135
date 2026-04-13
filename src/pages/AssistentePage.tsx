@@ -931,14 +931,16 @@ const AssistentePage = () => {
   };
 
   const renderLancarRubricaSelect = () => {
-    const contract = RUBRICA_CONTRACTS.find(c => c.id === selectedContract);
+    const contract = contracts.find(c => c.id === selectedContract);
     if (!contract) return <p className="text-muted-foreground text-center py-12">Contrato não encontrado.</p>;
+    const rubNames = (contract.rubricas || []).filter(r => r.percent > 0).map(r => r.name);
+    if (rubNames.length === 0) return <p className="text-muted-foreground text-center py-12">Nenhuma rubrica cadastrada para este contrato.</p>;
     return (
       <div className="grid grid-cols-1 gap-3">
-        {RUBRICA_NAMES.map((rubName, i) => {
-          const existing = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === rubName);
-          const allocated = existing?.valorAllocated || 0;
-          const executed = existing?.valorExecuted || 0;
+        {rubNames.map((rubName, i) => {
+          const rubrica = (contract.rubricas || []).find(r => r.name === rubName);
+          const allocated = contract.value * ((rubrica?.percent || 0) / 100);
+          const executed = savedRubricaEntries.filter(e => e.rubrica_name === rubName).reduce((s: number, e: any) => s + Number(e.value_executed), 0);
           const pct = allocated > 0 ? Math.round((executed / allocated) * 100) : 0;
           return (
             <motion.button key={rubName} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
@@ -959,11 +961,11 @@ const AssistentePage = () => {
   };
 
   const renderLancarRubricaForm = () => {
-    const contract = RUBRICA_CONTRACTS.find(c => c.id === selectedContract);
+    const contract = contracts.find(c => c.id === selectedContract);
     if (!contract) return null;
-    const existing = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === selectedRubrica);
-    const allocated = existing?.valorAllocated || 0;
-    const executed = existing?.valorExecuted || 0;
+    const rubrica = (contract.rubricas || []).find(r => r.name === selectedRubrica);
+    const allocated = contract.value * ((rubrica?.percent || 0) / 100);
+    const executed = savedRubricaEntries.filter(e => e.rubrica_name === selectedRubrica).reduce((s: number, e: any) => s + Number(e.value_executed), 0);
     const pct = allocated > 0 ? Math.round((executed / allocated) * 100) : 0;
     return (
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="kpi-card p-6 max-w-lg mx-auto">
@@ -975,7 +977,7 @@ const AssistentePage = () => {
         </div>
         <div className="space-y-3">
           <div><label className="text-xs text-muted-foreground block mb-1">Mês de referência</label>
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{MONTHS_LIST.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="text-xs text-muted-foreground block mb-1">Valor executado</label><Input type="number" step="0.01" placeholder="R$ 0,00" value={rubricaValue} onChange={e => setRubricaValue(e.target.value)} /></div>
