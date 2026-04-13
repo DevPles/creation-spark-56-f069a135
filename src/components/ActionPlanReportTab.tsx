@@ -28,22 +28,43 @@ const PRIORIDADE_LABELS: Record<string, string> = {
   baixa: "Baixa", media: "Média", alta: "Alta", critica: "Crítica",
 };
 
-const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
+const PERIOD_OPTIONS = [
+  { value: "7d", label: "Últimos 7 dias" },
+  { value: "15d", label: "Últimos 15 dias" },
+  { value: "30d", label: "Últimos 30 dias" },
+  { value: "90d", label: "Últimos 3 meses" },
+  { value: "180d", label: "Últimos 6 meses" },
+  { value: "365d", label: "Último ano" },
+  { value: "all", label: "Todo o período" },
+];
+
+const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => {
   const [loading, setLoading] = useState(false);
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 3);
-    return d.toISOString().slice(0, 10);
-  });
-  const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [reportUnit, setReportUnit] = useState(selectedUnit);
+  const [period, setPeriod] = useState("90d");
+  const [selectedPlanId, setSelectedPlanId] = useState("todos");
+
+  // Compute date range from period
+  const { startDate, endDate } = useMemo(() => {
+    const end = new Date();
+    const endStr = end.toISOString().slice(0, 10);
+    if (period === "all") return { startDate: "", endDate: endStr };
+    const days = parseInt(period);
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    return { startDate: start.toISOString().slice(0, 10), endDate: endStr };
+  }, [period]);
 
   // Filter plans by unit and date range
   const filtered = useMemo(() => {
-    let result = selectedUnit === "Todas as unidades" ? plans : plans.filter(p => p.facility_unit === selectedUnit);
+    let result = reportUnit === "Todas as unidades" ? plans : plans.filter(p => p.facility_unit === reportUnit);
     if (startDate) result = result.filter(p => p.created_at >= startDate + "T00:00:00");
     if (endDate) result = result.filter(p => p.created_at <= endDate + "T23:59:59");
     return result;
-  }, [plans, selectedUnit, startDate, endDate]);
+  }, [plans, reportUnit, startDate, endDate]);
+
+  // Plans available for selection (filtered by unit + date)
+  const plansForSelection = filtered;
 
   const total = filtered.length;
   const concluidas = filtered.filter(p => p.status_acao === "concluida").length;
