@@ -601,143 +601,130 @@ const LancamentoMetasPage = () => {
     if (sections.mapaTermico) {
       let startY = addHeader("Relatório de Lançamentos — Mapa Térmico Diário");
 
-      const heatGoals = goals.filter(g => !selectedUnit || g.facility_unit === selectedUnit);
-      const year = Number(filterYear);
-      const month = filterMonth === "todos" ? new Date().getMonth() : Number(filterMonth);
-      const daysInMo = getDaysInMonth(new Date(year, month));
-      const mLabel = FILTER_MONTHS.find(m => m.value === String(month))?.label || "";
+      const hmGoals = goals.filter(g => !selectedUnit || g.facility_unit === selectedUnit);
+      const hmYear = Number(filterYear);
+      const hmMonth = filterMonth === "todos" ? new Date().getMonth() : Number(filterMonth);
+      const hmDaysInMo = getDaysInMonth(new Date(hmYear, hmMonth));
+      const hmLabel = FILTER_MONTHS.find(m => m.value === String(hmMonth))?.label || "";
 
-      // Build day map
-      const goalDayMap: Record<string, Record<number, number>> = {};
-      heatGoals.forEach(g => {
-        goalDayMap[g.id] = {};
+      // Build day map using parse (period is dd/MM/yyyy)
+      const hmDayMap: Record<string, Record<number, number>> = {};
+      hmGoals.forEach(g => {
+        hmDayMap[g.id] = {};
         const gEntries = existingEntries[g.id] || [];
         gEntries.forEach(e => {
-          const d = new Date(e.period + "T00:00:00");
-          if (d.getFullYear() === year && d.getMonth() === month) {
-            goalDayMap[g.id][d.getDate()] = (goalDayMap[g.id][d.getDate()] || 0) + e.value;
-          }
+          try {
+            const d = parse(e.period, "dd/MM/yyyy", new Date());
+            if (d.getFullYear() === hmYear && d.getMonth() === hmMonth) {
+              hmDayMap[g.id][d.getDate()] = (hmDayMap[g.id][d.getDate()] || 0) + e.value;
+            }
+          } catch {}
         });
       });
 
-      // Per-row stats for coloring
-      const rowStats: Record<string, { min: number; max: number }> = {};
-      heatGoals.forEach(g => {
-        const vals = Object.values(goalDayMap[g.id] || {});
+      // Per-row stats
+      const hmRowStats: Record<string, { min: number; max: number }> = {};
+      hmGoals.forEach(g => {
+        const vals = Object.values(hmDayMap[g.id] || {});
         if (vals.length > 0) {
-          rowStats[g.id] = { min: Math.min(...vals), max: Math.max(...vals) };
+          hmRowStats[g.id] = { min: Math.min(...vals), max: Math.max(...vals) };
         }
       });
 
       // KPIs
-      let totalGoalsWithEntries = 0;
-      let sumPct = 0;
-      let totalDaysWithEntries = new Set<number>();
-      heatGoals.forEach(g => {
-        const dayEntries = goalDayMap[g.id] || {};
+      let hmGoalsWithEntries = 0;
+      let hmSumPct = 0;
+      const hmDaysSet = new Set<number>();
+      hmGoals.forEach(g => {
+        const dayEntries = hmDayMap[g.id] || {};
         const count = Object.keys(dayEntries).length;
         if (count > 0) {
-          totalGoalsWithEntries++;
+          hmGoalsWithEntries++;
           const total = Object.values(dayEntries).reduce((s, v) => s + v, 0);
-          sumPct += g.target > 0 ? (total / g.target) * 100 : 0;
+          hmSumPct += g.target > 0 ? (total / g.target) * 100 : 0;
         }
-        Object.keys(dayEntries).forEach(d => totalDaysWithEntries.add(Number(d)));
+        Object.keys(dayEntries).forEach(d => hmDaysSet.add(Number(d)));
       });
-      const avgPct = totalGoalsWithEntries > 0 ? Math.round(sumPct / totalGoalsWithEntries) : 0;
-      const coverage = Math.round((totalDaysWithEntries.size / daysInMo) * 100);
+      const hmAvgPct = hmGoalsWithEntries > 0 ? Math.round(hmSumPct / hmGoalsWithEntries) : 0;
+      const hmCoverage = Math.round((hmDaysSet.size / hmDaysInMo) * 100);
 
       startY = drawKpiBoxes([
-        { label: "Metas com Lançamento", value: `${totalGoalsWithEntries}/${heatGoals.length}` },
-        { label: "Atingimento Médio", value: `${avgPct}%`, color: avgPct >= 100 ? success : avgPct >= 70 ? warning : danger },
-        { label: "Dias com Lançamento", value: `${totalDaysWithEntries.size}/${daysInMo}` },
-        { label: "Cobertura do Mês", value: `${coverage}%`, color: coverage >= 80 ? success : coverage >= 50 ? warning : danger },
+        { label: "Metas com Lançamento", value: `${hmGoalsWithEntries}/${hmGoals.length}` },
+        { label: "Atingimento Médio", value: `${hmAvgPct}%`, color: hmAvgPct >= 100 ? success : hmAvgPct >= 70 ? warning : danger },
+        { label: "Dias com Lançamento", value: `${hmDaysSet.size}/${hmDaysInMo}` },
+        { label: "Cobertura do Mês", value: `${hmCoverage}%`, color: hmCoverage >= 80 ? success : hmCoverage >= 50 ? warning : danger },
       ], startY);
 
-      startY = drawSectionTitle(`Mapa Térmico — ${mLabel} ${year}`, startY);
+      startY = drawSectionTitle(`Mapa Térmico — ${hmLabel} ${hmYear}`, startY);
 
-      // Draw heatmap table
-      const cellW = Math.min(5, (contentW - 40) / daysInMo);
-      const nameColW = 35;
-      const totalColW = 12;
-      const pctColW = 10;
+      // Draw heatmap grid
+      const cellW = Math.min(5, (contentW - 50) / hmDaysInMo);
+      const nameColW = 38;
       const gridStartX = margin + nameColW;
 
-      // Header row with day numbers
+      // Header row: day numbers
       doc.setFontSize(4.5);
       doc.setTextColor(120, 120, 120);
-      for (let d = 1; d <= daysInMo; d++) {
-        const x = gridStartX + (d - 1) * cellW;
-        doc.text(String(d), x + cellW / 2, startY, { align: "center" });
+      for (let d = 1; d <= hmDaysInMo; d++) {
+        doc.text(String(d), gridStartX + (d - 1) * cellW + cellW / 2, startY, { align: "center" });
       }
-      doc.text("Total", gridStartX + daysInMo * cellW + 2, startY);
-      doc.text("%", gridStartX + daysInMo * cellW + totalColW + 4, startY);
+      doc.text("Total", gridStartX + hmDaysInMo * cellW + 2, startY);
+      doc.text("%", gridStartX + hmDaysInMo * cellW + 14, startY);
       startY += 3;
 
-      const getHeatColor = (goalId: string, value: number, lowerIsBetter: boolean): [number, number, number] => {
-        const stats = rowStats[goalId];
-        if (!stats || stats.min === stats.max) return [46, 160, 67]; // green
+      const getHmColor = (goalId: string, value: number, lowerIsBetter: boolean): [number, number, number] => {
+        const stats = hmRowStats[goalId];
+        if (!stats || stats.min === stats.max) return [46, 160, 67];
         const { min, max } = stats;
-        let norm: number;
-        if (lowerIsBetter) {
-          norm = (max - value) / (max - min);
-        } else {
-          norm = (value - min) / (max - min);
-        }
-        if (norm >= 0.75) return [46, 160, 67];   // green
-        if (norm >= 0.50) return [241, 196, 15];   // yellow
-        if (norm >= 0.25) return [230, 126, 34];   // orange
-        return [231, 76, 60];                       // red
+        const norm = lowerIsBetter ? (max - value) / (max - min) : (value - min) / (max - min);
+        if (norm >= 0.75) return [46, 160, 67];
+        if (norm >= 0.50) return [241, 196, 15];
+        if (norm >= 0.25) return [230, 126, 34];
+        return [231, 76, 60];
       };
 
       const rowH = 5.5;
-      heatGoals.forEach((g, gi) => {
-        // Check page break
+      hmGoals.forEach(g => {
         if (startY + rowH > pageH - 18) {
           addFooter();
-          startY = addHeader("Relatório de Lançamentos — Mapa Térmico (cont.)");
+          startY = addHeader("Relatório — Mapa Térmico (cont.)");
         }
 
-        const y = startY;
         const lowerIsBetter = g.name.toLowerCase().includes("tempo") ||
           g.name.toLowerCase().includes("infecção") ||
           g.name.toLowerCase().includes("retorno") ||
           g.name.toLowerCase().includes("mortalidade") ||
           g.name.toLowerCase().includes("óbito");
 
-        // Goal name
         doc.setFontSize(5);
         doc.setTextColor(40, 40, 40);
-        doc.text(g.name.substring(0, 18), margin, y + rowH - 1.5);
+        doc.text(g.name.substring(0, 20), margin, startY + rowH - 1.5);
 
-        // Day cells
-        const dayEntries = goalDayMap[g.id] || {};
-        let totalValue = 0;
-
-        for (let d = 1; d <= daysInMo; d++) {
+        const dayEntries = hmDayMap[g.id] || {};
+        let totalVal = 0;
+        for (let d = 1; d <= hmDaysInMo; d++) {
           const x = gridStartX + (d - 1) * cellW;
           const val = dayEntries[d];
-
           if (val !== undefined) {
-            totalValue += val;
-            const color = getHeatColor(g.id, val, lowerIsBetter);
+            totalVal += val;
+            const color = getHmColor(g.id, val, lowerIsBetter);
             doc.setFillColor(...color);
-            doc.roundedRect(x + 0.3, y, cellW - 0.6, rowH - 0.5, 0.5, 0.5, "F");
+            doc.roundedRect(x + 0.3, startY, cellW - 0.6, rowH - 0.5, 0.5, 0.5, "F");
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(4);
-            doc.text(String(val), x + cellW / 2, y + rowH - 2, { align: "center" });
+            doc.text(String(val), x + cellW / 2, startY + rowH - 2, { align: "center" });
           } else {
             doc.setFillColor(230, 233, 237);
-            doc.roundedRect(x + 0.3, y, cellW - 0.6, rowH - 0.5, 0.5, 0.5, "F");
+            doc.roundedRect(x + 0.3, startY, cellW - 0.6, rowH - 0.5, 0.5, 0.5, "F");
           }
         }
 
-        // Total and %
-        const pct = g.target > 0 ? Math.round((totalValue / g.target) * 100) : 0;
+        const pct = g.target > 0 ? Math.round((totalVal / g.target) * 100) : 0;
         doc.setTextColor(40, 40, 40);
         doc.setFontSize(5);
-        doc.text(String(totalValue), gridStartX + daysInMo * cellW + 2, y + rowH - 1.5);
+        doc.text(String(totalVal), gridStartX + hmDaysInMo * cellW + 2, startY + rowH - 1.5);
         doc.setTextColor(...(pct >= 100 ? success : pct >= 70 ? warning : danger));
-        doc.text(`${pct}%`, gridStartX + daysInMo * cellW + totalColW + 4, y + rowH - 1.5);
+        doc.text(`${pct}%`, gridStartX + hmDaysInMo * cellW + 14, startY + rowH - 1.5);
 
         startY += rowH + 1;
       });
@@ -745,7 +732,6 @@ const LancamentoMetasPage = () => {
       // Legend
       startY += 3;
       if (startY < pageH - 25) {
-        doc.setFontSize(5);
         const legendItems: { label: string; color: [number, number, number] }[] = [
           { label: "Melhor da meta", color: [46, 160, 67] },
           { label: "Acima da mediana", color: [241, 196, 15] },
@@ -754,6 +740,7 @@ const LancamentoMetasPage = () => {
           { label: "Sem lançamento", color: [230, 233, 237] },
         ];
         let lx = margin;
+        doc.setFontSize(5);
         legendItems.forEach(item => {
           doc.setFillColor(...item.color);
           doc.roundedRect(lx, startY, 3, 3, 0.5, 0.5, "F");
@@ -762,9 +749,8 @@ const LancamentoMetasPage = () => {
           lx += 30;
         });
       }
-
       addFooter();
-    } // end mapaTermico
+    } // end mapa termico
 
     doc.save(`lancamentos_${format(now, "yyyyMMdd_HHmm")}.pdf`);
     toast.success("PDF gerado com sucesso!");
