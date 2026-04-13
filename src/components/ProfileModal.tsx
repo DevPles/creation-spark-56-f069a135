@@ -13,7 +13,7 @@ interface ProfileModalProps {
 }
 
 const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined);
@@ -79,6 +79,7 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
       toast.error("Erro ao salvar perfil", { description: error.message });
       return;
     }
+    await refreshProfile();
     toast.success("Perfil atualizado");
   };
 
