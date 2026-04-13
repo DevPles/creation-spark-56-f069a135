@@ -79,6 +79,7 @@ const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
       toast.error("Erro ao salvar perfil", { description: error.message });
       return;
     }
+    await refreshProfile();
     toast.success("Perfil atualizado");
   };
 
