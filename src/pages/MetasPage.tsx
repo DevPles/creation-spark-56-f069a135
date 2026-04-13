@@ -53,7 +53,7 @@ const MetasPage = () => {
       const current = gEntries.reduce((sum, e) => sum + e.value, 0);
       const target = Number(g.target);
       const weight = Number(g.weight);
-      const scoring = (g.scoring as any[]) || [];
+      const scoring = normalizeScoringRules((g.scoring as any[]) || []);
 
       // Compute trend from last 4 entries
       const lastValues = gEntries.slice(-4).map(e => e.value);
@@ -68,12 +68,12 @@ const MetasPage = () => {
       // Build history (last 4 quarter-like buckets)
       const history = lastValues.length >= 4 ? lastValues.slice(-4) : [0, 0, 0, 0];
 
-      // Risk calculation
-      const attainment = g.type === "DOC"
-        ? (current >= target ? 1 : 0)
-        : Math.min(1, target > 0 ? current / target : 0);
-      const glosaPct = 0.05;
-      const risk = attainment < 1 ? Math.round((1 - attainment) * weight * 1200000 * glosaPct) : 0;
+      // Risk calculation using scoring tiers
+      const attainmentPct = g.type === "DOC"
+        ? (current >= target ? 100 : 0)
+        : target > 0 ? Math.min(100, (current / target) * 100) : 0;
+      const glosaPct = findGlosaPct(attainmentPct, scoring);
+      const risk = glosaPct > 0 ? Math.round(weight * 1200000 * (glosaPct / 100)) : 0;
 
       return {
         id: g.id,
@@ -87,7 +87,6 @@ const MetasPage = () => {
         trend,
         scoring,
         history,
-        glosaPct,
         facilityUnit: g.facility_unit,
         sector: g.sector || undefined,
         startDate: g.start_date || undefined,

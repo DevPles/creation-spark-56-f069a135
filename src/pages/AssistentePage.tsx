@@ -672,8 +672,8 @@ const AssistentePage = () => {
   /* ══ Templates ══ */
   const newGoalTemplate: GoalData = {
     id: "", name: "", target: 0, current: 0, unit: "%", type: "QNT", risk: 0, weight: 1, trend: "stable",
-    scoring: [{ min: 0, label: "Insuficiente", points: 0 }, { min: 50, label: "Regular", points: 50 }, { min: 80, label: "Bom", points: 80 }, { min: 100, label: "Ótimo", points: 100 }],
-    history: [], glosaPct: 0,
+    scoring: [{ min: 0, label: "Insuficiente", glosa: 100 }, { min: 50, label: "Regular", glosa: 50 }, { min: 80, label: "Bom", glosa: 25 }, { min: 100, label: "Ótimo", glosa: 0 }],
+    history: [],
   };
   const newEvidenceTemplate: EvidenceData = { id: "", goalName: "", type: "PDF", fileName: "", status: "Pendente", dueDate: new Date().toISOString().split("T")[0], notes: "", contractId: evidenceContractId };
 
