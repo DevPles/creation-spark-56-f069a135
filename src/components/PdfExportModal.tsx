@@ -10,9 +10,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   onGenerate: (sections: { metas: boolean; rubricas: boolean; leitos: boolean }) => void;
   generating?: boolean;
+  showRubricas?: boolean;
 }
 
-const PdfExportModal = ({ open, onOpenChange, onGenerate, generating }: Props) => {
+const PdfExportModal = ({ open, onOpenChange, onGenerate, generating, showRubricas = true }: Props) => {
   const [sections, setSections] = useState({ metas: true, rubricas: true, leitos: true });
 
   const toggle = (key: keyof typeof sections) => {
@@ -43,13 +44,15 @@ const PdfExportModal = ({ open, onOpenChange, onGenerate, generating }: Props) =
             </Label>
           </div>
 
-          <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-            <Checkbox id="rubricas" checked={sections.rubricas} onCheckedChange={() => toggle("rubricas")} />
-            <Label htmlFor="rubricas" className="flex-1 cursor-pointer">
-              <span className="font-semibold text-sm">Lançamento de Rubricas</span>
-              <p className="text-xs text-muted-foreground">Execução financeira por rubrica com saldos e status</p>
-            </Label>
-          </div>
+          {showRubricas && (
+            <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
+              <Checkbox id="rubricas" checked={sections.rubricas} onCheckedChange={() => toggle("rubricas")} />
+              <Label htmlFor="rubricas" className="flex-1 cursor-pointer">
+                <span className="font-semibold text-sm">Lançamento de Rubricas</span>
+                <p className="text-xs text-muted-foreground">Execução financeira por rubrica com saldos e status</p>
+              </Label>
+            </div>
+          )}
 
           <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
             <Checkbox id="leitos" checked={sections.leitos} onCheckedChange={() => toggle("leitos")} />
