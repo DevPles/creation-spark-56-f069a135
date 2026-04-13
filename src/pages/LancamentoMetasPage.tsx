@@ -1240,6 +1240,7 @@ const LancamentoMetasPage = () => {
           onOpenChange={setPdfModalOpen}
           onGenerate={handleGeneratePdf}
           generating={pdfGenerating}
+          showRubricas={isAdmin}
         />
       </main>
     </div>
