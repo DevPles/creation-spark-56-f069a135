@@ -118,74 +118,90 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const W = doc.internal.pageSize.getWidth();
       const H = doc.internal.pageSize.getHeight();
-      const margin = 15;
+      const margin = 14;
       let y = margin;
       const now = new Date().toLocaleDateString("pt-BR");
       const periodLabel = `${new Date(startDate + "T00:00:00").toLocaleDateString("pt-BR")} a ${new Date(endDate + "T00:00:00").toLocaleDateString("pt-BR")}`;
 
-      const PRIMARY = [35, 66, 117];
-      const DARK = [30, 40, 50];
-      const MUTED = [120, 130, 140];
-      const RED = [220, 60, 60];
-      const GREEN = [40, 160, 90];
-      const AMBER = [230, 160, 30];
-      const WHITE = [255, 255, 255];
-      const LIGHT_BG = [235, 239, 245];
+      const PRIMARY: [number, number, number] = [35, 66, 117];
+      const DARK: [number, number, number] = [30, 40, 50];
+      const MUTED: [number, number, number] = [120, 130, 140];
+      const RED: [number, number, number] = [200, 55, 55];
+      const GREEN: [number, number, number] = [40, 150, 85];
+      const AMBER: [number, number, number] = [210, 145, 20];
+      const WHITE: [number, number, number] = [255, 255, 255];
+      const LIGHT_BG: [number, number, number] = [240, 243, 248];
 
       const addNewPageIfNeeded = (needed: number) => {
-        if (y + needed > H - 20) { doc.addPage(); y = margin; drawPageHeader(); }
+        if (y + needed > H - 18) { doc.addPage(); y = margin; drawPageHeader(); }
       };
 
       const drawPageHeader = () => {
-        doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-        doc.rect(0, 0, W, 12, "F");
+        doc.setFillColor(...PRIMARY);
+        doc.rect(0, 0, W, 11, "F");
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
+        doc.setFontSize(7);
         doc.setFont("helvetica", "bold");
-        doc.text("MOSS -- Relatorio de Plano de Acao", margin, 8);
-        doc.text(now, W - margin, 8, { align: "right" });
-        doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-        y = 18;
+        doc.text("MOSS — Relatorio de Plano de Acao", margin, 7);
+        doc.setFont("helvetica", "normal");
+        doc.text(now, W - margin, 7, { align: "right" });
+        doc.setTextColor(...DARK);
+        y = 16;
       };
 
       const drawFooter = (pageNum: number, totalPages: number) => {
-        doc.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
-        doc.rect(0, H - 10, W, 10, "F");
-        doc.setFontSize(7);
-        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-        doc.text("Gerado automaticamente pelo MOSS", margin, H - 4);
-        doc.text(`Pagina ${pageNum} de ${totalPages}`, W - margin, H - 4, { align: "right" });
+        doc.setDrawColor(200, 205, 215);
+        doc.setLineWidth(0.2);
+        doc.line(margin, H - 10, W - margin, H - 10);
+        doc.setFontSize(6);
+        doc.setTextColor(...MUTED);
+        doc.text("Gerado automaticamente pelo MOSS", margin, H - 5);
+        doc.text(`Pagina ${pageNum} de ${totalPages}`, W - margin, H - 5, { align: "right" });
       };
 
-      // Cover
-      doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.rect(0, 0, W, 45, "F");
+      const drawSectionTitle = (title: string) => {
+        addNewPageIfNeeded(16);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...PRIMARY);
+        doc.text(title, margin, y);
+        y += 2;
+        doc.setDrawColor(...PRIMARY);
+        doc.setLineWidth(0.4);
+        doc.line(margin, y, W - margin, y);
+        y += 6;
+      };
+
+      // ═══ COVER ═══
+      doc.setFillColor(...PRIMARY);
+      doc.rect(0, 0, W, 42, "F");
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(22);
+      doc.setFontSize(24);
       doc.setFont("helvetica", "bold");
-      doc.text("MOSS", margin, 20);
+      doc.text("MOSS", margin, 18);
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text("Relatorio Inteligente de Plano de Acao", margin, 28);
-      doc.setFontSize(9);
-      doc.text(`${periodLabel}  |  ${reportUnit}  |  ${now}`, margin, 38);
-      y = 55;
+      doc.text("Relatorio Inteligente de Plano de Acao", margin, 26);
+      doc.setFontSize(8);
+      doc.setTextColor(220, 225, 240);
+      doc.text(`${periodLabel}  |  ${reportUnit}  |  ${now}`, margin, 36);
+      y = 50;
 
       // Info box
-      doc.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
-      doc.roundedRect(margin, y, W - 2 * margin, 14, 3, 3, "F");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.setFontSize(10);
+      doc.setFillColor(...LIGHT_BG);
+      doc.roundedRect(margin, y, W - 2 * margin, 12, 2, 2, "F");
+      doc.setTextColor(...DARK);
+      doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
-      doc.text("Relatorio Consolidado - Planos de Acao", margin + 5, y + 6);
-      doc.setFontSize(8);
+      doc.text("Relatorio Consolidado — Planos de Acao", margin + 4, y + 5);
+      doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-      doc.text(`Unidade: ${reportUnit}  |  Periodo: ${periodLabel}  |  ${total} planos analisados`, margin + 5, y + 12);
-      y += 20;
+      doc.setTextColor(...MUTED);
+      doc.text(`Unidade: ${reportUnit}  |  Periodo: ${periodLabel}  |  ${total} planos analisados`, margin + 4, y + 10);
+      y += 17;
 
-      // KPI cards
-      const cardW = (W - 2 * margin - 12) / 5;
+      // KPI cards (5 inline)
+      const cardW = (W - 2 * margin - 8) / 5;
       const kpis = [
         { label: "Total", value: `${total}`, color: PRIMARY },
         { label: "Concluidas", value: `${concluidas}`, color: GREEN },
@@ -194,106 +210,56 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
         { label: "Vencidas", value: `${vencidas}`, color: RED },
       ];
       kpis.forEach((kpi, i) => {
-        const x = margin + i * (cardW + 3);
-        doc.setFillColor(WHITE[0], WHITE[1], WHITE[2]);
-        doc.setDrawColor(220, 222, 226);
-        doc.roundedRect(x, y, cardW, 22, 2, 2, "FD");
+        const x = margin + i * (cardW + 2);
+        doc.setFillColor(...WHITE);
+        doc.setDrawColor(215, 218, 225);
+        doc.roundedRect(x, y, cardW, 20, 2, 2, "FD");
         doc.setFontSize(6);
-        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.setTextColor(...MUTED);
         doc.text(kpi.label, x + 3, y + 6);
-        doc.setFontSize(14);
+        doc.setFontSize(13);
         doc.setFont("helvetica", "bold");
-        doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
-        doc.text(kpi.value, x + 3, y + 17);
+        doc.setTextColor(...kpi.color);
+        doc.text(kpi.value, x + 3, y + 16);
         doc.setFont("helvetica", "normal");
       });
-      y += 30;
+      y += 26;
 
-      // Summary tables: by status, priority, type
-      addNewPageIfNeeded(50);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text("Distribuicao por Status", margin, y);
-      y += 4;
+      // ═══ Summary tables ═══
+      const tableStyles = {
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: [215, 218, 225] as [number, number, number], lineWidth: 0.15 },
+        headStyles: { fillColor: PRIMARY, textColor: WHITE, fontStyle: "bold" as const, fontSize: 7.5 },
+        alternateRowStyles: { fillColor: [246, 248, 252] as [number, number, number] },
+      };
 
+      drawSectionTitle("Distribuicao por Status");
       const statusData = Object.entries(
         filtered.reduce((acc, p) => { acc[p.status_acao] = (acc[p.status_acao] || 0) + 1; return acc; }, {} as Record<string, number>)
       ).map(([k, v]) => [STATUS_LABELS[k] || k, `${v}`, `${total > 0 ? ((v / total) * 100).toFixed(1) : 0}%`]);
+      autoTable(doc, { startY: y, head: [["Status", "Quantidade", "Percentual"]], body: statusData, ...tableStyles });
+      y = (doc as any).lastAutoTable.finalY + 6;
 
-      autoTable(doc, {
-        startY: y,
-        head: [["Status", "Quantidade", "Percentual"]],
-        body: statusData,
-        margin: { left: margin, right: margin },
-        styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
-        headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [248, 249, 252] },
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-
-      // By priority
-      addNewPageIfNeeded(40);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text("Distribuicao por Prioridade", margin, y);
-      y += 4;
-
+      drawSectionTitle("Distribuicao por Prioridade");
       const prioData = Object.entries(
         filtered.reduce((acc, p) => { acc[p.prioridade] = (acc[p.prioridade] || 0) + 1; return acc; }, {} as Record<string, number>)
       ).map(([k, v]) => [PRIORIDADE_LABELS[k] || k, `${v}`, `${total > 0 ? ((v / total) * 100).toFixed(1) : 0}%`]);
+      autoTable(doc, { startY: y, head: [["Prioridade", "Quantidade", "Percentual"]], body: prioData, ...tableStyles });
+      y = (doc as any).lastAutoTable.finalY + 6;
 
-      autoTable(doc, {
-        startY: y,
-        head: [["Prioridade", "Quantidade", "Percentual"]],
-        body: prioData,
-        margin: { left: margin, right: margin },
-        styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
-        headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [248, 249, 252] },
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-
-      // By type
-      addNewPageIfNeeded(40);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text("Distribuicao por Tipo de Problema", margin, y);
-      y += 4;
-
+      drawSectionTitle("Distribuicao por Tipo de Problema");
       const tipoData = Object.entries(
         filtered.reduce((acc, p) => { acc[p.tipo_problema] = (acc[p.tipo_problema] || 0) + 1; return acc; }, {} as Record<string, number>)
       ).map(([k, v]) => [TIPO_LABELS[k] || k, `${v}`, `${total > 0 ? ((v / total) * 100).toFixed(1) : 0}%`]);
-
-      autoTable(doc, {
-        startY: y,
-        head: [["Tipo de Problema", "Quantidade", "Percentual"]],
-        body: tipoData,
-        margin: { left: margin, right: margin },
-        styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
-        headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [248, 249, 252] },
-      });
+      autoTable(doc, { startY: y, head: [["Tipo de Problema", "Quantidade", "Percentual"]], body: tipoData, ...tableStyles });
       y = (doc as any).lastAutoTable.finalY + 8;
 
       // ═══════════════════════════════════════════════
       // PARETO CHART — Incidência por Tipo de Problema
       // ═══════════════════════════════════════════════
-      doc.addPage();
-      y = margin;
-      drawPageHeader();
+      addNewPageIfNeeded(110);
 
-      doc.setFontSize(13);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.text("Diagrama de Pareto - Incidencia por Tipo de Problema", margin, y);
-      y += 3;
-      doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, W - margin, y);
-      y += 10;
+      drawSectionTitle("Diagrama de Pareto — Incidencia por Tipo de Problema");
 
       // Build sorted data
       const paretoRaw = filtered.reduce((acc, p) => {
@@ -438,17 +404,9 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       const areaTotal = areaSorted.reduce((s, [, v]) => s + v, 0);
 
       if (areaSorted.length > 0 && areaTotal > 0) {
-        addNewPageIfNeeded(110);
+        addNewPageIfNeeded(100);
 
-        doc.setFontSize(13);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-        doc.text("Diagrama de Pareto - Incidencia por Area/Setor", margin, y);
-        y += 3;
-        doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-        doc.setLineWidth(0.5);
-        doc.line(margin, y, W - margin, y);
-        y += 10;
+        drawSectionTitle("Diagrama de Pareto — Incidencia por Area/Setor");
 
         const chartX2 = margin + 5;
         const chartY2 = y;
@@ -513,19 +471,9 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       // ═══════════════════════════════════════════════
       // ISHIKAWA (Fishbone) DIAGRAM
       // ═══════════════════════════════════════════════
-      doc.addPage();
-      y = margin;
-      drawPageHeader();
+      addNewPageIfNeeded(120);
 
-      doc.setFontSize(13);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.text("Diagrama de Ishikawa - Analise de Causa e Efeito", margin, y);
-      y += 3;
-      doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, W - margin, y);
-      y += 10;
+      drawSectionTitle("Diagrama de Ishikawa — Analise de Causa e Efeito");
 
       // Build Ishikawa categories from real data
       const ishikawaCategories: { name: string; color: number[]; causes: string[] }[] = [
@@ -633,11 +581,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
 
       // Ishikawa summary table
       addNewPageIfNeeded(40);
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text("Detalhamento das Causas Raiz Identificadas", margin, y);
-      y += 4;
+      drawSectionTitle("Detalhamento das Causas Raiz Identificadas");
 
       const causaData = filtered
         .filter(p => p.causa_raiz)
@@ -675,12 +619,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       ).filter(([, v]) => v > 1).sort((a, b) => b[1] - a[1]);
 
       if (reincidencias.length > 0) {
-        addNewPageIfNeeded(40);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(RED[0], RED[1], RED[2]);
-        doc.text("Reincidencias Identificadas", margin, y);
-        y += 4;
+        drawSectionTitle("Reincidencias Identificadas");
 
         autoTable(doc, {
           startY: y,
@@ -695,12 +634,8 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       }
 
       // Full plans table
-      addNewPageIfNeeded(30);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text("Detalhamento dos Planos de Acao", margin, y);
-      y += 4;
+      drawSectionTitle("Detalhamento dos Planos de Acao");
+      
 
       const plansTableData = filtered.map((p, i) => [
         `${i + 1}`,
@@ -750,21 +685,10 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       });
       y = (doc as any).lastAutoTable.finalY + 10;
 
-      // AI Report section
-      addNewPageIfNeeded(30);
-      doc.addPage();
-      y = margin;
-      drawPageHeader();
+      // AI Report section — always start on a fresh page
+      addNewPageIfNeeded(60);
 
-      doc.setFontSize(13);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.text("Analise Inteligente", margin, y);
-      y += 3;
-      doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, W - margin, y);
-      y += 8;
+      drawSectionTitle("Analise Inteligente");
 
       // Render AI text with line wrapping
       doc.setFontSize(8.5);
