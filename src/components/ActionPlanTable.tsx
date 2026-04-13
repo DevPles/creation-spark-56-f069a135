@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Tables } from "@/integrations/supabase/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type ActionPlan = Tables<"action_plans">;
 
@@ -40,10 +41,64 @@ const TIPO_PROBLEMA_MAP: Record<string, string> = {
 };
 
 const ActionPlanTable = ({ plans, onSelect }: ActionPlanTableProps) => {
+  const isMobile = useIsMobile();
+
+  if (plans.length === 0) {
+    return (
+      <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+        Nenhum plano de ação encontrado
+      </div>
+    );
+  }
+
+  // Mobile: card layout
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        {plans.map((plan, i) => {
+          const statusAcao = STATUS_ACAO_MAP[plan.status_acao] || STATUS_ACAO_MAP.nao_iniciada;
+          const statusEv = STATUS_EVIDENCIA_MAP[plan.status_evidencia] || STATUS_EVIDENCIA_MAP.pendente;
+          const prioridade = PRIORIDADE_MAP[plan.prioridade] || PRIORIDADE_MAP.media;
+          const isCritica = plan.prioridade === "critica" || plan.prioridade === "alta";
+
+          return (
+            <motion.div
+              key={plan.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.02 }}
+              onClick={() => onSelect(plan)}
+              className={`kpi-card cursor-pointer space-y-2 ${isCritica ? "ring-1 ring-destructive/30" : ""}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-medium text-foreground text-sm leading-tight flex-1">{plan.reference_name}</p>
+                <Badge variant="outline" className={`text-[10px] shrink-0 ${prioridade.className}`}>{prioridade.label}</Badge>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span>{TIPO_PROBLEMA_MAP[plan.tipo_problema] || "—"}</span>
+                {plan.area && <><span>·</span><span>{plan.area}</span></>}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{plan.responsavel || "Sem responsável"}</span>
+                <span className="text-xs text-muted-foreground">
+                  {plan.prazo ? new Date(plan.prazo + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "Sem prazo"}
+                </span>
+              </div>
+              <div className="flex gap-1.5 pt-1">
+                <Badge variant="outline" className={`text-[10px] ${statusAcao.className}`}>{statusAcao.label}</Badge>
+                <Badge variant="outline" className={`text-[10px] ${statusEv.className}`}>{statusEv.label}</Badge>
+              </div>
+            </motion.div>
+          );
+        })}
+        <p className="text-[10px] text-muted-foreground text-right">{plans.length} planos</p>
+      </div>
+    );
+  }
+
+  // Desktop: table layout
   return (
     <div className="space-y-3">
-
-      {/* Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
         <div className="px-4 py-2.5 border-b border-border grid grid-cols-12 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           <span className="col-span-3">Referência</span>
@@ -54,11 +109,6 @@ const ActionPlanTable = ({ plans, onSelect }: ActionPlanTableProps) => {
           <span className="col-span-1">Ação</span>
           <span className="col-span-2">Evidência</span>
         </div>
-        {plans.length === 0 && (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-            Nenhum plano de ação encontrado
-          </div>
-        )}
         {plans.map((plan, i) => {
           const statusAcao = STATUS_ACAO_MAP[plan.status_acao] || STATUS_ACAO_MAP.nao_iniciada;
           const statusEv = STATUS_EVIDENCIA_MAP[plan.status_evidencia] || STATUS_EVIDENCIA_MAP.pendente;
@@ -74,9 +124,7 @@ const ActionPlanTable = ({ plans, onSelect }: ActionPlanTableProps) => {
               onClick={() => onSelect(plan)}
               className={`px-4 py-3 grid grid-cols-12 items-center text-sm border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer ${isCritica ? "bg-destructive/5" : ""}`}
             >
-              <span className="col-span-3 font-medium text-foreground truncate">
-                {plan.reference_name}
-              </span>
+              <span className="col-span-3 font-medium text-foreground truncate">{plan.reference_name}</span>
               <span className="col-span-2 text-muted-foreground truncate text-xs">
                 {TIPO_PROBLEMA_MAP[plan.tipo_problema] || "—"}
                 {plan.area && <span className="block text-[10px] text-muted-foreground/70">{plan.area}</span>}
@@ -98,10 +146,7 @@ const ActionPlanTable = ({ plans, onSelect }: ActionPlanTableProps) => {
           );
         })}
       </div>
-
-      <p className="text-[10px] text-muted-foreground text-right">
-        {plans.length} planos
-      </p>
+      <p className="text-[10px] text-muted-foreground text-right">{plans.length} planos</p>
     </div>
   );
 };

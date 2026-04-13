@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ArrowDownAZ, GripVertical, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ADMIN_ONLY_CARD_IDS = ["contratos", "controle-rubrica", "admin", "relatorios", "relatorio-assistencial"];
 
@@ -46,6 +47,7 @@ interface DashboardKpis {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { profile, isAdmin, role } = useAuth();
+  const isMobile = useIsMobile();
   const dragRef = useRef<ActiveDrag | null>(null);
   const didDrag = useRef(false);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
@@ -188,13 +190,13 @@ const Dashboard = () => {
   }, []);
 
   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>, cardId: string) => {
-    if (event.button !== 0) return;
+    if (isMobile || event.button !== 0) return;
     const currentOffset = cardOffsets[cardId] ?? { x: 0, y: 0 };
     dragRef.current = { cardId, startX: event.clientX, startY: event.clientY, baseX: currentOffset.x, baseY: currentOffset.y };
     didDrag.current = false;
     setActiveCardId(cardId);
     event.currentTarget.setPointerCapture(event.pointerId);
-  }, [cardOffsets]);
+  }, [cardOffsets, isMobile]);
 
   const handlePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>, cardId: string) => {
     if (!dragRef.current || dragRef.current.cardId !== cardId) return;
@@ -231,7 +233,7 @@ const Dashboard = () => {
       <TopBar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
           {isAdmin && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} onClick={() => navigate("/contratos")} className="cursor-pointer">
               <KpiCard label="R$ em risco" value={`R$ ${(kpis.totalRisk / 1000).toFixed(1)}k`} status="critical" subtitle="Contrato vigente" />
@@ -258,7 +260,7 @@ const Dashboard = () => {
         </div>
 
         <LayoutGroup>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {orderedCards.map((card) => {
               const offset = cardOffsets[card.id] ?? { x: 0, y: 0 };
               const isDragging = activeCardId === card.id;
@@ -270,7 +272,7 @@ const Dashboard = () => {
                     onPointerUp={finishDrag}
                     onPointerCancel={finishDrag}
                     onClick={() => handleCardClick(card.route)}
-                    className={`touch-none select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+                    className={`select-none ${isMobile ? "" : "touch-none"} ${isDragging ? "cursor-grabbing" : isMobile ? "cursor-pointer" : "cursor-grab"}`}
                     style={{
                       transform: `translate(${offset.x}px, ${offset.y}px)`,
                       transition: isDragging ? "none" : "transform 160ms ease",

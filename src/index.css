@@ -119,23 +119,23 @@
   }
 
   .kpi-card {
-    @apply rounded-2xl p-5 transition-all duration-200;
+    @apply rounded-2xl p-4 sm:p-5 transition-all duration-200;
     background: hsl(220 15% 94%);
     box-shadow: 6px 6px 14px hsl(220 15% 82%), -6px -6px 14px hsl(0 0% 100%);
   }
 
   .kpi-card:hover {
-    @apply -translate-y-0.5;
+    @apply sm:-translate-y-0.5;
     box-shadow: 8px 8px 18px hsl(220 15% 78%), -8px -8px 18px hsl(0 0% 100%);
   }
 
   .kpi-value {
     font-family: var(--font-display);
-    @apply text-2xl font-bold text-foreground;
+    @apply text-xl sm:text-2xl font-bold text-foreground;
   }
 
   .status-badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center rounded-full px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-medium;
   }
 
   .status-critical {

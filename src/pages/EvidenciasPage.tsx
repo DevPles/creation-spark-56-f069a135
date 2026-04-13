@@ -149,10 +149,10 @@ const EvidenciasPage = () => {
               <p className="text-xs text-muted-foreground">Gestão de tratativas, evidências e acompanhamento de indicadores</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {unitOptions.length > 1 && (
               <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                <SelectTrigger className="w-48 h-9 text-xs">
+                <SelectTrigger className="w-full sm:w-48 h-9 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -160,7 +160,7 @@ const EvidenciasPage = () => {
                 </SelectContent>
               </Select>
             )}
-            <Button onClick={handleNew} size="sm" className="gap-1.5">
+            <Button onClick={handleNew} size="sm" className="gap-1.5 w-full sm:w-auto">
               <Plus className="h-3.5 w-3.5" />
               Novo plano
             </Button>
@@ -179,50 +179,52 @@ const EvidenciasPage = () => {
           ))}
         </div>
 
-        {/* Tabs + Filters on same row */}
+        {/* Tabs + Filters */}
         <Tabs defaultValue="tratativas" className="space-y-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-            <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-4 gap-0">
+          <div className="flex flex-col gap-3">
+            <TabsList className="grid w-full grid-cols-4 gap-0">
               <TabsTrigger value="tratativas" className="text-xs">Tratativas</TabsTrigger>
-              <TabsTrigger value="acompanhamento" className="text-xs">Acompanhamento</TabsTrigger>
+              <TabsTrigger value="acompanhamento" className="text-xs">Acompanhar</TabsTrigger>
               <TabsTrigger value="analise" className="text-xs">Análise</TabsTrigger>
               <TabsTrigger value="relatorios" className="text-xs">Relatórios</TabsTrigger>
             </TabsList>
-            <div className="flex items-center gap-2">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  className="h-9 pl-9 w-56 text-xs"
-                  placeholder="Buscar por referência, responsável ou área..."
+                  className="h-9 pl-9 w-full text-xs"
+                  placeholder="Buscar..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                 />
               </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-36 h-9 text-xs">
-                  <Filter className="h-3 w-3 mr-1.5" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os status</SelectItem>
-                  <SelectItem value="nao_iniciada">Não iniciada</SelectItem>
-                  <SelectItem value="em_andamento">Em andamento</SelectItem>
-                  <SelectItem value="concluida">Concluída</SelectItem>
-                  <SelectItem value="cancelada">Cancelada</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filterPrioridade} onValueChange={setFilterPrioridade}>
-                <SelectTrigger className="w-28 h-9 text-xs">
-                  <SelectValue placeholder="Prioridade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todas</SelectItem>
-                  <SelectItem value="baixa">Baixa</SelectItem>
-                  <SelectItem value="media">Média</SelectItem>
-                  <SelectItem value="alta">Alta</SelectItem>
-                  <SelectItem value="critica">Crítica</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="flex-1 sm:w-36 h-9 text-xs">
+                    <Filter className="h-3 w-3 mr-1.5" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os status</SelectItem>
+                    <SelectItem value="nao_iniciada">Não iniciada</SelectItem>
+                    <SelectItem value="em_andamento">Em andamento</SelectItem>
+                    <SelectItem value="concluida">Concluída</SelectItem>
+                    <SelectItem value="cancelada">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={filterPrioridade} onValueChange={setFilterPrioridade}>
+                  <SelectTrigger className="flex-1 sm:w-28 h-9 text-xs">
+                    <SelectValue placeholder="Prioridade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas</SelectItem>
+                    <SelectItem value="baixa">Baixa</SelectItem>
+                    <SelectItem value="media">Média</SelectItem>
+                    <SelectItem value="alta">Alta</SelectItem>
+                    <SelectItem value="critica">Crítica</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
