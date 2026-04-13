@@ -118,19 +118,19 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const W = doc.internal.pageSize.getWidth();
       const H = doc.internal.pageSize.getHeight();
-      const margin = 15;
+      const margin = 14;
       let y = margin;
       const now = new Date().toLocaleDateString("pt-BR");
       const periodLabel = `${new Date(startDate + "T00:00:00").toLocaleDateString("pt-BR")} a ${new Date(endDate + "T00:00:00").toLocaleDateString("pt-BR")}`;
 
-      const PRIMARY = [35, 66, 117];
-      const DARK = [30, 40, 50];
-      const MUTED = [120, 130, 140];
-      const RED = [220, 60, 60];
-      const GREEN = [40, 160, 90];
-      const AMBER = [230, 160, 30];
-      const WHITE = [255, 255, 255];
-      const LIGHT_BG = [235, 239, 245];
+      const PRIMARY: [number, number, number] = [35, 66, 117];
+      const DARK: [number, number, number] = [30, 40, 50];
+      const MUTED: [number, number, number] = [120, 130, 140];
+      const RED: [number, number, number] = [200, 55, 55];
+      const GREEN: [number, number, number] = [40, 150, 85];
+      const AMBER: [number, number, number] = [210, 145, 20];
+      const WHITE: [number, number, number] = [255, 255, 255];
+      const LIGHT_BG: [number, number, number] = [240, 243, 248];
 
       const addNewPageIfNeeded = (needed: number) => {
         if (y + needed > H - 20) { doc.addPage(); y = margin; drawPageHeader(); }
