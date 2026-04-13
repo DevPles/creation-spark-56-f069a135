@@ -635,7 +635,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
 
       // Full plans table
       drawSectionTitle("Detalhamento dos Planos de Acao");
-      y += 4;
+      
 
       const plansTableData = filtered.map((p, i) => [
         `${i + 1}`,
