@@ -475,13 +475,18 @@ async function generatePdfBlob(
 
 const RelatoriosPage = () => {
   const navigate = useNavigate();
+  const { contracts: realContracts } = useContracts();
   const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
 
+  // DB data
+  const [dbGoals, setDbGoals] = useState<any[]>([]);
+  const [dbEntries, setDbEntries] = useState<any[]>([]);
+
   // Contract & comparison
-  const [selectedContractId, setSelectedContractId] = useState("c1");
+  const [selectedContractId, setSelectedContractId] = useState("");
   const [compareMode, setCompareMode] = useState(false);
-  const [compareContractId, setCompareContractId] = useState("c2");
+  const [compareContractId, setCompareContractId] = useState("");
 
   // Filters
   const [typeFilter, setTypeFilter] = useState("todas");
@@ -504,6 +509,60 @@ const RelatoriosPage = () => {
   // Bed data from DB
   const [bedData, setBedData] = useState<{ facility_unit: string; category: string; specialty: string; quantity: number }[]>([]);
   const [bedGoalEntries, setBedGoalEntries] = useState<{ goal_name: string; facility_unit: string; period: string; value: number; target: number }[]>([]);
+
+  // Set default contract
+  useEffect(() => {
+    if (realContracts.length > 0 && !selectedContractId) {
+      setSelectedContractId(realContracts[0].id);
+      if (realContracts.length > 1) setCompareContractId(realContracts[1].id);
+    }
+  }, [realContracts, selectedContractId]);
+
+  // Load goals and entries
+  useEffect(() => {
+    const load = async () => {
+      const [goalsRes, entriesRes] = await Promise.all([
+        supabase.from("goals").select("*"),
+        supabase.from("goal_entries").select("*"),
+      ]);
+      setDbGoals(goalsRes.data || []);
+      setDbEntries(entriesRes.data || []);
+    };
+    load();
+  }, []);
+
+  // Build ContractData objects from real data
+  const CONTRACTS: ContractData[] = useMemo(() => {
+    return realContracts.map(rc => {
+      const unitGoals = dbGoals.filter(g => g.facility_unit === rc.unit);
+      const goalItems: GoalItem[] = unitGoals.map(g => {
+        const entries = dbEntries.filter(e => e.goal_id === g.id);
+        const current = entries.reduce((s: number, e: any) => s + Number(e.value), 0);
+        const pct = g.target > 0 ? (current / g.target) * 100 : 0;
+        return {
+          id: g.id, name: g.name, target: Number(g.target), current, unit: g.unit,
+          type: g.type as "QNT" | "QLT" | "DOC", risk: Number(g.risk),
+          trend: pct >= 90 ? "up" as const : pct >= 60 ? "stable" as const : "down" as const,
+          rubrica: "Metas", pesoFinanceiro: Number(g.weight) * 100,
+        };
+      });
+      const totalRisk = goalItems.reduce((s, g) => s + g.risk, 0);
+      return {
+        id: rc.id, name: rc.name, unit: rc.unit, valorGlobal: rc.value,
+        rubricas: (rc.rubricas || []).filter(r => r.percent > 0).map(r => ({ name: r.name, pct: r.percent, valor: rc.value * (r.percent / 100) })),
+        goals: goalItems,
+        performance: ["Jan", "Fev", "Mar", "Abr"].map(month => {
+          const atingidas = goalItems.filter(g => getGoalPct(g) >= 90).length;
+          const parciais = goalItems.filter(g => { const p = getGoalPct(g); return p >= 60 && p < 90; }).length;
+          const total = goalItems.length || 1;
+          return { month, atingidas: Math.round((atingidas / total) * 100), parciais: Math.round((parciais / total) * 100), naoAtingidas: Math.round(((total - atingidas - parciais) / total) * 100) };
+        }),
+        riskTrend: ["Jan", "Fev", "Mar", "Abr"].map((month, i) => ({
+          month, risco: Math.round(totalRisk * (1 - i * 0.1)), glosa: Math.round(totalRisk * 0.15 * (1 - i * 0.1)),
+        })),
+      };
+    });
+  }, [realContracts, dbGoals, dbEntries]);
 
   useEffect(() => {
     const fetchBedData = async () => {
@@ -530,10 +589,10 @@ const RelatoriosPage = () => {
     fetchBedData();
   }, []);
 
-  const contract = CONTRACTS.find(c => c.id === selectedContractId)!;
+  const contract = CONTRACTS.find(c => c.id === selectedContractId) || CONTRACTS[0];
   const compareContract = CONTRACTS.find(c => c.id === compareContractId);
 
-  const filteredGoals = useMemo(() => filterGoals(contract.goals, typeFilter, statusFilter), [contract, typeFilter, statusFilter]);
+  const filteredGoals = useMemo(() => contract ? filterGoals(contract.goals, typeFilter, statusFilter) : [], [contract, typeFilter, statusFilter]);
   const stats = useMemo(() => computeStats(filteredGoals), [filteredGoals]);
 
   const compareFilteredGoals = useMemo(() => compareContract ? filterGoals(compareContract.goals, typeFilter, statusFilter) : [], [compareContract, typeFilter, statusFilter]);
