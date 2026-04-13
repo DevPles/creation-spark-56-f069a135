@@ -607,15 +607,20 @@ const RelatoriosPage = () => {
           goalTotals[e.goal_id] = (goalTotals[e.goal_id] || 0) + Number(e.value);
         });
         let risco = 0, glosa = 0;
+        const contract = realContracts.find(c => c.unit === rc.unit);
+        const contractValue = contract ? Number(contract.value) : 0;
+        const variablePct = contract ? Number(contract.variable) / 100 : 0;
         unitGoals.forEach(g => {
           const monthlyTarget = Number(g.target) / 12;
           const achieved = goalTotals[g.id] || 0;
-          const gap = Math.max(0, monthlyTarget - achieved);
-          const goalRisk = Number(g.risk);
-          const pct = monthlyTarget > 0 ? achieved / monthlyTarget : 1;
-          if (pct < 1) {
-            risco += Math.round(goalRisk * (1 - pct));
-            glosa += Math.round(goalRisk * 0.15 * (1 - pct));
+          const attainmentPct = monthlyTarget > 0 ? (achieved / monthlyTarget) * 100 : 100;
+          const rules = normalizeScoringRules(g.scoring as any[]);
+          const glosaPct = findGlosaPct(attainmentPct, rules);
+          const weight = Number(g.weight) || 0;
+          if (glosaPct > 0) {
+            const goalRiskValue = calculateGoalRisk(attainmentPct, contractValue, variablePct, weight, rules);
+            risco += goalRiskValue;
+            glosa += goalRiskValue;
           }
         });
         return { month: monthLabel, risco, glosa };
