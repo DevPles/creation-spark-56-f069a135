@@ -51,10 +51,6 @@ const RelatorioAssistencialPage = () => {
   const [dbGoals, setDbGoals] = useState<any[]>([]);
   const [dbEntries, setDbEntries] = useState<any[]>([]);
   const [dbRubricaEntries, setDbRubricaEntries] = useState<any[]>([]);
-  const navigate = useNavigate();
-  const { contracts } = useContracts();
-  const [selectedContractId, setSelectedContractId] = useState("");
-  const [editableNotes, setEditableNotes] = useState("");
 
   // Personalização state — editable sections
   const [persContrato, setPersContrato] = useState("");
