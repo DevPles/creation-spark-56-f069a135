@@ -555,12 +555,24 @@ const AssistentePage = () => {
     await loadGoals(selectedUnit);
   };
 
-  const handleSubmitRubrica = () => {
+  const handleSubmitRubrica = async () => {
     if (!rubricaValue || !rubricaDate) { toast.error("Preencha o valor e a data"); return; }
-    const contract = RUBRICA_CONTRACTS.find(c => c.id === selectedContract);
+    if (!user) return;
+    const contract = contracts.find(c => c.id === selectedContract);
+    if (!contract) { toast.error("Contrato não encontrado"); return; }
+    const { error } = await supabase.from("rubrica_entries").insert({
+      contract_id: contract.id,
+      rubrica_name: selectedRubrica,
+      value_executed: parseFloat(rubricaValue),
+      period: rubricaDate,
+      facility_unit: contract.unit,
+      notes: rubricaNotes || null,
+      user_id: user.id,
+    });
+    if (error) { console.error(error); toast.error("Erro ao salvar lançamento"); return; }
     goToFinalizado("Lançamento de rubrica realizado", [
       `Rubrica: ${selectedRubrica}`,
-      `Contrato: ${contract?.unit || ""}`,
+      `Contrato: ${contract.unit}`,
       `Valor executado: R$ ${rubricaValue}`,
       `Data: ${rubricaDate}`,
       `Mês de referência: ${selectedMonth}`,
@@ -658,7 +670,7 @@ const AssistentePage = () => {
       case "lancar-meta-unit":
         return UNITS.map(u => ({ id: u, title: u, description: `Lançar metas da unidade ${u}`, action: () => { setSelectedUnit(u); loadGoals(u); goTo("lancar-meta-select"); } }));
       case "lancar-rubrica-unit":
-        return RUBRICA_CONTRACTS.map(c => ({ id: c.id, title: c.unit, description: `Contrato: ${c.unit}`, action: () => { setSelectedContract(c.id); goTo("lancar-rubrica-select"); } }));
+        return contracts.map(c => ({ id: c.id, title: c.unit, description: `Contrato: ${c.name}`, action: () => { setSelectedContract(c.id); goTo("lancar-rubrica-select"); } }));
       case "consultar-metas-unit":
         return UNITS.map(u => ({ id: u, title: u, description: `Consultar metas de ${u}`, action: () => { setSelectedUnit(u); loadGoals(u); goTo("consultar-metas-list"); } }));
       default:
