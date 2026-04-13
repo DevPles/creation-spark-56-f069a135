@@ -49,7 +49,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
   const endDate = dateRange.to.toISOString().slice(0, 10);
 
   // Filter plans by unit and date range
-  const filtered = useMemo(() => {
+  const filteredByUnitAndDate = useMemo(() => {
     let result = reportUnit === "Todas as unidades" ? plans : plans.filter(p => p.facility_unit === reportUnit);
     if (startDate) result = result.filter(p => p.created_at >= startDate + "T00:00:00");
     if (endDate) result = result.filter(p => p.created_at <= endDate + "T23:59:59");
@@ -57,7 +57,13 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
   }, [plans, reportUnit, startDate, endDate]);
 
   // Plans available for selection (filtered by unit + date)
-  const plansForSelection = filtered;
+  const plansForSelection = filteredByUnitAndDate;
+
+  // Apply plan selection filter
+  const filtered = useMemo(() => {
+    if (selectedPlanId === "todos") return filteredByUnitAndDate;
+    return filteredByUnitAndDate.filter(p => p.id === selectedPlanId);
+  }, [filteredByUnitAndDate, selectedPlanId]);
 
   const total = filtered.length;
   const concluidas = filtered.filter(p => p.status_acao === "concluida").length;
