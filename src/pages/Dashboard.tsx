@@ -233,7 +233,7 @@ const Dashboard = () => {
       <TopBar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-8">
           {isAdmin && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} onClick={() => navigate("/contratos")} className="cursor-pointer">
               <KpiCard label="R$ em risco" value={`R$ ${(kpis.totalRisk / 1000).toFixed(1)}k`} status="critical" subtitle="Contrato vigente" />
@@ -260,7 +260,7 @@ const Dashboard = () => {
         </div>
 
         <LayoutGroup>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
             {orderedCards.map((card) => {
               const offset = cardOffsets[card.id] ?? { x: 0, y: 0 };
               const isDragging = activeCardId === card.id;
@@ -298,9 +298,9 @@ interface NavCardProps {
 }
 
 const NavCard = ({ title, description }: NavCardProps) => (
-  <div className="kpi-card group w-full cursor-pointer text-left">
-    <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{title}</h3>
-    <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+  <div className="kpi-card group w-full cursor-pointer text-left min-h-[70px] sm:min-h-0">
+    <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors text-sm sm:text-base leading-tight">{title}</h3>
+    <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted-foreground leading-tight">{description}</p>
   </div>
 );
 

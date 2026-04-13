@@ -8,9 +8,9 @@ interface KpiCardProps {
 const KpiCard = ({ label, value, subtitle }: KpiCardProps) => {
   return (
     <div className="kpi-card">
-      <p className="text-xs text-muted-foreground font-medium">{label}</p>
-      <p className="kpi-value mt-1">{value}</p>
-      <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+      <p className="text-[10px] sm:text-xs text-muted-foreground font-medium leading-tight">{label}</p>
+      <p className="kpi-value mt-0.5 sm:mt-1">{value}</p>
+      <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{subtitle}</p>
     </div>
   );
 };
