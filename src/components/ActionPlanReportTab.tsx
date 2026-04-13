@@ -133,28 +133,43 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       const LIGHT_BG: [number, number, number] = [240, 243, 248];
 
       const addNewPageIfNeeded = (needed: number) => {
-        if (y + needed > H - 20) { doc.addPage(); y = margin; drawPageHeader(); }
+        if (y + needed > H - 18) { doc.addPage(); y = margin; drawPageHeader(); }
       };
 
       const drawPageHeader = () => {
-        doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-        doc.rect(0, 0, W, 12, "F");
+        doc.setFillColor(...PRIMARY);
+        doc.rect(0, 0, W, 11, "F");
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
+        doc.setFontSize(7);
         doc.setFont("helvetica", "bold");
-        doc.text("MOSS -- Relatorio de Plano de Acao", margin, 8);
-        doc.text(now, W - margin, 8, { align: "right" });
-        doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-        y = 18;
+        doc.text("MOSS — Relatorio de Plano de Acao", margin, 7);
+        doc.setFont("helvetica", "normal");
+        doc.text(now, W - margin, 7, { align: "right" });
+        doc.setTextColor(...DARK);
+        y = 16;
       };
 
       const drawFooter = (pageNum: number, totalPages: number) => {
-        doc.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
-        doc.rect(0, H - 10, W, 10, "F");
-        doc.setFontSize(7);
-        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-        doc.text("Gerado automaticamente pelo MOSS", margin, H - 4);
-        doc.text(`Pagina ${pageNum} de ${totalPages}`, W - margin, H - 4, { align: "right" });
+        doc.setDrawColor(200, 205, 215);
+        doc.setLineWidth(0.2);
+        doc.line(margin, H - 10, W - margin, H - 10);
+        doc.setFontSize(6);
+        doc.setTextColor(...MUTED);
+        doc.text("Gerado automaticamente pelo MOSS", margin, H - 5);
+        doc.text(`Pagina ${pageNum} de ${totalPages}`, W - margin, H - 5, { align: "right" });
+      };
+
+      const drawSectionTitle = (title: string) => {
+        addNewPageIfNeeded(16);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...PRIMARY);
+        doc.text(title, margin, y);
+        y += 2;
+        doc.setDrawColor(...PRIMARY);
+        doc.setLineWidth(0.4);
+        doc.line(margin, y, W - margin, y);
+        y += 6;
       };
 
       // Cover
