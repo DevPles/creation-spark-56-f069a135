@@ -100,9 +100,9 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       // 1. Get AI report
       const { data, error } = await supabase.functions.invoke("action-plan-report", {
         body: {
-          facility_unit: selectedUnit === "Todas as unidades" ? null : selectedUnit,
+          facility_unit: reportUnit === "Todas as unidades" ? null : reportUnit,
           period: "custom",
-          start_date: startDate,
+          start_date: startDate || "2020-01-01",
           end_date: endDate,
         },
       });
