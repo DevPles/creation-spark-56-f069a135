@@ -55,12 +55,12 @@ const ActionPlanTable = ({ plans, onSelect }: ActionPlanTableProps) => {
           <span className="col-span-1">Ação</span>
           <span className="col-span-2">Evidência</span>
         </div>
-        {filtered.length === 0 && (
+        {plans.length === 0 && (
           <div className="px-5 py-10 text-center text-sm text-muted-foreground">
             Nenhum plano de ação encontrado
           </div>
         )}
-        {filtered.map((plan, i) => {
+        {plans.map((plan, i) => {
           const statusAcao = STATUS_ACAO_MAP[plan.status_acao] || STATUS_ACAO_MAP.nao_iniciada;
           const statusEv = STATUS_EVIDENCIA_MAP[plan.status_evidencia] || STATUS_EVIDENCIA_MAP.pendente;
           const prioridade = PRIORIDADE_MAP[plan.prioridade] || PRIORIDADE_MAP.media;
@@ -101,9 +101,8 @@ const ActionPlanTable = ({ plans, onSelect }: ActionPlanTableProps) => {
         })}
       </div>
 
-      {/* Footer count */}
       <p className="text-[10px] text-muted-foreground text-right">
-        {filtered.length} de {plans.length} planos
+        {plans.length} planos
       </p>
     </div>
   );
