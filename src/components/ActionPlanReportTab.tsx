@@ -584,7 +584,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       drawSectionTitle("Detalhamento das Causas Raiz Identificadas");
       y += 4;
 
-      const causaData = filtered
+      
         .filter(p => p.causa_raiz)
         .map(p => [
           p.reference_name.length > 30 ? p.reference_name.substring(0, 29) + "..." : p.reference_name,
