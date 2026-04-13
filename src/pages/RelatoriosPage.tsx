@@ -528,6 +528,23 @@ const RelatoriosPage = () => {
     load();
   }, []);
 
+  // Helper: get N months back based on period filter
+  const periodMonths = useMemo(() => {
+    const n = parseInt(period.replace("M", "")) || 4;
+    const months: string[] = [];
+    const now = new Date();
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    }
+    return months;
+  }, [period]);
+
+  const MONTH_LABELS: Record<string, string> = {
+    "01": "Jan", "02": "Fev", "03": "Mar", "04": "Abr", "05": "Mai", "06": "Jun",
+    "07": "Jul", "08": "Ago", "09": "Set", "10": "Out", "11": "Nov", "12": "Dez",
+  };
+
   // Build ContractData objects from real data
   const CONTRACTS: ContractData[] = useMemo(() => {
     return realContracts.map(rc => {
@@ -544,22 +561,72 @@ const RelatoriosPage = () => {
         };
       });
       const totalRisk = goalItems.reduce((s, g) => s + g.risk, 0);
+
+      // Real performance: group entries by month
+      const unitEntries = dbEntries.filter(e => unitGoals.some(g => g.id === e.goal_id));
+      const performance = periodMonths.map(ym => {
+        const monthLabel = MONTH_LABELS[ym.split("-")[1]] || ym;
+        // Entries in this month (period format: "2024-03" or "2024-03-15")
+        const monthEntries = unitEntries.filter(e => (e.period as string).startsWith(ym));
+        if (monthEntries.length === 0) {
+          return { month: monthLabel, atingidas: 0, parciais: 0, naoAtingidas: 0 };
+        }
+        // Compute per-goal status for this month
+        const goalTotals: Record<string, number> = {};
+        monthEntries.forEach(e => {
+          goalTotals[e.goal_id] = (goalTotals[e.goal_id] || 0) + Number(e.value);
+        });
+        const goalsWithEntries = Object.keys(goalTotals).length;
+        let atingidas = 0, parciais = 0, criticas = 0;
+        Object.entries(goalTotals).forEach(([gid, val]) => {
+          const goal = unitGoals.find(g => g.id === gid);
+          if (!goal) return;
+          // Monthly target = annual target proportional
+          const monthlyTarget = Number(goal.target) / 12;
+          const pct = monthlyTarget > 0 ? (val / monthlyTarget) * 100 : 100;
+          if (pct >= 90) atingidas++;
+          else if (pct >= 60) parciais++;
+          else criticas++;
+        });
+        const total = goalsWithEntries || 1;
+        return {
+          month: monthLabel,
+          atingidas: Math.round((atingidas / total) * 100),
+          parciais: Math.round((parciais / total) * 100),
+          naoAtingidas: Math.round((criticas / total) * 100),
+        };
+      });
+
+      // Real riskTrend: compute gap-based risk per month
+      const riskTrend = periodMonths.map(ym => {
+        const monthLabel = MONTH_LABELS[ym.split("-")[1]] || ym;
+        const monthEntries = unitEntries.filter(e => (e.period as string).startsWith(ym));
+        const goalTotals: Record<string, number> = {};
+        monthEntries.forEach(e => {
+          goalTotals[e.goal_id] = (goalTotals[e.goal_id] || 0) + Number(e.value);
+        });
+        let risco = 0, glosa = 0;
+        unitGoals.forEach(g => {
+          const monthlyTarget = Number(g.target) / 12;
+          const achieved = goalTotals[g.id] || 0;
+          const gap = Math.max(0, monthlyTarget - achieved);
+          const goalRisk = Number(g.risk);
+          const pct = monthlyTarget > 0 ? achieved / monthlyTarget : 1;
+          if (pct < 1) {
+            risco += Math.round(goalRisk * (1 - pct));
+            glosa += Math.round(goalRisk * 0.15 * (1 - pct));
+          }
+        });
+        return { month: monthLabel, risco, glosa };
+      });
+
       return {
         id: rc.id, name: rc.name, unit: rc.unit, valorGlobal: rc.value,
         rubricas: (rc.rubricas || []).filter(r => r.percent > 0).map(r => ({ name: r.name, pct: r.percent, valor: rc.value * (r.percent / 100) })),
-        goals: goalItems,
-        performance: ["Jan", "Fev", "Mar", "Abr"].map(month => {
-          const atingidas = goalItems.filter(g => getGoalPct(g) >= 90).length;
-          const parciais = goalItems.filter(g => { const p = getGoalPct(g); return p >= 60 && p < 90; }).length;
-          const total = goalItems.length || 1;
-          return { month, atingidas: Math.round((atingidas / total) * 100), parciais: Math.round((parciais / total) * 100), naoAtingidas: Math.round(((total - atingidas - parciais) / total) * 100) };
-        }),
-        riskTrend: ["Jan", "Fev", "Mar", "Abr"].map((month, i) => ({
-          month, risco: Math.round(totalRisk * (1 - i * 0.1)), glosa: Math.round(totalRisk * 0.15 * (1 - i * 0.1)),
-        })),
+        goals: goalItems, performance, riskTrend,
       };
     });
-  }, [realContracts, dbGoals, dbEntries]);
+  }, [realContracts, dbGoals, dbEntries, periodMonths]);
 
   useEffect(() => {
     const fetchBedData = async () => {
