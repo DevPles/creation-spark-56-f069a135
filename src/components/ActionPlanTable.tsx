@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -75,8 +74,7 @@ const ActionPlanTable = ({ plans, onSelect }: ActionPlanTableProps) => {
               onClick={() => onSelect(plan)}
               className={`px-4 py-3 grid grid-cols-12 items-center text-sm border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer ${isCritica ? "bg-destructive/5" : ""}`}
             >
-              <span className="col-span-3 font-medium text-foreground truncate flex items-center gap-1.5">
-                {isCritica && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />}
+              <span className="col-span-3 font-medium text-foreground truncate">
                 {plan.reference_name}
               </span>
               <span className="col-span-2 text-muted-foreground truncate text-xs">

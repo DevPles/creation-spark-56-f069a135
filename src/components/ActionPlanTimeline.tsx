@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Tables } from "@/integrations/supabase/types";
-import { Clock, AlertTriangle, CheckCircle2, XCircle, Hourglass } from "lucide-react";
 
 type ActionPlan = Tables<"action_plans">;
 
@@ -9,11 +8,11 @@ interface Props {
   selectedUnit: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any; borderColor: string }> = {
-  nao_iniciada: { label: "Não iniciadas", color: "text-muted-foreground", icon: Clock, borderColor: "border-muted-foreground/30" },
-  em_andamento: { label: "Em andamento", color: "text-warning", icon: Hourglass, borderColor: "border-warning/30" },
-  concluida: { label: "Concluídas", color: "text-success", icon: CheckCircle2, borderColor: "border-success/30" },
-  cancelada: { label: "Canceladas", color: "text-destructive", icon: XCircle, borderColor: "border-destructive/30" },
+const STATUS_CONFIG: Record<string, { label: string; color: string; borderColor: string }> = {
+  nao_iniciada: { label: "Não iniciadas", color: "text-muted-foreground", borderColor: "border-muted-foreground/30" },
+  em_andamento: { label: "Em andamento", color: "text-warning", borderColor: "border-warning/30" },
+  concluida: { label: "Concluídas", color: "text-success", borderColor: "border-success/30" },
+  cancelada: { label: "Canceladas", color: "text-destructive", borderColor: "border-destructive/30" },
 };
 
 const STATUSES = ["nao_iniciada", "em_andamento", "concluida", "cancelada"] as const;
@@ -55,14 +54,12 @@ const ActionPlanTimeline = ({ plans, selectedUnit }: Props) => {
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {STATUSES.map(status => {
         const config = STATUS_CONFIG[status];
-        const Icon = config.icon;
         const items = grouped[status];
 
         return (
           <div key={status} className="space-y-2">
             {/* Column header */}
             <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl bg-card border ${config.borderColor}`}>
-              <Icon className={`h-4 w-4 ${config.color}`} />
               <h3 className={`text-sm font-semibold ${config.color}`}>{config.label}</h3>
               <Badge variant="secondary" className="text-[10px] ml-auto">{items.length}</Badge>
             </div>
@@ -80,12 +77,11 @@ const ActionPlanTimeline = ({ plans, selectedUnit }: Props) => {
                   <div key={plan.id} className={`rounded-xl border bg-card p-3 space-y-2 hover:shadow-md transition-shadow ${prazo?.urgent ? "border-destructive/30" : "border-border"}`}>
                     <p className="text-sm font-medium text-foreground leading-tight line-clamp-2">{plan.reference_name}</p>
                     {plan.responsavel && (
-                      <p className="text-[11px] text-muted-foreground">👤 {plan.responsavel}</p>
+                      <p className="text-[11px] text-muted-foreground">{plan.responsavel}</p>
                     )}
                     <div className="flex items-center justify-between gap-2">
                       {prazo ? (
-                        <span className={`text-[10px] flex items-center gap-1 ${prazo.className}`}>
-                          {prazo.urgent && <AlertTriangle className="h-3 w-3" />}
+                        <span className={`text-[10px] ${prazo.className}`}>
                           {prazo.label}
                         </span>
                       ) : (
