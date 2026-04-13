@@ -1061,7 +1061,7 @@ const RelatoriosPage = () => {
     const reportLabel = REPORT_TYPES.find(t => t.id === selectedType)?.label || selectedType;
     toast.info("Gerando PDF...");
     try {
-      const blob = await generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails, contract, chartRef);
+      const blob = await generatePdfBlob(filteredGoals, contract.name, selectedType, includeCharts, includeDetails, contract, chartRef, { dbGoals, dbEntries, dbRubricaEntries, actionPlans });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       const fileName = `MOSS_${reportLabel.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
