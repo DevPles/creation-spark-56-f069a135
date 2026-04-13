@@ -811,14 +811,15 @@ const RelatoriosPage = () => {
     ];
   }, [compareMode, contract, compareContract, stats, compareStats]);
 
-  /* ── Financial impact by rubrica ── */
+  /* ── Financial impact by rubrica (real data) ── */
   const rubricaFinancial = useMemo(() => {
     return contract.rubricas.map(r => {
-      const goalsInRubrica = filteredGoals.filter(g => g.rubrica === r.name);
-      const riskInRubrica = goalsInRubrica.reduce((s, g) => s + g.risk, 0);
-      return { name: r.name, valor: r.valor / 1000, risco: riskInRubrica / 1000, pct: r.pct };
+      const executed = dbRubricaEntries
+        .filter(re => re.contract_id === contract.id && re.rubrica_name === r.name)
+        .reduce((s: number, re: any) => s + Number(re.value_executed), 0);
+      return { name: r.name, valor: r.valor / 1000, risco: Math.max(0, (r.valor - executed)) / 1000, pct: r.pct };
     });
-  }, [contract, filteredGoals]);
+  }, [contract, dbRubricaEntries]);
 
   /* ── Render slides ── */
   const chartH = isCarouselFullscreen ? 420 : 280;
