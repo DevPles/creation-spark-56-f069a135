@@ -685,21 +685,10 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       });
       y = (doc as any).lastAutoTable.finalY + 10;
 
-      // AI Report section
-      addNewPageIfNeeded(30);
-      doc.addPage();
-      y = margin;
-      drawPageHeader();
+      // AI Report section — always start on a fresh page
+      addNewPageIfNeeded(60);
 
-      doc.setFontSize(13);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.text("Analise Inteligente", margin, y);
-      y += 3;
-      doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, W - margin, y);
-      y += 8;
+      drawSectionTitle("Analise Inteligente");
 
       // Render AI text with line wrapping
       doc.setFontSize(8.5);
