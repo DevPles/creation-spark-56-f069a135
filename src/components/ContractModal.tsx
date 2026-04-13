@@ -43,7 +43,7 @@ const ContractModal = ({ contract, open, onOpenChange }: ContractModalProps) => 
       const { data: goalsData } = await supabase
         .from("goals")
         .select("id, name, target, type, weight")
-        .eq("facility_unit", unit);
+        .eq("facility_unit", unit as any);
 
       const { data: entriesData } = await supabase
         .from("goal_entries")
