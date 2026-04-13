@@ -513,15 +513,17 @@ const RelatoriosPage = () => {
     }
   }, [realContracts, selectedContractId]);
 
-  // Load goals and entries
+  // Load goals, entries and rubrica entries
   useEffect(() => {
     const load = async () => {
-      const [goalsRes, entriesRes] = await Promise.all([
+      const [goalsRes, entriesRes, rubricaRes] = await Promise.all([
         supabase.from("goals").select("*"),
         supabase.from("goal_entries").select("*"),
+        supabase.from("rubrica_entries").select("*"),
       ]);
       setDbGoals(goalsRes.data || []);
       setDbEntries(entriesRes.data || []);
+      setDbRubricaEntries(rubricaRes.data || []);
     };
     load();
   }, []);
