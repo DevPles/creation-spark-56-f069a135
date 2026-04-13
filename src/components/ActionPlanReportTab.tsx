@@ -404,17 +404,9 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       const areaTotal = areaSorted.reduce((s, [, v]) => s + v, 0);
 
       if (areaSorted.length > 0 && areaTotal > 0) {
-        addNewPageIfNeeded(110);
+        addNewPageIfNeeded(100);
 
-        doc.setFontSize(13);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-        doc.text("Diagrama de Pareto - Incidencia por Area/Setor", margin, y);
-        y += 3;
-        doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-        doc.setLineWidth(0.5);
-        doc.line(margin, y, W - margin, y);
-        y += 10;
+        drawSectionTitle("Diagrama de Pareto — Incidencia por Area/Setor");
 
         const chartX2 = margin + 5;
         const chartY2 = y;
