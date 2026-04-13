@@ -13,7 +13,7 @@ interface ProfileModalProps {
 }
 
 const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined);
