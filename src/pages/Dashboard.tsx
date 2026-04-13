@@ -233,7 +233,7 @@ const Dashboard = () => {
       <TopBar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
           {isAdmin && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} onClick={() => navigate("/contratos")} className="cursor-pointer">
               <KpiCard label="R$ em risco" value={`R$ ${(kpis.totalRisk / 1000).toFixed(1)}k`} status="critical" subtitle="Contrato vigente" />
@@ -260,7 +260,7 @@ const Dashboard = () => {
         </div>
 
         <LayoutGroup>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {orderedCards.map((card) => {
               const offset = cardOffsets[card.id] ?? { x: 0, y: 0 };
               const isDragging = activeCardId === card.id;
@@ -272,7 +272,7 @@ const Dashboard = () => {
                     onPointerUp={finishDrag}
                     onPointerCancel={finishDrag}
                     onClick={() => handleCardClick(card.route)}
-                    className={`touch-none select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+                    className={`select-none ${isMobile ? "" : "touch-none"} ${isDragging ? "cursor-grabbing" : isMobile ? "cursor-pointer" : "cursor-grab"}`}
                     style={{
                       transform: `translate(${offset.x}px, ${offset.y}px)`,
                       transition: isDragging ? "none" : "transform 160ms ease",
