@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 // no icon imports - text only
 import TopBar from "@/components/TopBar";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useContracts } from "@/contexts/ContractsContext";
-import { ALL_ENTRIES, getEstouradasByUnit, RUBRICA_NAMES, MONTHS } from "@/data/rubricaData";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -41,34 +41,7 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
-// Simulated goals data per unit
-const GOALS_DATA: Record<string, { name: string; type: "QLT" | "QNT"; target: number; achieved: number; weight: number; penalty: number }[]> = {
-  "Hospital Geral": [
-    { name: "Taxa de ocupação de leitos", type: "QNT", target: 85, achieved: 82, weight: 15, penalty: 2 },
-    { name: "Tempo médio de espera", type: "QNT", target: 30, achieved: 35, weight: 10, penalty: 1.5 },
-    { name: "Comissão de óbitos ativa", type: "QLT", target: 100, achieved: 100, weight: 10, penalty: 3 },
-    { name: "Cirurgias eletivas realizadas", type: "QNT", target: 120, achieved: 98, weight: 20, penalty: 5 },
-    { name: "RDQA entregue", type: "QLT", target: 100, achieved: 0, weight: 15, penalty: 4 },
-    { name: "Protocolo de higienização", type: "QLT", target: 100, achieved: 100, weight: 10, penalty: 2 },
-    { name: "Satisfação do paciente (NPS)", type: "QNT", target: 80, achieved: 72, weight: 10, penalty: 2 },
-    { name: "Taxa de infecção hospitalar", type: "QNT", target: 5, achieved: 6.2, weight: 10, penalty: 3 },
-  ],
-  "UPA Norte": [
-    { name: "Satisfação do paciente (NPS)", type: "QNT", target: 75, achieved: 68, weight: 20, penalty: 3 },
-    { name: "Protocolo de higienização", type: "QLT", target: 100, achieved: 100, weight: 15, penalty: 2 },
-    { name: "Cirurgias eletivas realizadas", type: "QNT", target: 60, achieved: 55, weight: 25, penalty: 4 },
-    { name: "Tempo médio de espera", type: "QNT", target: 20, achieved: 25, weight: 15, penalty: 2 },
-    { name: "RDQA entregue", type: "QLT", target: 100, achieved: 100, weight: 15, penalty: 3 },
-    { name: "Comissão de óbitos ativa", type: "QLT", target: 100, achieved: 0, weight: 10, penalty: 5 },
-  ],
-  "UBS Centro": [
-    { name: "RDQA entregue", type: "QLT", target: 100, achieved: 100, weight: 25, penalty: 5 },
-    { name: "Taxa de infecção hospitalar", type: "QNT", target: 3, achieved: 2.8, weight: 20, penalty: 3 },
-    { name: "Protocolo de higienização", type: "QLT", target: 100, achieved: 100, weight: 20, penalty: 2 },
-    { name: "Satisfação do paciente (NPS)", type: "QNT", target: 70, achieved: 74, weight: 20, penalty: 2 },
-    { name: "Tempo médio de espera", type: "QNT", target: 15, achieved: 12, weight: 15, penalty: 1 },
-  ],
-};
+const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const RelatorioAssistencialPage = () => {
   const navigate = useNavigate();
