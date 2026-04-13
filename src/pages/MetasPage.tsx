@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { normalizeScoringRules, findGlosaPct } from "@/lib/riskCalculation";
 
 const MetasPage = () => {
   const navigate = useNavigate();
