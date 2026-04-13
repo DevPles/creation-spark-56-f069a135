@@ -1056,6 +1056,16 @@ const LancamentoMetasPage = () => {
                 return "bg-emerald-500/80 text-white";
               };
 
+              // Pre-compute per-row min/max for "meta" mode
+              const rowStats: Record<string, { min: number; max: number; values: number[] }> = {};
+              heatmapGoals.forEach(g => {
+                const entries = goalDayMap[g.id] || {};
+                const vals = Object.values(entries);
+                if (vals.length > 0) {
+                  rowStats[g.id] = { min: Math.min(...vals), max: Math.max(...vals), values: vals };
+                }
+              });
+
               const getCellColor = (goal: Goal, value: number | undefined) => {
                 if (value === undefined) return "bg-muted/30 text-muted-foreground/50";
 
@@ -1066,17 +1076,25 @@ const LancamentoMetasPage = () => {
                   goal.name.toLowerCase().includes("óbito");
 
                 if (heatmapCompare === "meta") {
-                  // Compare against the goal's full target
-                  const pct = goal.target > 0 ? (value / goal.target) * 100 : 0;
+                  // Compare within the row: worst value = red, best = green
+                  const stats = rowStats[goal.id];
+                  if (!stats || stats.values.length <= 1) return "bg-emerald-500/80 text-white";
+                  const { min, max } = stats;
+                  if (min === max) return "bg-emerald-500/80 text-white";
+
+                  // Normalize 0-1 where 0=worst, 1=best
+                  let norm: number;
                   if (lowerIsBetter) {
-                    if (pct <= 80) return "bg-emerald-500/80 text-white";
-                    if (pct <= 100) return "bg-amber-400/80 text-white";
-                    if (pct <= 120) return "bg-orange-400/80 text-white";
-                    return "bg-destructive/80 text-white";
+                    // Lower is better: min=best(1), max=worst(0)
+                    norm = (max - value) / (max - min);
+                  } else {
+                    // Higher is better: max=best(1), min=worst(0)
+                    norm = (value - min) / (max - min);
                   }
-                  if (pct >= 100) return "bg-emerald-500/80 text-white";
-                  if (pct >= 80) return "bg-amber-400/80 text-white";
-                  if (pct >= 50) return "bg-orange-400/80 text-white";
+
+                  if (norm >= 0.75) return "bg-emerald-500/80 text-white";
+                  if (norm >= 0.50) return "bg-amber-400/80 text-white";
+                  if (norm >= 0.25) return "bg-orange-400/80 text-white";
                   return "bg-destructive/80 text-white";
                 }
 
