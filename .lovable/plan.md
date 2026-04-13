@@ -1,58 +1,81 @@
 
 
-## Plano: Sistema Inteligente de Plano de Ação
+# Plano de Revisão Completa do Sistema MOSS
 
-### Problema atual
-O módulo é 100% client-side com dados hardcoded. Não há persistência, histórico de tratativas, acompanhamento de evolução, análise por área/tipo, nem geração de relatórios. Ao recarregar a página, tudo se perde.
+## Problemas Identificados
 
-### Visão geral da solução
+### 1. Dados Mock ainda presentes (CRÍTICO)
+Várias páginas ainda usam dados hardcoded em vez de consultar o banco de dados:
 
-Criar um sistema completo e persistente de Plano de Ação com 5 pilares:
+- **RelatoriosPage.tsx**: Usa `CONTRACTS` com dados mock (3 contratos hardcoded com metas, performance, riskTrend). Deveria usar a tabela `contracts` + `goals` + `goal_entries` do banco.
+- **ControleRubricaPage.tsx**: `RISK_DATA` é hardcoded. A rubrica usa dados dos contratos do banco mas simula a execução com `executionRate` calculado artificialmente (linhas 73-76). Deveria ter uma tabela `rubrica_entries` para lançamentos reais.
+- **RiscoPage.tsx**: `RISK_DATA` é 100% hardcoded. Deveria calcular riscos a partir de `goals` + `goal_entries`.
+- **RelatorioAssistencialPage.tsx**: `GOALS_DATA` é hardcoded por unidade. Deveria usar `goals` + `goal_entries`.
+- **LancamentoMetasPage.tsx (aba Rubricas)**: Usa `CONTRACTS` e `ALL_ENTRIES` do `rubricaData.ts` (mock). O `handleRubricaSubmit` apenas mostra toast sem salvar no banco.
+- **rubricaData.ts**: Arquivo inteiro de dados fictícios usado por múltiplas páginas.
 
-1. **Persistência no banco de dados** — tabela `action_plans` + `action_plan_history` para registrar cada mudança de status/tratativa
-2. **Painel analítico com abas** — substituir a listagem simples por abas: Tratativas, Acompanhamento, Análise por Área, Relatórios
-3. **Timeline de histórico** — cada plano terá uma timeline mostrando todas as alterações (quem, quando, o quê)
-4. **Dashboard analítico** — gráficos de incidência/reincidência por tipo, área, unidade e período
-5. **Relatórios inteligentes** — geração de relatório consolidado com IA que resume o cenário, destaca padrões e sugere prioridades
+### 2. Tabela de Lançamento de Rubricas inexistente (CRÍTICO)
+Não existe tabela `rubrica_entries` no banco. Os lançamentos de rubricas na aba "Lançamento de Rubricas" não são persistidos — apenas exibem um toast de sucesso falso.
+
+### 3. SAU Page sem funcionalidade
+Página apenas exibe "Módulo em construção". Precisa de tabela e CRUD.
+
+### 4. Filtros não funcionais em algumas páginas
+- **ControleRubricaPage**: Filtros de ano e mês existem mas não afetam os dados (dados são simulados).
+- **RelatoriosPage**: Dados são mock, filtros não têm efeito real.
+
+### 5. goal_entries filtra apenas por user_id
+Na LancamentoMetasPage (linha 630), `goal_entries` só busca entradas do próprio usuário. Admins deveriam ver todas as entradas.
 
 ---
 
-### Detalhes técnicos
+## Plano de Implementação (6 Etapas)
 
-#### 1. Novas tabelas (migrações)
+### Etapa 1: Criar tabela `rubrica_entries`
+- Migration SQL para criar tabela com campos: `id`, `contract_id`, `rubrica_name`, `value_executed`, `period`, `notes`, `user_id`, `facility_unit`, `created_at`
+- RLS: authenticated SELECT, INSERT por user_id, UPDATE por user_id
 
-**`action_plans`** — registro principal:
-- `id`, `facility_unit`, `category` (meta/rubrica/justificativa/relatório), `reference_name` (meta ou rubrica vinculada), `reference_id` (goal_id opcional)
-- `analise_critica`, `causa_raiz`, `acao_corretiva`, `responsavel`, `prazo`, `status_acao` (não iniciada/em andamento/concluída/cancelada)
-- `status_evidencia` (pendente/enviada/validada/rejeitada), `tipo_evidencia`, `arquivo_url`
-- `area` (setor/departamento), `tipo_problema` (enum: processo, equipamento, rh, insumo, infraestrutura, outro)
-- `prioridade` (baixa/média/alta/crítica), `risco_financeiro` (valor numérico)
-- `created_by`, `created_at`, `updated_at`
+### Etapa 2: Criar tabela `sau_records` para SAU
+- Migration SQL: `id`, `facility_unit`, `tipo` (ouvidoria/elogio/reclamação/sugestão), `descricao`, `status`, `responsavel`, `created_by`, `created_at`, `resolved_at`
+- RLS com políticas adequadas
 
-**`action_plan_history`** — log de cada alteração:
-- `id`, `action_plan_id` (FK), `field_changed`, `old_value`, `new_value`, `changed_by`, `changed_at`, `notes`
+### Etapa 3: Conectar LancamentoMetasPage (aba Rubricas) ao banco
+- Substituir `CONTRACTS` mock pelos contratos do `useContracts()`
+- `handleRubricaSubmit` → INSERT real na tabela `rubrica_entries`
+- Exibir lançamentos anteriores da tabela
+- Corrigir filtro de `goal_entries` para admins verem todas as entradas
 
-RLS: autenticados podem ler; inserção/edição vinculada ao `created_by` ou admin.
+### Etapa 4: Conectar ControleRubricaPage ao banco
+- Substituir `RISK_DATA` por cálculo real de `goals` + `goal_entries`
+- Substituir simulação de execução por dados reais de `rubrica_entries`
+- Garantir que filtros de ano/mês funcionem
 
-#### 2. Página reestruturada com abas
+### Etapa 5: Conectar RelatoriosPage e RelatorioAssistencialPage ao banco
+- Substituir `CONTRACTS` mock por dados reais de `contracts` + `goals` + `goal_entries`
+- Calcular performance, riskTrend e stats dinamicamente
+- Garantir que PDFs gerados usem dados reais
 
-- **Tratativas** (tab principal): listagem com filtros por status, prioridade, área, tipo de problema. Cards KPI no topo (total, pendentes, em andamento, concluídas, vencidas)
-- **Acompanhamento**: visão Kanban ou timeline das tratativas agrupadas por status, com indicador de prazo (no prazo / atrasado / vencido)
-- **Análise**: gráficos de barras/donut mostrando incidência por tipo de problema, por área/setor, por unidade; ranking de reincidência (mesma meta/rubrica com múltiplos planos); evolução mensal
-- **Relatórios**: geração de relatório consolidado via IA que analisa os dados e produz um resumo executivo com padrões identificados, áreas críticas e recomendações
+### Etapa 6: Conectar RiscoPage ao banco + Implementar SauPage
+- RiscoPage: calcular riscos a partir de `goals` + `goal_entries`
+- SauPage: CRUD completo com formulário, listagem, filtros por unidade e status
 
-#### 3. Modal aprimorado
+---
 
-- Adicionar campos: `tipo_problema` (select), `área/setor` (select dinâmico da tabela sectors), `prioridade` (select)
-- Seção de histórico dentro do modal: timeline com todas as alterações anteriores
-- Ao salvar, registrar automaticamente em `action_plan_history`
+## Resumo Técnico
 
-#### 4. Edge function para relatório inteligente
+```text
+Arquivos a criar:
+  - 1 migration (rubrica_entries + sau_records)
 
-- `supabase/functions/action-plan-report/index.ts` — recebe filtros (unidade, período), consulta os planos do banco, envia para Lovable AI e retorna um relatório estruturado com: resumo executivo, padrões de incidência, áreas com maior reincidência, recomendações priorizadas
+Arquivos a editar:
+  - src/pages/LancamentoMetasPage.tsx (rubrica submit real, entries sem filtro user)
+  - src/pages/ControleRubricaPage.tsx (dados reais)
+  - src/pages/RelatoriosPage.tsx (dados reais)
+  - src/pages/RelatorioAssistencialPage.tsx (dados reais)
+  - src/pages/RiscoPage.tsx (dados reais)
+  - src/pages/SauPage.tsx (CRUD completo)
+  - src/data/rubricaData.ts (pode ser removido ou mantido como fallback)
+```
 
-#### 5. Arquivos impactados
-
-- **Criar**: migração SQL, `src/pages/EvidenciasPage.tsx` (reestruturar), `src/components/ActionPlanTable.tsx`, `src/components/ActionPlanTimeline.tsx`, `src/components/ActionPlanAnalytics.tsx`, `src/components/ActionPlanReportTab.tsx`, `supabase/functions/action-plan-report/index.ts`
-- **Editar**: `src/components/EvidenceFormModal.tsx` (novos campos + histórico inline)
+Cada etapa será implementada sequencialmente para evitar quebras. A ordem prioriza as funcionalidades mais críticas (persistência de dados) antes das páginas de visualização.
 
