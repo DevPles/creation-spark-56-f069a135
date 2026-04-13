@@ -1,9 +1,6 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, Search, Filter } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
 
 type ActionPlan = Tables<"action_plans">;
@@ -44,59 +41,8 @@ const TIPO_PROBLEMA_MAP: Record<string, string> = {
 };
 
 const ActionPlanTable = ({ plans, onSelect }: ActionPlanTableProps) => {
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("todos");
-  const [filterPrioridade, setFilterPrioridade] = useState("todos");
-
-  const filtered = plans.filter(plan => {
-    const matchSearch = !search ||
-      plan.reference_name.toLowerCase().includes(search.toLowerCase()) ||
-      plan.responsavel?.toLowerCase().includes(search.toLowerCase()) ||
-      plan.area?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "todos" || plan.status_acao === filterStatus;
-    const matchPrioridade = filterPrioridade === "todos" || plan.prioridade === filterPrioridade;
-    return matchSearch && matchStatus && matchPrioridade;
-  });
-
   return (
     <div className="space-y-3">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            className="h-9 pl-9 text-xs"
-            placeholder="Buscar por referência, responsável ou área..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40 h-9 text-xs">
-            <Filter className="h-3 w-3 mr-1.5" />
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os status</SelectItem>
-            <SelectItem value="nao_iniciada">Não iniciada</SelectItem>
-            <SelectItem value="em_andamento">Em andamento</SelectItem>
-            <SelectItem value="concluida">Concluída</SelectItem>
-            <SelectItem value="cancelada">Cancelada</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterPrioridade} onValueChange={setFilterPrioridade}>
-          <SelectTrigger className="w-36 h-9 text-xs">
-            <SelectValue placeholder="Prioridade" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todas</SelectItem>
-            <SelectItem value="baixa">Baixa</SelectItem>
-            <SelectItem value="media">Média</SelectItem>
-            <SelectItem value="alta">Alta</SelectItem>
-            <SelectItem value="critica">Crítica</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
       {/* Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
