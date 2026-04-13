@@ -1,42 +1,34 @@
 
 
-# Plano de Revisão Final + Notificações por E-mail
+# Plano de Revisão Final — Sistema MOSS
 
-## Estado Atual do Sistema
+## Problemas Identificados
 
-Após auditoria completa, o sistema está bem integrado com o banco de dados. Os dados mock foram eliminados. Restam dois pontos a corrigir e uma funcionalidade nova a implementar.
+### 1. Performance e riskTrend fabricados em RelatoriosPage (CRÍTICO)
+Linhas 548-556: `performance` e `riskTrend` são gerados com dados sintéticos fixos ("Jan", "Fev", "Mar", "Abr") usando cálculos artificiais com fator `(1 - i * 0.1)`. Não refletem dados reais por mês. Devem ser computados a partir de `goal_entries` agrupados por mês/período.
 
-## Problemas Encontrados
+### 2. Sem filtro de período no RelatoriosPage
+A página tem um seletor `period` ("4M") que não afeta nenhum dado — é puramente decorativo. Os dados não são filtrados por período.
 
-### 1. Timeline hardcoded no Relatório Assistencial (MENOR)
-A página `RelatorioAssistencialPage.tsx` (linhas 79-86) contém 6 itens de timeline com dados de exemplo. Estes itens são editáveis inline pelo usuário, servindo como template inicial. Recomendação: substituir por array vazio para que o usuário crie os seus próprios itens.
+### 3. GoalItem.rubrica sempre "Metas" (MENOR)
+Linha 540: `rubrica: "Metas"` — hardcoded. O radar de rubricas nunca mostra dados reais porque nenhuma goal tem rubrica correspondente ao nome da rubrica do contrato. Sem campo de rubrica na tabela `goals`, este dado deve ser calculado ou removido do radar.
 
-### 2. Notificação de metas em risco por e-mail (NOVO — solicitado)
-O campo `notification_email` já existe nos contratos e tem input no formulário. Porém, **não existe edge function** para enviar os alertas semanais. Precisa ser criada toda a infraestrutura de envio.
+## Plano de Correção (2 Etapas)
 
-## Plano de Implementação
+### Etapa 1: Corrigir performance e riskTrend em RelatoriosPage
+- Computar `performance` real: agrupar `goal_entries` por mês, calcular % atingidas/parciais/críticas para cada mês que tem lançamentos
+- Computar `riskTrend` real: calcular risco por mês baseado no gap entre lançado e meta proporcional
+- Conectar o filtro `period` para filtrar os meses mostrados (4M = últimos 4 meses, etc.)
 
-### Etapa 1: Configurar domínio de e-mail
-Para enviar e-mails do sistema, é necessário configurar um domínio de e-mail primeiro. Isso é feito através das configurações do projeto. Será apresentado o botão de configuração para você completar este passo.
+### Etapa 2: Corrigir radar de rubricas
+- Como não existe campo `rubrica` na tabela `goals`, remover o radar ou substituí-lo por dados reais de execução de rubricas (`rubrica_entries` vs alocação do contrato)
 
-### Etapa 2: Criar Edge Function `check-goals-notify`
-Uma nova edge function que:
-1. Busca todos os contratos com `notification_email` preenchido
-2. Para cada contrato, busca as metas da unidade e seus lançamentos
-3. Calcula o atingimento semanal (meta mensal ÷ 4)
-4. Se o atingimento acumulado estiver abaixo do esperado, envia e-mail ao endereço cadastrado
-5. O e-mail lista as metas em risco com seus percentuais e valores financeiros
+## Resumo Técnico
 
-### Etapa 3: Agendar execução semanal via pg_cron
-Configurar um cron job que executa a edge function toda segunda-feira às 8h, verificando automaticamente as metas e disparando alertas.
+```text
+Arquivos a editar:
+  - src/pages/RelatoriosPage.tsx (performance/riskTrend reais + filtro período)
+```
 
-### Etapa 4: Limpar timeline hardcoded
-Substituir os 6 itens de exemplo no `RelatorioAssistencialPage` por array vazio.
-
-## Pré-requisito
-Antes de implementar o envio de e-mail, você precisa configurar um domínio de e-mail. Clique no botão abaixo para iniciar a configuração.
-
-<lov-actions>
-<lov-open-email-setup>Configurar domínio de e-mail</lov-open-email-setup>
-</lov-actions>
+Impacto: Médio. Alteração de lógica de computação dos dados de gráficos sem mudança de DB.
 
