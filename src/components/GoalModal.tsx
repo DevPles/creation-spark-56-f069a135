@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
+import { ScoringRule, normalizeScoringRules, findGlosaPct } from "@/lib/riskCalculation";
 
 interface Goal {
   id: string;
@@ -16,6 +17,7 @@ interface Goal {
   type: string;
   risk: number;
   trend: string;
+  scoring?: ScoringRule[];
 }
 
 interface GoalModalProps {
@@ -39,19 +41,8 @@ const GoalModal = ({ goal, open, onOpenChange }: GoalModalProps) => {
   };
   const status = getStatus();
 
-  const scoringRules = [
-    { range: "≥ 100%", label: "Máximo", points: "1.0 pt" },
-    { range: "90–99%", label: "Parcial alto", points: "0.75 pt" },
-    { range: "70–89%", label: "Parcial baixo", points: "0.5 pt" },
-    { range: "< 70%", label: "Insuficiente", points: "0 pt" },
-  ];
-
-  const history = [
-    { period: "Jan", value: Math.round(goal.current * 0.85) },
-    { period: "Fev", value: Math.round(goal.current * 0.9) },
-    { period: "Mar", value: Math.round(goal.current * 0.95) },
-    { period: "Abr", value: goal.current },
-  ];
+  const scoringRules = normalizeScoringRules(goal.scoring as any[] || []);
+  const currentGlosa = findGlosaPct(attainment, scoringRules);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -68,6 +59,9 @@ const GoalModal = ({ goal, open, onOpenChange }: GoalModalProps) => {
             </span>
             <span className={`status-badge ${goal.type === "QNT" ? "bg-accent text-accent-foreground" : goal.type === "QLT" ? "status-success" : "status-warning"}`}>
               {goal.type}
+            </span>
+            <span className={`status-badge ${currentGlosa === 0 ? "status-success" : currentGlosa <= 25 ? "status-warning" : "status-critical"}`}>
+              {currentGlosa}% glosa
             </span>
           </div>
 
@@ -100,36 +94,22 @@ const GoalModal = ({ goal, open, onOpenChange }: GoalModalProps) => {
             )}
           </div>
 
-          {/* History */}
+          {/* Scoring Rules from DB */}
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2">Evolução mensal</p>
-            <div className="space-y-1.5">
-              {history.map((h) => (
-                <div key={h.period} className="flex items-center gap-3 text-sm">
-                  <span className="w-8 text-muted-foreground">{h.period}</span>
-                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${status === "success" ? "bg-success" : status === "warning" ? "bg-warning" : "bg-risk"}`}
-                      style={{ width: `${Math.min(100, (h.value / goal.target) * 100)}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-display font-semibold w-12 text-right">{h.value}{goal.unit}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Scoring Rules */}
-          <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2">Faixas de pontuação contratual</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">Faixas de glosa contratual</p>
             <div className="bg-secondary rounded-lg overflow-hidden">
-              {scoringRules.map((rule, i) => (
-                <div key={i} className={`flex items-center justify-between px-3 py-2 text-sm ${i > 0 ? "border-t border-border" : ""}`}>
-                  <span className="text-foreground">{rule.range}</span>
-                  <span className="text-muted-foreground">{rule.label}</span>
-                  <span className="font-display font-semibold text-foreground">{rule.points}</span>
-                </div>
-              ))}
+              {scoringRules.sort((a, b) => b.min - a.min).map((rule, i) => {
+                const isActive = attainment >= rule.min && (i === 0 || attainment < scoringRules.sort((a, b) => b.min - a.min)[i - 1].min);
+                return (
+                  <div key={i} className={`flex items-center justify-between px-3 py-2 text-sm ${i > 0 ? "border-t border-border" : ""} ${isActive ? "bg-primary/10" : ""}`}>
+                    <span className="text-foreground">≥ {rule.min}%</span>
+                    <span className="text-muted-foreground">{rule.label}</span>
+                    <span className={`font-display font-semibold ${rule.glosa === 0 ? "text-success" : rule.glosa <= 25 ? "text-warning" : "text-risk"}`}>
+                      {rule.glosa}% glosa
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -138,8 +118,8 @@ const GoalModal = ({ goal, open, onOpenChange }: GoalModalProps) => {
             <div className="bg-risk/5 border border-risk/20 rounded-lg p-3">
               <p className="text-sm font-medium text-foreground">Projeção de risco</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Com base no ritmo atual (run-rate), a projeção indica atingimento de {attainment}% ao fim do período,
-                resultando em perda estimada de <span className="font-semibold text-risk">R$ {(goal.risk / 1000).toFixed(1)}k</span> na parte variável do contrato.
+                Com atingimento de {attainment}%, a glosa aplicada é de <span className="font-semibold text-risk">{currentGlosa}%</span> sobre o valor proporcional ao peso desta meta,
+                resultando em perda estimada de <span className="font-semibold text-risk">R$ {(goal.risk / 1000).toFixed(1)}k</span>.
               </p>
             </div>
           )}

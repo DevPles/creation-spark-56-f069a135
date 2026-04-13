@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import GoalGauge from "./GoalGauge";
 import { useAuth } from "@/contexts/AuthContext";
+import { ScoringRule, findGlosaPct } from "@/lib/riskCalculation";
 
 interface GoalDetail {
   id: string;
@@ -11,7 +12,7 @@ interface GoalDetail {
   type: string;
   risk: number;
   weight: number;
-  scoring: { min: number; label: string; points: number }[];
+  scoring: ScoringRule[];
   history: number[];
   startDate?: string;
   endDate?: string;
@@ -30,6 +31,7 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
     return "critical";
   };
   const status = getStatus();
+  const currentGlosa = findGlosaPct(attainment, goal.scoring);
 
   // Daily target calculation
   const remaining = Math.max(0, goal.target - goal.current);
@@ -55,6 +57,9 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
               {goal.type}
             </span>
             <span className="text-xs text-muted-foreground">Peso: {(goal.weight * 100).toFixed(0)}%</span>
+            <span className={`text-xs font-medium ${currentGlosa > 0 ? "text-risk" : "text-success"}`}>
+              Glosa: {currentGlosa}%
+            </span>
           </div>
         </div>
       </div>
@@ -125,11 +130,15 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
 
       {/* Scoring rules */}
       <div className="mt-3 pt-3 border-t border-border">
-        <p className="text-[10px] text-muted-foreground mb-1.5">Faixas de pontuação</p>
-        <div className="flex gap-1">
+        <p className="text-[10px] text-muted-foreground mb-1.5">Faixas de glosa</p>
+        <div className="flex flex-wrap gap-1">
           {goal.scoring.map((s, i) => (
-            <span key={i} className="text-[10px] bg-secondary text-secondary-foreground rounded px-1.5 py-0.5">
-              ≥{s.min}% → {s.label} ({s.points}pt)
+            <span key={i} className={`text-[10px] rounded px-1.5 py-0.5 ${
+              s.glosa === 0 ? "bg-success/20 text-success" : 
+              s.glosa <= 25 ? "bg-warning/20 text-warning" : 
+              "bg-risk/20 text-risk"
+            }`}>
+              ≥{s.min}% → {s.glosa}% glosa
             </span>
           ))}
         </div>
