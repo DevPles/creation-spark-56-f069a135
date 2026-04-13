@@ -95,7 +95,13 @@ async function generatePdfBlob(
   includeCharts: boolean,
   includeDetails: boolean,
   contract: ContractData,
-  chartCanvasRef: React.RefObject<HTMLDivElement | null>
+  chartCanvasRef: React.RefObject<HTMLDivElement | null>,
+  extraData?: {
+    dbGoals?: any[];
+    dbEntries?: any[];
+    dbRubricaEntries?: any[];
+    actionPlans?: any[];
+  }
 ): Promise<Blob> {
   const { jsPDF } = await import("jspdf");
   const autoTableModule = await import("jspdf-autotable");
@@ -111,16 +117,15 @@ async function generatePdfBlob(
   const margin = 15;
   let y = margin;
 
-   const PRIMARY = [35, 66, 117]; // hsl(214 55% 30%)
-   const DARK = [30, 40, 50];
-   const MUTED = [120, 130, 140];
-   const RED = [220, 60, 60];
-   const GREEN = [40, 160, 90];
-   const AMBER = [230, 160, 30];
-   const WHITE = [255, 255, 255];
-   const LIGHT_BG = [235, 239, 245];
+  const PRIMARY = [35, 66, 117];
+  const DARK = [30, 40, 50];
+  const MUTED = [120, 130, 140];
+  const RED = [220, 60, 60];
+  const GREEN = [40, 160, 90];
+  const AMBER = [230, 160, 30];
+  const WHITE = [255, 255, 255];
+  const LIGHT_BG = [235, 239, 245];
 
-  /* ── Helper functions ── */
   const addNewPageIfNeeded = (needed: number) => {
     if (y + needed > H - 20) { doc.addPage(); y = margin; drawHeader(); }
   };
@@ -156,6 +161,20 @@ async function generatePdfBlob(
     }
   };
 
+  const drawSectionTitle = (title: string) => {
+    addNewPageIfNeeded(14);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+    doc.text(title, margin, y);
+    y += 1;
+    doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, W - margin, y);
+    y += 6;
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  };
+
   const drawPieSlice = (cx: number, cy: number, r: number, startAngle: number, endAngle: number, color: number[]) => {
     doc.setFillColor(color[0], color[1], color[2]);
     const steps = 40;
@@ -164,24 +183,14 @@ async function generatePdfBlob(
       const a = startAngle + (endAngle - startAngle) * (i / steps);
       points.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
     }
-    // Draw as filled polygon using lines
     doc.setDrawColor(255, 255, 255);
     doc.setLineWidth(0.5);
-    const xs = points.map(p => p[0]);
-    const ys = points.map(p => p[1]);
-    // Use triangle fan approach
     for (let i = 1; i < points.length - 1; i++) {
-      doc.triangle(
-        points[0][0], points[0][1],
-        points[i][0], points[i][1],
-        points[i+1][0], points[i+1][1],
-        "F"
-      );
+      doc.triangle(points[0][0], points[0][1], points[i][0], points[i][1], points[i+1][0], points[i+1][1], "F");
     }
   };
 
-  /* ═══ PAGE 1: Cover & Summary ═══ */
-  // Header bar
+  /* ═══ COVER PAGE (shared) ═══ */
   doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
   doc.rect(0, 0, W, 45, "F");
   doc.setTextColor(255, 255, 255);
@@ -208,193 +217,254 @@ async function generatePdfBlob(
   doc.text(`Valor global: ${formatFullCurrency(contract.valorGlobal)}/mês  •  ${goals.length} metas avaliadas`, margin + 5, y + 14);
   y += 25;
 
-  // KPI cards row
-  const cardW = (W - 2 * margin - 9) / 4;
-  const kpis = [
-    { label: "Risco financeiro", value: formatCurrency(stats.totalRisk), color: RED, sub: `${((stats.totalRisk / contract.valorGlobal) * 100).toFixed(1)}% do contrato` },
-    { label: "Atingimento médio", value: `${stats.avg}%`, color: stats.avg >= 90 ? GREEN : stats.avg >= 70 ? AMBER : RED, sub: `${stats.atingidas} de ${stats.total} atingidas` },
-    { label: "Em alerta", value: `${stats.parciais}`, color: AMBER, sub: "Entre 60% e 89%" },
-    { label: "Críticas", value: `${stats.criticas}`, color: RED, sub: "Abaixo de 60%" },
-  ];
+  /* ═══════════════════════════════════════════
+     TYPE-SPECIFIC CONTENT
+     ═══════════════════════════════════════════ */
 
-  kpis.forEach((kpi, i) => {
-    const x = margin + i * (cardW + 3);
-    doc.setFillColor(WHITE[0], WHITE[1], WHITE[2]);
-    doc.setDrawColor(220, 222, 226);
-    doc.roundedRect(x, y, cardW, 28, 2, 2, "FD");
-    doc.setFontSize(7);
-    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-    doc.text(kpi.label, x + 4, y + 7);
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
-    doc.text(kpi.value, x + 4, y + 18);
-    doc.setFontSize(6);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-    doc.text(kpi.sub, x + 4, y + 24);
-  });
-  y += 36;
-
-  /* ═══ Charts section ═══ */
-  if (includeCharts) {
-    // Distribution by type - horizontal bars
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-    doc.text("Distribuição por tipo de meta", margin, y);
-    y += 6;
-
-    const qnt = goals.filter(g => g.type === "QNT").length;
-    const qlt = goals.filter(g => g.type === "QLT").length;
-    const docType = goals.filter(g => g.type === "DOC").length;
-    const maxGoals = Math.max(qnt, qlt, docType, 1);
-    const barWidth = W - 2 * margin - 35;
-
-    [{ label: "Quantitativas", val: qnt, color: PRIMARY },
-     { label: "Qualitativas", val: qlt, color: AMBER },
-     { label: "Documentais", val: docType, color: MUTED }].forEach(item => {
-      doc.setFontSize(7);
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text(item.label, margin, y + 4);
-      drawBar(margin + 32, y, barWidth, 5, (item.val / maxGoals) * 100, item.color);
-      doc.setFontSize(7);
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text(`${item.val}`, margin + 34 + barWidth, y + 4);
-      y += 8;
+  if (type === "consolidado") {
+    // ── KPI cards ──
+    const cardW = (W - 2 * margin - 9) / 4;
+    const kpis = [
+      { label: "Risco financeiro", value: formatCurrency(stats.totalRisk), color: RED, sub: `${((stats.totalRisk / contract.valorGlobal) * 100).toFixed(1)}% do contrato` },
+      { label: "Atingimento médio", value: `${stats.avg}%`, color: stats.avg >= 90 ? GREEN : stats.avg >= 70 ? AMBER : RED, sub: `${stats.atingidas} de ${stats.total} atingidas` },
+      { label: "Em alerta", value: `${stats.parciais}`, color: AMBER, sub: "Entre 60% e 89%" },
+      { label: "Críticas", value: `${stats.criticas}`, color: RED, sub: "Abaixo de 60%" },
+    ];
+    kpis.forEach((kpi, i) => {
+      const x = margin + i * (cardW + 3);
+      doc.setFillColor(WHITE[0], WHITE[1], WHITE[2]);
+      doc.setDrawColor(220, 222, 226);
+      doc.roundedRect(x, y, cardW, 28, 2, 2, "FD");
+      doc.setFontSize(7); doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text(kpi.label, x + 4, y + 7);
+      doc.setFontSize(16); doc.setFont("helvetica", "bold");
+      doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+      doc.text(kpi.value, x + 4, y + 18);
+      doc.setFontSize(6); doc.setFont("helvetica", "normal");
+      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text(kpi.sub, x + 4, y + 24);
     });
-    y += 4;
+    y += 36;
 
-    // Pie chart - status distribution
-    addNewPageIfNeeded(60);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-    doc.text("Status das metas", margin, y);
-    y += 5;
+    // Charts: type distribution
+    if (includeCharts) {
+      drawSectionTitle("Distribuição por tipo de meta");
+      const qnt = goals.filter(g => g.type === "QNT").length;
+      const qlt = goals.filter(g => g.type === "QLT").length;
+      const docType = goals.filter(g => g.type === "DOC").length;
+      const maxGoals = Math.max(qnt, qlt, docType, 1);
+      const barWidth = W - 2 * margin - 35;
+      [{ label: "Quantitativas", val: qnt, color: PRIMARY },
+       { label: "Qualitativas", val: qlt, color: AMBER },
+       { label: "Documentais", val: docType, color: MUTED }].forEach(item => {
+        doc.setFontSize(7); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+        doc.text(item.label, margin, y + 4);
+        drawBar(margin + 32, y, barWidth, 5, (item.val / maxGoals) * 100, item.color);
+        doc.text(`${item.val}`, margin + 34 + barWidth, y + 4);
+        y += 8;
+      });
+      y += 4;
 
-    const pieData = [
-      { label: "Atingidas (≥90%)", val: stats.atingidas, color: GREEN },
-      { label: "Parciais (60-89%)", val: stats.parciais, color: AMBER },
-      { label: "Críticas (<60%)", val: stats.criticas, color: RED },
-    ].filter(d => d.val > 0);
+      // Pie chart
+      addNewPageIfNeeded(60);
+      drawSectionTitle("Status das metas");
+      const pieData = [
+        { label: "Atingidas (≥90%)", val: stats.atingidas, color: GREEN },
+        { label: "Parciais (60-89%)", val: stats.parciais, color: AMBER },
+        { label: "Críticas (<60%)", val: stats.criticas, color: RED },
+      ].filter(d => d.val > 0);
+      const pieR = 18, pieCx = margin + pieR + 5, pieCy = y + pieR + 2;
+      let startA = -Math.PI / 2;
+      pieData.forEach(slice => {
+        const sliceAngle = (slice.val / stats.total) * Math.PI * 2;
+        drawPieSlice(pieCx, pieCy, pieR, startA, startA + sliceAngle, slice.color);
+        startA += sliceAngle;
+      });
+      let legendY = y + 4;
+      pieData.forEach(item => {
+        doc.setFillColor(item.color[0], item.color[1], item.color[2]);
+        doc.rect(margin + pieR * 2 + 18, legendY, 4, 4, "F");
+        doc.setFontSize(8); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+        doc.text(`${item.label}: ${item.val} (${((item.val / stats.total) * 100).toFixed(0)}%)`, margin + pieR * 2 + 25, legendY + 3.5);
+        legendY += 7;
+      });
+      y += pieR * 2 + 10;
+    }
 
-    const pieR = 18;
-    const pieCx = margin + pieR + 5;
-    const pieCy = y + pieR + 2;
-    let startA = -Math.PI / 2;
+    // Goals table
+    if (includeDetails) {
+      addNewPageIfNeeded(30);
+      drawSectionTitle("Detalhamento por meta");
+      autoTable(doc, {
+        startY: y,
+        head: [["#", "Meta", "Tipo", "Alvo", "Real", "Ating.", "Risco", "Peso"]],
+        body: goals.map((g, i) => [`${i + 1}`, g.name, g.type, `${g.target}${g.unit}`, `${g.current}${g.unit}`, `${getGoalPct(g).toFixed(0)}%`, formatCurrency(g.risk), `${g.pesoFinanceiro}%`]),
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 7, cellPadding: 2, lineColor: [220, 222, 226], lineWidth: 0.2 },
+        headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 7 },
+        alternateRowStyles: { fillColor: [248, 249, 252] },
+        columnStyles: { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 45 }, 2: { cellWidth: 12, halign: "center" }, 3: { cellWidth: 20, halign: "right" }, 4: { cellWidth: 20, halign: "right" }, 5: { cellWidth: 15, halign: "center" }, 6: { cellWidth: 22, halign: "right" }, 7: { cellWidth: 15, halign: "center" } },
+        didParseCell: (data: any) => {
+          if (data.section === "body" && data.column.index === 5) {
+            const val = parseFloat(data.cell.raw);
+            if (val >= 90) data.cell.styles.textColor = GREEN;
+            else if (val >= 60) data.cell.styles.textColor = AMBER;
+            else data.cell.styles.textColor = RED;
+            data.cell.styles.fontStyle = "bold";
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+    }
 
-    pieData.forEach(slice => {
-      const sliceAngle = (slice.val / stats.total) * Math.PI * 2;
-      drawPieSlice(pieCx, pieCy, pieR, startA, startA + sliceAngle, slice.color);
-      startA += sliceAngle;
-    });
-
-    // Legend for pie
-    let legendY = y + 4;
-    pieData.forEach(item => {
-      doc.setFillColor(item.color[0], item.color[1], item.color[2]);
-      doc.rect(margin + pieR * 2 + 18, legendY, 4, 4, "F");
-      doc.setFontSize(8);
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text(`${item.label}: ${item.val} (${((item.val / stats.total) * 100).toFixed(0)}%)`, margin + pieR * 2 + 25, legendY + 3.5);
-      legendY += 7;
-    });
-    y += pieR * 2 + 10;
-
-    // Risk bar chart by goal
-    addNewPageIfNeeded(60);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-    doc.text("Top riscos financeiros", margin, y);
-    y += 6;
-
-    const topRisks = [...goals].sort((a, b) => b.risk - a.risk).slice(0, 5);
-    const maxRisk = Math.max(...topRisks.map(g => g.risk), 1);
-    const riskBarW = W - 2 * margin - 65;
-
-    topRisks.forEach((g, i) => {
-      const pct = getGoalPct(g);
-      const color = pct >= 90 ? GREEN : pct >= 60 ? AMBER : RED;
-      doc.setFontSize(7);
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      const truncName = g.name.length > 25 ? g.name.substring(0, 25) + "..." : g.name;
-      doc.text(truncName, margin, y + 4);
-      drawBar(margin + 52, y, riskBarW, 5, (g.risk / maxRisk) * 100, color);
-      doc.setFontSize(7);
-      doc.setTextColor(RED[0], RED[1], RED[2]);
-      doc.text(formatCurrency(g.risk), margin + 54 + riskBarW, y + 4);
-      y += 8;
-    });
-    y += 6;
-
-    // Rubrica allocation chart
-    addNewPageIfNeeded(55);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-    doc.text("Alocação por rubrica", margin, y);
-    y += 6;
-
-    const rubColors = [PRIMARY, GREEN, AMBER, [150, 100, 200], RED];
-    contract.rubricas.forEach((r, i) => {
-      const color = rubColors[i % rubColors.length];
-      doc.setFontSize(7);
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      const rLabel = r.name.length > 20 ? r.name.substring(0, 20) + "..." : r.name;
-      doc.text(rLabel, margin, y + 4);
-      drawBar(margin + 40, y, W - 2 * margin - 65, 5, r.pct, color);
-      doc.setFontSize(7);
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text(`${r.pct}%  (${formatCurrency(r.valor)})`, W - margin - 22, y + 4);
-      y += 8;
-    });
-    y += 4;
-  }
-
-  /* ═══ Goals detail table ═══ */
-  if (includeDetails) {
+    // Performance evolution
     addNewPageIfNeeded(30);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-    doc.text("Detalhamento por meta", margin, y);
-    y += 4;
-
-    const tableData = goals.map((g, i) => {
-      const pct = getGoalPct(g).toFixed(0);
-      return [
-        `${i + 1}`,
-        g.name,
-        g.type,
-        `${g.target}${g.unit}`,
-        `${g.current}${g.unit}`,
-        `${pct}%`,
-        formatCurrency(g.risk),
-        `${g.pesoFinanceiro}%`,
-      ];
-    });
-
+    drawSectionTitle("Evolução mensal de desempenho");
     autoTable(doc, {
       startY: y,
-      head: [["#", "Meta", "Tipo", "Alvo", "Real", "Ating.", "Risco", "Peso"]],
-      body: tableData,
+      head: [["Mês", "Atingidas %", "Parciais %", "Não atingidas %"]],
+      body: contract.performance.map(p => [p.month, `${p.atingidas}%`, `${p.parciais}%`, `${p.naoAtingidas}%`]),
       margin: { left: margin, right: margin },
-      styles: { fontSize: 7, cellPadding: 2, lineColor: [220, 222, 226], lineWidth: 0.2 },
-      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 7 },
+      styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
       alternateRowStyles: { fillColor: [248, 249, 252] },
-      columnStyles: {
-        0: { cellWidth: 8, halign: "center" },
-        1: { cellWidth: 45 },
-        2: { cellWidth: 12, halign: "center" },
-        3: { cellWidth: 20, halign: "right" },
-        4: { cellWidth: 20, halign: "right" },
-        5: { cellWidth: 15, halign: "center" },
-        6: { cellWidth: 22, halign: "right" },
-        7: { cellWidth: 15, halign: "center" },
-      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    // Risk trend
+    addNewPageIfNeeded(30);
+    drawSectionTitle("Tendência de risco e glosa");
+    autoTable(doc, {
+      startY: y,
+      head: [["Mês", "Risco (R$)", "Glosa (R$)"]],
+      body: contract.riskTrend.map(r => [r.month, formatFullCurrency(r.risco), formatFullCurrency(r.glosa)]),
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+    });
+
+  } else if (type === "rdqa") {
+    // ═══ RDQA — Relatório Detalhado de Qualidade Assistencial ═══
+    drawSectionTitle("RDQA — Relatório Detalhado de Qualidade Assistencial");
+    doc.setFontSize(8); doc.setFont("helvetica", "normal");
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text("Conforme LC 141/2012, Art. 36 — Monitoramento e avaliação de indicadores de saúde", margin, y);
+    y += 8;
+
+    // Summary KPIs
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text(`Total de indicadores: ${stats.total}  |  Atingidas: ${stats.atingidas}  |  Parciais: ${stats.parciais}  |  Críticas: ${stats.criticas}  |  Atingimento médio: ${stats.avg}%`, margin, y);
+    y += 10;
+
+    // Detailed per-goal analysis
+    drawSectionTitle("Análise detalhada por indicador");
+    const dbGoalsData = extraData?.dbGoals || [];
+    goals.forEach((g, idx) => {
+      addNewPageIfNeeded(40);
+      const pct = getGoalPct(g);
+      const statusLabel = pct >= 90 ? "ATINGIDA" : pct >= 60 ? "PARCIAL" : "NÃO ATINGIDA";
+      const statusColor = pct >= 90 ? GREEN : pct >= 60 ? AMBER : RED;
+
+      // Goal header
+      doc.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
+      doc.roundedRect(margin, y, W - 2 * margin, 22, 2, 2, "F");
+      doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      doc.text(`${idx + 1}. ${g.name}`, margin + 4, y + 7);
+      doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text(`Tipo: ${g.type}  |  Meta: ${g.target}${g.unit}  |  Realizado: ${g.current}${g.unit}  |  Peso: ${g.pesoFinanceiro}%`, margin + 4, y + 13);
+      // Status badge
+      doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
+      doc.roundedRect(W - margin - 30, y + 3, 26, 7, 2, 2, "F");
+      doc.setFontSize(6); doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold");
+      doc.text(statusLabel, W - margin - 28, y + 8);
+      // Attainment bar
+      drawBar(margin + 4, y + 16, W - 2 * margin - 8, 3, Math.min(pct, 100), statusColor);
+      doc.setFontSize(6); doc.setTextColor(DARK[0], DARK[1], DARK[2]); doc.setFont("helvetica", "normal");
+      doc.text(`${pct.toFixed(1)}%`, W - margin - 4, y + 19, { align: "right" });
+      y += 26;
+
+      // Scoring rules for this goal
+      const dbGoal = dbGoalsData.find((dg: any) => dg.id === g.id);
+      if (dbGoal?.scoring) {
+        const rules = normalizeScoringRules(dbGoal.scoring as any[]);
+        if (rules.length > 0) {
+          doc.setFontSize(7); doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+          doc.text("Faixas de pontuação:", margin + 4, y);
+          y += 4;
+          rules.sort((a, b) => b.min - a.min).forEach(rule => {
+            doc.setFontSize(6); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+            doc.text(`≥ ${rule.min}%: ${rule.label} (glosa ${rule.glosa}%)`, margin + 8, y);
+            y += 3.5;
+          });
+          y += 3;
+        }
+      }
+
+      // Monthly entries for this goal
+      const goalEntries = (extraData?.dbEntries || []).filter((e: any) => e.goal_id === g.id);
+      if (goalEntries.length > 0) {
+        const byMonth: Record<string, number> = {};
+        goalEntries.forEach((e: any) => {
+          const ym = (e.period as string).substring(0, 7);
+          byMonth[ym] = (byMonth[ym] || 0) + Number(e.value);
+        });
+        const months = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b));
+        addNewPageIfNeeded(10 + months.length * 4);
+        doc.setFontSize(7); doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text("Lançamentos por mês:", margin + 4, y);
+        y += 4;
+        months.forEach(([ym, val]) => {
+          doc.setFontSize(6); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+          doc.text(`${ym}: ${val}${g.unit}`, margin + 8, y);
+          y += 3.5;
+        });
+        y += 3;
+      }
+
+      // Risk info
+      if (g.risk > 0) {
+        doc.setFontSize(7); doc.setTextColor(RED[0], RED[1], RED[2]);
+        doc.text(`⚠ Risco financeiro: ${formatFullCurrency(g.risk)}`, margin + 4, y);
+        y += 6;
+      }
+      y += 2;
+    });
+
+  } else if (type === "contrato") {
+    // ═══ Relatório por contrato — Detalhamento financeiro ═══
+    drawSectionTitle("Visão financeira do contrato");
+
+    // Contract financial summary
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text(`Valor global mensal: ${formatFullCurrency(contract.valorGlobal)}`, margin, y); y += 5;
+    doc.text(`Total de metas: ${goals.length}  |  Risco total: ${formatFullCurrency(stats.totalRisk)}`, margin, y); y += 5;
+    doc.text(`Impacto no contrato: ${((stats.totalRisk / contract.valorGlobal) * 100).toFixed(2)}%`, margin, y); y += 10;
+
+    // Rubrica breakdown table
+    drawSectionTitle("Detalhamento por rubrica");
+    const rubricaRows = contract.rubricas.map(r => {
+      const executed = (extraData?.dbRubricaEntries || [])
+        .filter((re: any) => re.contract_id === contract.id && re.rubrica_name === r.name)
+        .reduce((s: number, re: any) => s + Number(re.value_executed), 0);
+      const balance = r.valor - executed;
+      const execPct = r.valor > 0 ? ((executed / r.valor) * 100).toFixed(1) : "0.0";
+      return [r.name, `${r.pct}%`, formatFullCurrency(r.valor), formatFullCurrency(executed), formatFullCurrency(balance), `${execPct}%`];
+    });
+    autoTable(doc, {
+      startY: y,
+      head: [["Rubrica", "Peso", "Orçado (R$)", "Executado (R$)", "Saldo (R$)", "Exec. %"]],
+      body: rubricaRows,
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 7, cellPadding: 2.5, lineColor: [220, 222, 226], lineWidth: 0.2 },
+      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
       didParseCell: (data: any) => {
+        if (data.section === "body" && data.column.index === 4) {
+          const text = data.cell.raw as string;
+          const val = parseFloat(text.replace(/[^\d,-]/g, "").replace(",", "."));
+          if (val < 0) data.cell.styles.textColor = RED;
+        }
         if (data.section === "body" && data.column.index === 5) {
           const val = parseFloat(data.cell.raw);
           if (val >= 90) data.cell.styles.textColor = GREEN;
@@ -402,57 +472,289 @@ async function generatePdfBlob(
           else data.cell.styles.textColor = RED;
           data.cell.styles.fontStyle = "bold";
         }
-        if (data.section === "body" && data.column.index === 6) {
-          const riskText = data.cell.raw as string;
-          if (riskText !== "R$ 0k") data.cell.styles.textColor = RED;
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Glosa summary by month
+    addNewPageIfNeeded(30);
+    drawSectionTitle("Evolução de glosas mensais");
+    autoTable(doc, {
+      startY: y,
+      head: [["Mês", "Risco estimado (R$)", "Glosa aplicada (R$)"]],
+      body: contract.riskTrend.map(r => [r.month, formatFullCurrency(r.risco), formatFullCurrency(r.glosa)]),
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+      didParseCell: (data: any) => {
+        if (data.section === "body" && (data.column.index === 1 || data.column.index === 2)) {
+          data.cell.styles.textColor = RED;
         }
       },
     });
-    y = (doc as any).lastAutoTable.finalY + 8;
-  }
+    y = (doc as any).lastAutoTable.finalY + 10;
 
-  // Performance trend table
-  addNewPageIfNeeded(30);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-  doc.text("Evolução mensal de desempenho", margin, y);
-  y += 4;
+    // Top risk goals in this contract
+    addNewPageIfNeeded(30);
+    drawSectionTitle("Metas com maior impacto financeiro");
+    const topRisks = [...goals].sort((a, b) => b.risk - a.risk).slice(0, 10);
+    autoTable(doc, {
+      startY: y,
+      head: [["#", "Meta", "Tipo", "Ating. %", "Risco (R$)", "Peso"]],
+      body: topRisks.map((g, i) => [`${i + 1}`, g.name, g.type, `${getGoalPct(g).toFixed(0)}%`, formatFullCurrency(g.risk), `${g.pesoFinanceiro}%`]),
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 7, cellPadding: 2.5, lineColor: [220, 222, 226], lineWidth: 0.2 },
+      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+    });
 
-  autoTable(doc, {
-    startY: y,
-    head: [["Mês", "Atingidas %", "Parciais %", "Não atingidas %"]],
-    body: contract.performance.map(p => [p.month, `${p.atingidas}%`, `${p.parciais}%`, `${p.naoAtingidas}%`]),
-    margin: { left: margin, right: margin },
-    styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
-    headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
-    alternateRowStyles: { fillColor: [248, 249, 252] },
-    columnStyles: { 0: { fontStyle: "bold" } },
-  });
-  y = (doc as any).lastAutoTable.finalY + 8;
+  } else if (type === "metas") {
+    // ═══ Relatório de metas — Evolução e projeções ═══
+    drawSectionTitle("Panorama geral de metas");
 
-  // Risk trend table
-  addNewPageIfNeeded(30);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-  doc.text("Tendência de risco e glosa", margin, y);
-  y += 4;
+    // Summary
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text(`Total: ${stats.total} metas  |  Atingidas: ${stats.atingidas} (${stats.total > 0 ? ((stats.atingidas / stats.total) * 100).toFixed(0) : 0}%)  |  Parciais: ${stats.parciais}  |  Críticas: ${stats.criticas}`, margin, y);
+    y += 8;
 
-  autoTable(doc, {
-    startY: y,
-    head: [["Mês", "Risco (R$)", "Glosa (R$)"]],
-    body: contract.riskTrend.map(r => [r.month, formatFullCurrency(r.risco), formatFullCurrency(r.glosa)]),
-    margin: { left: margin, right: margin },
-    styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
-    headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
-    alternateRowStyles: { fillColor: [248, 249, 252] },
-    didParseCell: (data: any) => {
-      if (data.section === "body" && data.column.index === 1) {
-        data.cell.styles.textColor = RED;
+    // Performance evolution
+    drawSectionTitle("Evolução mensal do atingimento");
+    autoTable(doc, {
+      startY: y,
+      head: [["Mês", "Atingidas %", "Parciais %", "Não atingidas %"]],
+      body: contract.performance.map(p => [p.month, `${p.atingidas}%`, `${p.parciais}%`, `${p.naoAtingidas}%`]),
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Individual goal detail with monthly entries
+    addNewPageIfNeeded(20);
+    drawSectionTitle("Detalhamento e evolução por meta");
+    goals.forEach((g, idx) => {
+      addNewPageIfNeeded(30);
+      const pct = getGoalPct(g);
+      const statusColor = pct >= 90 ? GREEN : pct >= 60 ? AMBER : RED;
+
+      doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      doc.text(`${idx + 1}. ${g.name}`, margin, y);
+      y += 5;
+      doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text(`Tipo: ${g.type}  |  Alvo: ${g.target}${g.unit}  |  Realizado: ${g.current}${g.unit}  |  Ating.: ${pct.toFixed(1)}%  |  Peso: ${g.pesoFinanceiro}%`, margin, y);
+      y += 4;
+      drawBar(margin, y, W - 2 * margin, 4, Math.min(pct, 100), statusColor);
+      y += 7;
+
+      // Monthly breakdown
+      const goalEntries = (extraData?.dbEntries || []).filter((e: any) => e.goal_id === g.id);
+      if (goalEntries.length > 0) {
+        const byMonth: Record<string, number> = {};
+        goalEntries.forEach((e: any) => {
+          const ym = (e.period as string).substring(0, 7);
+          byMonth[ym] = (byMonth[ym] || 0) + Number(e.value);
+        });
+        const entries = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b));
+        autoTable(doc, {
+          startY: y,
+          head: [["Período", "Valor lançado", "Meta mensal proporcional", "Ating. mensal %"]],
+          body: entries.map(([ym, val]) => {
+            const monthlyTarget = g.target / 12;
+            const monthPct = monthlyTarget > 0 ? ((val / monthlyTarget) * 100).toFixed(1) : "—";
+            return [ym, `${val}${g.unit}`, `${monthlyTarget.toFixed(1)}${g.unit}`, `${monthPct}%`];
+          }),
+          margin: { left: margin + 4, right: margin },
+          styles: { fontSize: 6, cellPadding: 2, lineColor: [220, 222, 226], lineWidth: 0.1 },
+          headStyles: { fillColor: [LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]], textColor: [DARK[0], DARK[1], DARK[2]], fontStyle: "bold", fontSize: 6 },
+        });
+        y = (doc as any).lastAutoTable.finalY + 6;
+      } else {
+        doc.setFontSize(6); doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text("Sem lançamentos registrados.", margin + 4, y);
+        y += 6;
       }
-    },
-  });
+    });
+
+  } else if (type === "risco") {
+    // ═══ Análise de risco — Cenários e priorização ═══
+    drawSectionTitle("Resumo de risco financeiro");
+
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text(`Risco total: ${formatFullCurrency(stats.totalRisk)}  |  Impacto: ${((stats.totalRisk / contract.valorGlobal) * 100).toFixed(2)}% do contrato`, margin, y);
+    y += 5;
+    doc.text(`Metas com risco: ${goals.filter(g => g.risk > 0).length} de ${stats.total}`, margin, y);
+    y += 10;
+
+    // Risk trend evolution
+    drawSectionTitle("Evolução mensal de risco");
+    autoTable(doc, {
+      startY: y,
+      head: [["Mês", "Risco (R$)", "Glosa (R$)"]],
+      body: contract.riskTrend.map(r => [r.month, formatFullCurrency(r.risco), formatFullCurrency(r.glosa)]),
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+      didParseCell: (data: any) => {
+        if (data.section === "body") data.cell.styles.textColor = RED;
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Ranking by risk (Pareto)
+    addNewPageIfNeeded(30);
+    drawSectionTitle("Ranking de risco (Pareto)");
+    const riskyGoals = [...goals].filter(g => g.risk > 0).sort((a, b) => b.risk - a.risk);
+    let accumulated = 0;
+    autoTable(doc, {
+      startY: y,
+      head: [["#", "Meta", "Tipo", "Ating. %", "Risco (R$)", "% acumulado do risco"]],
+      body: riskyGoals.map((g, i) => {
+        accumulated += g.risk;
+        const accPct = stats.totalRisk > 0 ? ((accumulated / stats.totalRisk) * 100).toFixed(1) : "0.0";
+        return [`${i + 1}`, g.name, g.type, `${getGoalPct(g).toFixed(0)}%`, formatFullCurrency(g.risk), `${accPct}%`];
+      }),
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 7, cellPadding: 2.5, lineColor: [220, 222, 226], lineWidth: 0.2 },
+      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.column.index === 4) data.cell.styles.textColor = RED;
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Risk by goal type
+    addNewPageIfNeeded(25);
+    drawSectionTitle("Risco por tipo de meta");
+    const riskByType = [
+      { tipo: "Quantitativas (QNT)", risco: goals.filter(g => g.type === "QNT").reduce((s, g) => s + g.risk, 0), count: goals.filter(g => g.type === "QNT").length },
+      { tipo: "Qualitativas (QLT)", risco: goals.filter(g => g.type === "QLT").reduce((s, g) => s + g.risk, 0), count: goals.filter(g => g.type === "QLT").length },
+      { tipo: "Documentais (DOC)", risco: goals.filter(g => g.type === "DOC").reduce((s, g) => s + g.risk, 0), count: goals.filter(g => g.type === "DOC").length },
+    ];
+    autoTable(doc, {
+      startY: y,
+      head: [["Tipo", "Qtd. metas", "Risco total (R$)", "% do risco total"]],
+      body: riskByType.map(r => [r.tipo, `${r.count}`, formatFullCurrency(r.risco), stats.totalRisk > 0 ? `${((r.risco / stats.totalRisk) * 100).toFixed(1)}%` : "0%"]),
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+      headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Recovery recommendations
+    addNewPageIfNeeded(30);
+    drawSectionTitle("Priorização de recuperação");
+    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    const recoverable = riskyGoals.filter(g => getGoalPct(g) >= 40 && getGoalPct(g) < 90);
+    if (recoverable.length > 0) {
+      doc.text("Metas com potencial de recuperação (atingimento entre 40% e 89%):", margin, y);
+      y += 5;
+      recoverable.forEach((g, i) => {
+        addNewPageIfNeeded(8);
+        const pct = getGoalPct(g);
+        const gap = g.target - g.current;
+        doc.setFontSize(7); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+        doc.text(`${i + 1}. ${g.name} — atual: ${pct.toFixed(0)}% — gap: ${gap.toFixed(1)}${g.unit} — risco: ${formatCurrency(g.risk)}`, margin + 4, y);
+        y += 5;
+      });
+    } else {
+      doc.text("Nenhuma meta com potencial imediato de recuperação identificada.", margin, y);
+    }
+
+  } else if (type === "evidencias") {
+    // ═══ Status de evidências — Planos de ação ═══
+    drawSectionTitle("Status de evidências e documentos");
+
+    const plans = (extraData?.actionPlans || []).filter((p: any) => p.facility_unit === contract.unit);
+    const pendentes = plans.filter((p: any) => p.status_evidencia === "pendente");
+    const enviadas = plans.filter((p: any) => p.status_evidencia === "enviada");
+    const validadas = plans.filter((p: any) => p.status_evidencia === "validada");
+    const rejeitadas = plans.filter((p: any) => p.status_evidencia === "rejeitada");
+
+    // Summary
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text(`Total de planos de ação: ${plans.length}`, margin, y); y += 5;
+    doc.text(`Pendentes: ${pendentes.length}  |  Enviadas: ${enviadas.length}  |  Validadas: ${validadas.length}  |  Rejeitadas: ${rejeitadas.length}`, margin, y); y += 10;
+
+    // Status pie visual
+    const pieData = [
+      { label: "Pendentes", val: pendentes.length, color: AMBER },
+      { label: "Enviadas", val: enviadas.length, color: PRIMARY },
+      { label: "Validadas", val: validadas.length, color: GREEN },
+      { label: "Rejeitadas", val: rejeitadas.length, color: RED },
+    ].filter(d => d.val > 0);
+    if (pieData.length > 0 && plans.length > 0) {
+      const pieR = 16, pieCx = margin + pieR + 5, pieCy = y + pieR + 2;
+      let startA = -Math.PI / 2;
+      pieData.forEach(slice => {
+        const sliceAngle = (slice.val / plans.length) * Math.PI * 2;
+        drawPieSlice(pieCx, pieCy, pieR, startA, startA + sliceAngle, slice.color);
+        startA += sliceAngle;
+      });
+      let legendY2 = y + 4;
+      pieData.forEach(item => {
+        doc.setFillColor(item.color[0], item.color[1], item.color[2]);
+        doc.rect(margin + pieR * 2 + 18, legendY2, 4, 4, "F");
+        doc.setFontSize(8); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+        doc.text(`${item.label}: ${item.val} (${((item.val / plans.length) * 100).toFixed(0)}%)`, margin + pieR * 2 + 25, legendY2 + 3.5);
+        legendY2 += 7;
+      });
+      y += pieR * 2 + 10;
+    }
+
+    // Detailed list
+    if (plans.length > 0) {
+      addNewPageIfNeeded(30);
+      drawSectionTitle("Lista de planos de ação e evidências");
+      const statusMap: Record<string, string> = { pendente: "Pendente", enviada: "Enviada", validada: "Validada", rejeitada: "Rejeitada" };
+      const acaoStatusMap: Record<string, string> = { nao_iniciada: "Não iniciada", em_andamento: "Em andamento", concluida: "Concluída", cancelada: "Cancelada" };
+      autoTable(doc, {
+        startY: y,
+        head: [["#", "Referência", "Categoria", "Status ação", "Evidência", "Prazo", "Responsável"]],
+        body: plans.map((p: any, i: number) => [
+          `${i + 1}`,
+          p.reference_name || "—",
+          p.category || "—",
+          acaoStatusMap[p.status_acao] || p.status_acao,
+          statusMap[p.status_evidencia] || p.status_evidencia,
+          p.prazo ? new Date(p.prazo).toLocaleDateString("pt-BR") : "—",
+          p.responsavel || "—",
+        ]),
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 6, cellPadding: 2, lineColor: [220, 222, 226], lineWidth: 0.2 },
+        headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 6 },
+        alternateRowStyles: { fillColor: [248, 249, 252] },
+        didParseCell: (data: any) => {
+          if (data.section === "body" && data.column.index === 4) {
+            const val = data.cell.raw as string;
+            if (val === "Pendente") data.cell.styles.textColor = AMBER;
+            else if (val === "Validada") data.cell.styles.textColor = GREEN;
+            else if (val === "Rejeitada") data.cell.styles.textColor = RED;
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+
+      // Pending items highlight
+      if (pendentes.length > 0) {
+        addNewPageIfNeeded(20);
+        drawSectionTitle(`⚠ ${pendentes.length} evidência(s) pendente(s)`);
+        pendentes.forEach((p: any, i: number) => {
+          addNewPageIfNeeded(8);
+          doc.setFontSize(7); doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+          doc.text(`${i + 1}. ${p.reference_name} — Responsável: ${p.responsavel || "Não definido"} — Prazo: ${p.prazo ? new Date(p.prazo).toLocaleDateString("pt-BR") : "Sem prazo"}`, margin + 4, y);
+          y += 5;
+        });
+      }
+    } else {
+      doc.setFontSize(9); doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text("Nenhum plano de ação registrado para esta unidade.", margin, y);
+    }
+  }
 
   // Add footers to all pages
   const totalPages = doc.getNumberOfPages();
