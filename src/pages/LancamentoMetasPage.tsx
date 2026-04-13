@@ -597,6 +597,161 @@ const LancamentoMetasPage = () => {
     addFooter();
     } // end leitos
 
+    // ═══ PAGE: MAPA TÉRMICO ═══
+    if (sections.mapaTermico) {
+      let startY = addHeader("Relatório de Lançamentos — Mapa Térmico Diário");
+
+      const hmGoals = goals.filter(g => !selectedUnit || g.facility_unit === selectedUnit);
+      const hmYear = Number(filterYear);
+      const hmMonth = filterMonth === "todos" ? new Date().getMonth() : Number(filterMonth);
+      const hmDaysInMo = getDaysInMonth(new Date(hmYear, hmMonth));
+      const hmLabel = FILTER_MONTHS.find(m => m.value === String(hmMonth))?.label || "";
+
+      // Build day map using parse (period is dd/MM/yyyy)
+      const hmDayMap: Record<string, Record<number, number>> = {};
+      hmGoals.forEach(g => {
+        hmDayMap[g.id] = {};
+        const gEntries = existingEntries[g.id] || [];
+        gEntries.forEach(e => {
+          try {
+            const d = parse(e.period, "dd/MM/yyyy", new Date());
+            if (d.getFullYear() === hmYear && d.getMonth() === hmMonth) {
+              hmDayMap[g.id][d.getDate()] = (hmDayMap[g.id][d.getDate()] || 0) + e.value;
+            }
+          } catch {}
+        });
+      });
+
+      // Per-row stats
+      const hmRowStats: Record<string, { min: number; max: number }> = {};
+      hmGoals.forEach(g => {
+        const vals = Object.values(hmDayMap[g.id] || {});
+        if (vals.length > 0) {
+          hmRowStats[g.id] = { min: Math.min(...vals), max: Math.max(...vals) };
+        }
+      });
+
+      // KPIs
+      let hmGoalsWithEntries = 0;
+      let hmSumPct = 0;
+      const hmDaysSet = new Set<number>();
+      hmGoals.forEach(g => {
+        const dayEntries = hmDayMap[g.id] || {};
+        const count = Object.keys(dayEntries).length;
+        if (count > 0) {
+          hmGoalsWithEntries++;
+          const total = Object.values(dayEntries).reduce((s, v) => s + v, 0);
+          hmSumPct += g.target > 0 ? (total / g.target) * 100 : 0;
+        }
+        Object.keys(dayEntries).forEach(d => hmDaysSet.add(Number(d)));
+      });
+      const hmAvgPct = hmGoalsWithEntries > 0 ? Math.round(hmSumPct / hmGoalsWithEntries) : 0;
+      const hmCoverage = Math.round((hmDaysSet.size / hmDaysInMo) * 100);
+
+      startY = drawKpiBoxes([
+        { label: "Metas com Lançamento", value: `${hmGoalsWithEntries}/${hmGoals.length}` },
+        { label: "Atingimento Médio", value: `${hmAvgPct}%`, color: hmAvgPct >= 100 ? success : hmAvgPct >= 70 ? warning : danger },
+        { label: "Dias com Lançamento", value: `${hmDaysSet.size}/${hmDaysInMo}` },
+        { label: "Cobertura do Mês", value: `${hmCoverage}%`, color: hmCoverage >= 80 ? success : hmCoverage >= 50 ? warning : danger },
+      ], startY);
+
+      startY = drawSectionTitle(`Mapa Térmico — ${hmLabel} ${hmYear}`, startY);
+
+      // Draw heatmap grid
+      const cellW = Math.min(5, (contentW - 50) / hmDaysInMo);
+      const nameColW = 38;
+      const gridStartX = margin + nameColW;
+
+      // Header row: day numbers
+      doc.setFontSize(4.5);
+      doc.setTextColor(120, 120, 120);
+      for (let d = 1; d <= hmDaysInMo; d++) {
+        doc.text(String(d), gridStartX + (d - 1) * cellW + cellW / 2, startY, { align: "center" });
+      }
+      doc.text("Total", gridStartX + hmDaysInMo * cellW + 2, startY);
+      doc.text("%", gridStartX + hmDaysInMo * cellW + 14, startY);
+      startY += 3;
+
+      const getHmColor = (goalId: string, value: number, lowerIsBetter: boolean): [number, number, number] => {
+        const stats = hmRowStats[goalId];
+        if (!stats || stats.min === stats.max) return [46, 160, 67];
+        const { min, max } = stats;
+        const norm = lowerIsBetter ? (max - value) / (max - min) : (value - min) / (max - min);
+        if (norm >= 0.75) return [46, 160, 67];
+        if (norm >= 0.50) return [241, 196, 15];
+        if (norm >= 0.25) return [230, 126, 34];
+        return [231, 76, 60];
+      };
+
+      const rowH = 5.5;
+      hmGoals.forEach(g => {
+        if (startY + rowH > pageH - 18) {
+          addFooter();
+          startY = addHeader("Relatório — Mapa Térmico (cont.)");
+        }
+
+        const lowerIsBetter = g.name.toLowerCase().includes("tempo") ||
+          g.name.toLowerCase().includes("infecção") ||
+          g.name.toLowerCase().includes("retorno") ||
+          g.name.toLowerCase().includes("mortalidade") ||
+          g.name.toLowerCase().includes("óbito");
+
+        doc.setFontSize(5);
+        doc.setTextColor(40, 40, 40);
+        doc.text(g.name.substring(0, 20), margin, startY + rowH - 1.5);
+
+        const dayEntries = hmDayMap[g.id] || {};
+        let totalVal = 0;
+        for (let d = 1; d <= hmDaysInMo; d++) {
+          const x = gridStartX + (d - 1) * cellW;
+          const val = dayEntries[d];
+          if (val !== undefined) {
+            totalVal += val;
+            const color = getHmColor(g.id, val, lowerIsBetter);
+            doc.setFillColor(...color);
+            doc.roundedRect(x + 0.3, startY, cellW - 0.6, rowH - 0.5, 0.5, 0.5, "F");
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(4);
+            doc.text(String(val), x + cellW / 2, startY + rowH - 2, { align: "center" });
+          } else {
+            doc.setFillColor(230, 233, 237);
+            doc.roundedRect(x + 0.3, startY, cellW - 0.6, rowH - 0.5, 0.5, 0.5, "F");
+          }
+        }
+
+        const pct = g.target > 0 ? Math.round((totalVal / g.target) * 100) : 0;
+        doc.setTextColor(40, 40, 40);
+        doc.setFontSize(5);
+        doc.text(String(totalVal), gridStartX + hmDaysInMo * cellW + 2, startY + rowH - 1.5);
+        doc.setTextColor(...(pct >= 100 ? success : pct >= 70 ? warning : danger));
+        doc.text(`${pct}%`, gridStartX + hmDaysInMo * cellW + 14, startY + rowH - 1.5);
+
+        startY += rowH + 1;
+      });
+
+      // Legend
+      startY += 3;
+      if (startY < pageH - 25) {
+        const legendItems: { label: string; color: [number, number, number] }[] = [
+          { label: "Melhor da meta", color: [46, 160, 67] },
+          { label: "Acima da mediana", color: [241, 196, 15] },
+          { label: "Abaixo da mediana", color: [230, 126, 34] },
+          { label: "Pior da meta", color: [231, 76, 60] },
+          { label: "Sem lançamento", color: [230, 233, 237] },
+        ];
+        let lx = margin;
+        doc.setFontSize(5);
+        legendItems.forEach(item => {
+          doc.setFillColor(...item.color);
+          doc.roundedRect(lx, startY, 3, 3, 0.5, 0.5, "F");
+          doc.setTextColor(100, 100, 100);
+          doc.text(item.label, lx + 4, startY + 2.5);
+          lx += 30;
+        });
+      }
+      addFooter();
+    } // end mapa termico
+
     doc.save(`lancamentos_${format(now, "yyyyMMdd_HHmm")}.pdf`);
     toast.success("PDF gerado com sucesso!");
     } finally {
