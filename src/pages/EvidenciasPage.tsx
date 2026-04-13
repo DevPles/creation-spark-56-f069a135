@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, ListChecks, Eye, BarChart3, FileText, Clock, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import ActionPlanTable from "@/components/ActionPlanTable";
 import ActionPlanTimeline from "@/components/ActionPlanTimeline";
 import ActionPlanAnalytics from "@/components/ActionPlanAnalytics";
@@ -85,11 +85,11 @@ const EvidenciasPage = () => {
   ).length;
 
   const kpis = [
-    { label: "Total", value: total, icon: ListChecks, color: "text-foreground" },
-    { label: "Não iniciadas", value: naoIniciadas, icon: Clock, color: "text-muted-foreground" },
-    { label: "Em andamento", value: emAndamento, icon: Eye, color: "text-warning" },
-    { label: "Concluídas", value: concluidas, icon: CheckCircle2, color: "text-success" },
-    { label: "Vencidas", value: vencidas, icon: XCircle, color: "text-destructive" },
+    { label: "Total", value: total, color: "text-foreground" },
+    { label: "Não iniciadas", value: naoIniciadas, color: "text-muted-foreground" },
+    { label: "Em andamento", value: emAndamento, color: "text-warning" },
+    { label: "Concluídas", value: concluidas, color: "text-success" },
+    { label: "Vencidas", value: vencidas, color: "text-destructive" },
   ];
 
   return (
@@ -126,10 +126,7 @@ const EvidenciasPage = () => {
         {/* KPIs */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {kpis.map(kpi => (
-            <div key={kpi.label} className="kpi-card flex items-center gap-3">
-              <div className={`p-2 rounded-xl bg-background/60 ${kpi.color}`}>
-                <kpi.icon className="h-4 w-4" />
-              </div>
+            <div key={kpi.label} className="kpi-card flex items-center gap-3 px-4 py-3">
               <div>
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">{kpi.label}</p>
                 <p className={`text-lg font-bold font-display ${kpi.color}`}>{kpi.value}</p>
@@ -141,22 +138,10 @@ const EvidenciasPage = () => {
         {/* Tabs */}
         <Tabs defaultValue="tratativas" className="space-y-4">
           <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-4 gap-0">
-            <TabsTrigger value="tratativas" className="gap-1.5 text-xs">
-              <ListChecks className="h-3.5 w-3.5" />
-              Tratativas
-            </TabsTrigger>
-            <TabsTrigger value="acompanhamento" className="gap-1.5 text-xs">
-              <Eye className="h-3.5 w-3.5" />
-              Acompanhamento
-            </TabsTrigger>
-            <TabsTrigger value="analise" className="gap-1.5 text-xs">
-              <BarChart3 className="h-3.5 w-3.5" />
-              Análise
-            </TabsTrigger>
-            <TabsTrigger value="relatorios" className="gap-1.5 text-xs">
-              <FileText className="h-3.5 w-3.5" />
-              Relatórios
-            </TabsTrigger>
+            <TabsTrigger value="tratativas" className="text-xs">Tratativas</TabsTrigger>
+            <TabsTrigger value="acompanhamento" className="text-xs">Acompanhamento</TabsTrigger>
+            <TabsTrigger value="analise" className="text-xs">Análise</TabsTrigger>
+            <TabsTrigger value="relatorios" className="text-xs">Relatórios</TabsTrigger>
           </TabsList>
 
           <TabsContent value="tratativas">
