@@ -10,13 +10,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useContracts } from "@/contexts/ContractsContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format, endOfMonth, isWithinInterval, parse, getDaysInMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ALL_ENTRIES, CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
 import GoalGauge from "@/components/GoalGauge";
 import BedMovementsTab from "@/components/BedMovementsTab";
 import jsPDF from "jspdf";
@@ -627,7 +627,10 @@ const LancamentoMetasPage = () => {
     if (error) { toast.error("Erro ao carregar metas"); setLoading(false); return; }
     setGoals((data as Goal[]) || []);
     if (data && user) {
-      const { data: entriesData } = await supabase.from("goal_entries").select("*").eq("user_id", user.id);
+      // Admins see all entries, regular users see only their own
+      let query = supabase.from("goal_entries").select("*");
+      if (!isAdmin) query = query.eq("user_id", user.id);
+      const { data: entriesData } = await query;
       const grouped: Record<string, { value: number; period: string }[]> = {};
       (entriesData || []).forEach((e: any) => {
         if (!grouped[e.goal_id]) grouped[e.goal_id] = [];
@@ -656,18 +659,51 @@ const LancamentoMetasPage = () => {
   };
 
   /* ── Rubrica state ── */
-  const [selectedContract, setSelectedContract] = useState(CONTRACTS[0].id);
-  const [selectedMonth, setSelectedMonth] = useState(MONTHS[0]);
+  const { contracts: realContracts } = useContracts();
+  const [selectedContract, setSelectedContract] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("Janeiro");
   const [rubricaEntries, setRubricaEntries] = useState<Record<string, EntryForm>>({});
   const [rubricaSubmitting, setRubricaSubmitting] = useState<string | null>(null);
+  const [savedRubricaEntries, setSavedRubricaEntries] = useState<any[]>([]);
 
-  const handleRubricaSubmit = async (key: string, rubName: string, contract: typeof CONTRACTS[0]) => {
+  // Set default contract when contracts load
+  useEffect(() => {
+    if (realContracts.length > 0 && !selectedContract) {
+      setSelectedContract(realContracts[0].id);
+    }
+  }, [realContracts, selectedContract]);
+
+  // Load saved rubrica entries
+  useEffect(() => {
+    if (!selectedContract) return;
+    supabase.from("rubrica_entries").select("*").eq("contract_id", selectedContract)
+      .then(({ data }) => setSavedRubricaEntries(data || []));
+  }, [selectedContract]);
+
+  const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+  const handleRubricaSubmit = async (key: string, rubName: string, contractId: string, contractUnit: string) => {
     const entry = rubricaEntries[key];
     if (!entry?.value || !entry?.period) { toast.error("Preencha o valor e a data"); return; }
+    if (!user) return;
     setRubricaSubmitting(key);
-    // For now, just show success (mock — would insert into a rubrica_entries table)
-    toast.success(`Lançamento de ${rubName} (${contract.unit}) salvo`);
-    setRubricaEntries(prev => ({ ...prev, [key]: { value: "", period: "", notes: "" } }));
+    const { error } = await supabase.from("rubrica_entries").insert({
+      contract_id: contractId,
+      rubrica_name: rubName,
+      value_executed: parseFloat(entry.value),
+      period: entry.period,
+      facility_unit: contractUnit,
+      notes: entry.notes || null,
+      user_id: user.id,
+    });
+    if (error) { toast.error("Erro ao salvar lançamento de rubrica"); console.error(error); }
+    else {
+      toast.success(`Lançamento de ${rubName} salvo`);
+      setRubricaEntries(prev => ({ ...prev, [key]: { value: "", period: "", notes: "" } }));
+      // Reload entries
+      const { data } = await supabase.from("rubrica_entries").select("*").eq("contract_id", contractId);
+      setSavedRubricaEntries(data || []);
+    }
     setRubricaSubmitting(null);
   };
 
