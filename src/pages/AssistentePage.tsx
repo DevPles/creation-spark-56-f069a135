@@ -25,7 +25,7 @@ import PdfExportModal from "@/components/PdfExportModal";
 import GoalGauge from "@/components/GoalGauge";
 import { GoalData } from "@/components/GoalFormModal";
 import { EvidenceData } from "@/components/EvidenceFormModal";
-import { ALL_ENTRIES, CONTRACTS as RUBRICA_CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
+const MONTHS_LIST = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
