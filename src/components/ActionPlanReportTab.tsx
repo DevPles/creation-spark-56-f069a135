@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
-import { FileText, Sparkles, TrendingUp, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+
 
 type ActionPlan = Tables<"action_plans">;
 
@@ -45,10 +45,10 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
   const criticas = filtered.filter(p => p.prioridade === "critica" || p.prioridade === "alta").length;
 
   const stats = [
-    { label: "Total de planos", value: total, icon: FileText, color: "text-foreground" },
-    { label: "Concluídas", value: concluidas, icon: CheckCircle2, color: "text-success" },
-    { label: "Evidências pendentes", value: pendentes, icon: Clock, color: "text-warning" },
-    { label: "Alta / Crítica", value: criticas, icon: AlertTriangle, color: "text-destructive" },
+    { label: "Total de planos", value: total, color: "text-foreground" },
+    { label: "Concluídas", value: concluidas, color: "text-success" },
+    { label: "Evidências pendentes", value: pendentes, color: "text-warning" },
+    { label: "Alta / Crítica", value: criticas, color: "text-destructive" },
   ];
 
   return (
@@ -56,10 +56,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
       {/* Quick stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {stats.map(stat => (
-          <div key={stat.label} className="kpi-card flex items-center gap-3">
-            <div className={`p-2 rounded-xl bg-background/60 ${stat.color}`}>
-              <stat.icon className="h-4 w-4" />
-            </div>
+          <div key={stat.label} className="kpi-card flex items-center gap-3 px-4 py-3">
             <div>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">{stat.label}</p>
               <p className={`text-lg font-bold font-display ${stat.color}`}>{stat.value}</p>
@@ -70,10 +67,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
 
       {/* Generate report */}
       <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h3 className="text-sm font-bold font-display">Gerar Relatório Inteligente</h3>
-        </div>
+        <h3 className="text-sm font-bold font-display">Gerar Relatório Inteligente</h3>
         <p className="text-xs text-muted-foreground leading-relaxed">
           O relatório analisa todos os planos de ação e identifica padrões de incidência, áreas críticas e gera recomendações priorizadas automaticamente.
         </p>
@@ -89,18 +83,14 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
               <SelectItem value="todo">Todo o período</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={generateReport} disabled={loading || total === 0} size="sm" className="gap-1.5">
-            <TrendingUp className="h-3.5 w-3.5" />
+          <Button onClick={generateReport} disabled={loading || total === 0} size="sm">
             {loading ? "Gerando..." : "Gerar relatório"}
           </Button>
         </div>
 
         {report && (
           <div className="mt-4 bg-muted/20 rounded-xl border border-border p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <FileText className="h-4 w-4 text-primary" />
-              <h4 className="text-sm font-semibold font-display">Relatório Consolidado</h4>
-            </div>
+            <h4 className="text-sm font-semibold font-display mb-3">Relatório Consolidado</h4>
             <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap text-xs leading-relaxed">
               {report}
             </div>
