@@ -788,14 +788,17 @@ const RelatoriosPage = () => {
     { name: "Documentais", value: filteredGoals.filter(g => g.type === "DOC").length, color: "hsl(var(--muted-foreground))" },
   ].filter(d => d.value > 0), [filteredGoals]);
 
-  /* ── Rubrica radar data ── */
+  /* ── Rubrica radar data from real rubrica_entries ── */
   const rubricaRadar = useMemo(() => {
     return contract.rubricas.map(r => {
-      const goalsInRubrica = filteredGoals.filter(g => g.rubrica === r.name);
-      const avgPct = goalsInRubrica.length ? Math.round(goalsInRubrica.reduce((s, g) => s + getGoalPct(g), 0) / goalsInRubrica.length) : 100;
-      return { rubrica: r.name, atingimento: avgPct, peso: r.pct };
+      const allocated = r.valor; // planned budget
+      const executed = dbRubricaEntries
+        .filter(re => re.contract_id === contract.id && re.rubrica_name === r.name)
+        .reduce((s: number, re: any) => s + Number(re.value_executed), 0);
+      const pctExec = allocated > 0 ? Math.round((executed / allocated) * 100) : 0;
+      return { rubrica: r.name, atingimento: Math.min(pctExec, 100), peso: r.pct };
     });
-  }, [contract, filteredGoals]);
+  }, [contract, dbRubricaEntries]);
 
   /* ── Comparison bar data ── */
   const comparisonData = useMemo(() => {
