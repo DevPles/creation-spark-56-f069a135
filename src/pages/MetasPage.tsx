@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
@@ -7,32 +7,149 @@ import GoalModal from "@/components/GoalModal";
 import GoalFormModal, { GoalData } from "@/components/GoalFormModal";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-
-const INITIAL_GOALS: GoalData[] = [
-  { id: "1", name: "Taxa de ocupação de leitos", target: 85, current: 78, unit: "%", type: "QNT", risk: 12400, weight: 0.15, trend: "down", scoring: [{ min: 90, label: "Máximo", points: 1 }, { min: 70, label: "Parcial", points: 0.5 }, { min: 0, label: "Insuficiente", points: 0 }], history: [72, 74, 76, 78], glosaPct: 0.05, facilityUnit: "Hospital Geral", startDate: "2026-01-01", endDate: "2026-06-30" },
-  { id: "2", name: "Tempo médio de espera", target: 30, current: 42, unit: "min", type: "QNT", risk: 8200, weight: 0.10, trend: "up", scoring: [{ min: 90, label: "Máximo", points: 1 }, { min: 70, label: "Parcial", points: 0.5 }, { min: 0, label: "Insuficiente", points: 0 }], history: [48, 45, 44, 42], glosaPct: 0.03, facilityUnit: "Hospital Geral", startDate: "2026-01-01", endDate: "2026-06-30" },
-  { id: "3", name: "Satisfação do paciente (NPS)", target: 75, current: 71, unit: "pts", type: "QNT", risk: 5600, weight: 0.10, trend: "stable", scoring: [{ min: 90, label: "Máximo", points: 1 }, { min: 70, label: "Parcial", points: 0.5 }, { min: 0, label: "Insuficiente", points: 0 }], history: [65, 68, 69, 71], glosaPct: 0.03, facilityUnit: "UPA Norte", startDate: "2026-01-01", endDate: "2026-12-31" },
-  { id: "4", name: "Protocolo de higienização", target: 100, current: 92, unit: "%", type: "QLT", risk: 3100, weight: 0.08, trend: "up", scoring: [{ min: 90, label: "Máximo", points: 1 }, { min: 70, label: "Parcial", points: 0.5 }, { min: 0, label: "Insuficiente", points: 0 }], history: [85, 88, 90, 92], glosaPct: 0.02, facilityUnit: "UPA Norte", startDate: "2026-01-01", endDate: "2026-06-30" },
-  { id: "5", name: "Relatório quadrimestral (RDQA)", target: 1, current: 0, unit: "doc", type: "DOC", risk: 15000, weight: 0.20, trend: "down", scoring: [{ min: 100, label: "Entregue", points: 1 }, { min: 0, label: "Não entregue", points: 0 }], history: [0, 0, 0, 0], glosaPct: 0.08, facilityUnit: "UBS Centro", startDate: "2026-01-01", endDate: "2026-04-30" },
-  { id: "6", name: "Taxa de infecção hospitalar", target: 5, current: 6.2, unit: "%", type: "QNT", risk: 9800, weight: 0.12, trend: "down", scoring: [{ min: 90, label: "Máximo", points: 1 }, { min: 70, label: "Parcial", points: 0.5 }, { min: 0, label: "Insuficiente", points: 0 }], history: [7.1, 6.8, 6.5, 6.2], glosaPct: 0.04, facilityUnit: "UBS Centro", startDate: "2026-01-01", endDate: "2026-06-30" },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const MetasPage = () => {
   const navigate = useNavigate();
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
-  const [goals, setGoals] = useState<GoalData[]>(INITIAL_GOALS);
+  const [goals, setGoals] = useState<GoalData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedGoal, setSelectedGoal] = useState<GoalData | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editGoal, setEditGoal] = useState<GoalData | null>(null);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
 
+  const fetchGoals = useCallback(async () => {
+    setLoading(true);
+    // Fetch goals
+    const { data: goalsData, error: goalsError } = await supabase
+      .from("goals")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    if (goalsError) {
+      console.error(goalsError);
+      toast.error("Erro ao carregar metas");
+      setLoading(false);
+      return;
+    }
+
+    // Fetch all entries to compute current values and history
+    const { data: entriesData } = await supabase
+      .from("goal_entries")
+      .select("goal_id, value, period")
+      .order("created_at", { ascending: true });
+
+    const entriesByGoal: Record<string, { value: number; period: string }[]> = {};
+    (entriesData || []).forEach(e => {
+      if (!entriesByGoal[e.goal_id]) entriesByGoal[e.goal_id] = [];
+      entriesByGoal[e.goal_id].push({ value: Number(e.value), period: e.period });
+    });
+
+    const mapped: GoalData[] = (goalsData || []).map(g => {
+      const gEntries = entriesByGoal[g.id] || [];
+      const current = gEntries.reduce((sum, e) => sum + e.value, 0);
+      const target = Number(g.target);
+      const weight = Number(g.weight);
+      const scoring = (g.scoring as any[]) || [];
+
+      // Compute trend from last 4 entries
+      const lastValues = gEntries.slice(-4).map(e => e.value);
+      let trend: "up" | "down" | "stable" = "stable";
+      if (lastValues.length >= 2) {
+        const last = lastValues[lastValues.length - 1];
+        const prev = lastValues[lastValues.length - 2];
+        if (last > prev) trend = "up";
+        else if (last < prev) trend = "down";
+      }
+
+      // Build history (last 4 quarter-like buckets)
+      const history = lastValues.length >= 4 ? lastValues.slice(-4) : [0, 0, 0, 0];
+
+      // Risk calculation
+      const attainment = g.type === "DOC"
+        ? (current >= target ? 1 : 0)
+        : Math.min(1, target > 0 ? current / target : 0);
+      const glosaPct = 0.05;
+      const risk = attainment < 1 ? Math.round((1 - attainment) * weight * 1200000 * glosaPct) : 0;
+
+      return {
+        id: g.id,
+        name: g.name,
+        target,
+        current,
+        unit: g.unit,
+        type: g.type as "QNT" | "QLT" | "DOC",
+        risk,
+        weight,
+        trend,
+        scoring,
+        history,
+        glosaPct,
+        facilityUnit: g.facility_unit,
+        sector: g.sector || undefined,
+        startDate: g.start_date || undefined,
+        endDate: g.end_date || undefined,
+      };
+    });
+
+    setGoals(mapped);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchGoals();
+  }, [fetchGoals]);
+
   const handleView = (goal: GoalData) => { setSelectedGoal(goal); setViewModalOpen(true); };
   const handleNew = () => { setEditGoal(null); setIsNew(true); setFormModalOpen(true); };
   const handleEdit = (goal: GoalData) => { setEditGoal(goal); setIsNew(false); setFormModalOpen(true); };
-  const handleSave = (goal: GoalData) => {
-    if (isNew) setGoals((prev) => [...prev, goal]);
-    else setGoals((prev) => prev.map((g) => (g.id === goal.id ? goal : g)));
+
+  const handleSave = async (goal: GoalData) => {
+    if (isNew) {
+      const { error } = await supabase.from("goals").insert({
+        name: goal.name,
+        target: goal.target,
+        unit: goal.unit,
+        type: goal.type,
+        weight: goal.weight,
+        risk: goal.risk,
+        facility_unit: goal.facilityUnit as any || "Hospital Geral",
+        scoring: goal.scoring as any,
+        sector: goal.sector || null,
+        start_date: goal.startDate || null,
+        end_date: goal.endDate || null,
+      });
+      if (error) {
+        console.error(error);
+        toast.error("Erro ao criar meta");
+        return;
+      }
+      toast.success("Meta criada com sucesso");
+    } else {
+      const { error } = await supabase.from("goals").update({
+        name: goal.name,
+        target: goal.target,
+        unit: goal.unit,
+        type: goal.type,
+        weight: goal.weight,
+        risk: goal.risk,
+        facility_unit: goal.facilityUnit as any || "Hospital Geral",
+        scoring: goal.scoring as any,
+        sector: goal.sector || null,
+        start_date: goal.startDate || null,
+        end_date: goal.endDate || null,
+      }).eq("id", goal.id);
+      if (error) {
+        console.error(error);
+        toast.error("Erro ao atualizar meta");
+        return;
+      }
+      toast.success("Meta atualizada");
+    }
+    fetchGoals();
   };
 
   return (
@@ -51,17 +168,25 @@ const MetasPage = () => {
           action={<Button onClick={handleNew}>Nova meta</Button>}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {goals
-            .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
-            .map((goal, i) => (
-            <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <div className="cursor-pointer" onClick={() => handleView(goal)}>
-                <GoalDetailCard goal={goal} onEdit={() => handleEdit(goal)} />
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">Carregando metas...</div>
+        ) : goals.filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit).length === 0 ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">
+            Nenhuma meta cadastrada{selectedUnit !== "Todas as unidades" ? ` para ${selectedUnit}` : ""}. Clique em "Nova meta" para começar.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {goals
+              .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+              .map((goal, i) => (
+              <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                <div className="cursor-pointer" onClick={() => handleView(goal)}>
+                  <GoalDetailCard goal={goal} onEdit={() => handleEdit(goal)} />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </main>
 
       {selectedGoal && <GoalModal goal={{ ...selectedGoal, trend: selectedGoal.trend }} open={viewModalOpen} onOpenChange={setViewModalOpen} />}
