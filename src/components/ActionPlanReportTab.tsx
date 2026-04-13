@@ -172,35 +172,36 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
         y += 6;
       };
 
-      // Cover
-      doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.rect(0, 0, W, 45, "F");
+      // ═══ COVER ═══
+      doc.setFillColor(...PRIMARY);
+      doc.rect(0, 0, W, 42, "F");
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(22);
+      doc.setFontSize(24);
       doc.setFont("helvetica", "bold");
-      doc.text("MOSS", margin, 20);
+      doc.text("MOSS", margin, 18);
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text("Relatorio Inteligente de Plano de Acao", margin, 28);
-      doc.setFontSize(9);
-      doc.text(`${periodLabel}  |  ${reportUnit}  |  ${now}`, margin, 38);
-      y = 55;
+      doc.text("Relatorio Inteligente de Plano de Acao", margin, 26);
+      doc.setFontSize(8);
+      doc.setTextColor(220, 225, 240);
+      doc.text(`${periodLabel}  |  ${reportUnit}  |  ${now}`, margin, 36);
+      y = 50;
 
       // Info box
-      doc.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
-      doc.roundedRect(margin, y, W - 2 * margin, 14, 3, 3, "F");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.setFontSize(10);
+      doc.setFillColor(...LIGHT_BG);
+      doc.roundedRect(margin, y, W - 2 * margin, 12, 2, 2, "F");
+      doc.setTextColor(...DARK);
+      doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
-      doc.text("Relatorio Consolidado - Planos de Acao", margin + 5, y + 6);
-      doc.setFontSize(8);
+      doc.text("Relatorio Consolidado — Planos de Acao", margin + 4, y + 5);
+      doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-      doc.text(`Unidade: ${reportUnit}  |  Periodo: ${periodLabel}  |  ${total} planos analisados`, margin + 5, y + 12);
-      y += 20;
+      doc.setTextColor(...MUTED);
+      doc.text(`Unidade: ${reportUnit}  |  Periodo: ${periodLabel}  |  ${total} planos analisados`, margin + 4, y + 10);
+      y += 17;
 
-      // KPI cards
-      const cardW = (W - 2 * margin - 12) / 5;
+      // KPI cards (5 inline)
+      const cardW = (W - 2 * margin - 8) / 5;
       const kpis = [
         { label: "Total", value: `${total}`, color: PRIMARY },
         { label: "Concluidas", value: `${concluidas}`, color: GREEN },
@@ -209,20 +210,20 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
         { label: "Vencidas", value: `${vencidas}`, color: RED },
       ];
       kpis.forEach((kpi, i) => {
-        const x = margin + i * (cardW + 3);
-        doc.setFillColor(WHITE[0], WHITE[1], WHITE[2]);
-        doc.setDrawColor(220, 222, 226);
-        doc.roundedRect(x, y, cardW, 22, 2, 2, "FD");
+        const x = margin + i * (cardW + 2);
+        doc.setFillColor(...WHITE);
+        doc.setDrawColor(215, 218, 225);
+        doc.roundedRect(x, y, cardW, 20, 2, 2, "FD");
         doc.setFontSize(6);
-        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.setTextColor(...MUTED);
         doc.text(kpi.label, x + 3, y + 6);
-        doc.setFontSize(14);
+        doc.setFontSize(13);
         doc.setFont("helvetica", "bold");
-        doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
-        doc.text(kpi.value, x + 3, y + 17);
+        doc.setTextColor(...kpi.color);
+        doc.text(kpi.value, x + 3, y + 16);
         doc.setFont("helvetica", "normal");
       });
-      y += 30;
+      y += 26;
 
       // Summary tables: by status, priority, type
       addNewPageIfNeeded(50);
