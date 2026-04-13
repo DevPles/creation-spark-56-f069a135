@@ -597,6 +597,175 @@ const LancamentoMetasPage = () => {
     addFooter();
     } // end leitos
 
+    // ═══ PAGE: MAPA TÉRMICO ═══
+    if (sections.mapaTermico) {
+      let startY = addHeader("Relatório de Lançamentos — Mapa Térmico Diário");
+
+      const heatGoals = goals.filter(g => !selectedUnit || g.facility_unit === selectedUnit);
+      const year = Number(filterYear);
+      const month = filterMonth === "todos" ? new Date().getMonth() : Number(filterMonth);
+      const daysInMo = getDaysInMonth(new Date(year, month));
+      const mLabel = FILTER_MONTHS.find(m => m.value === String(month))?.label || "";
+
+      // Build day map
+      const goalDayMap: Record<string, Record<number, number>> = {};
+      heatGoals.forEach(g => {
+        goalDayMap[g.id] = {};
+        const gEntries = existingEntries[g.id] || [];
+        gEntries.forEach(e => {
+          const d = new Date(e.period + "T00:00:00");
+          if (d.getFullYear() === year && d.getMonth() === month) {
+            goalDayMap[g.id][d.getDate()] = (goalDayMap[g.id][d.getDate()] || 0) + e.value;
+          }
+        });
+      });
+
+      // Per-row stats for coloring
+      const rowStats: Record<string, { min: number; max: number }> = {};
+      heatGoals.forEach(g => {
+        const vals = Object.values(goalDayMap[g.id] || {});
+        if (vals.length > 0) {
+          rowStats[g.id] = { min: Math.min(...vals), max: Math.max(...vals) };
+        }
+      });
+
+      // KPIs
+      let totalGoalsWithEntries = 0;
+      let sumPct = 0;
+      let totalDaysWithEntries = new Set<number>();
+      heatGoals.forEach(g => {
+        const dayEntries = goalDayMap[g.id] || {};
+        const count = Object.keys(dayEntries).length;
+        if (count > 0) {
+          totalGoalsWithEntries++;
+          const total = Object.values(dayEntries).reduce((s, v) => s + v, 0);
+          sumPct += g.target > 0 ? (total / g.target) * 100 : 0;
+        }
+        Object.keys(dayEntries).forEach(d => totalDaysWithEntries.add(Number(d)));
+      });
+      const avgPct = totalGoalsWithEntries > 0 ? Math.round(sumPct / totalGoalsWithEntries) : 0;
+      const coverage = Math.round((totalDaysWithEntries.size / daysInMo) * 100);
+
+      startY = drawKpiBoxes([
+        { label: "Metas com Lançamento", value: `${totalGoalsWithEntries}/${heatGoals.length}` },
+        { label: "Atingimento Médio", value: `${avgPct}%`, color: avgPct >= 100 ? success : avgPct >= 70 ? warning : danger },
+        { label: "Dias com Lançamento", value: `${totalDaysWithEntries.size}/${daysInMo}` },
+        { label: "Cobertura do Mês", value: `${coverage}%`, color: coverage >= 80 ? success : coverage >= 50 ? warning : danger },
+      ], startY);
+
+      startY = drawSectionTitle(`Mapa Térmico — ${mLabel} ${year}`, startY);
+
+      // Draw heatmap table
+      const cellW = Math.min(5, (contentW - 40) / daysInMo);
+      const nameColW = 35;
+      const totalColW = 12;
+      const pctColW = 10;
+      const gridStartX = margin + nameColW;
+
+      // Header row with day numbers
+      doc.setFontSize(4.5);
+      doc.setTextColor(120, 120, 120);
+      for (let d = 1; d <= daysInMo; d++) {
+        const x = gridStartX + (d - 1) * cellW;
+        doc.text(String(d), x + cellW / 2, startY, { align: "center" });
+      }
+      doc.text("Total", gridStartX + daysInMo * cellW + 2, startY);
+      doc.text("%", gridStartX + daysInMo * cellW + totalColW + 4, startY);
+      startY += 3;
+
+      const getHeatColor = (goalId: string, value: number, lowerIsBetter: boolean): [number, number, number] => {
+        const stats = rowStats[goalId];
+        if (!stats || stats.min === stats.max) return [46, 160, 67]; // green
+        const { min, max } = stats;
+        let norm: number;
+        if (lowerIsBetter) {
+          norm = (max - value) / (max - min);
+        } else {
+          norm = (value - min) / (max - min);
+        }
+        if (norm >= 0.75) return [46, 160, 67];   // green
+        if (norm >= 0.50) return [241, 196, 15];   // yellow
+        if (norm >= 0.25) return [230, 126, 34];   // orange
+        return [231, 76, 60];                       // red
+      };
+
+      const rowH = 5.5;
+      heatGoals.forEach((g, gi) => {
+        // Check page break
+        if (startY + rowH > pageH - 18) {
+          addFooter();
+          startY = addHeader("Relatório de Lançamentos — Mapa Térmico (cont.)");
+        }
+
+        const y = startY;
+        const lowerIsBetter = g.name.toLowerCase().includes("tempo") ||
+          g.name.toLowerCase().includes("infecção") ||
+          g.name.toLowerCase().includes("retorno") ||
+          g.name.toLowerCase().includes("mortalidade") ||
+          g.name.toLowerCase().includes("óbito");
+
+        // Goal name
+        doc.setFontSize(5);
+        doc.setTextColor(40, 40, 40);
+        doc.text(g.name.substring(0, 18), margin, y + rowH - 1.5);
+
+        // Day cells
+        const dayEntries = goalDayMap[g.id] || {};
+        let totalValue = 0;
+
+        for (let d = 1; d <= daysInMo; d++) {
+          const x = gridStartX + (d - 1) * cellW;
+          const val = dayEntries[d];
+
+          if (val !== undefined) {
+            totalValue += val;
+            const color = getHeatColor(g.id, val, lowerIsBetter);
+            doc.setFillColor(...color);
+            doc.roundedRect(x + 0.3, y, cellW - 0.6, rowH - 0.5, 0.5, 0.5, "F");
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(4);
+            doc.text(String(val), x + cellW / 2, y + rowH - 2, { align: "center" });
+          } else {
+            doc.setFillColor(230, 233, 237);
+            doc.roundedRect(x + 0.3, y, cellW - 0.6, rowH - 0.5, 0.5, 0.5, "F");
+          }
+        }
+
+        // Total and %
+        const pct = g.target > 0 ? Math.round((totalValue / g.target) * 100) : 0;
+        doc.setTextColor(40, 40, 40);
+        doc.setFontSize(5);
+        doc.text(String(totalValue), gridStartX + daysInMo * cellW + 2, y + rowH - 1.5);
+        doc.setTextColor(...(pct >= 100 ? success : pct >= 70 ? warning : danger));
+        doc.text(`${pct}%`, gridStartX + daysInMo * cellW + totalColW + 4, y + rowH - 1.5);
+
+        startY += rowH + 1;
+      });
+
+      // Legend
+      startY += 3;
+      if (startY < pageH - 25) {
+        doc.setFontSize(5);
+        const legendItems: { label: string; color: [number, number, number] }[] = [
+          { label: "Melhor da meta", color: [46, 160, 67] },
+          { label: "Acima da mediana", color: [241, 196, 15] },
+          { label: "Abaixo da mediana", color: [230, 126, 34] },
+          { label: "Pior da meta", color: [231, 76, 60] },
+          { label: "Sem lançamento", color: [230, 233, 237] },
+        ];
+        let lx = margin;
+        legendItems.forEach(item => {
+          doc.setFillColor(...item.color);
+          doc.roundedRect(lx, startY, 3, 3, 0.5, 0.5, "F");
+          doc.setTextColor(100, 100, 100);
+          doc.text(item.label, lx + 4, startY + 2.5);
+          lx += 30;
+        });
+      }
+
+      addFooter();
+    } // end mapaTermico
+
     doc.save(`lancamentos_${format(now, "yyyyMMdd_HHmm")}.pdf`);
     toast.success("PDF gerado com sucesso!");
     } finally {
