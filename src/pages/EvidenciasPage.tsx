@@ -4,11 +4,12 @@ import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Search, Filter } from "lucide-react";
 import ActionPlanTable from "@/components/ActionPlanTable";
 import ActionPlanTimeline from "@/components/ActionPlanTimeline";
 import ActionPlanAnalytics from "@/components/ActionPlanAnalytics";
@@ -28,6 +29,9 @@ const EvidenciasPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<ActionPlan | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("todos");
+  const [filterPrioridade, setFilterPrioridade] = useState("todos");
 
   // Determine which units the user can see
   const isManagerOrAdmin = role === "admin" || role === "gestor";
@@ -83,9 +87,19 @@ const EvidenciasPage = () => {
   }, [fetchPlans]);
 
   const filteredPlans = useMemo(() => {
-    if (selectedUnit === "Todas as unidades") return plans;
-    return plans.filter(p => p.facility_unit === selectedUnit);
-  }, [plans, selectedUnit]);
+    let result = selectedUnit === "Todas as unidades" ? plans : plans.filter(p => p.facility_unit === selectedUnit);
+    if (search) {
+      const s = search.toLowerCase();
+      result = result.filter(p =>
+        p.reference_name.toLowerCase().includes(s) ||
+        p.responsavel?.toLowerCase().includes(s) ||
+        p.area?.toLowerCase().includes(s)
+      );
+    }
+    if (filterStatus !== "todos") result = result.filter(p => p.status_acao === filterStatus);
+    if (filterPrioridade !== "todos") result = result.filter(p => p.prioridade === filterPrioridade);
+    return result;
+  }, [plans, selectedUnit, search, filterStatus, filterPrioridade]);
 
   const handleNew = () => {
     setSelectedPlan(null);
@@ -165,14 +179,52 @@ const EvidenciasPage = () => {
           ))}
         </div>
 
-        {/* Tabs */}
+        {/* Tabs + Filters on same row */}
         <Tabs defaultValue="tratativas" className="space-y-4">
-          <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-4 gap-0">
-            <TabsTrigger value="tratativas" className="text-xs">Tratativas</TabsTrigger>
-            <TabsTrigger value="acompanhamento" className="text-xs">Acompanhamento</TabsTrigger>
-            <TabsTrigger value="analise" className="text-xs">Análise</TabsTrigger>
-            <TabsTrigger value="relatorios" className="text-xs">Relatórios</TabsTrigger>
-          </TabsList>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-4 gap-0">
+              <TabsTrigger value="tratativas" className="text-xs">Tratativas</TabsTrigger>
+              <TabsTrigger value="acompanhamento" className="text-xs">Acompanhamento</TabsTrigger>
+              <TabsTrigger value="analise" className="text-xs">Análise</TabsTrigger>
+              <TabsTrigger value="relatorios" className="text-xs">Relatórios</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  className="h-9 pl-9 w-56 text-xs"
+                  placeholder="Buscar por referência, responsável ou área..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-36 h-9 text-xs">
+                  <Filter className="h-3 w-3 mr-1.5" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os status</SelectItem>
+                  <SelectItem value="nao_iniciada">Não iniciada</SelectItem>
+                  <SelectItem value="em_andamento">Em andamento</SelectItem>
+                  <SelectItem value="concluida">Concluída</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterPrioridade} onValueChange={setFilterPrioridade}>
+                <SelectTrigger className="w-28 h-9 text-xs">
+                  <SelectValue placeholder="Prioridade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas</SelectItem>
+                  <SelectItem value="baixa">Baixa</SelectItem>
+                  <SelectItem value="media">Média</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="critica">Crítica</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
           <TabsContent value="tratativas">
             {loading ? (
