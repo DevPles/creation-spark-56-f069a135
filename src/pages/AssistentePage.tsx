@@ -181,10 +181,63 @@ const AssistentePage = () => {
 
   // Report generation state
   const [selectedReportType, setSelectedReportType] = useState("");
-  const [reportContractId, setReportContractId] = useState(REPORT_CONTRACTS[0].id);
+  const [reportContractId, setReportContractId] = useState("");
   const [reportIncludeCharts, setReportIncludeCharts] = useState(true);
   const [reportIncludeDetails, setReportIncludeDetails] = useState(true);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [reportGoals, setReportGoals] = useState<any[]>([]);
+  const [reportEntries, setReportEntries] = useState<any[]>([]);
+
+  // Load report data
+  useEffect(() => {
+    const load = async () => {
+      const [g, e] = await Promise.all([
+        supabase.from("goals").select("*"),
+        supabase.from("goal_entries").select("*"),
+      ]);
+      setReportGoals(g.data || []);
+      setReportEntries(e.data || []);
+    };
+    load();
+  }, []);
+
+  // Set default report contract
+  useEffect(() => {
+    if (contracts.length > 0 && !reportContractId) setReportContractId(contracts[0].id);
+  }, [contracts, reportContractId]);
+
+  // Build REPORT_CONTRACTS dynamically
+  const REPORT_CONTRACTS: ReportContractData[] = useMemo(() => {
+    return contracts.map(rc => {
+      const unitGoals = reportGoals.filter((g: any) => g.facility_unit === rc.unit);
+      const goalItems: ReportGoalItem[] = unitGoals.map((g: any) => {
+        const entries = reportEntries.filter((e: any) => e.goal_id === g.id);
+        const current = entries.reduce((s: number, e: any) => s + Number(e.value), 0);
+        const pct = g.target > 0 ? (current / g.target) * 100 : 0;
+        return {
+          id: g.id, name: g.name, target: Number(g.target), current, unit: g.unit,
+          type: g.type as "QNT" | "QLT" | "DOC", risk: Number(g.risk),
+          trend: (pct >= 90 ? "up" : pct >= 60 ? "stable" : "down") as "up" | "down" | "stable",
+          rubrica: "Metas", pesoFinanceiro: Number(g.weight) * 100,
+        };
+      });
+      const totalRisk = goalItems.reduce((s, g) => s + g.risk, 0);
+      return {
+        id: rc.id, name: rc.name, unit: rc.unit, valorGlobal: rc.value,
+        rubricas: (rc.rubricas || []).filter(r => r.percent > 0).map(r => ({ name: r.name, pct: r.percent, valor: rc.value * (r.percent / 100) })),
+        goals: goalItems,
+        performance: ["Jan", "Fev", "Mar", "Abr"].map(month => {
+          const at = goalItems.filter(g => getReportGoalPct(g) >= 90).length;
+          const pa = goalItems.filter(g => { const p = getReportGoalPct(g); return p >= 60 && p < 90; }).length;
+          const total = goalItems.length || 1;
+          return { month, atingidas: Math.round((at / total) * 100), parciais: Math.round((pa / total) * 100), naoAtingidas: Math.round(((total - at - pa) / total) * 100) };
+        }),
+        riskTrend: ["Jan", "Fev", "Mar", "Abr"].map((month, i) => ({
+          month, risco: Math.round(totalRisk * (1 - i * 0.1)), glosa: Math.round(totalRisk * 0.15 * (1 - i * 0.1)),
+        })),
+      };
+    });
+  }, [contracts, reportGoals, reportEntries]);
 
   /* ══ Training state ══ */
   const [trainingModules, setTrainingModules] = useState<TrainingModule[]>([]);
