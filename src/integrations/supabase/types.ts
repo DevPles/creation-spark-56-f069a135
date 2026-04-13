@@ -216,6 +216,57 @@ export type Database = {
         }
         Relationships: []
       }
+      contracts: {
+        Row: {
+          created_at: string
+          goals: number
+          id: string
+          name: string
+          notification_email: string | null
+          pdf_name: string | null
+          pdf_url: string | null
+          period: string
+          rubricas: Json
+          status: string
+          unit: string
+          updated_at: string
+          value: number
+          variable: number
+        }
+        Insert: {
+          created_at?: string
+          goals?: number
+          id?: string
+          name: string
+          notification_email?: string | null
+          pdf_name?: string | null
+          pdf_url?: string | null
+          period?: string
+          rubricas?: Json
+          status?: string
+          unit: string
+          updated_at?: string
+          value?: number
+          variable?: number
+        }
+        Update: {
+          created_at?: string
+          goals?: number
+          id?: string
+          name?: string
+          notification_email?: string | null
+          pdf_name?: string | null
+          pdf_url?: string | null
+          period?: string
+          rubricas?: Json
+          status?: string
+          unit?: string
+          updated_at?: string
+          value?: number
+          variable?: number
+        }
+        Relationships: []
+      }
       goal_entries: {
         Row: {
           created_at: string

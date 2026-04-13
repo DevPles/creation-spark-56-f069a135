@@ -1,69 +1,120 @@
-import { createContext, useContext, useState, ReactNode } from "react";
-import { ContractData } from "@/components/contract/types";
-
-const INITIAL_CONTRACTS: ContractData[] = [
-  {
-    id: "1", name: "Contrato de Gestão — Hospital Geral", value: 12000000, variable: 0.10, goals: 8, status: "Vigente", period: "2024-2025", unit: "Hospital Geral",
-    rubricas: [
-      { id: "rh", name: "Recursos Humanos", percent: 55 },
-      { id: "insumos", name: "Insumos e Materiais", percent: 18 },
-      { id: "equip", name: "Equipamentos", percent: 8 },
-      { id: "infra", name: "Infraestrutura", percent: 4 },
-      { id: "quali", name: "Metas Qualitativas", percent: 5 },
-      { id: "quanti", name: "Metas Quantitativas", percent: 10 },
-    ],
-  },
-  {
-    id: "2", name: "Contrato de Gestão — UPA Norte", value: 4500000, variable: 0.08, goals: 6, status: "Vigente", period: "2024-2025", unit: "UPA Norte",
-    rubricas: [
-      { id: "rh", name: "Recursos Humanos", percent: 60 },
-      { id: "insumos", name: "Insumos e Materiais", percent: 15 },
-      { id: "equip", name: "Equipamentos", percent: 7 },
-      { id: "infra", name: "Infraestrutura", percent: 3 },
-      { id: "quali", name: "Metas Qualitativas", percent: 5 },
-      { id: "quanti", name: "Metas Quantitativas", percent: 10 },
-    ],
-  },
-  {
-    id: "3", name: "Contrato de Gestão — UBS Centro", value: 2800000, variable: 0.10, goals: 5, status: "Em renovação", period: "2023-2024", unit: "UBS Centro",
-    rubricas: [
-      { id: "rh", name: "Recursos Humanos", percent: 65 },
-      { id: "insumos", name: "Insumos e Materiais", percent: 12 },
-      { id: "equip", name: "Equipamentos", percent: 5 },
-      { id: "infra", name: "Infraestrutura", percent: 3 },
-      { id: "quali", name: "Metas Qualitativas", percent: 5 },
-      { id: "quanti", name: "Metas Quantitativas", percent: 10 },
-    ],
-  },
-];
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { ContractData, Rubrica } from "@/components/contract/types";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ContractsContextType {
   contracts: ContractData[];
+  loading: boolean;
   setContracts: React.Dispatch<React.SetStateAction<ContractData[]>>;
   updateContract: (contract: ContractData) => void;
   addContract: (contract: ContractData) => void;
   deleteContract: (id: string) => void;
+  refresh: () => void;
 }
 
 const ContractsContext = createContext<ContractsContextType | null>(null);
 
+const mapRowToContract = (row: any): ContractData => ({
+  id: row.id,
+  name: row.name,
+  value: Number(row.value),
+  variable: Number(row.variable),
+  goals: row.goals,
+  status: row.status,
+  period: row.period,
+  unit: row.unit,
+  pdfName: row.pdf_name || undefined,
+  pdfUrl: row.pdf_url || undefined,
+  notificationEmail: row.notification_email || undefined,
+  rubricas: (row.rubricas as Rubrica[]) || [],
+});
+
 export const ContractsProvider = ({ children }: { children: ReactNode }) => {
-  const [contracts, setContracts] = useState<ContractData[]>(INITIAL_CONTRACTS);
+  const [contracts, setContracts] = useState<ContractData[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const updateContract = (contract: ContractData) => {
-    setContracts(prev => prev.map(c => c.id === contract.id ? contract : c));
+  const fetchContracts = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("contracts")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching contracts:", error);
+      toast.error("Erro ao carregar contratos");
+    } else {
+      setContracts((data || []).map(mapRowToContract));
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchContracts();
+  }, [fetchContracts]);
+
+  const updateContract = async (contract: ContractData) => {
+    const { error } = await supabase.from("contracts").update({
+      name: contract.name,
+      value: contract.value,
+      variable: contract.variable,
+      goals: contract.goals,
+      status: contract.status,
+      period: contract.period,
+      unit: contract.unit,
+      pdf_name: contract.pdfName || null,
+      pdf_url: contract.pdfUrl || null,
+      notification_email: contract.notificationEmail || null,
+      rubricas: contract.rubricas as any || [],
+    }).eq("id", contract.id);
+
+    if (error) {
+      console.error(error);
+      toast.error("Erro ao atualizar contrato");
+    } else {
+      setContracts(prev => prev.map(c => c.id === contract.id ? contract : c));
+      toast.success("Contrato atualizado");
+    }
   };
 
-  const addContract = (contract: ContractData) => {
-    setContracts(prev => [...prev, contract]);
+  const addContract = async (contract: ContractData) => {
+    const { data, error } = await supabase.from("contracts").insert({
+      name: contract.name,
+      value: contract.value,
+      variable: contract.variable,
+      goals: contract.goals,
+      status: contract.status,
+      period: contract.period,
+      unit: contract.unit,
+      pdf_name: contract.pdfName || null,
+      pdf_url: contract.pdfUrl || null,
+      notification_email: contract.notificationEmail || null,
+      rubricas: contract.rubricas as any || [],
+    }).select().single();
+
+    if (error) {
+      console.error(error);
+      toast.error("Erro ao criar contrato");
+    } else if (data) {
+      setContracts(prev => [...prev, mapRowToContract(data)]);
+      toast.success("Contrato criado");
+    }
   };
 
-  const deleteContract = (id: string) => {
-    setContracts(prev => prev.filter(c => c.id !== id));
+  const deleteContract = async (id: string) => {
+    const { error } = await supabase.from("contracts").delete().eq("id", id);
+    if (error) {
+      console.error(error);
+      toast.error("Erro ao excluir contrato");
+    } else {
+      setContracts(prev => prev.filter(c => c.id !== id));
+      toast.success("Contrato excluído");
+    }
   };
 
   return (
-    <ContractsContext.Provider value={{ contracts, setContracts, updateContract, addContract, deleteContract }}>
+    <ContractsContext.Provider value={{ contracts, loading, setContracts, updateContract, addContract, deleteContract, refresh: fetchContracts }}>
       {children}
     </ContractsContext.Provider>
   );
