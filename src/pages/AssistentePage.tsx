@@ -211,8 +211,9 @@ const AssistentePage = () => {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [selectedRubrica, setSelectedRubrica] = useState("");
-  const [selectedContract, setSelectedContract] = useState(RUBRICA_CONTRACTS[0]?.id || "");
-  const [selectedMonth, setSelectedMonth] = useState(MONTHS[0] || "");
+  const [selectedContract, setSelectedContract] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(MONTHS_LIST[0] || "");
+  const [savedRubricaEntries, setSavedRubricaEntries] = useState<any[]>([]);
 
   // Goal data
   const [goals, setGoals] = useState<Goal[]>([]);
