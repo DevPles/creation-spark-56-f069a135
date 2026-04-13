@@ -235,6 +235,426 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
       });
       y = (doc as any).lastAutoTable.finalY + 8;
 
+      // ═══════════════════════════════════════════════
+      // PARETO CHART — Incidência por Tipo de Problema
+      // ═══════════════════════════════════════════════
+      doc.addPage();
+      y = margin;
+      drawPageHeader();
+
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+      doc.text("Diagrama de Pareto - Incidencia por Tipo de Problema", margin, y);
+      y += 3;
+      doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, W - margin, y);
+      y += 10;
+
+      // Build sorted data
+      const paretoRaw = filtered.reduce((acc, p) => {
+        const label = TIPO_LABELS[p.tipo_problema] || p.tipo_problema;
+        acc[label] = (acc[label] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      const paretoSorted = Object.entries(paretoRaw).sort((a, b) => b[1] - a[1]);
+      const paretoTotal = paretoSorted.reduce((s, [, v]) => s + v, 0);
+
+      if (paretoSorted.length > 0 && paretoTotal > 0) {
+        const chartX = margin + 5;
+        const chartY = y;
+        const chartW = W - 2 * margin - 10;
+        const chartH = 75;
+        const barColors = [
+          [35, 66, 117], [220, 60, 60], [230, 160, 30],
+          [40, 160, 90], [150, 100, 200], [80, 180, 200],
+        ];
+        const barCount = paretoSorted.length;
+        const barGap = 4;
+        const barW = Math.min(30, (chartW - barGap * (barCount + 1)) / barCount);
+        const maxVal = paretoSorted[0][1];
+        const barAreaW = barCount * (barW + barGap) + barGap;
+        const offsetX = chartX + (chartW - barAreaW) / 2;
+
+        // Y axis
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.3);
+        doc.line(chartX, chartY, chartX, chartY + chartH);
+        doc.line(chartX, chartY + chartH, chartX + chartW, chartY + chartH);
+
+        // Y axis labels
+        for (let i = 0; i <= 4; i++) {
+          const yLine = chartY + chartH - (chartH * i) / 4;
+          doc.setDrawColor(235, 237, 240);
+          doc.setLineWidth(0.1);
+          doc.line(chartX + 1, yLine, chartX + chartW, yLine);
+          doc.setFontSize(6);
+          doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+          doc.text(`${Math.round((maxVal * i) / 4)}`, chartX - 2, yLine + 1, { align: "right" });
+        }
+
+        // Right Y axis label (%)
+        doc.setFontSize(6);
+        doc.setTextColor(RED[0], RED[1], RED[2]);
+        doc.text("100%", chartX + chartW + 2, chartY + 2);
+        doc.text("50%", chartX + chartW + 2, chartY + chartH / 2 + 1);
+        doc.text("0%", chartX + chartW + 2, chartY + chartH + 1);
+
+        // Bars
+        let cumulative = 0;
+        const cumulativePoints: { x: number; y: number }[] = [];
+
+        paretoSorted.forEach(([label, val], i) => {
+          const barH = (val / maxVal) * (chartH - 5);
+          const bx = offsetX + barGap + i * (barW + barGap);
+          const by = chartY + chartH - barH;
+          const color = barColors[i % barColors.length];
+
+          doc.setFillColor(color[0], color[1], color[2]);
+          doc.roundedRect(bx, by, barW, barH, 1, 1, "F");
+
+          // Value on top
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(color[0], color[1], color[2]);
+          doc.text(`${val}`, bx + barW / 2, by - 2, { align: "center" });
+
+          // Label below
+          doc.setFontSize(6.5);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+          const truncLabel = label.length > 12 ? label.substring(0, 11) + "." : label;
+          doc.text(truncLabel, bx + barW / 2, chartY + chartH + 5, { align: "center" });
+
+          // Cumulative line point
+          cumulative += val;
+          const cPct = cumulative / paretoTotal;
+          cumulativePoints.push({
+            x: bx + barW / 2,
+            y: chartY + chartH - cPct * (chartH - 5),
+          });
+        });
+
+        // Cumulative line
+        doc.setDrawColor(RED[0], RED[1], RED[2]);
+        doc.setLineWidth(0.6);
+        for (let i = 1; i < cumulativePoints.length; i++) {
+          doc.line(cumulativePoints[i - 1].x, cumulativePoints[i - 1].y, cumulativePoints[i].x, cumulativePoints[i].y);
+        }
+        // Dots
+        cumulativePoints.forEach((pt, i) => {
+          doc.setFillColor(RED[0], RED[1], RED[2]);
+          doc.circle(pt.x, pt.y, 1.2, "F");
+          const pct = Math.round(((paretoSorted.slice(0, i + 1).reduce((s, [, v]) => s + v, 0)) / paretoTotal) * 100);
+          doc.setFontSize(6);
+          doc.setTextColor(RED[0], RED[1], RED[2]);
+          doc.text(`${pct}%`, pt.x, pt.y - 3, { align: "center" });
+        });
+
+        // Legend
+        y = chartY + chartH + 12;
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text("Barras: frequencia absoluta por tipo  |  Linha vermelha: percentual acumulado (Pareto)", margin, y);
+        y += 8;
+
+        // 80/20 insight
+        const count80 = (() => {
+          let acc = 0;
+          for (let i = 0; i < paretoSorted.length; i++) {
+            acc += paretoSorted[i][1];
+            if (acc / paretoTotal >= 0.8) return i + 1;
+          }
+          return paretoSorted.length;
+        })();
+        doc.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
+        doc.roundedRect(margin, y, W - 2 * margin, 12, 2, 2, "F");
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+        doc.text("Regra 80/20:", margin + 4, y + 5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+        doc.text(
+          `${count80} de ${paretoSorted.length} tipos de problema concentram 80% das ocorrencias (${paretoSorted.slice(0, count80).map(([l]) => l).join(", ")})`,
+          margin + 30, y + 5
+        );
+        y += 18;
+      }
+
+      // ═══════════════════════════════════════════════
+      // PARETO CHART 2 — Incidência por Área/Setor
+      // ═══════════════════════════════════════════════
+      const areaRaw = filtered.reduce((acc, p) => {
+        const label = p.area || "Sem area";
+        acc[label] = (acc[label] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      const areaSorted = Object.entries(areaRaw).sort((a, b) => b[1] - a[1]);
+      const areaTotal = areaSorted.reduce((s, [, v]) => s + v, 0);
+
+      if (areaSorted.length > 0 && areaTotal > 0) {
+        addNewPageIfNeeded(110);
+
+        doc.setFontSize(13);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+        doc.text("Diagrama de Pareto - Incidencia por Area/Setor", margin, y);
+        y += 3;
+        doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+        doc.setLineWidth(0.5);
+        doc.line(margin, y, W - margin, y);
+        y += 10;
+
+        const chartX2 = margin + 5;
+        const chartY2 = y;
+        const chartW2 = W - 2 * margin - 10;
+        const chartH2 = 65;
+        const barColors2 = [
+          [40, 160, 90], [35, 66, 117], [230, 160, 30],
+          [220, 60, 60], [150, 100, 200], [80, 180, 200], [200, 100, 30],
+        ];
+        const barCount2 = areaSorted.length;
+        const barGap2 = 3;
+        const barW2 = Math.min(25, (chartW2 - barGap2 * (barCount2 + 1)) / barCount2);
+        const maxVal2 = areaSorted[0][1];
+        const barAreaW2 = barCount2 * (barW2 + barGap2) + barGap2;
+        const offsetX2 = chartX2 + (chartW2 - barAreaW2) / 2;
+
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.3);
+        doc.line(chartX2, chartY2, chartX2, chartY2 + chartH2);
+        doc.line(chartX2, chartY2 + chartH2, chartX2 + chartW2, chartY2 + chartH2);
+
+        let cum2 = 0;
+        const cumPts2: { x: number; y: number }[] = [];
+        areaSorted.forEach(([label, val], i) => {
+          const barH = (val / maxVal2) * (chartH2 - 5);
+          const bx = offsetX2 + barGap2 + i * (barW2 + barGap2);
+          const by = chartY2 + chartH2 - barH;
+          const color = barColors2[i % barColors2.length];
+
+          doc.setFillColor(color[0], color[1], color[2]);
+          doc.roundedRect(bx, by, barW2, barH, 1, 1, "F");
+
+          doc.setFontSize(7);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(color[0], color[1], color[2]);
+          doc.text(`${val}`, bx + barW2 / 2, by - 2, { align: "center" });
+
+          doc.setFontSize(6);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+          const tl = label.length > 14 ? label.substring(0, 13) + "." : label;
+          doc.text(tl, bx + barW2 / 2, chartY2 + chartH2 + 5, { align: "center" });
+
+          cum2 += val;
+          cumPts2.push({ x: bx + barW2 / 2, y: chartY2 + chartH2 - (cum2 / areaTotal) * (chartH2 - 5) });
+        });
+
+        doc.setDrawColor(RED[0], RED[1], RED[2]);
+        doc.setLineWidth(0.6);
+        for (let i = 1; i < cumPts2.length; i++) {
+          doc.line(cumPts2[i - 1].x, cumPts2[i - 1].y, cumPts2[i].x, cumPts2[i].y);
+        }
+        cumPts2.forEach((pt) => { doc.setFillColor(RED[0], RED[1], RED[2]); doc.circle(pt.x, pt.y, 1, "F"); });
+
+        y = chartY2 + chartH2 + 12;
+        doc.setFontSize(7);
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text("Barras: frequencia por area  |  Linha: acumulado", margin, y);
+        y += 10;
+      }
+
+      // ═══════════════════════════════════════════════
+      // ISHIKAWA (Fishbone) DIAGRAM
+      // ═══════════════════════════════════════════════
+      doc.addPage();
+      y = margin;
+      drawPageHeader();
+
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+      doc.text("Diagrama de Ishikawa - Analise de Causa e Efeito", margin, y);
+      y += 3;
+      doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, W - margin, y);
+      y += 10;
+
+      // Build Ishikawa categories from real data
+      const ishikawaCategories: { name: string; color: number[]; causes: string[] }[] = [
+        {
+          name: "Processo",
+          color: [35, 66, 117],
+          causes: filtered.filter(p => p.tipo_problema === "processo").map(p => p.causa_raiz || p.reference_name).slice(0, 4),
+        },
+        {
+          name: "Mao de Obra (RH)",
+          color: [220, 60, 60],
+          causes: filtered.filter(p => p.tipo_problema === "rh").map(p => p.causa_raiz || p.reference_name).slice(0, 4),
+        },
+        {
+          name: "Material / Insumo",
+          color: [230, 160, 30],
+          causes: filtered.filter(p => p.tipo_problema === "insumo").map(p => p.causa_raiz || p.reference_name).slice(0, 4),
+        },
+        {
+          name: "Equipamento",
+          color: [150, 100, 200],
+          causes: filtered.filter(p => p.tipo_problema === "equipamento").map(p => p.causa_raiz || p.reference_name).slice(0, 4),
+        },
+        {
+          name: "Infraestrutura",
+          color: [40, 160, 90],
+          causes: filtered.filter(p => p.tipo_problema === "infraestrutura").map(p => p.causa_raiz || p.reference_name).slice(0, 4),
+        },
+        {
+          name: "Outros",
+          color: [80, 180, 200],
+          causes: filtered.filter(p => p.tipo_problema === "outro").map(p => p.causa_raiz || p.reference_name).slice(0, 4),
+        },
+      ].filter(c => c.causes.length > 0);
+
+      // Draw fishbone
+      const fishX = margin;
+      const fishW = W - 2 * margin;
+      const fishCenterY = y + 55;
+      const headX = fishX + fishW;
+      const spineStartX = fishX + 10;
+
+      // Main spine (horizontal arrow)
+      doc.setDrawColor(DARK[0], DARK[1], DARK[2]);
+      doc.setLineWidth(1);
+      doc.line(spineStartX, fishCenterY, headX - 20, fishCenterY);
+
+      // Arrow head (effect box)
+      doc.setFillColor(RED[0], RED[1], RED[2]);
+      doc.roundedRect(headX - 40, fishCenterY - 8, 40, 16, 3, 3, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.text("Nao", headX - 38, fishCenterY - 1);
+      doc.text("Conformidade", headX - 38, fishCenterY + 5);
+
+      // Distribute categories: top and bottom
+      const topCats = ishikawaCategories.filter((_, i) => i % 2 === 0);
+      const botCats = ishikawaCategories.filter((_, i) => i % 2 === 1);
+      const spineLen = headX - 20 - spineStartX;
+
+      const drawBranch = (cat: typeof ishikawaCategories[0], idx: number, count: number, isTop: boolean) => {
+        const spacing = spineLen / (count + 1);
+        const bx = spineStartX + spacing * (idx + 1);
+        const branchLen = 35;
+        const endY = isTop ? fishCenterY - branchLen : fishCenterY + branchLen;
+
+        // Branch line
+        doc.setDrawColor(cat.color[0], cat.color[1], cat.color[2]);
+        doc.setLineWidth(0.7);
+        doc.line(bx, fishCenterY, bx - 10, endY);
+
+        // Category label
+        doc.setFillColor(cat.color[0], cat.color[1], cat.color[2]);
+        const labelW = doc.getTextWidth(cat.name) * 0.75 + 6;
+        const labelY = isTop ? endY - 6 : endY + 1;
+        doc.roundedRect(bx - 10 - labelW / 2, labelY, labelW, 5.5, 1.5, 1.5, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(6.5);
+        doc.setFont("helvetica", "bold");
+        doc.text(cat.name, bx - 10, labelY + 4, { align: "center" });
+
+        // Causes (sub-branches)
+        cat.causes.forEach((cause, ci) => {
+          const subOffset = (ci + 1) * (branchLen / (cat.causes.length + 1));
+          const subY = isTop ? fishCenterY - subOffset : fishCenterY + subOffset;
+          const subEndX = bx - 10 + (isTop ? -15 : -15);
+
+          doc.setDrawColor(cat.color[0], cat.color[1], cat.color[2]);
+          doc.setLineWidth(0.3);
+          // Small horizontal line from the branch
+          const interpX = bx - (10 * subOffset) / branchLen;
+          doc.line(interpX, subY, interpX - 18, subY);
+
+          // Cause text
+          doc.setFontSize(5.5);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+          const truncCause = cause.length > 30 ? cause.substring(0, 29) + "..." : cause;
+          doc.text(truncCause, interpX - 19, subY - 1, { align: "right" });
+        });
+      };
+
+      topCats.forEach((cat, i) => drawBranch(cat, i, topCats.length, true));
+      botCats.forEach((cat, i) => drawBranch(cat, i, botCats.length, false));
+
+      y = fishCenterY + 50;
+
+      // Ishikawa summary table
+      addNewPageIfNeeded(40);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      doc.text("Detalhamento das Causas Raiz Identificadas", margin, y);
+      y += 4;
+
+      const causaData = filtered
+        .filter(p => p.causa_raiz)
+        .map(p => [
+          p.reference_name.length > 30 ? p.reference_name.substring(0, 29) + "..." : p.reference_name,
+          TIPO_LABELS[p.tipo_problema] || p.tipo_problema,
+          p.area || "-",
+          (p.causa_raiz || "").length > 45 ? (p.causa_raiz || "").substring(0, 44) + "..." : (p.causa_raiz || ""),
+          PRIORIDADE_LABELS[p.prioridade] || p.prioridade,
+        ]);
+
+      if (causaData.length > 0) {
+        autoTable(doc, {
+          startY: y,
+          head: [["Referencia", "Tipo", "Area", "Causa Raiz", "Prioridade"]],
+          body: causaData,
+          margin: { left: margin, right: margin },
+          styles: { fontSize: 7, cellPadding: 2.5, lineColor: [220, 222, 226], lineWidth: 0.2 },
+          headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+          alternateRowStyles: { fillColor: [248, 249, 252] },
+          columnStyles: {
+            0: { cellWidth: 35 },
+            1: { cellWidth: 22 },
+            2: { cellWidth: 22 },
+            3: { cellWidth: 65 },
+            4: { cellWidth: 18 },
+          },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      // ═══════════════ Reincidência ═══════════════
+      const reincidencias = Object.entries(
+        filtered.reduce((acc, p) => { acc[p.reference_name] = (acc[p.reference_name] || 0) + 1; return acc; }, {} as Record<string, number>)
+      ).filter(([, v]) => v > 1).sort((a, b) => b[1] - a[1]);
+
+      if (reincidencias.length > 0) {
+        addNewPageIfNeeded(40);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(RED[0], RED[1], RED[2]);
+        doc.text("Reincidencias Identificadas", margin, y);
+        y += 4;
+
+        autoTable(doc, {
+          startY: y,
+          head: [["Referencia", "Ocorrencias", "Observacao"]],
+          body: reincidencias.map(([name, count]) => [name, `${count}`, "Requer atencao especial - multiplos planos para mesma referencia"]),
+          margin: { left: margin, right: margin },
+          styles: { fontSize: 7.5, cellPadding: 3, lineColor: [220, 222, 226], lineWidth: 0.2 },
+          headStyles: { fillColor: [RED[0], RED[1], RED[2]], textColor: [255, 255, 255], fontStyle: "bold" },
+          alternateRowStyles: { fillColor: [255, 248, 248] },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+
       // Full plans table
       addNewPageIfNeeded(30);
       doc.setFontSize(11);
