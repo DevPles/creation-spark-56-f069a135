@@ -243,7 +243,7 @@ const EvidenciasPage = () => {
           </TabsContent>
 
           <TabsContent value="relatorios">
-            <ActionPlanReportTab plans={plans} selectedUnit={selectedUnit} />
+            <ActionPlanReportTab plans={plans} selectedUnit={selectedUnit} availableUnits={availableUnits} />
           </TabsContent>
         </Tabs>
       </main>
