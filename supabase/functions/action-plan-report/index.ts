@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { facility_unit, period } = await req.json();
+    const { facility_unit, period, start_date, end_date } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -19,19 +19,25 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Determine date filter
-    let dateFilter: string | null = null;
+    let dateFilterStart: string | null = null;
+    let dateFilterEnd: string | null = null;
     const now = new Date();
-    if (period === "ultimo_mes") {
-      dateFilter = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).toISOString();
+
+    if (period === "custom" && start_date && end_date) {
+      dateFilterStart = start_date + "T00:00:00";
+      dateFilterEnd = end_date + "T23:59:59";
+    } else if (period === "ultimo_mes") {
+      dateFilterStart = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).toISOString();
     } else if (period === "ultimo_trimestre") {
-      dateFilter = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()).toISOString();
+      dateFilterStart = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()).toISOString();
     } else if (period === "ultimo_semestre") {
-      dateFilter = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).toISOString();
+      dateFilterStart = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).toISOString();
     }
 
     let query = supabase.from("action_plans").select("*");
     if (facility_unit) query = query.eq("facility_unit", facility_unit);
-    if (dateFilter) query = query.gte("created_at", dateFilter);
+    if (dateFilterStart) query = query.gte("created_at", dateFilterStart);
+    if (dateFilterEnd) query = query.lte("created_at", dateFilterEnd);
 
     const { data: plans, error } = await query.order("created_at", { ascending: false });
     if (error) throw error;

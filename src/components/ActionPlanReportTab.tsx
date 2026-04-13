@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
@@ -11,13 +12,6 @@ interface Props {
   plans: ActionPlan[];
   selectedUnit: string;
 }
-
-const PERIOD_LABELS: Record<string, string> = {
-  ultimo_mes: "Último mês",
-  ultimo_trimestre: "Último trimestre",
-  ultimo_semestre: "Último semestre",
-  todo: "Todo o período",
-};
 
 const TIPO_LABELS: Record<string, string> = {
   processo: "Processo", equipamento: "Equipamento", rh: "RH",
@@ -35,9 +29,21 @@ const PRIORIDADE_LABELS: Record<string, string> = {
 
 const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
   const [loading, setLoading] = useState(false);
-  const [period, setPeriod] = useState("ultimo_trimestre");
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 3);
+    return d.toISOString().slice(0, 10);
+  });
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
 
-  const filtered = selectedUnit === "Todas as unidades" ? plans : plans.filter(p => p.facility_unit === selectedUnit);
+  // Filter plans by unit and date range
+  const filtered = useMemo(() => {
+    let result = selectedUnit === "Todas as unidades" ? plans : plans.filter(p => p.facility_unit === selectedUnit);
+    if (startDate) result = result.filter(p => p.created_at >= startDate + "T00:00:00");
+    if (endDate) result = result.filter(p => p.created_at <= endDate + "T23:59:59");
+    return result;
+  }, [plans, selectedUnit, startDate, endDate]);
+
   const total = filtered.length;
   const concluidas = filtered.filter(p => p.status_acao === "concluida").length;
   const pendentes = filtered.filter(p => p.status_evidencia === "pendente").length;
@@ -48,11 +54,22 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
     p.status_acao !== "concluida" && p.status_acao !== "cancelada"
   ).length;
 
+  // Group plans by unit for listing
+  const plansByUnit = useMemo(() => {
+    const map: Record<string, ActionPlan[]> = {};
+    filtered.forEach(p => {
+      if (!map[p.facility_unit]) map[p.facility_unit] = [];
+      map[p.facility_unit].push(p);
+    });
+    return Object.entries(map).sort((a, b) => b[1].length - a[1].length);
+  }, [filtered]);
+
   const stats = [
     { label: "Total de planos", value: total, color: "text-foreground" },
     { label: "Concluídas", value: concluidas, color: "text-success" },
-    { label: "Evidências pendentes", value: pendentes, color: "text-warning" },
+    { label: "Ev. pendentes", value: pendentes, color: "text-warning" },
     { label: "Alta / Crítica", value: criticas, color: "text-destructive" },
+    { label: "Vencidas", value: vencidas, color: "text-destructive" },
   ];
 
   const generatePdfReport = async () => {
@@ -62,7 +79,9 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
       const { data, error } = await supabase.functions.invoke("action-plan-report", {
         body: {
           facility_unit: selectedUnit === "Todas as unidades" ? null : selectedUnit,
-          period,
+          period: "custom",
+          start_date: startDate,
+          end_date: endDate,
         },
       });
       if (error) throw error;
@@ -79,6 +98,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
       const margin = 15;
       let y = margin;
       const now = new Date().toLocaleDateString("pt-BR");
+      const periodLabel = `${new Date(startDate + "T00:00:00").toLocaleDateString("pt-BR")} a ${new Date(endDate + "T00:00:00").toLocaleDateString("pt-BR")}`;
 
       const PRIMARY = [35, 66, 117];
       const DARK = [30, 40, 50];
@@ -125,7 +145,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
       doc.setFont("helvetica", "normal");
       doc.text("Relatorio Inteligente de Plano de Acao", margin, 28);
       doc.setFontSize(9);
-      doc.text(`${PERIOD_LABELS[period] || period}  |  ${selectedUnit}  |  ${now}`, margin, 38);
+      doc.text(`${periodLabel}  |  ${selectedUnit}  |  ${now}`, margin, 38);
       y = 55;
 
       // Info box
@@ -138,7 +158,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-      doc.text(`Unidade: ${selectedUnit}  |  Periodo: ${PERIOD_LABELS[period]}  |  ${total} planos analisados`, margin + 5, y + 12);
+      doc.text(`Unidade: ${selectedUnit}  |  Periodo: ${periodLabel}  |  ${total} planos analisados`, margin + 5, y + 12);
       y += 20;
 
       // KPI cards
@@ -329,10 +349,9 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
 
           // Cumulative line point
           cumulative += val;
-          const cPct = cumulative / paretoTotal;
           cumulativePoints.push({
             x: bx + barW / 2,
-            y: chartY + chartH - cPct * (chartH - 5),
+            y: chartY + chartH - (cumulative / paretoTotal) * (chartH - 5),
           });
         });
 
@@ -570,15 +589,12 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
         cat.causes.forEach((cause, ci) => {
           const subOffset = (ci + 1) * (branchLen / (cat.causes.length + 1));
           const subY = isTop ? fishCenterY - subOffset : fishCenterY + subOffset;
-          const subEndX = bx - 10 + (isTop ? -15 : -15);
 
           doc.setDrawColor(cat.color[0], cat.color[1], cat.color[2]);
           doc.setLineWidth(0.3);
-          // Small horizontal line from the branch
           const interpX = bx - (10 * subOffset) / branchLen;
           doc.line(interpX, subY, interpX - 18, subY);
 
-          // Cause text
           doc.setFontSize(5.5);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(DARK[0], DARK[1], DARK[2]);
@@ -802,7 +818,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
   return (
     <div className="space-y-5">
       {/* Quick stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {stats.map(stat => (
           <div key={stat.label} className="kpi-card flex items-center gap-3 px-4 py-3">
             <div>
@@ -813,25 +829,58 @@ const ActionPlanReportTab = ({ plans, selectedUnit }: Props) => {
         ))}
       </div>
 
+      {/* Plans by unit listing */}
+      {plansByUnit.length > 0 && (
+        <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+          <h3 className="text-sm font-bold font-display">Planos por Unidade no Período</h3>
+          <div className="space-y-2">
+            {plansByUnit.map(([unit, unitPlans]) => {
+              const unitConcluidas = unitPlans.filter(p => p.status_acao === "concluida").length;
+              const unitVencidas = unitPlans.filter(p =>
+                p.prazo && new Date(p.prazo + "T00:00:00") < today &&
+                p.status_acao !== "concluida" && p.status_acao !== "cancelada"
+              ).length;
+              return (
+                <div key={unit} className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-lg bg-muted/30 border border-border">
+                  <span className="text-sm font-medium text-foreground">{unit}</span>
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-muted-foreground">{unitPlans.length} planos</span>
+                    <span className="text-success font-medium">{unitConcluidas} concluídos</span>
+                    {unitVencidas > 0 && <span className="text-destructive font-medium">{unitVencidas} vencidos</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Generate report */}
       <div className="bg-card rounded-xl border border-border p-6 space-y-4">
         <h3 className="text-sm font-bold font-display">Gerar Relatório Inteligente em PDF</h3>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          O relatório analisa todos os planos de ação, gera tabelas de distribuição por status, prioridade e tipo de problema,
-          lista todos os planos detalhados e inclui uma análise inteligente com padrões de incidência, áreas críticas e recomendações priorizadas.
+          O relatório inclui diagramas de Pareto e Ishikawa, tabelas de distribuição, detalhamento dos planos
+          e uma análise inteligente com padrões de incidência, áreas críticas e recomendações priorizadas.
         </p>
-        <div className="flex items-center gap-3">
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-48 h-9 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ultimo_mes">Último mês</SelectItem>
-              <SelectItem value="ultimo_trimestre">Último trimestre</SelectItem>
-              <SelectItem value="ultimo_semestre">Último semestre</SelectItem>
-              <SelectItem value="todo">Todo o período</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Data inicial</Label>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              className="w-40 h-9 text-xs"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Data final</Label>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              className="w-40 h-9 text-xs"
+            />
+          </div>
           <Button onClick={generatePdfReport} disabled={loading || total === 0} size="sm">
             {loading ? "Gerando PDF..." : "Gerar relatório PDF"}
           </Button>

@@ -17,11 +17,11 @@ import ActionPlanFormModal from "@/components/ActionPlanFormModal";
 
 type ActionPlan = Tables<"action_plans">;
 
-const UNITS = ["Todas as unidades", "Hospital Geral", "UPA Norte", "UBS Centro"];
+const ALL_UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
 const EvidenciasPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, role } = useAuth();
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
   const [plans, setPlans] = useState<ActionPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,19 +29,47 @@ const EvidenciasPage = () => {
   const [selectedPlan, setSelectedPlan] = useState<ActionPlan | null>(null);
   const [isNew, setIsNew] = useState(false);
 
+  // Determine which units the user can see
+  const isManagerOrAdmin = role === "admin" || role === "gestor";
+  const availableUnits = useMemo(() => {
+    if (isManagerOrAdmin) return ALL_UNITS;
+    // Regular users only see their own unit
+    if (profile?.facility_unit) return [profile.facility_unit];
+    return ALL_UNITS;
+  }, [isManagerOrAdmin, profile?.facility_unit]);
+
+  const unitOptions = useMemo(() => {
+    if (availableUnits.length > 1) return ["Todas as unidades", ...availableUnits];
+    return availableUnits;
+  }, [availableUnits]);
+
+  // Set default unit for non-managers
+  useEffect(() => {
+    if (!isManagerOrAdmin && profile?.facility_unit) {
+      setSelectedUnit(profile.facility_unit);
+    }
+  }, [isManagerOrAdmin, profile?.facility_unit]);
+
   const fetchPlans = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("action_plans")
       .select("*")
       .order("created_at", { ascending: false });
+
+    // Non-managers only see plans from their unit
+    if (!isManagerOrAdmin && profile?.facility_unit) {
+      query = query.eq("facility_unit", profile.facility_unit);
+    }
+
+    const { data, error } = await query;
     if (error) {
       console.error(error);
       toast.error("Erro ao carregar planos de ação");
     }
     setPlans((data as ActionPlan[]) || []);
     setLoading(false);
-  }, []);
+  }, [isManagerOrAdmin, profile?.facility_unit]);
 
   useEffect(() => {
     fetchPlans();
@@ -108,14 +136,16 @@ const EvidenciasPage = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-              <SelectTrigger className="w-48 h-9 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {unitOptions.length > 1 && (
+              <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                <SelectTrigger className="w-48 h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {unitOptions.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Button onClick={handleNew} size="sm" className="gap-1.5">
               <Plus className="h-3.5 w-3.5" />
               Novo plano
