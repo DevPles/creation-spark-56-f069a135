@@ -581,10 +581,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
 
       // Ishikawa summary table
       addNewPageIfNeeded(40);
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-      doc.text("Detalhamento das Causas Raiz Identificadas", margin, y);
+      drawSectionTitle("Detalhamento das Causas Raiz Identificadas");
       y += 4;
 
       const causaData = filtered
