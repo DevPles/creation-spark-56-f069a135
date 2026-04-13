@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeScoringRules, findGlosaPct, calculateGoalRisk } from "@/lib/riskCalculation";
 import { useContracts } from "@/contexts/ContractsContext";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
