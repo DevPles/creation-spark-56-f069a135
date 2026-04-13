@@ -1,53 +1,42 @@
 
 
-# Plano de Revisão Final — Sistema MOSS 100% Funcional
+# Plano de Revisão Final + Notificações por E-mail
 
-## Problemas Identificados
+## Estado Atual do Sistema
 
-### 1. Filtros de ano/mês não funcionais em ControleRubricaPage (CRÍTICO)
-Os filtros `selectedYear` e `selectedMonth` existem na UI mas **não afetam os dados**. O `byRubrica` e `byMonth` não filtram `rubricaEntries` por ano/mês — mostram sempre todos os lançamentos independente do filtro selecionado.
+Após auditoria completa, o sistema está bem integrado com o banco de dados. Os dados mock foram eliminados. Restam dois pontos a corrigir e uma funcionalidade nova a implementar.
 
-### 2. `rubricaData.ts` ainda existe (LIMPEZA)
-O arquivo `src/data/rubricaData.ts` contém 95 linhas de dados fictícios. Nenhum arquivo importa mais este arquivo, mas ele permanece no projeto. Deve ser removido para evitar confusão.
+## Problemas Encontrados
 
-### 3. `GENERATED_REPORTS` hardcoded em RelatoriosPage (MENOR)
-Linha 54-58: lista estática de relatórios anteriores ("Consolidado Q1 2024", "RDQA 1º Quadrimestre"). Estes são exemplos visuais que não têm tabela de persistência. Opção: remover a seção ou criar tabela `generated_reports` para persistir PDFs gerados.
+### 1. Timeline hardcoded no Relatório Assistencial (MENOR)
+A página `RelatorioAssistencialPage.tsx` (linhas 79-86) contém 6 itens de timeline com dados de exemplo. Estes itens são editáveis inline pelo usuário, servindo como template inicial. Recomendação: substituir por array vazio para que o usuário crie os seus próprios itens.
 
-### 4. Timeline items hardcoded em RelatorioAssistencialPage (MENOR)
-Linhas 79-86: items de timeline com dados de exemplo. Estes são **template editáveis** — o usuário pode editar inline para personalizar o relatório. Aceitável manter como defaults.
+### 2. Notificação de metas em risco por e-mail (NOVO — solicitado)
+O campo `notification_email` já existe nos contratos e tem input no formulário. Porém, **não existe edge function** para enviar os alertas semanais. Precisa ser criada toda a infraestrutura de envio.
 
-### 5. `period` format inconsistency em rubrica_entries
-O `ControleRubricaPage` tenta parsear `period` como `dd/MM/yyyy`, mas o `LancamentoMetasPage` pode salvar em formato diferente (date picker retorna `yyyy-MM-dd`). Precisa normalizar.
+## Plano de Implementação
 
----
+### Etapa 1: Configurar domínio de e-mail
+Para enviar e-mails do sistema, é necessário configurar um domínio de e-mail primeiro. Isso é feito através das configurações do projeto. Será apresentado o botão de configuração para você completar este passo.
 
-## Plano de Correção (3 Etapas)
+### Etapa 2: Criar Edge Function `check-goals-notify`
+Uma nova edge function que:
+1. Busca todos os contratos com `notification_email` preenchido
+2. Para cada contrato, busca as metas da unidade e seus lançamentos
+3. Calcula o atingimento semanal (meta mensal ÷ 4)
+4. Se o atingimento acumulado estiver abaixo do esperado, envia e-mail ao endereço cadastrado
+5. O e-mail lista as metas em risco com seus percentuais e valores financeiros
 
-### Etapa 1: Corrigir filtros em ControleRubricaPage
-- Filtrar `rubricaEntries` por `selectedYear` e `selectedMonth` nos cálculos `byRubrica` e `byMonth`
-- Parsear o campo `period` corretamente independente do formato (dd/MM/yyyy ou yyyy-MM-dd)
-- Incluir `selectedYear` e `selectedMonth` nas dependências dos `useMemo`
+### Etapa 3: Agendar execução semanal via pg_cron
+Configurar um cron job que executa a edge function toda segunda-feira às 8h, verificando automaticamente as metas e disparando alertas.
 
-### Etapa 2: Remover dados mock residuais
-- Deletar `src/data/rubricaData.ts`
-- Remover `GENERATED_REPORTS` hardcoded e substituir por lista vazia (relatórios salvos poderão ser implementados futuramente)
+### Etapa 4: Limpar timeline hardcoded
+Substituir os 6 itens de exemplo no `RelatorioAssistencialPage` por array vazio.
 
-### Etapa 3: Verificar consistência de formato de period
-- Garantir que `LancamentoMetasPage` salva `period` de rubrica_entries em formato consistente
-- Garantir que `ControleRubricaPage` parseia corretamente ambos formatos
+## Pré-requisito
+Antes de implementar o envio de e-mail, você precisa configurar um domínio de e-mail. Clique no botão abaixo para iniciar a configuração.
 
----
-
-## Resumo Técnico
-
-```text
-Arquivos a editar:
-  - src/pages/ControleRubricaPage.tsx (filtros ano/mês funcionais)
-  - src/pages/RelatoriosPage.tsx (remover GENERATED_REPORTS mock)
-
-Arquivos a deletar:
-  - src/data/rubricaData.ts
-```
-
-Impacto: Baixo risco. Correções pontuais em lógica de filtro sem alterar estrutura de banco.
+<lov-actions>
+<lov-open-email-setup>Configurar domínio de e-mail</lov-open-email-setup>
+</lov-actions>
 
