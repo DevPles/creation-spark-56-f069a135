@@ -17,14 +17,7 @@ import { ContractData } from "@/components/contract/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const RISK_DATA = [
-  { goal: "Relatório RDQA", risk: 15000, prob: 95, trend: "critical", projected: "Não entregue", unit: "UBS Centro" },
-  { goal: "Taxa de ocupação", risk: 12400, prob: 72, trend: "warning", projected: "78% (meta: 85%)", unit: "Hospital Geral" },
-  { goal: "Taxa de infecção", risk: 9800, prob: 68, trend: "warning", projected: "6.2% (meta: ≤5%)", unit: "UBS Centro" },
-  { goal: "Tempo de espera", risk: 8200, prob: 60, trend: "warning", projected: "42 min (meta: 30)", unit: "Hospital Geral" },
-  { goal: "Cirurgias eletivas", risk: 7300, prob: 55, trend: "warning", projected: "98 (meta: 120)", unit: "UPA Norte" },
-  { goal: "Satisfação NPS", risk: 5600, prob: 45, trend: "warning", projected: "71 (meta: 75)", unit: "UPA Norte" },
-];
+const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const formatCurrency = (v: number) => {
   if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;
@@ -43,21 +36,44 @@ const ControleRubricaPage = () => {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [rubricaModalOpen, setRubricaModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractData | null>(null);
-  const [selectedRisk, setSelectedRisk] = useState<typeof RISK_DATA[0] | null>(null);
+  const [selectedRisk, setSelectedRisk] = useState<any>(null);
   const [riskModalOpen, setRiskModalOpen] = useState(false);
+  const [rubricaEntries, setRubricaEntries] = useState<any[]>([]);
+  const [riskData, setRiskData] = useState<any[]>([]);
 
-  const filteredRisks =
-    selectedContract === "all"
-      ? RISK_DATA
-      : RISK_DATA.filter((item) => item.unit === selectedContract);
+  // Load rubrica entries from DB
+  useEffect(() => {
+    supabase.from("rubrica_entries").select("*").then(({ data }) => setRubricaEntries(data || []));
+  }, []);
+
+  // Load risk data from goals + entries
+  useEffect(() => {
+    const loadRisk = async () => {
+      const { data: goalsData } = await supabase.from("goals").select("*");
+      const { data: entriesData } = await supabase.from("goal_entries").select("*");
+      if (!goalsData) return;
+      const grouped: Record<string, number> = {};
+      (entriesData || []).forEach((e: any) => { grouped[e.goal_id] = (grouped[e.goal_id] || 0) + Number(e.value); });
+      const risks = goalsData.filter((g: any) => Number(g.risk) > 0).map((g: any) => {
+        const current = grouped[g.id] || 0;
+        const pct = g.target > 0 ? (current / g.target) * 100 : 0;
+        const prob = Math.max(0, Math.min(100, Math.round(100 - pct)));
+        return { goal: g.name, risk: Number(g.risk), prob, trend: prob >= 70 ? "critical" : "warning", projected: `${current}${g.unit} (meta: ${g.target}${g.unit})`, unit: g.facility_unit };
+      }).sort((a: any, b: any) => b.risk - a.risk);
+      setRiskData(risks);
+    };
+    loadRisk();
+  }, []);
+
+  const filteredRisks = selectedContract === "all" ? riskData : riskData.filter((item) => item.unit === selectedContract);
   const totalRisk = filteredRisks.reduce((sum, item) => sum + item.risk, 0);
 
-  const handleRiskClick = (item: typeof RISK_DATA[0]) => {
+  const handleRiskClick = (item: any) => {
     setSelectedRisk(item);
     setRiskModalOpen(true);
   };
 
-  // Build rubrica data from contracts
+  // Build rubrica data from contracts + real rubrica_entries
   const byRubrica = useMemo(() => {
     const filteredContracts = selectedContract === "all"
       ? contracts
@@ -69,11 +85,9 @@ const ControleRubricaPage = () => {
       (c.rubricas || []).forEach(r => {
         if (r.percent <= 0 || !r.name) return;
         const allocated = c.value * (r.percent / 100);
-        // Simulate execution rates for demo
-        const seed = r.name.length + c.value;
-        const executionRate = r.name === "Insumos e Materiais" && c.unit === "Hospital Geral"
-          ? 1.16 : (0.7 + ((seed % 30) / 100));
-        const executed = allocated * Math.min(1.2, executionRate);
+        const executed = rubricaEntries
+          .filter(e => e.contract_id === c.id && e.rubrica_name === r.name)
+          .reduce((s, e) => s + Number(e.value_executed), 0);
 
         if (!map[r.name]) map[r.name] = { allocated: 0, executed: 0 };
         map[r.name].allocated += allocated;
@@ -88,7 +102,7 @@ const ControleRubricaPage = () => {
       pctExec: v.allocated > 0 ? Math.round((v.executed / v.allocated) * 100) : 0,
       estourada: v.executed > v.allocated,
     })).sort((a, b) => b.allocated - a.allocated);
-  }, [contracts, selectedContract]);
+  }, [contracts, selectedContract, rubricaEntries]);
 
   const byMonth = useMemo(() => {
     const filteredContracts = selectedContract === "all"
@@ -96,16 +110,26 @@ const ControleRubricaPage = () => {
       : contracts.filter(c => c.unit === selectedContract);
 
     const totalAllocated = filteredContracts.reduce((s, c) => s + c.value, 0);
+    const contractIds = filteredContracts.map(c => c.id);
 
     return MONTHS.map((m, i) => {
-      const factor = 0.7 + ((i * 7 + 3) % 30) / 100;
+      const monthEntries = rubricaEntries.filter(e => {
+        if (!contractIds.includes(e.contract_id)) return false;
+        // Match by month from the period field (dd/MM/yyyy format)
+        try {
+          const parts = e.period.split("/");
+          if (parts.length === 3) return parseInt(parts[1]) - 1 === i;
+        } catch {}
+        return false;
+      });
+      const executed = monthEntries.reduce((s: number, e: any) => s + Number(e.value_executed), 0);
       return {
         month: m,
-        alocado: totalAllocated / 1000,
-        executado: (totalAllocated * factor) / 1000,
+        alocado: totalAllocated / 12 / 1000,
+        executado: executed / 1000,
       };
     });
-  }, [contracts, selectedContract]);
+  }, [contracts, selectedContract, rubricaEntries]);
 
   const totalAllocated = byRubrica.reduce((s, r) => s + r.allocated, 0);
   const totalExecuted = byRubrica.reduce((s, r) => s + r.executed, 0);
