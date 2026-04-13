@@ -1137,10 +1137,10 @@ const LancamentoMetasPage = () => {
                         </>
                       ) : (
                         <>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">Acima do alvo diário</span></div>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">Próximo (80–99%)</span></div>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">Parcial (50–79%)</span></div>
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">Abaixo de 50%</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/80" /><span className="text-[10px] text-muted-foreground">Melhor da meta</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-400/80" /><span className="text-[10px] text-muted-foreground">Acima da mediana</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-orange-400/80" /><span className="text-[10px] text-muted-foreground">Abaixo da mediana</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/80" /><span className="text-[10px] text-muted-foreground">Pior da meta</span></div>
                         </>
                       )}
                       <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-muted/30 border border-border" /><span className="text-[10px] text-muted-foreground">Sem lançamento</span></div>
