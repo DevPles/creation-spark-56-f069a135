@@ -11,6 +11,7 @@ type ActionPlan = Tables<"action_plans">;
 interface Props {
   plans: ActionPlan[];
   selectedUnit: string;
+  availableUnits: string[];
 }
 
 const TIPO_LABELS: Record<string, string> = {
