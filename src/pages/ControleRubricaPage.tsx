@@ -74,10 +74,29 @@ const ControleRubricaPage = () => {
   };
 
   // Build rubrica data from contracts + real rubrica_entries
+  // Helper to parse period (dd/MM/yyyy or yyyy-MM-dd) and check year/month filters
+  const matchesPeriodFilter = (period: string): boolean => {
+    let year: number, month: number;
+    if (period.includes("/")) {
+      const parts = period.split("/");
+      year = parseInt(parts[2]);
+      month = parseInt(parts[1]) - 1;
+    } else if (period.includes("-")) {
+      const parts = period.split("-");
+      year = parseInt(parts[0]);
+      month = parseInt(parts[1]) - 1;
+    } else return false;
+    if (selectedYear !== "all" && year !== parseInt(selectedYear)) return false;
+    if (selectedMonth !== "all" && MONTHS[month] !== selectedMonth) return false;
+    return true;
+  };
+
   const byRubrica = useMemo(() => {
     const filteredContracts = selectedContract === "all"
       ? contracts
       : contracts.filter(c => c.unit === selectedContract);
+
+    const filteredEntries = rubricaEntries.filter(e => matchesPeriodFilter(e.period));
 
     const map: Record<string, { allocated: number; executed: number }> = {};
 
@@ -85,7 +104,7 @@ const ControleRubricaPage = () => {
       (c.rubricas || []).forEach(r => {
         if (r.percent <= 0 || !r.name) return;
         const allocated = c.value * (r.percent / 100);
-        const executed = rubricaEntries
+        const executed = filteredEntries
           .filter(e => e.contract_id === c.id && e.rubrica_name === r.name)
           .reduce((s, e) => s + Number(e.value_executed), 0);
 
@@ -102,7 +121,7 @@ const ControleRubricaPage = () => {
       pctExec: v.allocated > 0 ? Math.round((v.executed / v.allocated) * 100) : 0,
       estourada: v.executed > v.allocated,
     })).sort((a, b) => b.allocated - a.allocated);
-  }, [contracts, selectedContract, rubricaEntries]);
+  }, [contracts, selectedContract, rubricaEntries, selectedYear, selectedMonth]);
 
   const byMonth = useMemo(() => {
     const filteredContracts = selectedContract === "all"
@@ -112,15 +131,23 @@ const ControleRubricaPage = () => {
     const totalAllocated = filteredContracts.reduce((s, c) => s + c.value, 0);
     const contractIds = filteredContracts.map(c => c.id);
 
+    // Filter by year only (month axis shows all 12 months)
+    const yearFiltered = rubricaEntries.filter(e => {
+      if (!contractIds.includes(e.contract_id)) return false;
+      let year: number;
+      if (e.period.includes("/")) { year = parseInt(e.period.split("/")[2]); }
+      else if (e.period.includes("-")) { year = parseInt(e.period.split("-")[0]); }
+      else return false;
+      return selectedYear === "all" || year === parseInt(selectedYear);
+    });
+
     return MONTHS.map((m, i) => {
-      const monthEntries = rubricaEntries.filter(e => {
-        if (!contractIds.includes(e.contract_id)) return false;
-        // Match by month from the period field (dd/MM/yyyy format)
-        try {
-          const parts = e.period.split("/");
-          if (parts.length === 3) return parseInt(parts[1]) - 1 === i;
-        } catch {}
-        return false;
+      const monthEntries = yearFiltered.filter(e => {
+        let month: number;
+        if (e.period.includes("/")) { month = parseInt(e.period.split("/")[1]) - 1; }
+        else if (e.period.includes("-")) { month = parseInt(e.period.split("-")[1]) - 1; }
+        else return false;
+        return month === i;
       });
       const executed = monthEntries.reduce((s: number, e: any) => s + Number(e.value_executed), 0);
       return {
@@ -129,7 +156,7 @@ const ControleRubricaPage = () => {
         executado: executed / 1000,
       };
     });
-  }, [contracts, selectedContract, rubricaEntries]);
+  }, [contracts, selectedContract, rubricaEntries, selectedYear]);
 
   const totalAllocated = byRubrica.reduce((s, r) => s + r.allocated, 0);
   const totalExecuted = byRubrica.reduce((s, r) => s + r.executed, 0);
