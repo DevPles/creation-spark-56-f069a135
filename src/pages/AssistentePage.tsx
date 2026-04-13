@@ -25,7 +25,7 @@ import PdfExportModal from "@/components/PdfExportModal";
 import GoalGauge from "@/components/GoalGauge";
 import { GoalData } from "@/components/GoalFormModal";
 import { EvidenceData } from "@/components/EvidenceFormModal";
-import { ALL_ENTRIES, CONTRACTS as RUBRICA_CONTRACTS, MONTHS, RUBRICA_NAMES } from "@/data/rubricaData";
+const MONTHS_LIST = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
@@ -100,7 +100,7 @@ const REPORT_OPTIONS = [
   { id: "pdf-export", title: "Exportar PDF Personalizado", description: "Monte um relatório customizado selecionando contratos e seções." },
 ];
 
-/* ── Mock contract data for PDF generation ── */
+/* ── Report contract types for PDF generation ── */
 interface ReportGoalItem {
   id: string; name: string; target: number; current: number; unit: string;
   type: "QNT" | "QLT" | "DOC"; risk: number; trend: "up" | "down" | "stable";
@@ -114,77 +114,6 @@ interface ReportContractData {
   performance: { month: string; atingidas: number; parciais: number; naoAtingidas: number }[];
   riskTrend: { month: string; risco: number; glosa: number }[];
 }
-
-const REPORT_CONTRACTS: ReportContractData[] = [
-  {
-    id: "c1", name: "Contrato de Gestão — Hospital Geral", unit: "Hospital Geral", valorGlobal: 2800000,
-    rubricas: [
-      { name: "RH", pct: 55, valor: 1540000 }, { name: "Insumos", pct: 20, valor: 560000 },
-      { name: "Equipamentos", pct: 10, valor: 280000 }, { name: "Metas Quantitativas", pct: 10, valor: 280000 },
-      { name: "Metas Qualitativas", pct: 5, valor: 140000 },
-    ],
-    goals: [
-      { id: "g1", name: "Taxa de ocupação de leitos", target: 85, current: 78, unit: "%", type: "QNT", risk: 12400, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 4.4 },
-      { id: "g2", name: "Tempo médio de espera", target: 30, current: 42, unit: "min", type: "QNT", risk: 8200, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.9 },
-      { id: "g3", name: "Satisfação do paciente (NPS)", target: 75, current: 71, unit: "pts", type: "QNT", risk: 5600, trend: "stable", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.0 },
-      { id: "g4", name: "Protocolo de higienização", target: 100, current: 92, unit: "%", type: "QLT", risk: 3100, trend: "up", rubrica: "Metas Qualitativas", pesoFinanceiro: 2.2 },
-      { id: "g5", name: "Relatório quadrimestral (RDQA)", target: 1, current: 0, unit: "doc", type: "DOC", risk: 15000, trend: "down", rubrica: "Metas Qualitativas", pesoFinanceiro: 5.4 },
-      { id: "g6", name: "Taxa de infecção hospitalar", target: 5, current: 6.2, unit: "%", type: "QNT", risk: 9800, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 3.5 },
-    ],
-    performance: [
-      { month: "Jan", atingidas: 65, parciais: 20, naoAtingidas: 15 }, { month: "Fev", atingidas: 70, parciais: 18, naoAtingidas: 12 },
-      { month: "Mar", atingidas: 68, parciais: 22, naoAtingidas: 10 }, { month: "Abr", atingidas: 75, parciais: 15, naoAtingidas: 10 },
-    ],
-    riskTrend: [
-      { month: "Jan", risco: 85000, glosa: 12000 }, { month: "Fev", risco: 72000, glosa: 9500 },
-      { month: "Mar", risco: 61800, glosa: 8200 }, { month: "Abr", risco: 54400, glosa: 7100 },
-    ],
-  },
-  {
-    id: "c2", name: "Contrato de Gestão — UPA Norte", unit: "UPA Norte", valorGlobal: 1200000,
-    rubricas: [
-      { name: "RH", pct: 60, valor: 720000 }, { name: "Insumos", pct: 18, valor: 216000 },
-      { name: "Equipamentos", pct: 7, valor: 84000 }, { name: "Metas Quantitativas", pct: 10, valor: 120000 },
-      { name: "Metas Qualitativas", pct: 5, valor: 60000 },
-    ],
-    goals: [
-      { id: "g9", name: "Tempo porta-médico", target: 15, current: 12, unit: "min", type: "QNT", risk: 0, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 0 },
-      { id: "g10", name: "Atendimentos/dia", target: 200, current: 185, unit: "un", type: "QNT", risk: 3200, trend: "stable", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.7 },
-      { id: "g11", name: "Classificação de risco (Manchester)", target: 100, current: 97, unit: "%", type: "QLT", risk: 0, trend: "up", rubrica: "Metas Qualitativas", pesoFinanceiro: 0 },
-      { id: "g12", name: "Taxa de retorno em 24h", target: 5, current: 7.8, unit: "%", type: "QNT", risk: 4100, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 3.4 },
-    ],
-    performance: [
-      { month: "Jan", atingidas: 72, parciais: 18, naoAtingidas: 10 }, { month: "Fev", atingidas: 78, parciais: 14, naoAtingidas: 8 },
-      { month: "Mar", atingidas: 80, parciais: 12, naoAtingidas: 8 }, { month: "Abr", atingidas: 85, parciais: 10, naoAtingidas: 5 },
-    ],
-    riskTrend: [
-      { month: "Jan", risco: 28000, glosa: 4200 }, { month: "Fev", risco: 22000, glosa: 3100 },
-      { month: "Mar", risco: 18000, glosa: 2600 }, { month: "Abr", risco: 10100, glosa: 1800 },
-    ],
-  },
-  {
-    id: "c3", name: "Contrato de Gestão — UBS Centro", unit: "UBS Centro", valorGlobal: 680000,
-    rubricas: [
-      { name: "RH", pct: 65, valor: 442000 }, { name: "Insumos", pct: 15, valor: 102000 },
-      { name: "Equipamentos", pct: 5, valor: 34000 }, { name: "Metas Quantitativas", pct: 10, valor: 68000 },
-      { name: "Metas Qualitativas", pct: 5, valor: 34000 },
-    ],
-    goals: [
-      { id: "g15", name: "Consultas agendadas realizadas", target: 90, current: 72, unit: "%", type: "QNT", risk: 5400, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 7.9 },
-      { id: "g16", name: "Cobertura vacinal", target: 95, current: 88, unit: "%", type: "QNT", risk: 3200, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 4.7 },
-      { id: "g17", name: "Visitas domiciliares ACS", target: 80, current: 65, unit: "%", type: "QNT", risk: 4600, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 6.8 },
-      { id: "g18", name: "Programa hiperdia atualizado", target: 1, current: 0, unit: "doc", type: "DOC", risk: 6200, trend: "down", rubrica: "Metas Qualitativas", pesoFinanceiro: 9.1 },
-    ],
-    performance: [
-      { month: "Jan", atingidas: 50, parciais: 30, naoAtingidas: 20 }, { month: "Fev", atingidas: 55, parciais: 25, naoAtingidas: 20 },
-      { month: "Mar", atingidas: 58, parciais: 27, naoAtingidas: 15 }, { month: "Abr", atingidas: 62, parciais: 23, naoAtingidas: 15 },
-    ],
-    riskTrend: [
-      { month: "Jan", risco: 32000, glosa: 5800 }, { month: "Fev", risco: 28000, glosa: 4900 },
-      { month: "Mar", risco: 24000, glosa: 4200 }, { month: "Abr", risco: 21500, glosa: 3600 },
-    ],
-  },
-];
 
 function getReportGoalPct(g: ReportGoalItem) {
   if (g.type === "DOC") return g.current >= g.target ? 100 : 0;
@@ -211,8 +140,9 @@ const AssistentePage = () => {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [selectedRubrica, setSelectedRubrica] = useState("");
-  const [selectedContract, setSelectedContract] = useState(RUBRICA_CONTRACTS[0]?.id || "");
-  const [selectedMonth, setSelectedMonth] = useState(MONTHS[0] || "");
+  const [selectedContract, setSelectedContract] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(MONTHS_LIST[0] || "");
+  const [savedRubricaEntries, setSavedRubricaEntries] = useState<any[]>([]);
 
   // Goal data
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -230,6 +160,13 @@ const AssistentePage = () => {
   const [rubricaDate, setRubricaDate] = useState("");
   const [rubricaNotes, setRubricaNotes] = useState("");
 
+  // Load rubrica entries when contract changes
+  useEffect(() => {
+    if (!selectedContract) return;
+    supabase.from("rubrica_entries").select("*").eq("contract_id", selectedContract)
+      .then(({ data }) => setSavedRubricaEntries(data || []));
+  }, [selectedContract]);
+
   // Modals
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [contractModalOpen, setContractModalOpen] = useState(false);
@@ -244,10 +181,63 @@ const AssistentePage = () => {
 
   // Report generation state
   const [selectedReportType, setSelectedReportType] = useState("");
-  const [reportContractId, setReportContractId] = useState(REPORT_CONTRACTS[0].id);
+  const [reportContractId, setReportContractId] = useState("");
   const [reportIncludeCharts, setReportIncludeCharts] = useState(true);
   const [reportIncludeDetails, setReportIncludeDetails] = useState(true);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [reportGoals, setReportGoals] = useState<any[]>([]);
+  const [reportEntries, setReportEntries] = useState<any[]>([]);
+
+  // Load report data
+  useEffect(() => {
+    const load = async () => {
+      const [g, e] = await Promise.all([
+        supabase.from("goals").select("*"),
+        supabase.from("goal_entries").select("*"),
+      ]);
+      setReportGoals(g.data || []);
+      setReportEntries(e.data || []);
+    };
+    load();
+  }, []);
+
+  // Set default report contract
+  useEffect(() => {
+    if (contracts.length > 0 && !reportContractId) setReportContractId(contracts[0].id);
+  }, [contracts, reportContractId]);
+
+  // Build REPORT_CONTRACTS dynamically
+  const REPORT_CONTRACTS: ReportContractData[] = useMemo(() => {
+    return contracts.map(rc => {
+      const unitGoals = reportGoals.filter((g: any) => g.facility_unit === rc.unit);
+      const goalItems: ReportGoalItem[] = unitGoals.map((g: any) => {
+        const entries = reportEntries.filter((e: any) => e.goal_id === g.id);
+        const current = entries.reduce((s: number, e: any) => s + Number(e.value), 0);
+        const pct = g.target > 0 ? (current / g.target) * 100 : 0;
+        return {
+          id: g.id, name: g.name, target: Number(g.target), current, unit: g.unit,
+          type: g.type as "QNT" | "QLT" | "DOC", risk: Number(g.risk),
+          trend: (pct >= 90 ? "up" : pct >= 60 ? "stable" : "down") as "up" | "down" | "stable",
+          rubrica: "Metas", pesoFinanceiro: Number(g.weight) * 100,
+        };
+      });
+      const totalRisk = goalItems.reduce((s, g) => s + g.risk, 0);
+      return {
+        id: rc.id, name: rc.name, unit: rc.unit, valorGlobal: rc.value,
+        rubricas: (rc.rubricas || []).filter(r => r.percent > 0).map(r => ({ name: r.name, pct: r.percent, valor: rc.value * (r.percent / 100) })),
+        goals: goalItems,
+        performance: ["Jan", "Fev", "Mar", "Abr"].map(month => {
+          const at = goalItems.filter(g => getReportGoalPct(g) >= 90).length;
+          const pa = goalItems.filter(g => { const p = getReportGoalPct(g); return p >= 60 && p < 90; }).length;
+          const total = goalItems.length || 1;
+          return { month, atingidas: Math.round((at / total) * 100), parciais: Math.round((pa / total) * 100), naoAtingidas: Math.round(((total - at - pa) / total) * 100) };
+        }),
+        riskTrend: ["Jan", "Fev", "Mar", "Abr"].map((month, i) => ({
+          month, risco: Math.round(totalRisk * (1 - i * 0.1)), glosa: Math.round(totalRisk * 0.15 * (1 - i * 0.1)),
+        })),
+      };
+    });
+  }, [contracts, reportGoals, reportEntries]);
 
   /* ══ Training state ══ */
   const [trainingModules, setTrainingModules] = useState<TrainingModule[]>([]);
@@ -554,12 +544,24 @@ const AssistentePage = () => {
     await loadGoals(selectedUnit);
   };
 
-  const handleSubmitRubrica = () => {
+  const handleSubmitRubrica = async () => {
     if (!rubricaValue || !rubricaDate) { toast.error("Preencha o valor e a data"); return; }
-    const contract = RUBRICA_CONTRACTS.find(c => c.id === selectedContract);
+    if (!user) return;
+    const contract = contracts.find(c => c.id === selectedContract);
+    if (!contract) { toast.error("Contrato não encontrado"); return; }
+    const { error } = await supabase.from("rubrica_entries").insert({
+      contract_id: contract.id,
+      rubrica_name: selectedRubrica,
+      value_executed: parseFloat(rubricaValue),
+      period: rubricaDate,
+      facility_unit: contract.unit,
+      notes: rubricaNotes || null,
+      user_id: user.id,
+    });
+    if (error) { console.error(error); toast.error("Erro ao salvar lançamento"); return; }
     goToFinalizado("Lançamento de rubrica realizado", [
       `Rubrica: ${selectedRubrica}`,
-      `Contrato: ${contract?.unit || ""}`,
+      `Contrato: ${contract.unit}`,
       `Valor executado: R$ ${rubricaValue}`,
       `Data: ${rubricaDate}`,
       `Mês de referência: ${selectedMonth}`,
@@ -657,7 +659,7 @@ const AssistentePage = () => {
       case "lancar-meta-unit":
         return UNITS.map(u => ({ id: u, title: u, description: `Lançar metas da unidade ${u}`, action: () => { setSelectedUnit(u); loadGoals(u); goTo("lancar-meta-select"); } }));
       case "lancar-rubrica-unit":
-        return RUBRICA_CONTRACTS.map(c => ({ id: c.id, title: c.unit, description: `Contrato: ${c.unit}`, action: () => { setSelectedContract(c.id); goTo("lancar-rubrica-select"); } }));
+        return contracts.map(c => ({ id: c.id, title: c.unit, description: `Contrato: ${c.name}`, action: () => { setSelectedContract(c.id); goTo("lancar-rubrica-select"); } }));
       case "consultar-metas-unit":
         return UNITS.map(u => ({ id: u, title: u, description: `Consultar metas de ${u}`, action: () => { setSelectedUnit(u); loadGoals(u); goTo("consultar-metas-list"); } }));
       default:
@@ -918,14 +920,16 @@ const AssistentePage = () => {
   };
 
   const renderLancarRubricaSelect = () => {
-    const contract = RUBRICA_CONTRACTS.find(c => c.id === selectedContract);
+    const contract = contracts.find(c => c.id === selectedContract);
     if (!contract) return <p className="text-muted-foreground text-center py-12">Contrato não encontrado.</p>;
+    const rubNames = (contract.rubricas || []).filter(r => r.percent > 0).map(r => r.name);
+    if (rubNames.length === 0) return <p className="text-muted-foreground text-center py-12">Nenhuma rubrica cadastrada para este contrato.</p>;
     return (
       <div className="grid grid-cols-1 gap-3">
-        {RUBRICA_NAMES.map((rubName, i) => {
-          const existing = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === rubName);
-          const allocated = existing?.valorAllocated || 0;
-          const executed = existing?.valorExecuted || 0;
+        {rubNames.map((rubName, i) => {
+          const rubrica = (contract.rubricas || []).find(r => r.name === rubName);
+          const allocated = contract.value * ((rubrica?.percent || 0) / 100);
+          const executed = savedRubricaEntries.filter(e => e.rubrica_name === rubName).reduce((s: number, e: any) => s + Number(e.value_executed), 0);
           const pct = allocated > 0 ? Math.round((executed / allocated) * 100) : 0;
           return (
             <motion.button key={rubName} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
@@ -946,11 +950,11 @@ const AssistentePage = () => {
   };
 
   const renderLancarRubricaForm = () => {
-    const contract = RUBRICA_CONTRACTS.find(c => c.id === selectedContract);
+    const contract = contracts.find(c => c.id === selectedContract);
     if (!contract) return null;
-    const existing = ALL_ENTRIES.find(e => e.unit === contract.unit && e.month === selectedMonth && e.rubrica === selectedRubrica);
-    const allocated = existing?.valorAllocated || 0;
-    const executed = existing?.valorExecuted || 0;
+    const rubrica = (contract.rubricas || []).find(r => r.name === selectedRubrica);
+    const allocated = contract.value * ((rubrica?.percent || 0) / 100);
+    const executed = savedRubricaEntries.filter(e => e.rubrica_name === selectedRubrica).reduce((s: number, e: any) => s + Number(e.value_executed), 0);
     const pct = allocated > 0 ? Math.round((executed / allocated) * 100) : 0;
     return (
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="kpi-card p-6 max-w-lg mx-auto">
@@ -962,7 +966,7 @@ const AssistentePage = () => {
         </div>
         <div className="space-y-3">
           <div><label className="text-xs text-muted-foreground block mb-1">Mês de referência</label>
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{MONTHS_LIST.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="text-xs text-muted-foreground block mb-1">Valor executado</label><Input type="number" step="0.01" placeholder="R$ 0,00" value={rubricaValue} onChange={e => setRubricaValue(e.target.value)} /></div>

@@ -22,7 +22,7 @@ import {
 } from "recharts";
 
 /* ══════════════════════════════════════════════
-   MOCK DATA — Contratos de gestão
+   Tipos e interfaces
    ══════════════════════════════════════════════ */
 
 interface ContractData {
@@ -41,8 +41,6 @@ interface GoalItem {
   type: "QNT" | "QLT" | "DOC"; risk: number; trend: "up" | "down" | "stable";
   rubrica: string; pesoFinanceiro: number;
 }
-
-/* Mock CONTRACTS removed — will be built dynamically from DB */
 
 const REPORT_TYPES = [
   { id: "consolidado", label: "Consolidado geral", description: "Resumo de todas as metas, atingimento e risco financeiro" },
