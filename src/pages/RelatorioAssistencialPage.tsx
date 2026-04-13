@@ -151,7 +151,44 @@ const RelatorioAssistencialPage = () => {
     });
   }, [dbRubricaEntries, selectedContract]);
 
-  const radarData = useMemo(() =>
+  const totalPenalty = useMemo(() => {
+    return goals.reduce((sum, g) => {
+      const pct = g.target > 0 ? (g.achieved / g.target) * 100 : 0;
+      return sum + (pct < 100 ? g.penalty : 0);
+    }, 0);
+  }, [goals]);
+
+  const totalGlosa = useMemo(() => {
+    if (!selectedContract) return 0;
+    return selectedContract.value * selectedContract.variable * (totalPenalty / 100);
+  }, [selectedContract, totalPenalty]);
+
+  const goalAchievementPct = useMemo(() => {
+    if (goals.length === 0) return 0;
+    const weightedSum = goals.reduce((sum, g) => {
+      const pct = Math.min(100, g.target > 0 ? (g.achieved / g.target) * 100 : 0);
+      return sum + pct * (g.weight / 100);
+    }, 0);
+    return Math.round(weightedSum);
+  }, [goals]);
+
+  const goalsBarData = useMemo(() =>
+    goals.map(g => ({
+      name: g.name.length > 20 ? g.name.substring(0, 20) + "..." : g.name,
+      fullName: g.name,
+      meta: g.target,
+      realizado: g.achieved,
+      tipo: g.type,
+    })),
+  [goals]);
+
+  const rubricaPieData = useMemo(() =>
+    (selectedContract?.rubricas || []).map(r => ({
+      name: r.name,
+      value: r.percent,
+    })),
+  [selectedContract]);
+
     goals.map(g => ({
       subject: g.name.length > 15 ? g.name.substring(0, 15) + "..." : g.name,
       alcance: Math.min(100, g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0),
