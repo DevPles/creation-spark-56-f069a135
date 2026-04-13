@@ -471,19 +471,9 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
       // ═══════════════════════════════════════════════
       // ISHIKAWA (Fishbone) DIAGRAM
       // ═══════════════════════════════════════════════
-      doc.addPage();
-      y = margin;
-      drawPageHeader();
+      addNewPageIfNeeded(120);
 
-      doc.setFontSize(13);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.text("Diagrama de Ishikawa - Analise de Causa e Efeito", margin, y);
-      y += 3;
-      doc.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, W - margin, y);
-      y += 10;
+      drawSectionTitle("Diagrama de Ishikawa — Analise de Causa e Efeito");
 
       // Build Ishikawa categories from real data
       const ishikawaCategories: { name: string; color: number[]; causes: string[] }[] = [
