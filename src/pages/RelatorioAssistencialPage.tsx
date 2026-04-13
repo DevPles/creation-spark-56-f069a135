@@ -189,7 +189,7 @@ const RelatorioAssistencialPage = () => {
     })),
   [selectedContract]);
 
-    goals.map(g => ({
+  const radarData = useMemo(() => goals.map(g => ({
       subject: g.name.length > 15 ? g.name.substring(0, 15) + "..." : g.name,
       alcance: Math.min(100, g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0),
       peso: g.weight,
