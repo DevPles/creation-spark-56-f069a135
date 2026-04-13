@@ -1,5 +1,11 @@
 import { useState, useMemo } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,32 +34,19 @@ const PRIORIDADE_LABELS: Record<string, string> = {
   baixa: "Baixa", media: "Média", alta: "Alta", critica: "Crítica",
 };
 
-const PERIOD_OPTIONS = [
-  { value: "7d", label: "Últimos 7 dias" },
-  { value: "15d", label: "Últimos 15 dias" },
-  { value: "30d", label: "Últimos 30 dias" },
-  { value: "90d", label: "Últimos 3 meses" },
-  { value: "180d", label: "Últimos 6 meses" },
-  { value: "365d", label: "Último ano" },
-  { value: "all", label: "Todo o período" },
-];
-
 const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => {
   const [loading, setLoading] = useState(false);
   const [reportUnit, setReportUnit] = useState(selectedUnit);
-  const [period, setPeriod] = useState("90d");
   const [selectedPlanId, setSelectedPlanId] = useState("todos");
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
+    const to = new Date();
+    const from = new Date();
+    from.setMonth(from.getMonth() - 3);
+    return { from, to };
+  });
 
-  // Compute date range from period
-  const { startDate, endDate } = useMemo(() => {
-    const end = new Date();
-    const endStr = end.toISOString().slice(0, 10);
-    if (period === "all") return { startDate: "", endDate: endStr };
-    const days = parseInt(period);
-    const start = new Date();
-    start.setDate(start.getDate() - days);
-    return { startDate: start.toISOString().slice(0, 10), endDate: endStr };
-  }, [period]);
+  const startDate = dateRange.from.toISOString().slice(0, 10);
+  const endDate = dateRange.to.toISOString().slice(0, 10);
 
   // Filter plans by unit and date range
   const filtered = useMemo(() => {
