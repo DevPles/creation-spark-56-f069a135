@@ -820,14 +820,16 @@ const RelatoriosPage = () => {
   // Load goals, entries and rubrica entries
   useEffect(() => {
     const load = async () => {
-      const [goalsRes, entriesRes, rubricaRes] = await Promise.all([
+      const [goalsRes, entriesRes, rubricaRes, plansRes] = await Promise.all([
         supabase.from("goals").select("*"),
         supabase.from("goal_entries").select("*"),
         supabase.from("rubrica_entries").select("*"),
+        supabase.from("action_plans").select("*"),
       ]);
       setDbGoals(goalsRes.data || []);
       setDbEntries(entriesRes.data || []);
       setDbRubricaEntries(rubricaRes.data || []);
+      setActionPlans(plansRes.data || []);
     };
     load();
   }, []);
