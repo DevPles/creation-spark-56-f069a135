@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 // no icon imports - text only
 import TopBar from "@/components/TopBar";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useContracts } from "@/contexts/ContractsContext";
-import { ALL_ENTRIES, getEstouradasByUnit, RUBRICA_NAMES, MONTHS } from "@/data/rubricaData";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -41,40 +41,16 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
-// Simulated goals data per unit
-const GOALS_DATA: Record<string, { name: string; type: "QLT" | "QNT"; target: number; achieved: number; weight: number; penalty: number }[]> = {
-  "Hospital Geral": [
-    { name: "Taxa de ocupação de leitos", type: "QNT", target: 85, achieved: 82, weight: 15, penalty: 2 },
-    { name: "Tempo médio de espera", type: "QNT", target: 30, achieved: 35, weight: 10, penalty: 1.5 },
-    { name: "Comissão de óbitos ativa", type: "QLT", target: 100, achieved: 100, weight: 10, penalty: 3 },
-    { name: "Cirurgias eletivas realizadas", type: "QNT", target: 120, achieved: 98, weight: 20, penalty: 5 },
-    { name: "RDQA entregue", type: "QLT", target: 100, achieved: 0, weight: 15, penalty: 4 },
-    { name: "Protocolo de higienização", type: "QLT", target: 100, achieved: 100, weight: 10, penalty: 2 },
-    { name: "Satisfação do paciente (NPS)", type: "QNT", target: 80, achieved: 72, weight: 10, penalty: 2 },
-    { name: "Taxa de infecção hospitalar", type: "QNT", target: 5, achieved: 6.2, weight: 10, penalty: 3 },
-  ],
-  "UPA Norte": [
-    { name: "Satisfação do paciente (NPS)", type: "QNT", target: 75, achieved: 68, weight: 20, penalty: 3 },
-    { name: "Protocolo de higienização", type: "QLT", target: 100, achieved: 100, weight: 15, penalty: 2 },
-    { name: "Cirurgias eletivas realizadas", type: "QNT", target: 60, achieved: 55, weight: 25, penalty: 4 },
-    { name: "Tempo médio de espera", type: "QNT", target: 20, achieved: 25, weight: 15, penalty: 2 },
-    { name: "RDQA entregue", type: "QLT", target: 100, achieved: 100, weight: 15, penalty: 3 },
-    { name: "Comissão de óbitos ativa", type: "QLT", target: 100, achieved: 0, weight: 10, penalty: 5 },
-  ],
-  "UBS Centro": [
-    { name: "RDQA entregue", type: "QLT", target: 100, achieved: 100, weight: 25, penalty: 5 },
-    { name: "Taxa de infecção hospitalar", type: "QNT", target: 3, achieved: 2.8, weight: 20, penalty: 3 },
-    { name: "Protocolo de higienização", type: "QLT", target: 100, achieved: 100, weight: 20, penalty: 2 },
-    { name: "Satisfação do paciente (NPS)", type: "QNT", target: 70, achieved: 74, weight: 20, penalty: 2 },
-    { name: "Tempo médio de espera", type: "QNT", target: 15, achieved: 12, weight: 15, penalty: 1 },
-  ],
-};
+const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const RelatorioAssistencialPage = () => {
   const navigate = useNavigate();
   const { contracts } = useContracts();
   const [selectedContractId, setSelectedContractId] = useState("");
   const [editableNotes, setEditableNotes] = useState("");
+  const [dbGoals, setDbGoals] = useState<any[]>([]);
+  const [dbEntries, setDbEntries] = useState<any[]>([]);
+  const [dbRubricaEntries, setDbRubricaEntries] = useState<any[]>([]);
 
   // Personalização state — editable sections
   const [persContrato, setPersContrato] = useState("");
@@ -121,15 +97,60 @@ const RelatorioAssistencialPage = () => {
   const selectedContract = contracts.find((c) => c.id === selectedContractId);
   const unit = selectedContract?.unit || "";
 
-  const goals = useMemo(() => GOALS_DATA[unit] || [], [unit]);
+  // Load goals and entries from DB
+  useEffect(() => {
+    if (!unit) return;
+    const load = async () => {
+      const [goalsRes, entriesRes, rubRes] = await Promise.all([
+        supabase.from("goals").select("*").eq("facility_unit", unit as any),
+        supabase.from("goal_entries").select("*"),
+        supabase.from("rubrica_entries").select("*").eq("facility_unit", unit),
+      ]);
+      setDbGoals(goalsRes.data || []);
+      setDbEntries(entriesRes.data || []);
+      setDbRubricaEntries(rubRes.data || []);
+    };
+    load();
+  }, [unit]);
+
+  const goals = useMemo(() => {
+    return dbGoals.map(g => {
+      const entries = dbEntries.filter(e => e.goal_id === g.id);
+      const achieved = entries.reduce((s: number, e: any) => s + Number(e.value), 0);
+      return {
+        name: g.name,
+        type: g.type as "QLT" | "QNT",
+        target: Number(g.target),
+        achieved,
+        weight: Number(g.weight) * 100,
+        penalty: Number(g.risk) > 0 ? Number(g.risk) / (selectedContract?.value || 1) * 100 : 0,
+      };
+    });
+  }, [dbGoals, dbEntries, selectedContract]);
+
   const qualitativas = useMemo(() => goals.filter(g => g.type === "QLT"), [goals]);
   const quantitativas = useMemo(() => goals.filter(g => g.type === "QNT"), [goals]);
 
-  const estouradas = useMemo(() => getEstouradasByUnit().filter(e => e.unit === unit), [unit]);
+  const estouradas = useMemo(() => {
+    if (!selectedContract) return [];
+    return (selectedContract.rubricas || []).filter(r => r.percent > 0).map(r => {
+      const allocated = selectedContract.value * (r.percent / 100);
+      const executed = dbRubricaEntries.filter(e => e.rubrica_name === r.name).reduce((s: number, e: any) => s + Number(e.value_executed), 0);
+      return { rubrica: r.name, unit, contract: selectedContract.name, pctExec: allocated > 0 ? Math.round((executed / allocated) * 100) : 0, allocated, executed, excedente: executed - allocated };
+    }).filter(e => e.executed > e.allocated);
+  }, [selectedContract, dbRubricaEntries, unit]);
 
-  const rubricaEntries = useMemo(() => ALL_ENTRIES.filter(e => e.unit === unit), [unit]);
+  const monthlyTrendData = useMemo(() => {
+    return MONTHS.map((month, i) => {
+      const monthEntries = dbRubricaEntries.filter(e => {
+        try { const parts = e.period.split("/"); return parts.length === 3 && parseInt(parts[1]) - 1 === i; } catch { return false; }
+      });
+      const executed = monthEntries.reduce((s: number, e: any) => s + Number(e.value_executed), 0);
+      const allocated = selectedContract ? selectedContract.value / 12 : 0;
+      return { month, alocado: Math.round(allocated / 1000), executado: Math.round(executed / 1000) };
+    });
+  }, [dbRubricaEntries, selectedContract]);
 
-  // Compute summaries
   const totalPenalty = useMemo(() => {
     return goals.reduce((sum, g) => {
       const pct = g.target > 0 ? (g.achieved / g.target) * 100 : 0;
@@ -151,7 +172,6 @@ const RelatorioAssistencialPage = () => {
     return Math.round(weightedSum);
   }, [goals]);
 
-  // Charts data
   const goalsBarData = useMemo(() =>
     goals.map(g => ({
       name: g.name.length > 20 ? g.name.substring(0, 20) + "..." : g.name,
@@ -169,17 +189,7 @@ const RelatorioAssistencialPage = () => {
     })),
   [selectedContract]);
 
-  const monthlyTrendData = useMemo(() => {
-    return MONTHS.map(month => {
-      const monthEntries = rubricaEntries.filter(e => e.month === month);
-      const allocated = monthEntries.reduce((s, e) => s + e.valorAllocated, 0);
-      const executed = monthEntries.reduce((s, e) => s + e.valorExecuted, 0);
-      return { month, alocado: Math.round(allocated / 1000), executado: Math.round(executed / 1000) };
-    });
-  }, [rubricaEntries]);
-
-  const radarData = useMemo(() =>
-    goals.map(g => ({
+  const radarData = useMemo(() => goals.map(g => ({
       subject: g.name.length > 15 ? g.name.substring(0, 15) + "..." : g.name,
       alcance: Math.min(100, g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0),
       peso: g.weight,

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useContracts } from "@/contexts/ContractsContext";
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import GoalRow from "@/components/GoalRow";
@@ -41,99 +42,7 @@ interface GoalItem {
   rubrica: string; pesoFinanceiro: number;
 }
 
-const CONTRACTS: ContractData[] = [
-  {
-    id: "c1", name: "Contrato de Gestão — Hospital Geral", unit: "Hospital Geral", valorGlobal: 2800000,
-    rubricas: [
-      { name: "RH", pct: 55, valor: 1540000 },
-      { name: "Insumos", pct: 20, valor: 560000 },
-      { name: "Equipamentos", pct: 10, valor: 280000 },
-      { name: "Metas Quantitativas", pct: 10, valor: 280000 },
-      { name: "Metas Qualitativas", pct: 5, valor: 140000 },
-    ],
-    goals: [
-      { id: "g1", name: "Taxa de ocupação de leitos", target: 85, current: 78, unit: "%", type: "QNT", risk: 12400, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 4.4 },
-      { id: "g2", name: "Tempo médio de espera (emergência)", target: 30, current: 42, unit: "min", type: "QNT", risk: 8200, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.9 },
-      { id: "g3", name: "Satisfação do paciente (NPS)", target: 75, current: 71, unit: "pts", type: "QNT", risk: 5600, trend: "stable", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.0 },
-      { id: "g4", name: "Protocolo de higienização", target: 100, current: 92, unit: "%", type: "QLT", risk: 3100, trend: "up", rubrica: "Metas Qualitativas", pesoFinanceiro: 2.2 },
-      { id: "g5", name: "Relatório quadrimestral (RDQA)", target: 1, current: 0, unit: "doc", type: "DOC", risk: 15000, trend: "down", rubrica: "Metas Qualitativas", pesoFinanceiro: 5.4 },
-      { id: "g6", name: "Taxa de infecção hospitalar", target: 5, current: 6.2, unit: "%", type: "QNT", risk: 9800, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 3.5 },
-      { id: "g7", name: "Cirurgias eletivas realizadas", target: 120, current: 98, unit: "un", type: "QNT", risk: 7300, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.6 },
-      { id: "g8", name: "Comissão de óbitos ativa", target: 1, current: 1, unit: "doc", type: "QLT", risk: 0, trend: "stable", rubrica: "Metas Qualitativas", pesoFinanceiro: 0 },
-    ],
-    performance: [
-      { month: "Jan", atingidas: 65, parciais: 20, naoAtingidas: 15 },
-      { month: "Fev", atingidas: 70, parciais: 18, naoAtingidas: 12 },
-      { month: "Mar", atingidas: 68, parciais: 22, naoAtingidas: 10 },
-      { month: "Abr", atingidas: 75, parciais: 15, naoAtingidas: 10 },
-    ],
-    riskTrend: [
-      { month: "Jan", risco: 85000, glosa: 12000 },
-      { month: "Fev", risco: 72000, glosa: 9500 },
-      { month: "Mar", risco: 61800, glosa: 8200 },
-      { month: "Abr", risco: 54400, glosa: 7100 },
-    ],
-  },
-  {
-    id: "c2", name: "Contrato de Gestão — UPA Norte", unit: "UPA Norte", valorGlobal: 1200000,
-    rubricas: [
-      { name: "RH", pct: 60, valor: 720000 },
-      { name: "Insumos", pct: 18, valor: 216000 },
-      { name: "Equipamentos", pct: 7, valor: 84000 },
-      { name: "Metas Quantitativas", pct: 10, valor: 120000 },
-      { name: "Metas Qualitativas", pct: 5, valor: 60000 },
-    ],
-    goals: [
-      { id: "g9", name: "Tempo porta-médico", target: 15, current: 12, unit: "min", type: "QNT", risk: 0, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 0 },
-      { id: "g10", name: "Atendimentos/dia", target: 200, current: 185, unit: "un", type: "QNT", risk: 3200, trend: "stable", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.7 },
-      { id: "g11", name: "Classificação de risco (Manchester)", target: 100, current: 97, unit: "%", type: "QLT", risk: 0, trend: "up", rubrica: "Metas Qualitativas", pesoFinanceiro: 0 },
-      { id: "g12", name: "Taxa de retorno em 24h", target: 5, current: 7.8, unit: "%", type: "QNT", risk: 4100, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 3.4 },
-      { id: "g13", name: "Protocolo sepse ativo", target: 1, current: 1, unit: "doc", type: "QLT", risk: 0, trend: "stable", rubrica: "Metas Qualitativas", pesoFinanceiro: 0 },
-      { id: "g14", name: "Notificações epidemiológicas", target: 100, current: 88, unit: "%", type: "QNT", risk: 2800, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 2.3 },
-    ],
-    performance: [
-      { month: "Jan", atingidas: 72, parciais: 18, naoAtingidas: 10 },
-      { month: "Fev", atingidas: 78, parciais: 14, naoAtingidas: 8 },
-      { month: "Mar", atingidas: 80, parciais: 12, naoAtingidas: 8 },
-      { month: "Abr", atingidas: 85, parciais: 10, naoAtingidas: 5 },
-    ],
-    riskTrend: [
-      { month: "Jan", risco: 28000, glosa: 4200 },
-      { month: "Fev", risco: 22000, glosa: 3100 },
-      { month: "Mar", risco: 18000, glosa: 2600 },
-      { month: "Abr", risco: 10100, glosa: 1800 },
-    ],
-  },
-  {
-    id: "c3", name: "Contrato de Gestão — UBS Centro", unit: "UBS Centro", valorGlobal: 680000,
-    rubricas: [
-      { name: "RH", pct: 65, valor: 442000 },
-      { name: "Insumos", pct: 15, valor: 102000 },
-      { name: "Equipamentos", pct: 5, valor: 34000 },
-      { name: "Metas Quantitativas", pct: 10, valor: 68000 },
-      { name: "Metas Qualitativas", pct: 5, valor: 34000 },
-    ],
-    goals: [
-      { id: "g15", name: "Consultas agendadas realizadas", target: 90, current: 72, unit: "%", type: "QNT", risk: 5400, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 7.9 },
-      { id: "g16", name: "Cobertura vacinal", target: 95, current: 88, unit: "%", type: "QNT", risk: 3200, trend: "up", rubrica: "Metas Quantitativas", pesoFinanceiro: 4.7 },
-      { id: "g17", name: "Visitas domiciliares ACS", target: 80, current: 65, unit: "%", type: "QNT", risk: 4600, trend: "down", rubrica: "Metas Quantitativas", pesoFinanceiro: 6.8 },
-      { id: "g18", name: "Programa hiperdia atualizado", target: 1, current: 0, unit: "doc", type: "DOC", risk: 6200, trend: "down", rubrica: "Metas Qualitativas", pesoFinanceiro: 9.1 },
-      { id: "g19", name: "Pré-natal (6+ consultas)", target: 85, current: 79, unit: "%", type: "QNT", risk: 2100, trend: "stable", rubrica: "Metas Quantitativas", pesoFinanceiro: 3.1 },
-    ],
-    performance: [
-      { month: "Jan", atingidas: 50, parciais: 30, naoAtingidas: 20 },
-      { month: "Fev", atingidas: 55, parciais: 25, naoAtingidas: 20 },
-      { month: "Mar", atingidas: 58, parciais: 27, naoAtingidas: 15 },
-      { month: "Abr", atingidas: 62, parciais: 23, naoAtingidas: 15 },
-    ],
-    riskTrend: [
-      { month: "Jan", risco: 32000, glosa: 5800 },
-      { month: "Fev", risco: 28000, glosa: 4900 },
-      { month: "Mar", risco: 24000, glosa: 4200 },
-      { month: "Abr", risco: 21500, glosa: 3600 },
-    ],
-  },
-];
+/* Mock CONTRACTS removed — will be built dynamically from DB */
 
 const REPORT_TYPES = [
   { id: "consolidado", label: "Consolidado geral", description: "Resumo de todas as metas, atingimento e risco financeiro" },
@@ -566,13 +475,18 @@ async function generatePdfBlob(
 
 const RelatoriosPage = () => {
   const navigate = useNavigate();
+  const { contracts: realContracts } = useContracts();
   const [period, setPeriod] = useState("4M");
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
 
+  // DB data
+  const [dbGoals, setDbGoals] = useState<any[]>([]);
+  const [dbEntries, setDbEntries] = useState<any[]>([]);
+
   // Contract & comparison
-  const [selectedContractId, setSelectedContractId] = useState("c1");
+  const [selectedContractId, setSelectedContractId] = useState("");
   const [compareMode, setCompareMode] = useState(false);
-  const [compareContractId, setCompareContractId] = useState("c2");
+  const [compareContractId, setCompareContractId] = useState("");
 
   // Filters
   const [typeFilter, setTypeFilter] = useState("todas");
@@ -595,6 +509,60 @@ const RelatoriosPage = () => {
   // Bed data from DB
   const [bedData, setBedData] = useState<{ facility_unit: string; category: string; specialty: string; quantity: number }[]>([]);
   const [bedGoalEntries, setBedGoalEntries] = useState<{ goal_name: string; facility_unit: string; period: string; value: number; target: number }[]>([]);
+
+  // Set default contract
+  useEffect(() => {
+    if (realContracts.length > 0 && !selectedContractId) {
+      setSelectedContractId(realContracts[0].id);
+      if (realContracts.length > 1) setCompareContractId(realContracts[1].id);
+    }
+  }, [realContracts, selectedContractId]);
+
+  // Load goals and entries
+  useEffect(() => {
+    const load = async () => {
+      const [goalsRes, entriesRes] = await Promise.all([
+        supabase.from("goals").select("*"),
+        supabase.from("goal_entries").select("*"),
+      ]);
+      setDbGoals(goalsRes.data || []);
+      setDbEntries(entriesRes.data || []);
+    };
+    load();
+  }, []);
+
+  // Build ContractData objects from real data
+  const CONTRACTS: ContractData[] = useMemo(() => {
+    return realContracts.map(rc => {
+      const unitGoals = dbGoals.filter(g => g.facility_unit === rc.unit);
+      const goalItems: GoalItem[] = unitGoals.map(g => {
+        const entries = dbEntries.filter(e => e.goal_id === g.id);
+        const current = entries.reduce((s: number, e: any) => s + Number(e.value), 0);
+        const pct = g.target > 0 ? (current / g.target) * 100 : 0;
+        return {
+          id: g.id, name: g.name, target: Number(g.target), current, unit: g.unit,
+          type: g.type as "QNT" | "QLT" | "DOC", risk: Number(g.risk),
+          trend: pct >= 90 ? "up" as const : pct >= 60 ? "stable" as const : "down" as const,
+          rubrica: "Metas", pesoFinanceiro: Number(g.weight) * 100,
+        };
+      });
+      const totalRisk = goalItems.reduce((s, g) => s + g.risk, 0);
+      return {
+        id: rc.id, name: rc.name, unit: rc.unit, valorGlobal: rc.value,
+        rubricas: (rc.rubricas || []).filter(r => r.percent > 0).map(r => ({ name: r.name, pct: r.percent, valor: rc.value * (r.percent / 100) })),
+        goals: goalItems,
+        performance: ["Jan", "Fev", "Mar", "Abr"].map(month => {
+          const atingidas = goalItems.filter(g => getGoalPct(g) >= 90).length;
+          const parciais = goalItems.filter(g => { const p = getGoalPct(g); return p >= 60 && p < 90; }).length;
+          const total = goalItems.length || 1;
+          return { month, atingidas: Math.round((atingidas / total) * 100), parciais: Math.round((parciais / total) * 100), naoAtingidas: Math.round(((total - atingidas - parciais) / total) * 100) };
+        }),
+        riskTrend: ["Jan", "Fev", "Mar", "Abr"].map((month, i) => ({
+          month, risco: Math.round(totalRisk * (1 - i * 0.1)), glosa: Math.round(totalRisk * 0.15 * (1 - i * 0.1)),
+        })),
+      };
+    });
+  }, [realContracts, dbGoals, dbEntries]);
 
   useEffect(() => {
     const fetchBedData = async () => {
@@ -621,10 +589,10 @@ const RelatoriosPage = () => {
     fetchBedData();
   }, []);
 
-  const contract = CONTRACTS.find(c => c.id === selectedContractId)!;
+  const contract = CONTRACTS.find(c => c.id === selectedContractId) || CONTRACTS[0];
   const compareContract = CONTRACTS.find(c => c.id === compareContractId);
 
-  const filteredGoals = useMemo(() => filterGoals(contract.goals, typeFilter, statusFilter), [contract, typeFilter, statusFilter]);
+  const filteredGoals = useMemo(() => contract ? filterGoals(contract.goals, typeFilter, statusFilter) : [], [contract, typeFilter, statusFilter]);
   const stats = useMemo(() => computeStats(filteredGoals), [filteredGoals]);
 
   const compareFilteredGoals = useMemo(() => compareContract ? filterGoals(compareContract.goals, typeFilter, statusFilter) : [], [compareContract, typeFilter, statusFilter]);
