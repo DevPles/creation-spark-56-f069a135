@@ -87,9 +87,19 @@ const EvidenciasPage = () => {
   }, [fetchPlans]);
 
   const filteredPlans = useMemo(() => {
-    if (selectedUnit === "Todas as unidades") return plans;
-    return plans.filter(p => p.facility_unit === selectedUnit);
-  }, [plans, selectedUnit]);
+    let result = selectedUnit === "Todas as unidades" ? plans : plans.filter(p => p.facility_unit === selectedUnit);
+    if (search) {
+      const s = search.toLowerCase();
+      result = result.filter(p =>
+        p.reference_name.toLowerCase().includes(s) ||
+        p.responsavel?.toLowerCase().includes(s) ||
+        p.area?.toLowerCase().includes(s)
+      );
+    }
+    if (filterStatus !== "todos") result = result.filter(p => p.status_acao === filterStatus);
+    if (filterPrioridade !== "todos") result = result.filter(p => p.prioridade === filterPrioridade);
+    return result;
+  }, [plans, selectedUnit, search, filterStatus, filterPrioridade]);
 
   const handleNew = () => {
     setSelectedPlan(null);
