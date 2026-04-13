@@ -4,11 +4,12 @@ import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Search, Filter } from "lucide-react";
 import ActionPlanTable from "@/components/ActionPlanTable";
 import ActionPlanTimeline from "@/components/ActionPlanTimeline";
 import ActionPlanAnalytics from "@/components/ActionPlanAnalytics";
@@ -28,6 +29,9 @@ const EvidenciasPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<ActionPlan | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("todos");
+  const [filterPrioridade, setFilterPrioridade] = useState("todos");
 
   // Determine which units the user can see
   const isManagerOrAdmin = role === "admin" || role === "gestor";
