@@ -400,6 +400,92 @@ export type Database = {
           },
         ]
       }
+      rubrica_entries: {
+        Row: {
+          contract_id: string
+          created_at: string
+          facility_unit: string
+          id: string
+          notes: string | null
+          period: string
+          rubrica_name: string
+          user_id: string
+          value_executed: number
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          facility_unit: string
+          id?: string
+          notes?: string | null
+          period: string
+          rubrica_name: string
+          user_id: string
+          value_executed?: number
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          facility_unit?: string
+          id?: string
+          notes?: string | null
+          period?: string
+          rubrica_name?: string
+          user_id?: string
+          value_executed?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rubrica_entries_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sau_records: {
+        Row: {
+          created_at: string
+          created_by: string
+          descricao: string
+          facility_unit: string
+          id: string
+          notes: string | null
+          resolved_at: string | null
+          responsavel: string | null
+          setor: string | null
+          status: Database["public"]["Enums"]["sau_status"]
+          tipo: Database["public"]["Enums"]["sau_tipo"]
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          descricao: string
+          facility_unit: string
+          id?: string
+          notes?: string | null
+          resolved_at?: string | null
+          responsavel?: string | null
+          setor?: string | null
+          status?: Database["public"]["Enums"]["sau_status"]
+          tipo: Database["public"]["Enums"]["sau_tipo"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          descricao?: string
+          facility_unit?: string
+          id?: string
+          notes?: string | null
+          resolved_at?: string | null
+          responsavel?: string | null
+          setor?: string | null
+          status?: Database["public"]["Enums"]["sau_status"]
+          tipo?: Database["public"]["Enums"]["sau_tipo"]
+        }
+        Relationships: []
+      }
       sectors: {
         Row: {
           created_at: string
@@ -533,6 +619,8 @@ export type Database = {
         | "insumo"
         | "infraestrutura"
         | "outro"
+      sau_status: "aberto" | "em_andamento" | "resolvido" | "cancelado"
+      sau_tipo: "elogio" | "reclamacao" | "sugestao" | "ouvidoria"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -673,6 +761,8 @@ export const Constants = {
         "infraestrutura",
         "outro",
       ],
+      sau_status: ["aberto", "em_andamento", "resolvido", "cancelado"],
+      sau_tipo: ["elogio", "reclamacao", "sugestao", "ouvidoria"],
     },
   },
 } as const
