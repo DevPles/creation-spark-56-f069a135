@@ -1597,11 +1597,70 @@ const RelatoriosPage = () => {
             )}
           </div>
         );
-      case (hasBedData ? 12 : 10): // Comparison (only in compare mode)
+      case heatmapSlideIdx: // Heatmap
+        return renderHeatmapSlide();
+      case compSlideIdx: // Comparison (only in compare mode)
         if (!compareMode || !compareContract) return null;
         return renderComparisonSlide();
       default: return null;
     }
+  };
+
+  const renderHeatmapSlide = () => {
+    const { rows, daysInMonth, todayDay } = heatmapData;
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const fmt = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+
+    const getCellColor = (val: number | undefined, dailyTarget: number) => {
+      if (!val) return "";
+      const ratio = dailyTarget > 0 ? val / dailyTarget : 1;
+      if (ratio >= 1) return "bg-green-500/20 text-green-700";
+      if (ratio >= 0.7) return "bg-yellow-500/20 text-yellow-700";
+      return "bg-red-500/20 text-red-700";
+    };
+
+    return (
+      <div>
+        <h3 className="font-display font-semibold text-lg text-foreground mb-1">Mapa Térmico — Produção Diária</h3>
+        <p className="text-xs text-muted-foreground mb-4">{contract.unit} • Metas ordenadas por volume de lançamentos</p>
+        <div className="bg-card rounded-lg border border-border overflow-auto max-h-[calc(100vh-200px)]">
+          <table className="w-full text-[11px]">
+            <thead className="sticky top-0 bg-card z-10">
+              <tr className="border-b border-border">
+                <th className="text-left px-2 py-2 min-w-[160px] sticky left-0 bg-card z-20 font-medium text-muted-foreground">Meta</th>
+                {days.map(d => (
+                  <th key={d} className={`text-center px-0.5 py-2 min-w-[28px] font-medium ${d === todayDay ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}>{d}</th>
+                ))}
+                <th className="text-right px-2 py-2 min-w-[60px] font-medium text-muted-foreground">Total</th>
+                <th className="text-right px-2 py-2 min-w-[50px] font-medium text-muted-foreground">Lanç.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="border-b border-border/50 hover:bg-muted/30">
+                  <td className="px-2 py-1.5 sticky left-0 bg-card z-10">
+                    <span className="truncate block max-w-[150px] font-medium text-foreground">{row.name}</span>
+                  </td>
+                  {days.map(d => {
+                    const val = row.dayMap[d];
+                    return (
+                      <td key={d} className={`text-center px-0.5 py-1.5 ${d === todayDay ? "bg-primary/5" : ""} ${val ? getCellColor(val, row.dailyTarget) : ""}`}>
+                        {val ? (val >= 1000 ? `${(val / 1000).toFixed(0)}k` : fmt(val)) : <span className="text-muted-foreground/20">–</span>}
+                      </td>
+                    );
+                  })}
+                  <td className="text-right px-2 py-1.5 font-semibold text-foreground">{fmt(row.totalMonth)}</td>
+                  <td className="text-right px-2 py-1.5 text-muted-foreground">{row.entryCount}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td colSpan={daysInMonth + 3} className="text-center py-8 text-muted-foreground">Sem lançamentos neste mês</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   };
 
   const renderComparisonSlide = () => {
