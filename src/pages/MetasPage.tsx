@@ -165,46 +165,50 @@ const MetasPage = () => {
           Voltar
         </Button>
 
-        <PageHeader
-          title="Metas e indicadores"
-          subtitle="Clique para ver detalhes ou use o botão para cadastrar"
-          selectedUnit={selectedUnit}
-          onUnitChange={(v) => { setSelectedUnit(v); }}
-          action={
-            <div className="flex items-center gap-2">
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-[140px] h-9 text-xs">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Todos">Todos os tipos</SelectItem>
-                  <SelectItem value="QNT">Quantitativa</SelectItem>
-                  <SelectItem value="QLT">Qualitativa</SelectItem>
-                  <SelectItem value="DOC">Documental</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={handleNew}>Nova meta</Button>
-              <div className="flex items-center border rounded-md overflow-hidden">
-                <Button
-                  variant={viewMode === "cards" ? "default" : "ghost"}
-                  size="icon"
-                  className="h-9 w-9 rounded-none"
-                  onClick={() => setViewMode("cards")}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  size="icon"
-                  className="h-9 w-9 rounded-none"
-                  onClick={() => setViewMode("list")}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b">
+          <PageHeader
+            title="Metas e indicadores"
+            subtitle="Clique para ver detalhes ou use o botão para cadastrar"
+            selectedUnit={selectedUnit}
+            onUnitChange={(v) => { setSelectedUnit(v); }}
+            action={
+              <div className="flex items-center gap-2">
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger className="w-[140px] h-9 text-xs">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todos">Todos os tipos</SelectItem>
+                    <SelectItem value="QNT">Quantitativa</SelectItem>
+                    <SelectItem value="QLT">Qualitativa</SelectItem>
+                    <SelectItem value="DOC">Documental</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleNew}>Nova meta</Button>
+                <div className="flex items-center border rounded-md overflow-hidden">
+                  <Button
+                    variant={viewMode === "cards" ? "default" : "ghost"}
+                    size="icon"
+                    className="h-9 w-9 rounded-none"
+                    onClick={() => setViewMode("cards")}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="icon"
+                    className="h-9 w-9 rounded-none"
+                    onClick={() => setViewMode("list")}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          }
-        />
+            }
+          />
+        </div>
+
+        <div className="pt-4">
 
         {loading ? (
           <div className="py-12 text-center text-sm text-muted-foreground">Carregando metas...</div>
