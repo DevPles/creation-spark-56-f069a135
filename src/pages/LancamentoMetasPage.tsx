@@ -1217,7 +1217,10 @@ const LancamentoMetasPage = () => {
               const monthLabel = FILTER_MONTHS.find(m => m.value === String(month))?.label || "";
 
               // Build a map: goalId -> { day -> value }
-              const heatmapGoals = goals.filter(g => !selectedUnit || g.facility_unit === selectedUnit);
+              const heatmapGoals = goals
+                .filter(g => !selectedUnit || g.facility_unit === selectedUnit)
+                .filter(g => filterSector === "todos" || g.sector === filterSector)
+                .filter(g => filterGoal === "todos" || g.id === filterGoal);
               const goalDayMap: Record<string, Record<number, number>> = {};
 
               heatmapGoals.forEach(g => {
