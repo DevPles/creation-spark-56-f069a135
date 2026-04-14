@@ -922,6 +922,37 @@ const LancamentoMetasPage = () => {
                 <SelectContent>{FILTER_MONTHS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            {/* Tipo — apenas Metas e Mapa Térmico */}
+            {(activeTab === "lancar-metas" || activeTab === "mapa-termico") && (
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-1">Tipo</label>
+                <Select value={filterType} onValueChange={(v) => { setFilterType(v); setFilterGoal("todos"); }}>
+                  <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="QNT">Quantitativa</SelectItem>
+                    <SelectItem value="QLT">Qualitativa</SelectItem>
+                    <SelectItem value="DOC">Documental</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* Meta específica — apenas Metas */}
+            {activeTab === "lancar-metas" && (
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-1">Meta</label>
+                <Select value={filterGoal} onValueChange={setFilterGoal}>
+                  <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas</SelectItem>
+                    {goals
+                      .filter(g => filterType === "todos" || g.type === filterType)
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <Button variant="outline" size="sm" className="h-9" onClick={() => setPdfModalOpen(true)}>
               Gerar PDF
             </Button>
