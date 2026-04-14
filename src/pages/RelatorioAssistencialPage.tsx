@@ -253,7 +253,15 @@ const RelatorioAssistencialPage = () => {
     toast.success(`Nova versão v${nextVersion} criada como rascunho`);
   };
 
-  const openReport = async (report: ReportRecord) => {
+  const deleteReport = async (reportId: string) => {
+    await supabase.from("report_attachments").delete().eq("report_id", reportId);
+    await supabase.from("report_section_entries").delete().eq("report_id", reportId);
+    await supabase.from("report_sections").delete().eq("report_id", reportId);
+    await supabase.from("reports").delete().eq("id", reportId);
+    await loadReports();
+    toast.success("Relatório excluído");
+  };
+
     setSelectedContractId(report.contract_id);
     setRefMonth(report.reference_month);
     setRefYear(report.reference_year);
