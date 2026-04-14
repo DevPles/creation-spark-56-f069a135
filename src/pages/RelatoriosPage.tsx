@@ -1395,43 +1395,61 @@ const RelatoriosPage = () => {
           </div>
         );
       }
-      case 7: // Risk distribution per goal
+      case 7: { // Risk distribution per goal — auto-cycle by sector
+        const riskSectors = allSectors;
+        const riskCycleIdx = sectorCycleIndex % Math.max(riskSectors.length, 1);
+        const riskActiveSector = riskSectors[riskCycleIdx] || "Sem setor";
+        const sectorRiskGoals = filteredGoals.filter(g => (g.sector || "Sem setor") === riskActiveSector && g.risk > 0).sort((a, b) => b.risk - a.risk);
+        const sectorTotalRisk = sectorRiskGoals.reduce((s, g) => s + g.risk, 0);
+        const pieColors = ["hsl(var(--destructive))", "hsl(38 92% 50%)", "hsl(var(--primary))", "hsl(280 70% 50%)", "hsl(190 80% 45%)", "hsl(340 75% 55%)", "hsl(160 60% 40%)", "hsl(25 85% 55%)"];
+        const riskPieData = sectorRiskGoals.map(g => ({ name: g.name.length > 20 ? g.name.slice(0, 20) + "…" : g.name, value: g.risk }));
         return (
           <div>
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Distribuição de risco por meta</h3>
-            <p className="text-xs text-muted-foreground mb-4">Impacto financeiro individual — {contract.unit}</p>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-card rounded-lg border border-border p-5">
-                 <ResponsiveContainer width="100%" height={chartH}>
-                  <PieChart>
-                    <Pie data={filteredGoals.filter(g => g.risk > 0).map(g => ({ name: g.name.length > 20 ? g.name.slice(0, 20) + "…" : g.name, value: g.risk }))} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3}>
-                      {filteredGoals.filter(g => g.risk > 0).map((_, i) => <Cell key={i} fill={["hsl(var(--destructive))", "hsl(38 92% 50%)", "hsl(var(--primary))", "hsl(280 70% 50%)", "hsl(190 80% 45%)", "hsl(340 75% 55%)", "hsl(160 60% 40%)", "hsl(25 85% 55%)"][i % 8]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatFullCurrency(v)} />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="space-y-2">
-                {[...filteredGoals].sort((a, b) => b.risk - a.risk).filter(g => g.risk > 0).map(g => {
-                  const pct = stats.totalRisk > 0 ? (g.risk / stats.totalRisk * 100) : 0;
-                  return (
-                    <div key={g.id} className="flex items-center gap-3">
-                      <span className="text-xs text-foreground w-40 truncate">{g.name}</span>
-                      <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-destructive/70 rounded-full" style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="text-xs font-medium text-destructive w-16 text-right">{formatCurrency(g.risk)}</span>
-                    </div>
-                  );
-                })}
-              </div>
+            <p className="text-xs text-muted-foreground mb-1">Impacto financeiro individual — {contract.unit}</p>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-sm font-semibold text-primary">{riskActiveSector}</span>
+              <span className="text-xs text-muted-foreground">({sectorRiskGoals.length} metas com risco · {formatCurrency(sectorTotalRisk)})</span>
+              <span className="text-[10px] text-muted-foreground ml-auto">{riskCycleIdx + 1}/{riskSectors.length} setores</span>
             </div>
+            {sectorRiskGoals.length === 0 ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma meta com risco neste setor.</div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-card rounded-lg border border-border p-5">
+                  <ResponsiveContainer width="100%" height={chartH}>
+                    <PieChart>
+                      <Pie data={riskPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3}
+                        label={({ name, value }) => `${name}: ${formatCurrency(value)}`}>
+                        {riskPieData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+                      </Pie>
+                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatFullCurrency(v)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-2">
+                  {sectorRiskGoals.map(g => {
+                    const pct = sectorTotalRisk > 0 ? (g.risk / sectorTotalRisk * 100) : 0;
+                    return (
+                      <div key={g.id} className="flex items-center gap-3">
+                        <span className="text-xs text-foreground w-40 truncate">{g.name}</span>
+                        <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-destructive/70 rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-xs font-medium text-destructive w-16 text-right">{formatCurrency(g.risk)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         );
-      case 8: { // Meta vs Realizado — split by sector
-        const mvSectors = [...new Set(filteredGoals.map(g => g.sector || "Sem setor"))].sort();
-        const mvActiveSector = sectorFilter === "todos" ? mvSectors[0] || "Sem setor" : sectorFilter;
+      }
+      case 8: { // Meta vs Realizado — auto-cycle by sector
+        const mvSectors = allSectors;
+        const mvCycleIdx = sectorCycleIndex % Math.max(mvSectors.length, 1);
+        const mvActiveSector = mvSectors[mvCycleIdx] || "Sem setor";
         const mvGoals = filteredGoals
           .filter(g => (g.sector || "Sem setor") === mvActiveSector)
           .sort((a, b) => (b.current > 0 ? 1 : 0) - (a.current > 0 ? 1 : 0) || b.current - a.current);
@@ -1443,14 +1461,11 @@ const RelatoriosPage = () => {
         return (
           <div>
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Meta vs Realizado</h3>
-            <p className="text-xs text-muted-foreground mb-3">Comparação direta — {contract.unit} • {mvActiveSector}</p>
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {mvSectors.map(s => (
-                <button key={s} onClick={() => setSectorFilter(s)}
-                  className={`text-[11px] px-3 py-1.5 rounded-full font-medium transition-all ${mvActiveSector === s ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 text-muted-foreground hover:bg-muted"}`}>
-                  {s}
-                </button>
-              ))}
+            <p className="text-xs text-muted-foreground mb-1">Comparação direta — {contract.unit}</p>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-sm font-semibold text-primary">{mvActiveSector}</span>
+              <span className="text-xs text-muted-foreground">({mvGoals.length} metas)</span>
+              <span className="text-[10px] text-muted-foreground ml-auto">{mvCycleIdx + 1}/{mvSectors.length} setores</span>
             </div>
             <div className="bg-card rounded-lg border border-border p-4">
               <ResponsiveContainer width="100%" height={Math.max(isCarouselFullscreen ? 380 : 260, mvGoals.length * 28)}>
@@ -1458,9 +1473,10 @@ const RelatoriosPage = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                   <YAxis type="category" dataKey="name" width={180} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="meta" fill="hsl(var(--muted-foreground) / 0.25)" radius={[0, 4, 4, 0]} name="Meta" />
-                  <Bar dataKey="realizado" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} name="Realizado" label={{ position: "right", fontSize: 9, fill: "hsl(var(--primary))" }} />
+                  <Bar dataKey="meta" fill="hsl(var(--muted-foreground) / 0.25)" radius={[0, 4, 4, 0]} name="Meta"
+                    label={{ position: "right", fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                  <Bar dataKey="realizado" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} name="Realizado"
+                    label={{ position: "right", fontSize: 9, fill: "hsl(var(--primary))", fontWeight: 600 }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </BarChart>
               </ResponsiveContainer>
