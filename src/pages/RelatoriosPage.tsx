@@ -885,7 +885,7 @@ const RelatoriosPage = () => {
       const performance = periodMonths.map(ym => {
         const monthLabel = MONTH_LABELS[ym.split("-")[1]] || ym;
         // Entries in this month (period format: "2024-03" or "2024-03-15")
-        const monthEntries = unitEntries.filter(e => (e.period as string).startsWith(ym));
+        const monthEntries = unitEntries.filter(e => entryMatchesYM(e.period as string, ym));
         if (monthEntries.length === 0) {
           return { month: monthLabel, atingidas: 0, parciais: 0, naoAtingidas: 0 };
         }
@@ -918,7 +918,7 @@ const RelatoriosPage = () => {
       // Real riskTrend: compute gap-based risk per month
       const riskTrend = periodMonths.map(ym => {
         const monthLabel = MONTH_LABELS[ym.split("-")[1]] || ym;
-        const monthEntries = unitEntries.filter(e => (e.period as string).startsWith(ym));
+        const monthEntries = unitEntries.filter(e => entryMatchesYM(e.period as string, ym));
         const goalTotals: Record<string, number> = {};
         monthEntries.forEach(e => {
           goalTotals[e.goal_id] = (goalTotals[e.goal_id] || 0) + Number(e.value);
