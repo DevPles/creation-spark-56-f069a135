@@ -609,12 +609,79 @@ const RelatorioAssistencialPage = () => {
 
   const addCustomSection = () => {
     if (!newSectionTitle.trim() || isLocked) return;
-    const order = sections.length + 1;
+    const parentSec = newSectionParent ? sections.find(s => s.key === newSectionParent) : null;
+    let order: number;
+    let title: string;
+    if (parentSec) {
+      // Count existing subtopics under this parent
+      const existingSubs = sections.filter(s => s.parentKey === parentSec.key);
+      const subIdx = existingSubs.length + 1;
+      const parentNum = parentSec.title.match(/^(\d+)\./)?.[1] || String(parentSec.order);
+      title = `${parentNum}.${subIdx} ${newSectionTitle}`;
+      // Insert right after parent and its subtopics
+      const parentIdx = sections.indexOf(parentSec);
+      order = parentSec.order + (subIdx * 0.1);
+    } else {
+      order = sections.filter(s => !s.parentKey).length + 1;
+      title = `${String(order).padStart(2, "0")}. ${newSectionTitle}`;
+    }
     const key = `custom_${Date.now()}`;
-    setSections(prev => [...prev, { key, title: `${String(order).padStart(2, "0")}. ${newSectionTitle}`, description: newSectionDesc || "Seção personalizada", order, custom: true }]);
+    const newSec: SectionDef = { key, title, description: newSectionDesc || "Seção personalizada", order, custom: true, parentKey: newSectionParent || undefined };
+
+    setSections(prev => {
+      if (parentSec) {
+        // Insert after parent and its existing subtopics
+        const parentIdx = prev.findIndex(s => s.key === parentSec.key);
+        const lastSubIdx = prev.reduce((last, s, i) => s.parentKey === parentSec.key ? i : last, parentIdx);
+        const insertAt = lastSubIdx + 1;
+        return [...prev.slice(0, insertAt), newSec, ...prev.slice(insertAt)];
+      }
+      return [...prev, newSec];
+    });
     setPdfSections(prev => new Set([...prev, key]));
-    setNewSectionTitle(""); setNewSectionDesc(""); setAddSectionOpen(false);
+    setNewSectionTitle(""); setNewSectionDesc(""); setNewSectionParent(""); setAddSectionOpen(false);
     toast.success("Seção adicionada");
+  };
+
+  const deleteSection = (sectionKey: string) => {
+    const sec = sections.find(s => s.key === sectionKey);
+    if (!sec) return;
+    // Also remove child subtopics if deleting a parent
+    const keysToRemove = new Set([sectionKey, ...sections.filter(s => s.parentKey === sectionKey).map(s => s.key)]);
+    setSections(prev => prev.filter(s => !keysToRemove.has(s.key)));
+    setPdfSections(prev => { const next = new Set(prev); keysToRemove.forEach(k => next.delete(k)); return next; });
+    if (keysToRemove.has(activeSection)) setActiveSection(sections[0]?.key || "capa");
+    toast.success("Seção removida");
+  };
+
+  const moveToSubtopic = (sectionKey: string, parentKey: string) => {
+    setSections(prev => {
+      const sec = prev.find(s => s.key === sectionKey);
+      const parent = prev.find(s => s.key === parentKey);
+      if (!sec || !parent) return prev;
+      const existingSubs = prev.filter(s => s.parentKey === parentKey);
+      const subIdx = existingSubs.length + 1;
+      const parentNum = parent.title.match(/^(\d+)\./)?.[1] || String(parent.order);
+      const rawTitle = sec.title.replace(/^\d+[\.\d]*\s*/, "");
+      const updated = { ...sec, parentKey, title: `${parentNum}.${subIdx} ${rawTitle}`, order: parent.order + (subIdx * 0.1) };
+      const without = prev.filter(s => s.key !== sectionKey);
+      const parentIdx = without.findIndex(s => s.key === parentKey);
+      const lastSubIdx = without.reduce((last, s, i) => s.parentKey === parentKey ? i : last, parentIdx);
+      return [...without.slice(0, lastSubIdx + 1), updated, ...without.slice(lastSubIdx + 1)];
+    });
+    toast.success("Seção movida como subtópico");
+  };
+
+  const promoteToTopic = (sectionKey: string) => {
+    setSections(prev => {
+      const sec = prev.find(s => s.key === sectionKey);
+      if (!sec) return prev;
+      const topLevelCount = prev.filter(s => !s.parentKey && s.key !== sectionKey).length + 1;
+      const rawTitle = sec.title.replace(/^\d+[\.\d]*\s*/, "");
+      const updated = { ...sec, parentKey: undefined, title: `${String(topLevelCount).padStart(2, "0")}. ${rawTitle}`, order: topLevelCount };
+      return prev.map(s => s.key === sectionKey ? updated : s);
+    });
+    toast.success("Seção promovida a tópico");
   };
 
   // ═══ COMPUTED ═══
