@@ -1,0 +1,1 @@
+UPDATE goals SET sector = 'Laboratório' WHERE sector = 'SADT';
