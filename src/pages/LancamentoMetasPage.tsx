@@ -238,8 +238,8 @@ const LancamentoMetasPage = () => {
       startY,
       head: [["Meta", "Tipo", "Alvo", "Realizado", "Faltam", "Atingimento", "Peso", "Lançam."]],
       body: metaRows.map(r => [
-        r.name, r.unit, `${r.target}${r.unit}`, `${r.total.toFixed(1)}${r.unit}`,
-        `${r.remaining.toFixed(1)}${r.unit}`, `${r.pct}%`, `${(r.weight * 100).toFixed(0)}%`, String(r.entries),
+         r.name, r.unit, `${r.target} ${r.unit}`, `${r.total.toFixed(1)} ${r.unit}`,
+        `${r.remaining.toFixed(1)} ${r.unit}`, `${r.pct}%`, `${(r.weight * 100).toFixed(0)}%`, String(r.entries),
       ]),
       headStyles: { fillColor: primary, textColor: [255, 255, 255], fontSize: 7, fontStyle: "bold", cellPadding: 2 },
       bodyStyles: { fontSize: 7, textColor: [40, 40, 40], cellPadding: 2 },
@@ -963,7 +963,7 @@ const LancamentoMetasPage = () => {
                             <div className="flex items-start justify-between mb-1">
                               <div>
                                 <h3 className="font-display font-semibold text-foreground text-sm">{goal.name}</h3>
-                                <p className="text-xs text-muted-foreground mt-0.5">Meta: {goal.target}{goal.unit} — Peso: {(goal.weight * 100).toFixed(0)}%</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">Meta: {goal.target} {goal.unit} — Peso: {(goal.weight * 100).toFixed(0)}%</p>
                               </div>
                               <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{goal.type}</span>
                             </div>
@@ -1337,7 +1337,7 @@ const LancamentoMetasPage = () => {
                                 </div>
                                 <span className={`status-badge text-[9px] mt-0.5 ${goal.type === "QNT" ? "bg-accent text-accent-foreground" : goal.type === "QLT" ? "status-success" : "status-warning"}`}>{goal.type}</span>
                               </td>
-                              <td className="text-center p-1 text-muted-foreground font-medium">{goal.target}{goal.unit}</td>
+                              <td className="text-center p-1 text-muted-foreground font-medium">{goal.target} {goal.unit}</td>
                               {days.map(d => {
                                 const val = dayEntries[d];
                                 return (
