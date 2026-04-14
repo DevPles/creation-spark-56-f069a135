@@ -175,7 +175,7 @@ const MetasPage = () => {
             onUnitChange={(v) => { setSelectedUnit(v); setSelectedGoalName("Todas"); }}
             action={
               <div className="flex items-center gap-2">
-                <Select value={selectedType} onValueChange={setSelectedType}>
+                <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setSelectedGoalName("Todas"); }}>
                   <SelectTrigger className="w-[140px] h-9 text-xs">
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
@@ -184,6 +184,22 @@ const MetasPage = () => {
                     <SelectItem value="QNT">Quantitativa</SelectItem>
                     <SelectItem value="QLT">Qualitativa</SelectItem>
                     <SelectItem value="DOC">Documental</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedGoalName} onValueChange={setSelectedGoalName}>
+                  <SelectTrigger className="w-[180px] h-9 text-xs">
+                    <SelectValue placeholder="Meta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todas">Todas as metas</SelectItem>
+                    {[...new Set(
+                      goals
+                        .filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+                        .filter(g => selectedType === "Todos" || g.type === selectedType)
+                        .map(g => g.name)
+                    )].sort().map(name => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Button onClick={handleNew}>Nova meta</Button>
