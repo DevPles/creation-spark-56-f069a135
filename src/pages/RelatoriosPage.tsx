@@ -1349,9 +1349,10 @@ const RelatoriosPage = () => {
             </div>
           </div>
         );
-      case 6: { // Individual goal attainment — split by sector with tabs
-        const sectors = [...new Set(filteredGoals.map(g => g.sector || "Sem setor"))].sort();
-        const activeSector = sectorFilter === "todos" ? sectors[0] || "Sem setor" : sectorFilter;
+      case 6: { // Individual goal attainment — auto-cycle by sector
+        const sectors = allSectors;
+        const cycleIdx = sectorCycleIndex % Math.max(sectors.length, 1);
+        const activeSector = sectors[cycleIdx] || "Sem setor";
         const sectorGoals = filteredGoals
           .filter(g => (g.sector || "Sem setor") === activeSector)
           .sort((a, b) => {
@@ -1366,28 +1367,15 @@ const RelatoriosPage = () => {
           current: g.current,
           target: g.target,
         }));
-        // Summary per sector
-        const sectorSummary = sectors.map(s => {
-          const sg = filteredGoals.filter(g => (g.sector || "Sem setor") === s);
-          const avg = sg.length ? Math.round(sg.reduce((sum, g) => sum + getGoalPct(g), 0) / sg.length) : 0;
-          return { sector: s, count: sg.length, avg, withData: sg.filter(g => g.current > 0).length };
-        });
+        const sectorAvg = sectorGoals.length ? Math.round(sectorGoals.reduce((s, g) => s + getGoalPct(g), 0) / sectorGoals.length) : 0;
         return (
           <div>
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Atingimento individual por meta</h3>
-            <p className="text-xs text-muted-foreground mb-3">% realizado vs meta pactuada — {contract.unit} • Agrupado por setor</p>
-            {/* Sector tabs */}
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {sectors.map(s => {
-                const info = sectorSummary.find(ss => ss.sector === s)!;
-                const isActive = activeSector === s;
-                return (
-                  <button key={s} onClick={() => setSectorFilter(s)}
-                    className={`text-[11px] px-3 py-1.5 rounded-full font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 text-muted-foreground hover:bg-muted"}`}>
-                    {s} <span className="opacity-70">({info.count})</span> <span className={`ml-0.5 ${info.avg >= 90 ? "text-emerald-400" : info.avg >= 60 ? "text-amber-400" : "text-red-400"}`}>{info.avg}%</span>
-                  </button>
-                );
-              })}
+            <p className="text-xs text-muted-foreground mb-1">% realizado vs meta pactuada — {contract.unit}</p>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-sm font-semibold text-primary">{activeSector}</span>
+              <span className="text-xs text-muted-foreground">({sectorGoals.length} metas · média {sectorAvg}%)</span>
+              <span className="text-[10px] text-muted-foreground ml-auto">{cycleIdx + 1}/{sectors.length} setores</span>
             </div>
             <div className="bg-card rounded-lg border border-border p-4">
               <ResponsiveContainer width="100%" height={Math.max(isCarouselFullscreen ? 380 : 250, sectorGoals.length * 28)}>
@@ -1395,8 +1383,8 @@ const RelatoriosPage = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                   <XAxis type="number" domain={[0, 110]} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}%`} />
                   <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number, _: string, props: any) => [`${v}%  (${props.payload.current}/${props.payload.target})`, "Atingimento"]} />
-                  <Bar dataKey="pct" radius={[0, 6, 6, 0]} name="Atingimento">
+                  <Bar dataKey="pct" radius={[0, 6, 6, 0]} name="Atingimento"
+                    label={{ position: "right", fontSize: 10, fill: "hsl(var(--foreground))", fontWeight: 600, formatter: (v: number) => `${v}%` }}>
                     {sectorChartData.map((entry, i) => (
                       <Cell key={i} fill={entry.pct >= 90 ? "hsl(142 71% 45%)" : entry.pct >= 60 ? "hsl(38 92% 50%)" : entry.pct > 0 ? "hsl(var(--destructive))" : "hsl(var(--muted-foreground) / 0.2)"} />
                     ))}
