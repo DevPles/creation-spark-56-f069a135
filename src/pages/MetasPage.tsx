@@ -235,6 +235,14 @@ const MetasPage = () => {
               onView={handleView}
               onEdit={handleEdit}
             />
+          ) : viewMode === "calendar" ? (
+            <GoalCalendarView
+              goals={goals
+                .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+                .filter((g) => selectedType === "Todos" || g.type === selectedType)}
+              onView={handleView}
+              onEdit={handleEdit}
+            />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {goals
