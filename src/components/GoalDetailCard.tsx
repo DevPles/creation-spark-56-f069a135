@@ -77,7 +77,7 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
           </p>
           {endDate && daysRemaining > 0 ? (
             <p className="text-[10px] text-muted-foreground">
-              Meta diária: <span className="font-semibold text-foreground">{dailyGoal.toFixed(2)}{goal.unit}/dia</span> ({daysRemaining} dias restantes)
+              Meta diária: <span className="font-semibold text-foreground">{dailyGoal.toFixed(2)} {goal.unit}/dia</span> ({daysRemaining} dias restantes)
             </p>
           ) : endDate && daysRemaining === 0 ? (
             <p className="text-[10px] text-destructive font-medium">Prazo encerrado</p>
@@ -112,7 +112,7 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
       <div className={`grid ${isAdmin ? "grid-cols-3" : "grid-cols-2"} gap-3 mt-4 pt-3 border-t border-border`}>
         <div>
           <p className="text-[10px] text-muted-foreground">Realizado</p>
-          <p className="font-display font-bold text-foreground text-sm">{goal.current}{goal.unit}</p>
+          <p className="font-display font-bold text-foreground text-sm">{goal.current} {goal.unit}</p>
         </div>
         <div>
           <p className="text-[10px] text-muted-foreground">Meta</p>
