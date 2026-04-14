@@ -1099,11 +1099,26 @@ const RelatoriosPage = () => {
     return (prev - 1 + total) % total;
   }), [TOTAL_SLIDES, TOTAL_FS_SLIDES, isCarouselFullscreen]);
 
+  // Sectors for auto-cycling in slides 6 and 8
+  const allSectors = useMemo(() => [...new Set(filteredGoals.map(g => g.sector || "Sem setor"))].sort(), [filteredGoals]);
+
   useEffect(() => {
     if (isPaused) return;
-    const timer = setInterval(nextSlide, 8000);
+    const activeSlide = isCarouselFullscreen
+      ? (FULLSCREEN_GROUPS[currentSlide] || [])
+      : [currentSlide];
+    const isOnSectorSlide = activeSlide.some(s => s === 6 || s === 8);
+    const interval = isOnSectorSlide ? 5000 : 8000;
+    const timer = setInterval(() => {
+      if (isOnSectorSlide && allSectors.length > 1 && sectorCycleIndex < allSectors.length - 1) {
+        setSectorCycleIndex(prev => prev + 1);
+      } else {
+        setSectorCycleIndex(0);
+        nextSlide();
+      }
+    }, interval);
     return () => clearInterval(timer);
-  }, [isPaused, nextSlide]);
+  }, [isPaused, nextSlide, currentSlide, isCarouselFullscreen, FULLSCREEN_GROUPS, allSectors, sectorCycleIndex]);
 
   useEffect(() => { setCurrentSlide(0); }, [selectedContractId, typeFilter, statusFilter, compareMode]);
 
