@@ -1266,8 +1266,8 @@ const RelatoriosPage = () => {
                   <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                   <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                   <Tooltip formatter={(v: number) => formatFullCurrency(v as number)} contentStyle={tooltipStyle} />
-                  <Line type="monotone" dataKey="risco" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 4 }} name="Risco" />
-                  <Line type="monotone" dataKey="glosa" stroke="hsl(38 92% 50%)" strokeWidth={2} dot={{ r: 4 }} name="Glosa" />
+                  <Line type="monotone" dataKey="risco" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 4 }} name="Risco" label={{ position: "top", fontSize: 9, fill: "hsl(var(--destructive))", formatter: (v: number) => formatCurrency(v) }} />
+                  <Line type="monotone" dataKey="glosa" stroke="hsl(38 92% 50%)" strokeWidth={2} dot={{ r: 4 }} name="Glosa" label={{ position: "bottom", fontSize: 9, fill: "hsl(38 92% 50%)", formatter: (v: number) => formatCurrency(v) }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </LineChart>
               </ResponsiveContainer>
