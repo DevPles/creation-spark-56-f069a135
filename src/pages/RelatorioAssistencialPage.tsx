@@ -29,11 +29,6 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area,
 } from "recharts";
-import {
-  CalendarIcon, Plus, Trash2, FileText, BarChart3, Database, CheckCircle2,
-  AlertTriangle, TrendingUp, Users, Shield, Activity, Settings, Download,
-  Eye, EyeOff, GripVertical, Image, Paperclip, Save, ChevronRight, Sparkles,
-} from "lucide-react";
 
 /* ══════════════════════════════════════════════
    Types
@@ -44,8 +39,7 @@ interface SectionDef {
   title: string;
   description: string;
   order: number;
-  icon: React.ReactNode;
-  autoData?: string; // which auto-data source to use
+  autoData?: string;
   custom?: boolean;
 }
 
@@ -74,24 +68,24 @@ const tooltipStyle = { background: "hsl(var(--card))", border: "1px solid hsl(va
    ══════════════════════════════════════════════ */
 
 const DEFAULT_SECTIONS: SectionDef[] = [
-  { key: "info_contrato", title: "01. Informações do Contrato", description: "Contratante, contratado, CNPJ, unidade gestora, CNES.", order: 1, icon: <FileText className="w-3.5 h-3.5" />, autoData: "contract" },
-  { key: "caract_unidade", title: "02. Caracterização da Unidade", description: "Infraestrutura, serviços terceirizados, especialidades.", order: 2, icon: <Database className="w-3.5 h-3.5" />, autoData: "beds" },
-  { key: "implantacao_processos", title: "03. Implantação dos Processos", description: "Evolução e melhoria nos processos.", order: 3, icon: <Settings className="w-3.5 h-3.5" /> },
-  { key: "doc_regulatoria", title: "04. Documentação Regulatória", description: "Alvarás, licenças e registros profissionais.", order: 4, icon: <Shield className="w-3.5 h-3.5" /> },
-  { key: "doc_operacional", title: "05. Documentação Operacional", description: "POPs e instruções operacionais.", order: 5, icon: <FileText className="w-3.5 h-3.5" /> },
-  { key: "recursos_humanos", title: "06. Recursos Humanos", description: "Contratações, desligamentos, turnover.", order: 6, icon: <Users className="w-3.5 h-3.5" /> },
-  { key: "seg_trabalho", title: "07. Segurança do Trabalho", description: "Acidentes e segurança ocupacional.", order: 7, icon: <Shield className="w-3.5 h-3.5" /> },
-  { key: "treinamentos", title: "08. Treinamentos", description: "Horas de treinamento e participantes.", order: 8, icon: <Users className="w-3.5 h-3.5" /> },
-  { key: "humanizacao", title: "09. Humanização", description: "Ações de humanização e acolhimento.", order: 9, icon: <Activity className="w-3.5 h-3.5" /> },
-  { key: "producao_assistencial", title: "10. Produção Assistencial", description: "Metas por setor, atingimento e produção mensal.", order: 10, icon: <BarChart3 className="w-3.5 h-3.5" />, autoData: "goals" },
-  { key: "indicadores_qualidade", title: "11. Indicadores de Qualidade", description: "SAU, comissões, equipe multidisciplinar.", order: 11, icon: <CheckCircle2 className="w-3.5 h-3.5" />, autoData: "sau" },
-  { key: "plano_acao", title: "12. Plano de Ação", description: "Tratativas, prazos e status de ação corretiva.", order: 12, icon: <AlertTriangle className="w-3.5 h-3.5" />, autoData: "actionPlans" },
-  { key: "indicadores_acompanhamento", title: "13. Indicadores de Acompanhamento", description: "Indicadores de acompanhamento dos serviços.", order: 13, icon: <TrendingUp className="w-3.5 h-3.5" /> },
-  { key: "tecnologia_info", title: "14. Tecnologia de Informação", description: "Sistemas, prontuário eletrônico e TI.", order: 14, icon: <Database className="w-3.5 h-3.5" /> },
-  { key: "servicos_terceirizados", title: "15. Serviços Terceirizados", description: "Serviços terceirizados contratados.", order: 15, icon: <Users className="w-3.5 h-3.5" /> },
-  { key: "execucao_financeira", title: "16. Execução Financeira", description: "Rubricas, faturamento e execução orçamentária.", order: 16, icon: <TrendingUp className="w-3.5 h-3.5" />, autoData: "rubricas" },
-  { key: "eventos_campanhas", title: "17. Eventos e Campanhas", description: "Eventos e atividades realizadas.", order: 17, icon: <Sparkles className="w-3.5 h-3.5" /> },
-  { key: "consideracoes_finais", title: "18. Considerações Finais", description: "Conclusões e recomendações.", order: 18, icon: <FileText className="w-3.5 h-3.5" /> },
+  { key: "info_contrato", title: "01. Informações do Contrato", description: "Contratante, contratado, CNPJ, unidade gestora, CNES.", order: 1, autoData: "contract" },
+  { key: "caract_unidade", title: "02. Caracterização da Unidade", description: "Infraestrutura, serviços terceirizados, especialidades.", order: 2, autoData: "beds" },
+  { key: "implantacao_processos", title: "03. Implantação dos Processos", description: "Evolução e melhoria nos processos.", order: 3 },
+  { key: "doc_regulatoria", title: "04. Documentação Regulatória", description: "Alvarás, licenças e registros profissionais.", order: 4 },
+  { key: "doc_operacional", title: "05. Documentação Operacional", description: "POPs e instruções operacionais.", order: 5 },
+  { key: "recursos_humanos", title: "06. Recursos Humanos", description: "Contratações, desligamentos, turnover.", order: 6 },
+  { key: "seg_trabalho", title: "07. Segurança do Trabalho", description: "Acidentes e segurança ocupacional.", order: 7 },
+  { key: "treinamentos", title: "08. Treinamentos", description: "Horas de treinamento e participantes.", order: 8 },
+  { key: "humanizacao", title: "09. Humanização", description: "Ações de humanização e acolhimento.", order: 9 },
+  { key: "producao_assistencial", title: "10. Produção Assistencial", description: "Metas por setor, atingimento e produção mensal.", order: 10, autoData: "goals" },
+  { key: "indicadores_qualidade", title: "11. Indicadores de Qualidade", description: "SAU, comissões, equipe multidisciplinar.", order: 11, autoData: "sau" },
+  { key: "plano_acao", title: "12. Plano de Ação", description: "Tratativas, prazos e status de ação corretiva.", order: 12, autoData: "actionPlans" },
+  { key: "indicadores_acompanhamento", title: "13. Indicadores de Acompanhamento", description: "Indicadores de acompanhamento dos serviços.", order: 13 },
+  { key: "tecnologia_info", title: "14. Tecnologia de Informação", description: "Sistemas, prontuário eletrônico e TI.", order: 14 },
+  { key: "servicos_terceirizados", title: "15. Serviços Terceirizados", description: "Serviços terceirizados contratados.", order: 15 },
+  { key: "execucao_financeira", title: "16. Execução Financeira", description: "Rubricas, faturamento e execução orçamentária.", order: 16, autoData: "rubricas" },
+  { key: "eventos_campanhas", title: "17. Eventos e Campanhas", description: "Eventos e atividades realizadas.", order: 17 },
+  { key: "consideracoes_finais", title: "18. Considerações Finais", description: "Conclusões e recomendações.", order: 18 },
 ];
 
 const CHART_COLORS = [
@@ -218,7 +212,7 @@ const RelatorioAssistencialPage = () => {
     const key = `custom_${Date.now()}`;
     setSections(prev => [...prev, {
       key, title: `${String(order).padStart(2, "0")}. ${newSectionTitle}`,
-      description: newSectionDesc || "Seção personalizada", order, icon: <FileText className="w-3.5 h-3.5" />, custom: true,
+      description: newSectionDesc || "Seção personalizada", order, custom: true,
     }]);
     setPdfSections(prev => new Set([...prev, key]));
     setNewSectionTitle("");
@@ -421,7 +415,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="bg-secondary/30 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2 mb-2">
-              <Database className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">Dados automáticos do contrato</span>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -450,7 +443,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">Dados de Produção Assistencial — {period}</span>
               <Badge variant="secondary" className="text-[10px]">{goalSummary.total} metas</Badge>
             </div>
@@ -546,7 +538,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">Plano de Ação — Dados do sistema</span>
               <Badge variant="secondary" className="text-[10px]">{actionPlanSummary.total} tratativas</Badge>
             </div>
@@ -620,7 +611,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">SAU — Serviço de Atendimento ao Usuário</span>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
@@ -666,7 +656,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">Capacidade de Leitos — {unit}</span>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -706,7 +695,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">Execução Financeira — {period}</span>
             </div>
             <div className="bg-card rounded-lg p-3 border border-border text-center">
@@ -982,8 +970,7 @@ const RelatorioAssistencialPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
+            <h1 className="font-display text-xl font-bold text-foreground">
               Relatório Assistencial
             </h1>
             <p className="text-xs text-muted-foreground mt-1">
@@ -1009,7 +996,6 @@ const RelatorioAssistencialPage = () => {
 
         {!selectedContract ? (
           <div className="kpi-card p-12 text-center">
-            <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-muted-foreground">Selecione um contrato para montar o relatório assistencial.</p>
           </div>
         ) : (
@@ -1023,7 +1009,7 @@ const RelatorioAssistencialPage = () => {
                     <Badge variant="secondary" className="text-[10px]">{filledCount}/{visibleSections.length}</Badge>
                     <Dialog open={addSectionOpen} onOpenChange={setAddSectionOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0"><Plus className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]">+</Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md">
                         <DialogHeader>
@@ -1073,18 +1059,12 @@ const RelatorioAssistencialPage = () => {
                             "hover:bg-muted text-foreground"
                           }`}
                         >
-                          <span className={`shrink-0 ${isActive ? "text-primary-foreground" : "text-muted-foreground"}`}>
-                            {sec.icon}
-                          </span>
                           <span className={`w-2 h-2 rounded-full shrink-0 ${
                             filled && hasAuto ? "bg-emerald-500 ring-1 ring-emerald-500/30" :
                             filled ? "bg-emerald-500" :
                             isActive ? "bg-primary-foreground/40" : "bg-muted-foreground/20"
                           }`} />
                           <span className="truncate flex-1">{sec.title}</span>
-                          {hasAuto && !isActive && (
-                            <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
-                          )}
                         </button>
                       );
                     })}
@@ -1096,7 +1076,7 @@ const RelatorioAssistencialPage = () => {
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="w-full text-xs">
-                        <Settings className="w-3 h-3 mr-1" /> Configurar PDF
+                        Configurar PDF
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-auto">
@@ -1128,9 +1108,7 @@ const RelatorioAssistencialPage = () => {
                             />
                             <span className="text-xs">{sec.title}</span>
                             {sec.custom && (
-                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0 ml-auto text-destructive" onClick={() => removeSection(sec.key)}>
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
+                              <button className="h-5 w-5 p-0 ml-auto text-destructive text-[10px]" onClick={() => removeSection(sec.key)}>✕</button>
                             )}
                           </div>
                         ))}
@@ -1139,7 +1117,7 @@ const RelatorioAssistencialPage = () => {
                   </Dialog>
 
                   <Button onClick={handleExportPdf} disabled={generating} className="w-full" size="sm">
-                    <Download className="w-3.5 h-3.5 mr-1" />
+                    {generating ? "Gerando PDF..." : "Gerar PDF do Relatório"}
                     {generating ? "Gerando PDF..." : "Gerar PDF do Relatório"}
                   </Button>
                 </div>
@@ -1157,27 +1135,19 @@ const RelatorioAssistencialPage = () => {
                   transition={{ duration: 0.15 }}
                   className="bg-card rounded-xl border border-border shadow-sm"
                 >
-                  {/* Section header */}
                   <div className="p-5 border-b border-border">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                          {activeSec?.icon}
-                        </div>
-                        <div>
-                          <h2 className="text-base font-bold text-foreground">{activeSec?.title}</h2>
-                          <p className="text-xs text-muted-foreground">{activeSec?.description}</p>
-                        </div>
+                      <div>
+                        <h2 className="text-base font-bold text-foreground">{activeSec?.title}</h2>
+                        <p className="text-xs text-muted-foreground">{activeSec?.description}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {activeSec?.autoData && (
-                          <Badge variant="outline" className="text-[10px] gap-1">
-                            <Sparkles className="w-3 h-3 text-amber-500" />
+                          <Badge variant="outline" className="text-[10px]">
                             Dados automáticos
                           </Badge>
                         )}
                         <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => handleSaveSection(activeSection)} disabled={saving}>
-                          <Save className="w-3 h-3 mr-1" />
                           {saving ? "Salvando..." : "Salvar"}
                         </Button>
                       </div>
@@ -1199,8 +1169,7 @@ const RelatorioAssistencialPage = () => {
 
                     {/* Content editor */}
                     <div>
-                      <Label className="text-xs font-semibold mb-2 block flex items-center gap-1">
-                        <FileText className="w-3 h-3" />
+                      <Label className="text-xs font-semibold mb-2 block">
                         Conteúdo Textual
                       </Label>
                       <Textarea
@@ -1216,8 +1185,8 @@ const RelatorioAssistencialPage = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {/* Images */}
                       <div>
-                        <Label className="text-xs font-semibold mb-2 block flex items-center gap-1">
-                          <Image className="w-3 h-3" /> Imagens
+                        <Label className="text-xs font-semibold mb-2 block">
+                          Imagens
                         </Label>
                         {activeImages.length > 0 && (
                           <div className="grid grid-cols-2 gap-2 mb-2">
@@ -1233,13 +1202,13 @@ const RelatorioAssistencialPage = () => {
                         )}
                         <input ref={imageInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleFileUpload(e.target.files, "image")} />
                         <Button variant="outline" size="sm" className="text-xs w-full" onClick={() => imageInputRef.current?.click()} disabled={uploading}>
-                          <Image className="w-3 h-3 mr-1" /> {uploading ? "Enviando..." : "Inserir imagens"}
+                          {uploading ? "Enviando..." : "Inserir imagens"}
                         </Button>
                       </div>
                       {/* Files */}
                       <div>
-                        <Label className="text-xs font-semibold mb-2 block flex items-center gap-1">
-                          <Paperclip className="w-3 h-3" /> Anexos (PDF, Excel, etc.)
+                        <Label className="text-xs font-semibold mb-2 block">
+                          Anexos (PDF, Excel, etc.)
                         </Label>
                         {activeFiles.length > 0 && (
                           <div className="space-y-1 mb-2">
@@ -1249,7 +1218,7 @@ const RelatorioAssistencialPage = () => {
                                   📎 {file.file_name}
                                 </a>
                                 <Button variant="ghost" size="sm" className="h-5 text-[10px] text-destructive" onClick={() => handleDeleteAttachment(file.id)}>
-                                  <Trash2 className="w-3 h-3" />
+                                  ✕
                                 </Button>
                               </div>
                             ))}
@@ -1257,7 +1226,7 @@ const RelatorioAssistencialPage = () => {
                         )}
                         <input ref={fileInputRef} type="file" accept=".pdf,.xlsx,.xls,.doc,.docx,.csv" multiple className="hidden" onChange={e => handleFileUpload(e.target.files, "document")} />
                         <Button variant="outline" size="sm" className="text-xs w-full" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                          <Paperclip className="w-3 h-3 mr-1" /> {uploading ? "Enviando..." : "Inserir anexo"}
+                          {uploading ? "Enviando..." : "Inserir anexo"}
                         </Button>
                       </div>
                     </div>
