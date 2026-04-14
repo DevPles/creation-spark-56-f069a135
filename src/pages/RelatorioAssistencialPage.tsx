@@ -27,25 +27,30 @@ import {
 
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
+// Status flow rules
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  rascunho: ["em_revisao"],
+  em_revisao: ["rascunho", "fechado"],
+  fechado: ["exportado"],
+  exportado: [],
+};
+
 const RelatorioAssistencialPage = () => {
   const navigate = useNavigate();
   const { contracts } = useContracts();
   const { user } = useAuth();
   const userId = user?.id || "";
 
-  // ─── View mode: listing vs editor ───
   const [view, setView] = useState<"listing" | "editor">("listing");
   const [selectedContractId, setSelectedContractId] = useState("");
   const [refMonth, setRefMonth] = useState(() => new Date().getMonth() + 1);
   const [refYear, setRefYear] = useState(() => new Date().getFullYear());
 
-  // ─── Reports listing ───
   const [reports, setReports] = useState<ReportRecord[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchText, setSearchText] = useState("");
 
-  // ─── Current report ───
   const [currentReport, setCurrentReport] = useState<ReportRecord | null>(null);
   const [sections, setSections] = useState<SectionDef[]>(DEFAULT_SECTIONS);
   const [activeSection, setActiveSection] = useState(DEFAULT_SECTIONS[0].key);
@@ -58,6 +63,10 @@ const RelatorioAssistencialPage = () => {
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newSectionDesc, setNewSectionDesc] = useState("");
   const [replicateOpen, setReplicateOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareReport, setCompareReport] = useState<ReportRecord | null>(null);
+  const [compareSectionsData, setCompareSectionsData] = useState<Record<string, SectionData>>({});
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +78,12 @@ const RelatorioAssistencialPage = () => {
   const { autoData, loading: autoDataLoading } = useAutoData(unit, selectedContractId);
   const { goalsBySector, goalSummary, actionPlanSummary, sauSummary, bedSummary, rubricaSummary } = useComputedSummaries(autoData, refMonth, refYear);
 
-  // ═══════════ REPORTS LISTING ═══════════
+  // ═══ Editability & status rules ═══
+  const isLocked = currentReport?.status === "fechado" || currentReport?.status === "exportado";
+  const isEditable = currentReport ? (currentReport.status === "rascunho" || currentReport.status === "em_revisao") : false;
+  const allowedTransitions = currentReport ? (STATUS_TRANSITIONS[currentReport.status] || []) : [];
+
+  // ═══ REPORTS LISTING ═══
 
   const loadReports = useCallback(async () => {
     setLoadingReports(true);
@@ -82,7 +96,7 @@ const RelatorioAssistencialPage = () => {
 
   const filteredReports = useMemo(() => {
     let r = reports;
-    if (selectedContractId) r = r.filter(rep => rep.contract_id === selectedContractId);
+    if (selectedContractId && selectedContractId !== "all") r = r.filter(rep => rep.contract_id === selectedContractId);
     if (filterStatus !== "all") r = r.filter(rep => rep.status === filterStatus);
     if (searchText) {
       const s = searchText.toLowerCase();
@@ -91,12 +105,11 @@ const RelatorioAssistencialPage = () => {
     return r;
   }, [reports, selectedContractId, filterStatus, searchText]);
 
-  // ═══════════ CREATE / OPEN REPORT ═══════════
+  // ═══ CREATE / OPEN REPORT ═══
 
   const createNewReport = async (replicateFrom?: "blank" | "text" | "all") => {
-    if (!selectedContractId || !unit) { toast.error("Selecione um contrato"); return; }
+    if (!selectedContractId || !unit || selectedContractId === "all") { toast.error("Selecione um contrato"); return; }
 
-    // Find next version
     const existing = reports.filter(r => r.contract_id === selectedContractId && r.facility_unit === unit && r.reference_month === refMonth && r.reference_year === refYear);
     const nextVersion = existing.length > 0 ? Math.max(...existing.map(r => r.version)) + 1 : 1;
 
@@ -115,7 +128,6 @@ const RelatorioAssistencialPage = () => {
     if (error) { toast.error("Erro ao criar relatório: " + error.message); return; }
     const report = data as unknown as ReportRecord;
 
-    // If replicating from previous month
     if (replicateFrom && replicateFrom !== "blank") {
       const prevMonth = refMonth === 1 ? 12 : refMonth - 1;
       const prevYear = refMonth === 1 ? refYear - 1 : refYear;
@@ -126,32 +138,20 @@ const RelatorioAssistencialPage = () => {
         if (prevSections) {
           for (const sec of prevSections) {
             const insertData: any = {
-              report_id: report.id,
-              contract_id: selectedContractId,
-              facility_unit: unit,
-              period,
-              section_key: sec.section_key,
-              section_title: sec.section_title,
+              report_id: report.id, contract_id: selectedContractId, facility_unit: unit, period,
+              section_key: sec.section_key, section_title: sec.section_title,
               content: replicateFrom === "all" ? sec.content : "",
               manual_content: sec.manual_content || "",
-              sort_order: sec.sort_order,
-              updated_by: userId,
-              completion_status: "pendente",
+              sort_order: sec.sort_order, updated_by: userId, completion_status: "pendente",
             };
             const { data: newSec } = await supabase.from("report_sections").insert(insertData).select("id").single();
-
             if (replicateFrom === "all" && newSec) {
               const { data: prevAtts } = await supabase.from("report_attachments").select("*").eq("section_id", sec.id);
               if (prevAtts) {
                 for (const att of prevAtts) {
                   await supabase.from("report_attachments").insert({
-                    report_id: report.id,
-                    section_id: newSec.id,
-                    file_name: att.file_name,
-                    file_url: att.file_url,
-                    file_type: att.file_type,
-                    uploaded_by: userId,
-                    sort_order: att.sort_order,
+                    report_id: report.id, section_id: newSec.id, file_name: att.file_name,
+                    file_url: att.file_url, file_type: att.file_type, uploaded_by: userId, sort_order: att.sort_order,
                   });
                 }
               }
@@ -169,6 +169,56 @@ const RelatorioAssistencialPage = () => {
     setReplicateOpen(false);
   };
 
+  const duplicateReport = async () => {
+    if (!currentReport) return;
+    const existing = reports.filter(r => r.contract_id === currentReport.contract_id && r.facility_unit === currentReport.facility_unit && r.reference_month === currentReport.reference_month && r.reference_year === currentReport.reference_year);
+    const nextVersion = Math.max(...existing.map(r => r.version)) + 1;
+
+    const { data, error } = await supabase.from("reports").insert({
+      contract_id: currentReport.contract_id,
+      facility_unit: currentReport.facility_unit,
+      reference_month: currentReport.reference_month,
+      reference_year: currentReport.reference_year,
+      version: nextVersion,
+      status: "rascunho" as any,
+      title: `Relatório ${MONTHS[currentReport.reference_month - 1]} ${currentReport.reference_year} — ${currentReport.facility_unit}`,
+      created_by: userId, updated_by: userId,
+    }).select().single();
+
+    if (error) { toast.error("Erro: " + error.message); return; }
+    const newReport = data as unknown as ReportRecord;
+
+    // Copy all sections and attachments
+    const { data: srcSections } = await supabase.from("report_sections").select("*").eq("report_id", currentReport.id);
+    if (srcSections) {
+      for (const sec of srcSections) {
+        const { data: newSec } = await supabase.from("report_sections").insert({
+          report_id: newReport.id, contract_id: sec.contract_id, facility_unit: sec.facility_unit,
+          period: sec.period, section_key: sec.section_key, section_title: sec.section_title,
+          content: sec.content, manual_content: sec.manual_content, sort_order: sec.sort_order,
+          updated_by: userId, completion_status: "pendente",
+        }).select("id").single();
+        if (newSec) {
+          const { data: atts } = await supabase.from("report_attachments").select("*").eq("section_id", sec.id);
+          if (atts) {
+            for (const att of atts) {
+              await supabase.from("report_attachments").insert({
+                report_id: newReport.id, section_id: newSec.id, file_name: att.file_name,
+                file_url: att.file_url, file_type: att.file_type, uploaded_by: userId, sort_order: att.sort_order,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    setCurrentReport(newReport);
+    await loadReportSections(newReport.id);
+    await loadReports();
+    setDuplicateOpen(false);
+    toast.success(`Nova versão v${nextVersion} criada como rascunho`);
+  };
+
   const openReport = async (report: ReportRecord) => {
     setSelectedContractId(report.contract_id);
     setRefMonth(report.reference_month);
@@ -178,7 +228,27 @@ const RelatorioAssistencialPage = () => {
     await loadReportSections(report.id);
   };
 
-  // ═══════════ SECTIONS DATA ═══════════
+  // ═══ COMPARE ═══
+
+  const loadCompareReport = async (reportId: string) => {
+    const rep = reports.find(r => r.id === reportId);
+    if (!rep) return;
+    setCompareReport(rep);
+    const { data: dbSections } = await supabase.from("report_sections").select("*").eq("report_id", reportId);
+    const dataMap: Record<string, SectionData> = {};
+    sections.forEach(sec => {
+      const dbSec = (dbSections || []).find((s: any) => s.section_key === sec.key);
+      dataMap[sec.key] = {
+        id: dbSec?.id || null, content: dbSec?.content || "", manual_content: dbSec?.manual_content || "",
+        auto_snapshot_json: dbSec?.auto_snapshot_json || null, completion_status: dbSec?.completion_status || "pendente",
+        updated_by: dbSec?.updated_by, updated_at: dbSec?.updated_at, attachments: [],
+      };
+    });
+    setCompareSectionsData(dataMap);
+    setCompareOpen(true);
+  };
+
+  // ═══ SECTIONS DATA ═══
 
   const loadReportSections = useCallback(async (reportId: string) => {
     const { data: dbSections } = await supabase.from("report_sections").select("*").eq("report_id", reportId);
@@ -192,13 +262,9 @@ const RelatorioAssistencialPage = () => {
     sections.forEach(sec => {
       const dbSec = (dbSections || []).find((s: any) => s.section_key === sec.key);
       dataMap[sec.key] = {
-        id: dbSec?.id || null,
-        content: dbSec?.content || "",
-        manual_content: dbSec?.manual_content || "",
-        auto_snapshot_json: dbSec?.auto_snapshot_json || null,
-        completion_status: dbSec?.completion_status || "pendente",
-        updated_by: dbSec?.updated_by,
-        updated_at: dbSec?.updated_at,
+        id: dbSec?.id || null, content: dbSec?.content || "", manual_content: dbSec?.manual_content || "",
+        auto_snapshot_json: dbSec?.auto_snapshot_json || null, completion_status: dbSec?.completion_status || "pendente",
+        updated_by: dbSec?.updated_by, updated_at: dbSec?.updated_at,
         attachments: attachments.filter((a: any) => a.section_id === dbSec?.id).map((a: any) => ({
           id: a.id, file_name: a.file_name, file_url: a.file_url, file_type: a.file_type, sort_order: a.sort_order,
         })),
@@ -208,11 +274,12 @@ const RelatorioAssistencialPage = () => {
   }, [sections]);
 
   const handleContentChange = (key: string, html: string) => {
+    if (isLocked) return;
     setSectionsData(prev => ({ ...prev, [key]: { ...prev[key], manual_content: html } }));
   };
 
   const handleSaveSection = async (sectionKey: string) => {
-    if (!currentReport) return;
+    if (!currentReport || isLocked) return;
     setSaving(true);
     try {
       const data = sectionsData[sectionKey];
@@ -225,8 +292,7 @@ const RelatorioAssistencialPage = () => {
         }).eq("id", data.id);
       } else {
         await supabase.from("report_sections").insert({
-          report_id: currentReport.id,
-          contract_id: selectedContractId, facility_unit: unit, period,
+          report_id: currentReport.id, contract_id: selectedContractId, facility_unit: unit, period,
           section_key: sectionKey, section_title: sec.title,
           content: data?.manual_content || "", manual_content: data?.manual_content || "",
           sort_order: sec.order, updated_by: userId,
@@ -240,27 +306,24 @@ const RelatorioAssistencialPage = () => {
   };
 
   const handleSaveAll = async () => {
-    if (!currentReport) return;
+    if (!currentReport || isLocked) return;
     setSaving(true);
-    for (const sec of sections) {
-      await handleSaveSection(sec.key);
-    }
+    for (const sec of sections) { await handleSaveSection(sec.key); }
     setSaving(false);
     toast.success("Todas as seções salvas");
   };
 
-  // ═══════════ FILE UPLOADS ═══════════
+  // ═══ FILE UPLOADS ═══
 
   const handleFileUpload = async (files: FileList | null, fileType: string) => {
-    if (!files || !currentReport) return;
+    if (!files || !currentReport || isLocked) return;
     setUploading(true);
     try {
       const sec = sections.find(s => s.key === activeSection);
       let currentSectionId = sectionsData[activeSection]?.id;
       if (!currentSectionId && sec) {
         const { data } = await supabase.from("report_sections").insert({
-          report_id: currentReport.id,
-          contract_id: selectedContractId, facility_unit: unit, period,
+          report_id: currentReport.id, contract_id: selectedContractId, facility_unit: unit, period,
           section_key: activeSection, section_title: sec.title,
           content: sectionsData[activeSection]?.manual_content || "",
           manual_content: sectionsData[activeSection]?.manual_content || "",
@@ -277,8 +340,7 @@ const RelatorioAssistencialPage = () => {
         if (error) { toast.error(`Erro: ${file.name}`); continue; }
         const { data: urlData } = supabase.storage.from("report-files").getPublicUrl(path);
         await supabase.from("report_attachments").insert({
-          report_id: currentReport.id,
-          section_id: currentSectionId,
+          report_id: currentReport.id, section_id: currentSectionId,
           file_name: file.name, file_url: urlData.publicUrl,
           file_type: fileType, uploaded_by: userId, sort_order: 0,
         });
@@ -290,15 +352,20 @@ const RelatorioAssistencialPage = () => {
   };
 
   const handleDeleteAttachment = async (attachmentId: string) => {
+    if (isLocked) return;
     await supabase.from("report_attachments").delete().eq("id", attachmentId);
     if (currentReport) await loadReportSections(currentReport.id);
     toast.success("Anexo removido");
   };
 
-  // ═══════════ STATUS MANAGEMENT ═══════════
+  // ═══ STATUS MANAGEMENT ═══
 
   const changeStatus = async (newStatus: string) => {
     if (!currentReport) return;
+    if (!allowedTransitions.includes(newStatus)) {
+      toast.error(`Não é possível alterar de "${STATUS_LABELS[currentReport.status]}" para "${STATUS_LABELS[newStatus]}"`);
+      return;
+    }
 
     // On close/export, snapshot auto data
     if (newStatus === "fechado" || newStatus === "exportado") {
@@ -316,13 +383,13 @@ const RelatorioAssistencialPage = () => {
     await supabase.from("reports").update({ status: newStatus as any, updated_by: userId }).eq("id", currentReport.id);
     setCurrentReport({ ...currentReport, status: newStatus as any });
     await loadReports();
-    toast.success(`Status atualizado para ${STATUS_LABELS[newStatus]}`);
+    toast.success(`Status: ${STATUS_LABELS[newStatus]}`);
   };
 
-  // ═══════════ CUSTOM SECTIONS ═══════════
+  // ═══ CUSTOM SECTIONS ═══
 
   const addCustomSection = () => {
-    if (!newSectionTitle.trim()) return;
+    if (!newSectionTitle.trim() || isLocked) return;
     const order = sections.length + 1;
     const key = `custom_${Date.now()}`;
     setSections(prev => [...prev, { key, title: `${String(order).padStart(2, "0")}. ${newSectionTitle}`, description: newSectionDesc || "Seção personalizada", order, custom: true }]);
@@ -331,9 +398,7 @@ const RelatorioAssistencialPage = () => {
     toast.success("Seção adicionada");
   };
 
-  // ═══════════ COMPUTED ═══════════
-
-  const isEditable = !currentReport || currentReport.status === "rascunho" || currentReport.status === "em_revisao";
+  // ═══ COMPUTED ═══
 
   const filledCount = useMemo(() =>
     sections.filter(sec => {
@@ -353,13 +418,18 @@ const RelatorioAssistencialPage = () => {
   );
 
   const progressPct = sections.length > 0 ? Math.round((filledCount / sections.length) * 100) : 0;
-
   const activeSec = sections.find(s => s.key === activeSection);
   const activeData = sectionsData[activeSection] || { id: null, content: "", manual_content: "", auto_snapshot_json: null, completion_status: "pendente", attachments: [] };
   const activeImages = activeData.attachments.filter(a => a.file_type === "image");
   const activeFiles = activeData.attachments.filter(a => a.file_type !== "image");
 
-  // ═══════════ PDF EXPORT ═══════════
+  // Available reports for comparison (same contract, different month/version)
+  const compareableReports = useMemo(() => {
+    if (!currentReport) return [];
+    return reports.filter(r => r.contract_id === currentReport.contract_id && r.id !== currentReport.id);
+  }, [reports, currentReport]);
+
+  // ═══ PDF EXPORT ═══
 
   const handleExportPdf = async () => {
     if (!selectedContract || !currentReport) return;
@@ -398,7 +468,6 @@ const RelatorioAssistencialPage = () => {
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.text(`Versão ${currentReport.version}`, W / 2, 88, { align: "center" });
-
       doc.setTextColor(0);
       doc.setFontSize(9);
       doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, W / 2, 115, { align: "center" });
@@ -410,7 +479,7 @@ const RelatorioAssistencialPage = () => {
       doc.text("SUMÁRIO", margin, 22);
       let ty = 32; doc.setTextColor(0);
       const pdfVisibleSections = sections.filter(s => pdfSections.has(s.key));
-      pdfVisibleSections.forEach((sec, i) => {
+      pdfVisibleSections.forEach((sec) => {
         doc.setFontSize(9); doc.setFont("helvetica", "normal");
         doc.text(`${sec.title}`, margin, ty);
         ty += 6;
@@ -426,7 +495,28 @@ const RelatorioAssistencialPage = () => {
         doc.text(sec.title, margin + 4, 23); doc.setTextColor(0);
         let y = 32;
 
-        // Auto-data text in PDF
+        if (sec.autoData === "contract" && selectedContract) {
+          doc.setFontSize(8); doc.setFont("helvetica", "normal");
+          autoTable(doc, {
+            startY: y,
+            head: [["Campo", "Valor"]],
+            body: [
+              ["Contrato", selectedContract.name],
+              ["Unidade", unit],
+              ["Valor mensal", `R$ ${Number(selectedContract.value).toLocaleString("pt-BR")}`],
+              ["Status", selectedContract.status],
+              ["Vigência", selectedContract.period],
+              ["Variável", `${(Number(selectedContract.variable) * 100).toFixed(0)}%`],
+              ["Metas vinculadas", String(selectedContract.goals)],
+            ],
+            margin: { left: margin, right: margin },
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255] },
+            alternateRowStyles: { fillColor: [248, 249, 252] },
+          });
+          y = (doc as any).lastAutoTable.finalY + 6;
+        }
+
         if (sec.autoData === "goals" && goalSummary.total > 0) {
           doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(80, 80, 80);
           doc.text(`Total de metas: ${goalSummary.total} | Atingimento médio: ${goalSummary.avg}% | Atingidas: ${goalSummary.atingidas} | Parciais: ${goalSummary.parciais} | Críticas: ${goalSummary.criticas}`, margin, y);
@@ -472,8 +562,11 @@ const RelatorioAssistencialPage = () => {
         }
 
         if (sec.autoData === "sau" && sauSummary.total > 0) {
-          doc.setFontSize(8); doc.text(`SAU — Total: ${sauSummary.total} | Elogios: ${sauSummary.elogios} | Reclamações: ${sauSummary.reclamacoes} | Resolvidos: ${sauSummary.resolvidos}`, margin, y); y += 6;
+          doc.setFontSize(8);
+          doc.text(`SAU — Total: ${sauSummary.total} | Elogios: ${sauSummary.elogios} | Reclamações: ${sauSummary.reclamacoes} | Resolvidos: ${sauSummary.resolvidos}`, margin, y);
+          y += 6;
         }
+
         if (sec.autoData === "beds" && bedSummary.total > 0) {
           doc.setFontSize(8);
           doc.text(`Leitos: ${bedSummary.total} | Internação: ${bedSummary.totalInternacao} | Internações mês: ${bedSummary.movements.totalAdmissions} | Altas: ${bedSummary.movements.totalDischarges}`, margin, y);
@@ -488,6 +581,7 @@ const RelatorioAssistencialPage = () => {
           });
           y = (doc as any).lastAutoTable.finalY + 6;
         }
+
         if (sec.autoData === "rubricas" && rubricaSummary.totalExecuted > 0) {
           doc.setFontSize(8);
           doc.text(`Total executado: R$ ${rubricaSummary.totalExecuted.toLocaleString("pt-BR")}`, margin, y); y += 8;
@@ -502,7 +596,13 @@ const RelatorioAssistencialPage = () => {
           y = (doc as any).lastAutoTable.finalY + 6;
         }
 
-        // Manual content (strip HTML tags for PDF)
+        if (sec.autoData === "goals_trend" && goalSummary.total > 0) {
+          doc.setFontSize(8); doc.setFont("helvetica", "normal");
+          doc.text(`Indicadores: ${goalSummary.total} metas | Atingimento médio: ${goalSummary.avg}% | Desempenho: ${goalSummary.avg >= 90 ? "Satisfatório" : goalSummary.avg >= 60 ? "Parcial" : "Crítico"}`, margin, y);
+          y += 6;
+        }
+
+        // Manual content
         const data = sectionsData[sec.key];
         const rawText = (data?.manual_content || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
         if (rawText) {
@@ -535,17 +635,19 @@ const RelatorioAssistencialPage = () => {
         doc.text(`MOSS — ${selectedContract.name} — ${MONTHS[refMonth - 1]}/${refYear} v${currentReport.version} — Página ${i}/${pageCount}`, margin, H - 6);
       }
 
-      // Mark as exported
-      if (currentReport.status !== "exportado") await changeStatus("exportado");
+      // Mark as exported if not already
+      if (currentReport.status !== "exportado" && currentReport.status === "fechado") {
+        await changeStatus("exportado");
+      }
 
       doc.save(`relatorio_${unit.replace(/\s/g, "_")}_${MONTHS[refMonth - 1]}_${refYear}_v${currentReport.version}.pdf`);
-      toast.success("PDF exportado com sucesso!");
+      toast.success("PDF exportado!");
     } catch (err) {
       console.error(err); toast.error("Erro ao gerar PDF");
     } finally { setGenerating(false); }
   };
 
-  // ═══════════ RENDER ═══════════
+  // ═══ RENDER — LISTING ═══
 
   if (view === "listing") {
     return (
@@ -561,7 +663,6 @@ const RelatorioAssistencialPage = () => {
             </div>
           </div>
 
-          {/* Filters */}
           <div className="bg-card rounded-xl border border-border p-4 mb-4">
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
               <div>
@@ -602,7 +703,6 @@ const RelatorioAssistencialPage = () => {
             </div>
           </div>
 
-          {/* New report actions */}
           <div className="flex gap-2 mb-4">
             <Dialog open={replicateOpen} onOpenChange={setReplicateOpen}>
               <DialogTrigger asChild>
@@ -616,29 +716,19 @@ const RelatorioAssistencialPage = () => {
                 <p className="text-xs text-muted-foreground mb-3">Como deseja criar este relatório?</p>
                 <div className="space-y-2">
                   <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("blank")}>
-                    <div>
-                      <p className="font-semibold">Criar em branco</p>
-                      <p className="text-[10px] text-muted-foreground">Seções vazias, dados automáticos recalculados</p>
-                    </div>
+                    <div><p className="font-semibold">Criar em branco</p><p className="text-[10px] text-muted-foreground">Seções vazias, dados automáticos recalculados</p></div>
                   </Button>
                   <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("text")}>
-                    <div>
-                      <p className="font-semibold">Copiar textos do mês anterior</p>
-                      <p className="text-[10px] text-muted-foreground">Replica textos manuais, dados automáticos recalculados</p>
-                    </div>
+                    <div><p className="font-semibold">Copiar textos do mês anterior</p><p className="text-[10px] text-muted-foreground">Replica textos manuais, dados automáticos recalculados</p></div>
                   </Button>
                   <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("all")}>
-                    <div>
-                      <p className="font-semibold">Copiar tudo do mês anterior</p>
-                      <p className="text-[10px] text-muted-foreground">Textos, imagens e anexos, dados automáticos recalculados</p>
-                    </div>
+                    <div><p className="font-semibold">Copiar tudo do mês anterior</p><p className="text-[10px] text-muted-foreground">Textos, imagens e anexos, dados automáticos recalculados</p></div>
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
 
-          {/* Reports list */}
           {loadingReports ? (
             <div className="text-center py-12 text-muted-foreground text-sm">Carregando relatórios...</div>
           ) : filteredReports.length === 0 ? (
@@ -650,11 +740,8 @@ const RelatorioAssistencialPage = () => {
               {filteredReports.map(rep => {
                 const c = contracts.find(cc => cc.id === rep.contract_id);
                 return (
-                  <button
-                    key={rep.id}
-                    onClick={() => openReport(rep)}
-                    className="w-full text-left bg-card rounded-xl border border-border p-4 hover:border-primary/40 hover:shadow-sm transition-all"
-                  >
+                  <button key={rep.id} onClick={() => openReport(rep)}
+                    className="w-full text-left bg-card rounded-xl border border-border p-4 hover:border-primary/40 hover:shadow-sm transition-all">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-bold text-foreground">{rep.title || `Relatório ${MONTHS[rep.reference_month - 1]} ${rep.reference_year}`}</p>
@@ -679,7 +766,7 @@ const RelatorioAssistencialPage = () => {
     );
   }
 
-  // ═══════════ EDITOR VIEW ═══════════
+  // ═══ RENDER — EDITOR ═══
 
   return (
     <div className="min-h-screen bg-background">
@@ -687,7 +774,7 @@ const RelatorioAssistencialPage = () => {
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
-          <Button variant="outline" size="sm" onClick={() => { setView("listing"); setCurrentReport(null); }} className="rounded-full">
+          <Button variant="outline" size="sm" onClick={() => { setView("listing"); setCurrentReport(null); setCompareOpen(false); }} className="rounded-full">
             Voltar
           </Button>
           <div className="flex-1">
@@ -702,34 +789,81 @@ const RelatorioAssistencialPage = () => {
                 {STATUS_LABELS[currentReport.status]}
               </span>
             )}
-            <Select value={currentReport?.status || "rascunho"} onValueChange={changeStatus}>
-              <SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {isLocked && (
+              <span className="text-[10px] px-2 py-1 rounded bg-destructive/10 text-destructive font-medium">
+                Documento congelado
+              </span>
+            )}
           </div>
         </div>
+
+        {/* Locked banner */}
+        {isLocked && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <p className="text-xs text-amber-800">
+              Este relatório está <strong>{STATUS_LABELS[currentReport!.status]}</strong> e não pode ser editado.
+              {currentReport?.status === "fechado" && " Para exportar como PDF, clique em \"Exportar PDF\". Para editar, crie uma nova versão."}
+              {currentReport?.status === "exportado" && " Este é o documento oficial. Para fazer alterações, crie uma nova versão."}
+            </p>
+            <div className="flex gap-2 mt-2">
+              <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 text-[10px]">Criar nova versão (rascunho)</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader><DialogTitle>Criar nova versão</DialogTitle></DialogHeader>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Uma cópia deste relatório será criada como rascunho com a próxima versão.
+                    Todos os textos, imagens e anexos serão copiados.
+                  </p>
+                  <div className="flex justify-end gap-2">
+                    <DialogClose asChild><Button variant="outline" size="sm">Cancelar</Button></DialogClose>
+                    <Button size="sm" onClick={duplicateReport}>Confirmar</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              {currentReport?.status === "fechado" && (
+                <Button size="sm" className="h-7 text-[10px]" onClick={handleExportPdf} disabled={generating}>
+                  {generating ? "Gerando..." : "Exportar PDF"}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Progress */}
         <div className="bg-card rounded-lg border border-border p-3 mb-4">
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">Progresso do relatório</span>
+            <span className="text-xs text-muted-foreground">Progresso</span>
             <div className="flex-1"><Progress value={progressPct} className="h-2" /></div>
-            <span className="text-xs font-semibold text-foreground">{filledCount}/{sections.length} seções ({progressPct}%)</span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={handleSaveAll} disabled={saving || !isEditable}>
-                {saving ? "Salvando..." : "Salvar Tudo"}
+            <span className="text-xs font-semibold text-foreground">{filledCount}/{sections.length} ({progressPct}%)</span>
+            {!isLocked && (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={handleSaveAll} disabled={saving}>
+                  {saving ? "Salvando..." : "Salvar Tudo"}
+                </Button>
+                {currentReport?.status === "rascunho" && (
+                  <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => changeStatus("em_revisao")}>
+                    Enviar para Revisão
+                  </Button>
+                )}
+                {currentReport?.status === "em_revisao" && (
+                  <Button size="sm" className="h-7 text-[10px]" onClick={() => changeStatus("fechado")}>
+                    Fechar Relatório
+                  </Button>
+                )}
+              </div>
+            )}
+            {currentReport?.status === "exportado" && (
+              <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={handleExportPdf} disabled={generating}>
+                {generating ? "Gerando..." : "Baixar PDF novamente"}
               </Button>
-              <Button size="sm" className="h-7 text-[10px]" onClick={handleExportPdf} disabled={generating}>
-                {generating ? "Gerando..." : "Exportar PDF"}
-              </Button>
-            </div>
+            )}
           </div>
         </div>
 
         <div className="flex gap-5">
-          {/* ─── Sidebar ─── */}
+          {/* Sidebar */}
           <div className="w-72 shrink-0">
             <div className="bg-card rounded-xl border border-border p-3 sticky top-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
@@ -762,7 +896,7 @@ const RelatorioAssistencialPage = () => {
                 </div>
               </div>
 
-              <ScrollArea className="h-[calc(100vh-360px)]">
+              <ScrollArea className="h-[calc(100vh-420px)]">
                 <div className="space-y-0.5 pr-2">
                   {sections.map(sec => {
                     const data = sectionsData[sec.key];
@@ -779,13 +913,10 @@ const RelatorioAssistencialPage = () => {
                     const filled = hasManual || hasAuto;
                     const isActive = activeSection === sec.key;
                     return (
-                      <button
-                        key={sec.key}
-                        onClick={() => setActiveSection(sec.key)}
+                      <button key={sec.key} onClick={() => setActiveSection(sec.key)}
                         className={`w-full text-left px-2.5 py-2 rounded-lg text-[11px] transition-all flex items-center gap-2 ${
                           isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "hover:bg-muted text-foreground"
-                        }`}
-                      >
+                        }`}>
                         <span className={`w-2 h-2 rounded-full shrink-0 ${
                           hasManual && hasAuto ? "bg-emerald-500 ring-1 ring-emerald-500/30" :
                           filled ? "bg-emerald-500" :
@@ -799,8 +930,27 @@ const RelatorioAssistencialPage = () => {
                 </div>
               </ScrollArea>
 
-              {/* PDF config */}
+              {/* Actions */}
               <div className="mt-3 pt-3 border-t border-border space-y-2">
+                {compareableReports.length > 0 && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full text-xs">Comparar com outro</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-auto">
+                      <DialogHeader><DialogTitle>Selecionar relatório para comparação</DialogTitle></DialogHeader>
+                      <div className="space-y-2">
+                        {compareableReports.map(rep => (
+                          <button key={rep.id} onClick={() => loadCompareReport(rep.id)}
+                            className="w-full text-left p-3 rounded-lg border border-border hover:border-primary/40 transition-all">
+                            <p className="text-sm font-semibold">{rep.title || `${MONTHS[rep.reference_month - 1]} ${rep.reference_year}`}</p>
+                            <p className="text-[10px] text-muted-foreground">v{rep.version} — {STATUS_LABELS[rep.status]} — {new Date(rep.updated_at).toLocaleDateString("pt-BR")}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm" className="w-full text-xs">Configurar PDF</Button>
@@ -810,12 +960,8 @@ const RelatorioAssistencialPage = () => {
                     <div className="space-y-2">
                       {sections.map(sec => (
                         <div key={sec.key} className="flex items-center gap-2 py-1">
-                          <Checkbox
-                            checked={pdfSections.has(sec.key)}
-                            onCheckedChange={checked => {
-                              setPdfSections(prev => { const n = new Set(prev); checked ? n.add(sec.key) : n.delete(sec.key); return n; });
-                            }}
-                          />
+                          <Checkbox checked={pdfSections.has(sec.key)}
+                            onCheckedChange={checked => { setPdfSections(prev => { const n = new Set(prev); checked ? n.add(sec.key) : n.delete(sec.key); return n; }); }} />
                           <span className="text-xs">{sec.title}</span>
                         </div>
                       ))}
@@ -826,17 +972,47 @@ const RelatorioAssistencialPage = () => {
             </div>
           </div>
 
-          {/* ─── Content area ─── */}
+          {/* Content area */}
           <div className="flex-1 min-w-0">
+            {/* Compare view */}
+            {compareOpen && compareReport && (
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-xs font-bold text-blue-800">Comparação: {compareReport.title} (v{compareReport.version})</p>
+                    <p className="text-[10px] text-blue-600">{STATUS_LABELS[compareReport.status]} — {new Date(compareReport.updated_at).toLocaleDateString("pt-BR")}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-6 text-[10px] text-blue-800" onClick={() => { setCompareOpen(false); setCompareReport(null); }}>
+                    Fechar comparação
+                  </Button>
+                </div>
+                {(() => {
+                  const cData = compareSectionsData[activeSection];
+                  const currentText = (activeData.manual_content || "").replace(/<[^>]*>/g, "").trim();
+                  const compareText = (cData?.manual_content || "").replace(/<[^>]*>/g, "").trim();
+                  const changed = currentText !== compareText;
+                  return (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white rounded-lg p-3 border border-blue-100">
+                        <p className="text-[10px] font-semibold text-blue-800 mb-1">Versão atual (v{currentReport?.version})</p>
+                        <p className="text-xs text-foreground">{currentText || <em className="text-muted-foreground">Sem conteúdo</em>}</p>
+                      </div>
+                      <div className={`bg-white rounded-lg p-3 border ${changed ? "border-amber-300" : "border-blue-100"}`}>
+                        <p className="text-[10px] font-semibold text-blue-800 mb-1">{compareReport.title} (v{compareReport.version})</p>
+                        {changed && <span className="text-[9px] text-amber-600 font-medium">Diferenças detectadas</span>}
+                        <p className="text-xs text-foreground">{compareText || <em className="text-muted-foreground">Sem conteúdo</em>}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             <AnimatePresence mode="wait">
-              <motion.div
-                key={activeSection}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
+              <motion.div key={activeSection}
+                initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.15 }}
-                className="bg-card rounded-xl border border-border shadow-sm"
-              >
+                className="bg-card rounded-xl border border-border shadow-sm">
                 {/* Section header */}
                 <div className="p-5 border-b border-border">
                   <div className="flex items-center justify-between">
@@ -856,9 +1032,11 @@ const RelatorioAssistencialPage = () => {
                       }`}>
                         {activeData.completion_status === "preenchido" ? "Preenchido" : "Pendente"}
                       </span>
-                      <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => handleSaveSection(activeSection)} disabled={saving || !isEditable}>
-                        {saving ? "Salvando..." : "Salvar"}
-                      </Button>
+                      {isEditable && (
+                        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => handleSaveSection(activeSection)} disabled={saving}>
+                          {saving ? "Salvando..." : "Salvar"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -868,6 +1046,9 @@ const RelatorioAssistencialPage = () => {
                   {activeSec?.autoData && (
                     <div className="rounded-xl bg-secondary/20 border border-primary/10 p-4">
                       <p className="text-[10px] text-primary font-semibold mb-2">BLOCO AUTOMÁTICO — dados compilados do sistema</p>
+                      {isLocked && activeData.auto_snapshot_json && (
+                        <p className="text-[9px] text-amber-600 mb-2">Dados congelados no momento do fechamento (snapshot)</p>
+                      )}
                       {autoDataLoading ? (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -877,20 +1058,16 @@ const RelatorioAssistencialPage = () => {
                         <AutoDataPanel
                           autoDataKey={activeSec.autoData}
                           selectedContract={selectedContract}
-                          unit={unit}
-                          period={period}
-                          goalsBySector={goalsBySector}
-                          goalSummary={goalSummary}
-                          actionPlanSummary={actionPlanSummary}
-                          sauSummary={sauSummary}
-                          bedSummary={bedSummary}
-                          rubricaSummary={rubricaSummary}
+                          unit={unit} period={period}
+                          goalsBySector={goalsBySector} goalSummary={goalSummary}
+                          actionPlanSummary={actionPlanSummary} sauSummary={sauSummary}
+                          bedSummary={bedSummary} rubricaSummary={rubricaSummary}
                         />
                       )}
                     </div>
                   )}
 
-                  {/* Manual content editor */}
+                  {/* Manual content */}
                   <div>
                     <p className="text-[10px] text-muted-foreground font-semibold mb-2">BLOCO MANUAL — análise, complemento e observações</p>
                     {isEditable ? (
@@ -900,7 +1077,8 @@ const RelatorioAssistencialPage = () => {
                         placeholder={`Adicione análise complementar para "${activeSec?.title}"...`}
                       />
                     ) : (
-                      <div className="border border-input rounded-lg p-3 bg-muted/30 prose prose-sm max-w-none text-sm" dangerouslySetInnerHTML={{ __html: activeData.manual_content || "<em>Sem conteúdo manual.</em>" }} />
+                      <div className="border border-input rounded-lg p-3 bg-muted/30 prose prose-sm max-w-none text-sm"
+                        dangerouslySetInnerHTML={{ __html: activeData.manual_content || "<em>Sem conteúdo manual.</em>" }} />
                     )}
                   </div>
 
