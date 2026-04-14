@@ -240,6 +240,7 @@ const MetasPage = () => {
               </motion.div>
             ))}
           </div>
+          </div>
         )}
       </main>
 
