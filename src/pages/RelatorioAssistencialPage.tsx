@@ -1036,6 +1036,13 @@ const RelatorioAssistencialPage = () => {
 
               <ScrollArea className="h-[calc(100vh-420px)]">
                 <div className="space-y-0.5 pr-2">
+                  <button onClick={() => setActiveSection("capa")}
+                    className={`w-full text-left px-2.5 py-2 rounded-lg text-[11px] transition-all flex items-center gap-2 ${
+                      activeSection === "capa" ? "bg-primary text-primary-foreground font-medium shadow-sm" : "hover:bg-muted text-foreground"
+                    }`}>
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${activeSection === "capa" ? "bg-primary-foreground/40" : "bg-emerald-500"}`} />
+                    <span className="truncate flex-1">Capa do Relatório</span>
+                  </button>
                   {sections.map(sec => {
                     const data = sectionsData[sec.key];
                     const hasManual = data && ((data.manual_content || "").trim().length > 0 || data.attachments.length > 0);
