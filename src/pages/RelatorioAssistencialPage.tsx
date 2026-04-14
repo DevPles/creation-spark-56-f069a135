@@ -524,24 +524,86 @@ const RelatorioAssistencialPage = () => {
         doc.text(`${selectedContract.name} — ${unit} — ${MONTHS[refMonth - 1]}/${refYear} — v${currentReport.version}`, W - margin, 8, { align: "right" });
       };
 
-      // Cover
+      // Helper to load image as base64
+      const loadImageAsBase64 = (url: string): Promise<string | null> => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) { resolve(null); return; }
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = () => resolve(null);
+          img.src = url;
+        });
+      };
+
+      // Cover - load logos
+      const logoBarH = 18;
+      const coverLogos: { dataUrl: string; ratio: number }[] = [];
+      if (coverConfig.logos.length > 0) {
+        const loaded = await Promise.all(coverConfig.logos.map(l => loadImageAsBase64(l.url)));
+        for (const dataUrl of loaded) {
+          if (dataUrl) {
+            const img = new Image();
+            await new Promise<void>((res) => { img.onload = () => res(); img.src = dataUrl; });
+            coverLogos.push({ dataUrl, ratio: img.naturalWidth / img.naturalHeight });
+          }
+        }
+      }
+
+      // Draw cover background
+      const coverH = coverLogos.length > 0 ? 120 : 100;
       doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.rect(0, 0, W, 100, "F");
+      doc.rect(0, 0, W, coverH, "F");
+
+      // Draw logos bar spanning full width
+      let coverTextStart = 8;
+      if (coverLogos.length > 0) {
+        const barPadX = margin;
+        const barW = W - 2 * barPadX;
+        const barY = 6;
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(barPadX, barY, barW, logoBarH + 4, 3, 3, "F");
+
+        // Calculate proportional widths for each logo
+        const totalRatio = coverLogos.reduce((s, l) => s + l.ratio, 0);
+        const logoGap = 4;
+        const availableW = barW - 8 - logoGap * (coverLogos.length - 1);
+        let lx = barPadX + 4;
+        coverLogos.forEach((logo, i) => {
+          const lw = (logo.ratio / totalRatio) * availableW;
+          const lh = logoBarH;
+          doc.addImage(logo.dataUrl, "PNG", lx, barY + 2, lw, lh);
+          lx += lw + logoGap;
+        });
+        coverTextStart = barY + logoBarH + 10;
+      }
+
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22); doc.setFont("helvetica", "bold");
-      doc.text("RELATÓRIO ASSISTENCIAL", W / 2, 30, { align: "center" });
+      doc.text(coverConfig.title, W / 2, coverTextStart + 10, { align: "center" });
       doc.setFontSize(11); doc.setFont("helvetica", "normal");
-      doc.text("Gerência, Operacionalização e Execução das Ações e Serviços de Saúde", W / 2, 42, { align: "center" });
+      const subtitleLines = doc.splitTextToSize(coverConfig.subtitle, W - 2 * margin);
+      subtitleLines.forEach((line: string, i: number) => {
+        doc.text(line, W / 2, coverTextStart + 22 + i * 5, { align: "center" });
+      });
+      const afterSubtitle = coverTextStart + 22 + subtitleLines.length * 5 + 8;
       doc.setFontSize(13);
-      doc.text(`${selectedContract.name}`, W / 2, 58, { align: "center" });
-      doc.text(`${unit}`, W / 2, 66, { align: "center" });
+      doc.text(`${selectedContract.name}`, W / 2, afterSubtitle, { align: "center" });
+      doc.text(`${unit}`, W / 2, afterSubtitle + 8, { align: "center" });
       doc.setFontSize(14); doc.setFont("helvetica", "bold");
-      doc.text(`${MONTHS[refMonth - 1]} de ${refYear}`, W / 2, 78, { align: "center" });
+      doc.text(`${MONTHS[refMonth - 1]} de ${refYear}`, W / 2, afterSubtitle + 20, { align: "center" });
       doc.setFontSize(9); doc.setFont("helvetica", "normal");
-      doc.text(`Versão ${currentReport.version}`, W / 2, 88, { align: "center" });
+      doc.text(`Versão ${currentReport.version}`, W / 2, afterSubtitle + 28, { align: "center" });
       doc.setTextColor(0); doc.setFontSize(9);
-      doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, W / 2, 115, { align: "center" });
-      doc.text(`Status: ${STATUS_LABELS[currentReport.status]}`, W / 2, 122, { align: "center" });
+      doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, W / 2, coverH + 15, { align: "center" });
+      doc.text(`Status: ${STATUS_LABELS[currentReport.status]}`, W / 2, coverH + 22, { align: "center" });
 
       // TOC
       doc.addPage(); drawHeader();
