@@ -219,6 +219,7 @@ const RelatorioAssistencialPage = () => {
         penalidade: penaltyApplied,
         glosa: glosaValue,
         status: pct >= 100 ? "Atingida" : pct >= 80 ? "Parcial" : "Crítica",
+        sector: g.sector,
       };
     });
   }, [goals, selectedContract]);
