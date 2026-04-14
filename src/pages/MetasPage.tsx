@@ -172,7 +172,7 @@ const MetasPage = () => {
             title="Metas e indicadores"
             subtitle="Clique para ver detalhes ou use o botão para cadastrar"
             selectedUnit={selectedUnit}
-            onUnitChange={(v) => { setSelectedUnit(v); }}
+            onUnitChange={(v) => { setSelectedUnit(v); setSelectedGoalName("Todas"); }}
             action={
               <div className="flex items-center gap-2">
                 <Select value={selectedType} onValueChange={setSelectedType}>
