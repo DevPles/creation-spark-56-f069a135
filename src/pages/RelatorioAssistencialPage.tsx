@@ -262,6 +262,7 @@ const RelatorioAssistencialPage = () => {
     toast.success("Relatório excluído");
   };
 
+  const openReport = async (report: ReportRecord) => {
     setSelectedContractId(report.contract_id);
     setRefMonth(report.reference_month);
     setRefYear(report.reference_year);
