@@ -32,25 +32,10 @@ const PageHeader = ({ title, subtitle, period, onPeriodChange, selectedUnit, onU
         <h1 className="font-display text-lg sm:text-xl font-bold text-foreground">{title}</h1>
         {subtitle && <p className="text-xs sm:text-sm text-muted-foreground">{subtitle}</p>}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
-    </div>
-    {(period || selectedUnit) && (
-      <div className="flex flex-wrap items-center gap-2">
-        {period && onPeriodChange && (
-          <Select value={period} onValueChange={onPeriodChange}>
-            <SelectTrigger className="w-full sm:w-[130px] h-8 text-xs">
-              <SelectValue placeholder="Período" />
-            </SelectTrigger>
-            <SelectContent>
-              {PERIODS.map((p) => (
-                <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+      <div className="flex flex-wrap items-center gap-2 shrink-0">
         {selectedUnit && onUnitChange && (
           <Select value={selectedUnit} onValueChange={onUnitChange}>
-            <SelectTrigger className="w-full sm:w-[160px] h-8 text-xs">
+            <SelectTrigger className="w-[160px] h-9 text-xs">
               <SelectValue placeholder="Unidade" />
             </SelectTrigger>
             <SelectContent>
@@ -60,6 +45,21 @@ const PageHeader = ({ title, subtitle, period, onPeriodChange, selectedUnit, onU
             </SelectContent>
           </Select>
         )}
+        {action}
+      </div>
+    </div>
+    {period && onPeriodChange && (
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={period} onValueChange={onPeriodChange}>
+          <SelectTrigger className="w-[130px] h-8 text-xs">
+            <SelectValue placeholder="Período" />
+          </SelectTrigger>
+          <SelectContent>
+            {PERIODS.map((p) => (
+              <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     )}
   </div>
