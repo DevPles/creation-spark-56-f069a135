@@ -240,6 +240,7 @@ const MetasPage = () => {
           ) : goals
               .filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
               .filter(g => selectedType === "Todos" || g.type === selectedType)
+              .filter(g => selectedGoalName === "Todas" || g.name === selectedGoalName)
               .length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
               Nenhuma meta cadastrada{selectedUnit !== "Todas as unidades" ? ` para ${selectedUnit}` : ""}. Clique em "Nova meta" para começar.
@@ -248,7 +249,8 @@ const MetasPage = () => {
             <GoalListView
               goals={goals
                 .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
-                .filter((g) => selectedType === "Todos" || g.type === selectedType)}
+                .filter((g) => selectedType === "Todos" || g.type === selectedType)
+                .filter((g) => selectedGoalName === "Todas" || g.name === selectedGoalName)}
               onView={handleView}
               onEdit={handleEdit}
             />
@@ -256,7 +258,8 @@ const MetasPage = () => {
             <GoalCalendarView
               goals={goals
                 .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
-                .filter((g) => selectedType === "Todos" || g.type === selectedType)}
+                .filter((g) => selectedType === "Todos" || g.type === selectedType)
+                .filter((g) => selectedGoalName === "Todas" || g.name === selectedGoalName)}
               onView={handleView}
               onEdit={handleEdit}
             />
@@ -265,6 +268,7 @@ const MetasPage = () => {
               {goals
                 .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
                 .filter((g) => selectedType === "Todos" || g.type === selectedType)
+                .filter((g) => selectedGoalName === "Todas" || g.name === selectedGoalName)
                 .map((goal, i) => (
                 <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                   <div className="cursor-pointer" onClick={() => handleView(goal)}>
