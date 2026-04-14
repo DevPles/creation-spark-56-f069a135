@@ -451,6 +451,57 @@ export type Database = {
           },
         ]
       }
+      report_section_entries: {
+        Row: {
+          created_at: string
+          created_by: string
+          entry_json: Json
+          entry_type: string
+          id: string
+          report_id: string | null
+          section_id: string | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          entry_json?: Json
+          entry_type?: string
+          id?: string
+          report_id?: string | null
+          section_id?: string | null
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          entry_json?: Json
+          entry_type?: string
+          id?: string
+          report_id?: string | null
+          section_id?: string | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_section_entries_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_section_entries_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "report_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_sections: {
         Row: {
           auto_snapshot_json: Json | null
