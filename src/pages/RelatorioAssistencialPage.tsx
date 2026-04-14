@@ -912,7 +912,7 @@ const RelatorioAssistencialPage = () => {
                           {STATUS_LABELS[rep.status]}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
-                          {new Date(rep.updated_at).toLocaleDateString("pt-BR")}
+                          {profilesMap[rep.updated_by] || "—"} · {new Date(rep.updated_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </span>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
