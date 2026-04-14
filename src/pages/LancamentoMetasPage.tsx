@@ -972,7 +972,7 @@ const LancamentoMetasPage = () => {
                             </div>
                             <div className="bg-secondary/50 rounded-lg p-2 text-center mb-2">
                               <p className="text-[10px] text-muted-foreground">
-                                Faltam <span className="font-semibold text-foreground">{remaining.toFixed(1)}{goal.unit}</span>
+                                Faltam <span className="font-semibold text-foreground">{remaining.toFixed(1)} {goal.unit}</span>
                                 {endDate && daysRemaining > 0 ? (
                                   <> • Meta diária: <span className="font-semibold text-foreground">{dailyGoal.toFixed(2)}{goal.unit}/dia</span> ({daysRemaining}d)</>
                                 ) : endDate && daysRemaining === 0 ? (
