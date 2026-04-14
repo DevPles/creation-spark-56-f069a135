@@ -30,7 +30,7 @@ const AISuggestionsPanel = ({
   const [dismissed, setDismissed] = useState(false);
   const lastDataHash = useRef("");
 
-  const dataHash = JSON.stringify({ goalSummary?.avg, goalSummary?.total, actionPlanSummary?.total, sauSummary?.total, bedSummary?.total, rubricaSummary?.totalExecuted });
+  const dataHash = JSON.stringify([goalSummary?.avg, goalSummary?.total, actionPlanSummary?.total, sauSummary?.total, bedSummary?.total, rubricaSummary?.totalExecuted]);
 
   const fetchSuggestions = async () => {
     setLoading(true);
