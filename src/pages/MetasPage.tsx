@@ -23,6 +23,7 @@ const MetasPage = () => {
   const [selectedGoalName, setSelectedGoalName] = useState("Todas");
   const [selectedSector, setSelectedSector] = useState("Todos");
   const [goals, setGoals] = useState<GoalData[]>([]);
+  const [dbSectors, setDbSectors] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGoal, setSelectedGoal] = useState<GoalData | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
