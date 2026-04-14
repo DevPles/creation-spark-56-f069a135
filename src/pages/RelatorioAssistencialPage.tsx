@@ -21,6 +21,7 @@ import autoTable from "jspdf-autotable";
 import RichTextEditor from "@/components/relatorio/RichTextEditor";
 import AutoDataPanel from "@/components/relatorio/AutoDataPanel";
 import SectionEntryForms from "@/components/relatorio/SectionEntryForms";
+import AISuggestionsPanel from "@/components/relatorio/AISuggestionsPanel";
 import { useAutoData, useComputedSummaries } from "@/components/relatorio/useAutoData";
 import {
   DEFAULT_SECTIONS, STATUS_LABELS, STATUS_COLORS,
@@ -1352,6 +1353,26 @@ const RelatorioAssistencialPage = () => {
                       userId={userId}
                       onRefresh={() => loadReportSections(currentReport.id)}
                       onEnsureSection={() => ensureSectionExists(activeSection)}
+                    />
+                  )}
+
+                  {/* AI Suggestions */}
+                  {isEditable && (
+                    <AISuggestionsPanel
+                      sectionTitle={activeSec?.title || ""}
+                      goalSummary={goalSummary}
+                      actionPlanSummary={actionPlanSummary}
+                      sauSummary={sauSummary}
+                      bedSummary={bedSummary}
+                      rubricaSummary={rubricaSummary}
+                      unit={unit}
+                      period={period}
+                      editable={isEditable}
+                      onInsert={(text) => {
+                        const current = activeData.manual_content || "";
+                        const separator = current.trim() ? "<p><br></p>" : "";
+                        handleContentChange(activeSection, current + separator + `<p>${text}</p>`);
+                      }}
                     />
                   )}
 
