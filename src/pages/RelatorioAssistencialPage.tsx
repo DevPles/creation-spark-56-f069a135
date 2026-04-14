@@ -106,7 +106,7 @@ const RelatorioAssistencialPage = () => {
     load();
   }, [unit]);
 
-  const goals = useMemo(() => {
+   const goals = useMemo(() => {
     return dbGoals.map(g => {
       const entries = dbEntries.filter(e => e.goal_id === g.id);
       const achieved = entries.reduce((s: number, e: any) => s + Number(e.value), 0);
@@ -117,9 +117,21 @@ const RelatorioAssistencialPage = () => {
         achieved,
         weight: Number(g.weight) * 100,
         penalty: Number(g.risk) > 0 ? Number(g.risk) / (selectedContract?.value || 1) * 100 : 0,
+        sector: g.sector || "Geral",
       };
     });
   }, [dbGoals, dbEntries, selectedContract]);
+
+  // Group goals by sector
+  const goalsBySector = useMemo(() => {
+    const map = new Map<string, typeof goals>();
+    goals.forEach(g => {
+      const list = map.get(g.sector) || [];
+      list.push(g);
+      map.set(g.sector, list);
+    });
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [goals]);
 
   const qualitativas = useMemo(() => goals.filter(g => g.type === "QLT"), [goals]);
   const quantitativas = useMemo(() => goals.filter(g => g.type === "QNT"), [goals]);
