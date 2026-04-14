@@ -1480,20 +1480,63 @@ const RelatorioAssistencialPage = () => {
                     const hasEntries = sectionHasEntries(sec.key);
                     const filled = hasManual || hasAuto || hasEntries;
                     const isActive = activeSection === sec.key;
+                    const isSubtopic = !!sec.parentKey;
+                    const topLevelParents = sections.filter(s => !s.parentKey && s.key !== sec.key);
                     return (
-                      <button key={sec.key} onClick={() => setActiveSection(sec.key)}
-                        className={`w-full text-left px-2.5 py-2 rounded-lg text-[11px] transition-all flex items-center gap-2 ${
-                          isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "hover:bg-muted text-foreground"
-                        }`}>
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${
-                          (hasManual && hasAuto) || (hasManual && hasEntries) ? "bg-emerald-500 ring-1 ring-emerald-500/30" :
-                          filled ? "bg-emerald-500" :
-                          isActive ? "bg-primary-foreground/40" : "bg-muted-foreground/20"
-                        }`} />
-                        <span className="truncate flex-1">{sec.title}</span>
-                        {hasAuto && <span className="text-[8px] opacity-60">auto</span>}
-                        {hasEntries && !hasAuto && <span className="text-[8px] opacity-60">compl</span>}
-                      </button>
+                      <div key={sec.key} className="group relative">
+                        <button onClick={() => setActiveSection(sec.key)}
+                          className={`w-full text-left py-2 rounded-lg text-[11px] transition-all flex items-center gap-2 ${
+                            isSubtopic ? "pl-6 pr-2.5" : "px-2.5"
+                          } ${
+                            isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "hover:bg-muted text-foreground"
+                          }`}>
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${
+                            (hasManual && hasAuto) || (hasManual && hasEntries) ? "bg-emerald-500 ring-1 ring-emerald-500/30" :
+                            filled ? "bg-emerald-500" :
+                            isActive ? "bg-primary-foreground/40" : "bg-muted-foreground/20"
+                          }`} />
+                          <span className="truncate flex-1">{sec.title}</span>
+                          {hasAuto && <span className="text-[8px] opacity-60">auto</span>}
+                          {hasEntries && !hasAuto && <span className="text-[8px] opacity-60">compl</span>}
+                        </button>
+                        {isEditable && (
+                          <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5">
+                            {/* Move as subtopic dropdown */}
+                            {!isSubtopic && sec.custom && topLevelParents.length > 0 && (
+                              <Select onValueChange={(parentKey) => moveToSubtopic(sec.key, parentKey)}>
+                                <SelectTrigger className="h-5 w-5 p-0 border-0 bg-transparent [&>svg]:hidden">
+                                  <span className="text-[9px] text-muted-foreground hover:text-foreground">↳</span>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {topLevelParents.map(p => (
+                                    <SelectItem key={p.key} value={p.key} className="text-xs">Sub de: {p.title.substring(0, 30)}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                            {isSubtopic && sec.custom && (
+                              <button onClick={() => promoteToTopic(sec.key)} className="h-5 w-5 flex items-center justify-center text-[9px] text-muted-foreground hover:text-foreground" title="Promover a tópico">↑</button>
+                            )}
+                            {sec.custom && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <button className="h-5 w-5 flex items-center justify-center text-[9px] text-muted-foreground hover:text-destructive" title="Excluir seção">✕</button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir seção?</AlertDialogTitle>
+                                    <AlertDialogDescription>A seção "{sec.title}" será removida do sumário. Esta ação não pode ser desfeita.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deleteSection(sec.key)}>Excluir</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
