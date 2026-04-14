@@ -1435,6 +1435,18 @@ const RelatorioAssistencialPage = () => {
                         <DialogHeader><DialogTitle>Adicionar Seção ao Sumário</DialogTitle></DialogHeader>
                         <div className="space-y-3">
                           <div>
+                            <Label className="text-xs">Tipo</Label>
+                            <Select value={newSectionParent} onValueChange={setNewSectionParent}>
+                              <SelectTrigger className="mt-1"><SelectValue placeholder="Novo tópico principal" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__new__">Novo tópico principal</SelectItem>
+                                {sections.filter(s => !s.parentKey).map(s => (
+                                  <SelectItem key={s.key} value={s.key}>Subtópico de: {s.title}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
                             <Label className="text-xs">Título</Label>
                             <Input value={newSectionTitle} onChange={e => setNewSectionTitle(e.target.value)} placeholder="Ex: Gestão de Resíduos" className="mt-1" />
                           </div>
@@ -1443,7 +1455,7 @@ const RelatorioAssistencialPage = () => {
                             <Input value={newSectionDesc} onChange={e => setNewSectionDesc(e.target.value)} placeholder="Breve descrição" className="mt-1" />
                           </div>
                           <DialogClose asChild>
-                            <Button onClick={addCustomSection} className="w-full">Adicionar</Button>
+                            <Button onClick={() => { if (newSectionParent === "__new__") setNewSectionParent(""); addCustomSection(); }} className="w-full">Adicionar</Button>
                           </DialogClose>
                         </div>
                       </DialogContent>
