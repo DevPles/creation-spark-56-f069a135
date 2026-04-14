@@ -1113,12 +1113,107 @@ const RelatorioAssistencialPage = () => {
           }
         }
 
-        if (secData?.attachments?.length) {
+        // Render images in blue card
+        const secImages = (secData?.attachments || []).filter(a => a.file_type === "image");
+        const secFiles = (secData?.attachments || []).filter(a => a.file_type !== "image");
+
+        if (secImages.length > 0) {
           y += 4;
+          if (y > 200) { doc.addPage(); drawHeader(); y = 20; }
+
+          // Load all images
+          const loadedImgs: { dataUrl: string; w: number; h: number; name: string }[] = [];
+          for (const img of secImages) {
+            const dataUrl = await loadImageAsBase64(img.file_url);
+            if (dataUrl) {
+              const tmpImg = new Image();
+              await new Promise<void>(res => { tmpImg.onload = () => res(); tmpImg.src = dataUrl; });
+              loadedImgs.push({ dataUrl, w: tmpImg.naturalWidth, h: tmpImg.naturalHeight, name: img.file_name });
+            }
+          }
+
+          if (loadedImgs.length > 0) {
+            const cardX = margin;
+            const cardW = W - 2 * margin;
+            const imgPadding = 4;
+            const imgGap = 3;
+            const innerW = cardW - 2 * imgPadding;
+
+            // Calculate image layout
+            let imgRows: { dataUrl: string; x: number; y: number; w: number; h: number; name: string }[][] = [];
+            if (loadedImgs.length === 1) {
+              const img = loadedImgs[0];
+              const ratio = img.w / img.h;
+              const dispW = Math.min(innerW * 0.8, innerW);
+              const dispH = Math.min(dispW / ratio, 80);
+              const finalW = dispH * ratio;
+              imgRows = [[{ ...img, x: cardX + imgPadding + (innerW - finalW) / 2, y: 0, w: finalW, h: dispH }]];
+            } else {
+              // Two per row, centered
+              const colW = (innerW - imgGap) / 2;
+              let row: typeof imgRows[0] = [];
+              for (const img of loadedImgs) {
+                const ratio = img.w / img.h;
+                const dispH = Math.min(colW / ratio, 60);
+                const dispW = dispH * ratio;
+                const colIdx = row.length;
+                const offsetX = colIdx === 0
+                  ? cardX + imgPadding + (colW - dispW) / 2
+                  : cardX + imgPadding + colW + imgGap + (colW - dispW) / 2;
+                row.push({ ...img, x: offsetX, y: 0, w: dispW, h: dispH });
+                if (row.length === 2) { imgRows.push(row); row = []; }
+              }
+              if (row.length > 0) imgRows.push(row);
+            }
+
+            // Calculate total card height
+            let totalImgH = 0;
+            for (const row of imgRows) {
+              const rowH = Math.max(...row.map(i => i.h));
+              totalImgH += rowH + imgGap;
+            }
+            totalImgH += 8; // label space
+            const cardH = totalImgH + 2 * imgPadding;
+
+            if (y + cardH > 275) { doc.addPage(); drawHeader(); y = 20; }
+
+            // Draw blue card background
+            doc.setFillColor(219, 234, 254); // blue-100
+            doc.setDrawColor(147, 197, 253); // blue-300
+            doc.setLineWidth(0.3);
+            doc.roundedRect(cardX, y, cardW, cardH, 3, 3, "FD");
+
+            // Draw images
+            let imgY = y + imgPadding;
+            for (const row of imgRows) {
+              const rowH = Math.max(...row.map(i => i.h));
+              for (const img of row) {
+                const yOffset = imgY + (rowH - img.h) / 2;
+                doc.addImage(img.dataUrl, "PNG", img.x, yOffset, img.w, img.h);
+              }
+              imgY += rowH + imgGap;
+            }
+
+            // Labels
+            doc.setFontSize(6); doc.setTextColor(29, 78, 216); // blue-700
+            for (const row of imgRows) {
+              for (const img of row) {
+                doc.text(img.name, img.x + img.w / 2, imgY, { align: "center", maxWidth: img.w });
+              }
+            }
+            doc.setTextColor(0);
+
+            y += cardH + 4;
+          }
+        }
+
+        // Non-image attachments list
+        if (secFiles.length > 0) {
+          y += 2;
           if (y > 270) { doc.addPage(); drawHeader(); y = 20; }
           doc.setFont("helvetica", "bold"); doc.setFontSize(9);
           doc.text("Anexos:", margin, y); doc.setFont("helvetica", "normal"); y += 5;
-          secData.attachments.forEach(att => {
+          secFiles.forEach(att => {
             if (y > 280) { doc.addPage(); drawHeader(); y = 20; }
             doc.setFontSize(8); doc.text(`  ${att.file_name}`, margin + 4, y); y += 4;
           });
