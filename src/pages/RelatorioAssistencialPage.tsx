@@ -212,7 +212,7 @@ const RelatorioAssistencialPage = () => {
     const key = `custom_${Date.now()}`;
     setSections(prev => [...prev, {
       key, title: `${String(order).padStart(2, "0")}. ${newSectionTitle}`,
-      description: newSectionDesc || "Seção personalizada", order, icon: <FileText className="w-3.5 h-3.5" />, custom: true,
+      description: newSectionDesc || "Seção personalizada", order, custom: true,
     }]);
     setPdfSections(prev => new Set([...prev, key]));
     setNewSectionTitle("");
@@ -415,7 +415,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="bg-secondary/30 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2 mb-2">
-              <Database className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">Dados automáticos do contrato</span>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -444,7 +443,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">Dados de Produção Assistencial — {period}</span>
               <Badge variant="secondary" className="text-[10px]">{goalSummary.total} metas</Badge>
             </div>
@@ -540,7 +538,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">Plano de Ação — Dados do sistema</span>
               <Badge variant="secondary" className="text-[10px]">{actionPlanSummary.total} tratativas</Badge>
             </div>
@@ -614,7 +611,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">SAU — Serviço de Atendimento ao Usuário</span>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
@@ -660,7 +656,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">Capacidade de Leitos — {unit}</span>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -700,7 +695,6 @@ const RelatorioAssistencialPage = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold text-primary">Execução Financeira — {period}</span>
             </div>
             <div className="bg-card rounded-lg p-3 border border-border text-center">
