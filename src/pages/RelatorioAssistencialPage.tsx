@@ -173,6 +173,7 @@ const RelatorioAssistencialPage = () => {
   const [addSectionOpen, setAddSectionOpen] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newSectionDesc, setNewSectionDesc] = useState("");
+  const [newSectionParent, setNewSectionParent] = useState<string>("");
   const [replicateOpen, setReplicateOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareReport, setCompareReport] = useState<ReportRecord | null>(null);
@@ -608,12 +609,79 @@ const RelatorioAssistencialPage = () => {
 
   const addCustomSection = () => {
     if (!newSectionTitle.trim() || isLocked) return;
-    const order = sections.length + 1;
+    const parentSec = newSectionParent ? sections.find(s => s.key === newSectionParent) : null;
+    let order: number;
+    let title: string;
+    if (parentSec) {
+      // Count existing subtopics under this parent
+      const existingSubs = sections.filter(s => s.parentKey === parentSec.key);
+      const subIdx = existingSubs.length + 1;
+      const parentNum = parentSec.title.match(/^(\d+)\./)?.[1] || String(parentSec.order);
+      title = `${parentNum}.${subIdx} ${newSectionTitle}`;
+      // Insert right after parent and its subtopics
+      const parentIdx = sections.indexOf(parentSec);
+      order = parentSec.order + (subIdx * 0.1);
+    } else {
+      order = sections.filter(s => !s.parentKey).length + 1;
+      title = `${String(order).padStart(2, "0")}. ${newSectionTitle}`;
+    }
     const key = `custom_${Date.now()}`;
-    setSections(prev => [...prev, { key, title: `${String(order).padStart(2, "0")}. ${newSectionTitle}`, description: newSectionDesc || "Seção personalizada", order, custom: true }]);
+    const newSec: SectionDef = { key, title, description: newSectionDesc || "Seção personalizada", order, custom: true, parentKey: newSectionParent || undefined };
+
+    setSections(prev => {
+      if (parentSec) {
+        // Insert after parent and its existing subtopics
+        const parentIdx = prev.findIndex(s => s.key === parentSec.key);
+        const lastSubIdx = prev.reduce((last, s, i) => s.parentKey === parentSec.key ? i : last, parentIdx);
+        const insertAt = lastSubIdx + 1;
+        return [...prev.slice(0, insertAt), newSec, ...prev.slice(insertAt)];
+      }
+      return [...prev, newSec];
+    });
     setPdfSections(prev => new Set([...prev, key]));
-    setNewSectionTitle(""); setNewSectionDesc(""); setAddSectionOpen(false);
+    setNewSectionTitle(""); setNewSectionDesc(""); setNewSectionParent(""); setAddSectionOpen(false);
     toast.success("Seção adicionada");
+  };
+
+  const deleteSection = (sectionKey: string) => {
+    const sec = sections.find(s => s.key === sectionKey);
+    if (!sec) return;
+    // Also remove child subtopics if deleting a parent
+    const keysToRemove = new Set([sectionKey, ...sections.filter(s => s.parentKey === sectionKey).map(s => s.key)]);
+    setSections(prev => prev.filter(s => !keysToRemove.has(s.key)));
+    setPdfSections(prev => { const next = new Set(prev); keysToRemove.forEach(k => next.delete(k)); return next; });
+    if (keysToRemove.has(activeSection)) setActiveSection(sections[0]?.key || "capa");
+    toast.success("Seção removida");
+  };
+
+  const moveToSubtopic = (sectionKey: string, parentKey: string) => {
+    setSections(prev => {
+      const sec = prev.find(s => s.key === sectionKey);
+      const parent = prev.find(s => s.key === parentKey);
+      if (!sec || !parent) return prev;
+      const existingSubs = prev.filter(s => s.parentKey === parentKey);
+      const subIdx = existingSubs.length + 1;
+      const parentNum = parent.title.match(/^(\d+)\./)?.[1] || String(parent.order);
+      const rawTitle = sec.title.replace(/^\d+[\.\d]*\s*/, "");
+      const updated = { ...sec, parentKey, title: `${parentNum}.${subIdx} ${rawTitle}`, order: parent.order + (subIdx * 0.1) };
+      const without = prev.filter(s => s.key !== sectionKey);
+      const parentIdx = without.findIndex(s => s.key === parentKey);
+      const lastSubIdx = without.reduce((last, s, i) => s.parentKey === parentKey ? i : last, parentIdx);
+      return [...without.slice(0, lastSubIdx + 1), updated, ...without.slice(lastSubIdx + 1)];
+    });
+    toast.success("Seção movida como subtópico");
+  };
+
+  const promoteToTopic = (sectionKey: string) => {
+    setSections(prev => {
+      const sec = prev.find(s => s.key === sectionKey);
+      if (!sec) return prev;
+      const topLevelCount = prev.filter(s => !s.parentKey && s.key !== sectionKey).length + 1;
+      const rawTitle = sec.title.replace(/^\d+[\.\d]*\s*/, "");
+      const updated = { ...sec, parentKey: undefined, title: `${String(topLevelCount).padStart(2, "0")}. ${rawTitle}`, order: topLevelCount };
+      return prev.map(s => s.key === sectionKey ? updated : s);
+    });
+    toast.success("Seção promovida a tópico");
   };
 
   // ═══ COMPUTED ═══
@@ -1367,6 +1435,18 @@ const RelatorioAssistencialPage = () => {
                         <DialogHeader><DialogTitle>Adicionar Seção ao Sumário</DialogTitle></DialogHeader>
                         <div className="space-y-3">
                           <div>
+                            <Label className="text-xs">Tipo</Label>
+                            <Select value={newSectionParent} onValueChange={setNewSectionParent}>
+                              <SelectTrigger className="mt-1"><SelectValue placeholder="Novo tópico principal" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__new__">Novo tópico principal</SelectItem>
+                                {sections.filter(s => !s.parentKey).map(s => (
+                                  <SelectItem key={s.key} value={s.key}>Subtópico de: {s.title}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
                             <Label className="text-xs">Título</Label>
                             <Input value={newSectionTitle} onChange={e => setNewSectionTitle(e.target.value)} placeholder="Ex: Gestão de Resíduos" className="mt-1" />
                           </div>
@@ -1375,7 +1455,7 @@ const RelatorioAssistencialPage = () => {
                             <Input value={newSectionDesc} onChange={e => setNewSectionDesc(e.target.value)} placeholder="Breve descrição" className="mt-1" />
                           </div>
                           <DialogClose asChild>
-                            <Button onClick={addCustomSection} className="w-full">Adicionar</Button>
+                            <Button onClick={() => { if (newSectionParent === "__new__") setNewSectionParent(""); addCustomSection(); }} className="w-full">Adicionar</Button>
                           </DialogClose>
                         </div>
                       </DialogContent>
@@ -1400,20 +1480,63 @@ const RelatorioAssistencialPage = () => {
                     const hasEntries = sectionHasEntries(sec.key);
                     const filled = hasManual || hasAuto || hasEntries;
                     const isActive = activeSection === sec.key;
+                    const isSubtopic = !!sec.parentKey;
+                    const topLevelParents = sections.filter(s => !s.parentKey && s.key !== sec.key);
                     return (
-                      <button key={sec.key} onClick={() => setActiveSection(sec.key)}
-                        className={`w-full text-left px-2.5 py-2 rounded-lg text-[11px] transition-all flex items-center gap-2 ${
-                          isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "hover:bg-muted text-foreground"
-                        }`}>
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${
-                          (hasManual && hasAuto) || (hasManual && hasEntries) ? "bg-emerald-500 ring-1 ring-emerald-500/30" :
-                          filled ? "bg-emerald-500" :
-                          isActive ? "bg-primary-foreground/40" : "bg-muted-foreground/20"
-                        }`} />
-                        <span className="truncate flex-1">{sec.title}</span>
-                        {hasAuto && <span className="text-[8px] opacity-60">auto</span>}
-                        {hasEntries && !hasAuto && <span className="text-[8px] opacity-60">compl</span>}
-                      </button>
+                      <div key={sec.key} className="group relative">
+                        <button onClick={() => setActiveSection(sec.key)}
+                          className={`w-full text-left py-2 rounded-lg text-[11px] transition-all flex items-center gap-2 ${
+                            isSubtopic ? "pl-6 pr-2.5" : "px-2.5"
+                          } ${
+                            isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "hover:bg-muted text-foreground"
+                          }`}>
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${
+                            (hasManual && hasAuto) || (hasManual && hasEntries) ? "bg-emerald-500 ring-1 ring-emerald-500/30" :
+                            filled ? "bg-emerald-500" :
+                            isActive ? "bg-primary-foreground/40" : "bg-muted-foreground/20"
+                          }`} />
+                          <span className="truncate flex-1">{sec.title}</span>
+                          {hasAuto && <span className="text-[8px] opacity-60">auto</span>}
+                          {hasEntries && !hasAuto && <span className="text-[8px] opacity-60">compl</span>}
+                        </button>
+                        {isEditable && (
+                          <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5">
+                            {/* Move as subtopic dropdown */}
+                            {!isSubtopic && sec.custom && topLevelParents.length > 0 && (
+                              <Select onValueChange={(parentKey) => moveToSubtopic(sec.key, parentKey)}>
+                                <SelectTrigger className="h-5 w-5 p-0 border-0 bg-transparent [&>svg]:hidden">
+                                  <span className="text-[9px] text-muted-foreground hover:text-foreground">↳</span>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {topLevelParents.map(p => (
+                                    <SelectItem key={p.key} value={p.key} className="text-xs">Sub de: {p.title.substring(0, 30)}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                            {isSubtopic && sec.custom && (
+                              <button onClick={() => promoteToTopic(sec.key)} className="h-5 w-5 flex items-center justify-center text-[9px] text-muted-foreground hover:text-foreground" title="Promover a tópico">↑</button>
+                            )}
+                            {sec.custom && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <button className="h-5 w-5 flex items-center justify-center text-[9px] text-muted-foreground hover:text-destructive" title="Excluir seção">✕</button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir seção?</AlertDialogTitle>
+                                    <AlertDialogDescription>A seção "{sec.title}" será removida do sumário. Esta ação não pode ser desfeita.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deleteSection(sec.key)}>Excluir</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
