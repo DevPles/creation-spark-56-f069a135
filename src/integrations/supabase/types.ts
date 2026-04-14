@@ -400,6 +400,97 @@ export type Database = {
           },
         ]
       }
+      report_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          section_id: string
+          sort_order: number
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_type?: string
+          file_url: string
+          id?: string
+          section_id: string
+          sort_order?: number
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          section_id?: string
+          sort_order?: number
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_attachments_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "report_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_sections: {
+        Row: {
+          content: string
+          contract_id: string
+          created_at: string
+          facility_unit: string
+          id: string
+          period: string
+          section_key: string
+          section_title: string
+          sort_order: number
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          content?: string
+          contract_id: string
+          created_at?: string
+          facility_unit: string
+          id?: string
+          period?: string
+          section_key: string
+          section_title: string
+          sort_order?: number
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          content?: string
+          contract_id?: string
+          created_at?: string
+          facility_unit?: string
+          id?: string
+          period?: string
+          section_key?: string
+          section_title?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_sections_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rubrica_entries: {
         Row: {
           contract_id: string
