@@ -146,7 +146,7 @@ const EvidenciasPage = () => {
             </Button>
             <div>
               <h1 className="text-xl font-bold font-display text-foreground">Plano de Ação</h1>
-              <p className="text-xs text-muted-foreground">Gestão de tratativas, evidências e acompanhamento de indicadores</p>
+              
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">

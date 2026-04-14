@@ -1819,7 +1819,7 @@ const RelatoriosPage = () => {
 
         <div className="mb-6">
           <h1 className="font-display text-xl font-bold text-foreground">Relatórios & Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Acompanhamento em tempo real de metas, riscos e desempenho</p>
+          
         </div>
 
         {/* ─── FILTERS BAR ─── */}

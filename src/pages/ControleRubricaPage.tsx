@@ -331,7 +331,7 @@ const ControleRubricaPage = () => {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="font-display text-xl font-bold text-foreground">Controle de Rubrica</h1>
-            <p className="text-sm text-muted-foreground">Gestão e acompanhamento de rubricas por contrato</p>
+            
           </div>
           <div className="flex items-center gap-3">
             <Select value={selectedContract} onValueChange={setSelectedContract}>

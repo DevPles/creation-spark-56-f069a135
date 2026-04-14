@@ -59,7 +59,7 @@ const ContratosPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h1 className="font-display text-xl font-bold text-foreground">Contratos de gestão</h1>
-            <p className="text-sm text-muted-foreground">Clique para ver detalhes ou use o botão para cadastrar</p>
+            
           </div>
           <div className="flex items-center gap-3">
             <Input
