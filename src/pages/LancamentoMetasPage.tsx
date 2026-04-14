@@ -929,9 +929,9 @@ const LancamentoMetasPage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="lancar-metas">Lançamento de Metas</TabsTrigger>
-            {isAdminRole && <TabsTrigger value="lancamento-rubricas">Lançamento de Rubricas</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="lancamento-rubricas">Lançamento de Rubricas</TabsTrigger>}
             <TabsTrigger value="lancar-leitos">Movimentação de Leitos</TabsTrigger>
-            <TabsTrigger value="mapa-termico">Mapa Térmico Diário</TabsTrigger>
+            {isAdmin && <TabsTrigger value="mapa-termico">Mapa Térmico Diário</TabsTrigger>}
           </TabsList>
 
           {/* ── TAB: Lançamento de Metas ── */}
@@ -1414,6 +1414,7 @@ const LancamentoMetasPage = () => {
           onGenerate={handleGeneratePdf}
           generating={pdfGenerating}
           showRubricas={isAdmin}
+          showMapaTermico={isAdmin}
         />
       </main>
     </div>
