@@ -39,8 +39,7 @@ interface SectionDef {
   title: string;
   description: string;
   order: number;
-  icon: React.ReactNode;
-  autoData?: string; // which auto-data source to use
+  autoData?: string;
   custom?: boolean;
 }
 
