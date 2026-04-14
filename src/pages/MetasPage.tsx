@@ -34,6 +34,10 @@ const MetasPage = () => {
 
   const fetchGoals = useCallback(async () => {
     setLoading(true);
+    // Fetch sectors from DB
+    const { data: sectorsData } = await supabase.from("sectors").select("name").order("name");
+    setDbSectors([...new Set((sectorsData || []).map(s => s.name))]);
+
     // Fetch goals
     const { data: goalsData, error: goalsError } = await supabase
       .from("goals")
