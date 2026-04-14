@@ -40,7 +40,7 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
   const daysRemaining = endDate ? Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / 86400000)) : 0;
   const dailyGoal = daysRemaining > 0 ? remaining / daysRemaining : remaining;
 
-  const maxHistory = Math.max(...goal.history, goal.target);
+  const maxHistory = Math.max(...(goal.history.length > 0 ? goal.history : [0]), goal.target, goal.current);
 
   return (
     <div className="kpi-card">
@@ -87,26 +87,6 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
         </div>
       )}
 
-      {/* Mini bar chart */}
-      <div className="flex items-end gap-1 h-12 mt-4">
-        {goal.history.map((val, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center">
-            <div
-              className={`w-full rounded-sm transition-all ${status === "success" ? "bg-success/60" : status === "warning" ? "bg-warning/60" : "bg-risk/60"}`}
-              style={{ height: `${(val / maxHistory) * 100}%` }}
-            />
-          </div>
-        ))}
-        <div className="flex-1 flex flex-col items-center">
-          <div
-            className="w-full rounded-sm bg-primary/80"
-            style={{ height: `${(goal.current / maxHistory) * 100}%` }}
-          />
-        </div>
-      </div>
-      <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-        <span>Q1</span><span>Q2</span><span>Q3</span><span>Q4</span><span>Atual</span>
-      </div>
 
       {/* Values */}
       <div className={`grid ${isAdmin ? "grid-cols-3" : "grid-cols-2"} gap-3 mt-4 pt-3 border-t border-border`}>
