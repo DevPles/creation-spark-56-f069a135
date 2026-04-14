@@ -165,78 +165,82 @@ const MetasPage = () => {
           Voltar
         </Button>
 
-        <PageHeader
-          title="Metas e indicadores"
-          subtitle="Clique para ver detalhes ou use o botão para cadastrar"
-          selectedUnit={selectedUnit}
-          onUnitChange={(v) => { setSelectedUnit(v); }}
-          action={
-            <div className="flex items-center gap-2">
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-[140px] h-9 text-xs">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Todos">Todos os tipos</SelectItem>
-                  <SelectItem value="QNT">Quantitativa</SelectItem>
-                  <SelectItem value="QLT">Qualitativa</SelectItem>
-                  <SelectItem value="DOC">Documental</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={handleNew}>Nova meta</Button>
-              <div className="flex items-center border rounded-md overflow-hidden">
-                <Button
-                  variant={viewMode === "cards" ? "default" : "ghost"}
-                  size="icon"
-                  className="h-9 w-9 rounded-none"
-                  onClick={() => setViewMode("cards")}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  size="icon"
-                  className="h-9 w-9 rounded-none"
-                  onClick={() => setViewMode("list")}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          }
-        />
-
-        {loading ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">Carregando metas...</div>
-        ) : goals
-            .filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
-            .filter(g => selectedType === "Todos" || g.type === selectedType)
-            .length === 0 ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">
-            Nenhuma meta cadastrada{selectedUnit !== "Todas as unidades" ? ` para ${selectedUnit}` : ""}. Clique em "Nova meta" para começar.
-          </div>
-        ) : viewMode === "list" ? (
-          <GoalListView
-            goals={goals
-              .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
-              .filter((g) => selectedType === "Todos" || g.type === selectedType)}
-            onView={handleView}
-            onEdit={handleEdit}
-          />
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {goals
-              .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
-              .filter((g) => selectedType === "Todos" || g.type === selectedType)
-              .map((goal, i) => (
-              <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <div className="cursor-pointer" onClick={() => handleView(goal)}>
-                  <GoalDetailCard goal={goal} onEdit={() => handleEdit(goal)} />
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b">
+          <PageHeader
+            title="Metas e indicadores"
+            subtitle="Clique para ver detalhes ou use o botão para cadastrar"
+            selectedUnit={selectedUnit}
+            onUnitChange={(v) => { setSelectedUnit(v); }}
+            action={
+              <div className="flex items-center gap-2">
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger className="w-[140px] h-9 text-xs">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todos">Todos os tipos</SelectItem>
+                    <SelectItem value="QNT">Quantitativa</SelectItem>
+                    <SelectItem value="QLT">Qualitativa</SelectItem>
+                    <SelectItem value="DOC">Documental</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleNew}>Nova meta</Button>
+                <div className="flex items-center border rounded-md overflow-hidden">
+                  <Button
+                    variant={viewMode === "cards" ? "default" : "ghost"}
+                    size="icon"
+                    className="h-9 w-9 rounded-none"
+                    onClick={() => setViewMode("cards")}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="icon"
+                    className="h-9 w-9 rounded-none"
+                    onClick={() => setViewMode("list")}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+              </div>
+            }
+          />
+        </div>
+
+        <div className="pt-4">
+          {loading ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">Carregando metas...</div>
+          ) : goals
+              .filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+              .filter(g => selectedType === "Todos" || g.type === selectedType)
+              .length === 0 ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              Nenhuma meta cadastrada{selectedUnit !== "Todas as unidades" ? ` para ${selectedUnit}` : ""}. Clique em "Nova meta" para começar.
+            </div>
+          ) : viewMode === "list" ? (
+            <GoalListView
+              goals={goals
+                .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+                .filter((g) => selectedType === "Todos" || g.type === selectedType)}
+              onView={handleView}
+              onEdit={handleEdit}
+            />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {goals
+                .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+                .filter((g) => selectedType === "Todos" || g.type === selectedType)
+                .map((goal, i) => (
+                <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                  <div className="cursor-pointer" onClick={() => handleView(goal)}>
+                    <GoalDetailCard goal={goal} onEdit={() => handleEdit(goal)} />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       {selectedGoal && <GoalModal goal={{ ...selectedGoal, trend: selectedGoal.trend }} open={viewModalOpen} onOpenChange={setViewModalOpen} />}
