@@ -1,14 +1,11 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-// no icon imports - text only
 import TopBar from "@/components/TopBar";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useContracts } from "@/contexts/ContractsContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
@@ -17,307 +14,338 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  LineChart, Line, CartesianGrid, Legend,
-} from "recharts";
+import ReportSectionEditor from "@/components/ReportSectionEditor";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 
-const CHART_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--destructive))",
-  "hsl(var(--accent))",
-  "#2563eb",
-  "#16a34a",
-  "#f59e0b",
+// Sections matching the document sumário
+const REPORT_SECTIONS = [
+  {
+    key: "info_contrato",
+    title: "01. Informações do Contrato",
+    description: "Contratante, contratado, CNPJ, tipo de beneficiário, contrato, processo, unidade gestora, CNES e informações da Organização Social.",
+    order: 1,
+  },
+  {
+    key: "caract_unidade",
+    title: "02. Caracterização da Unidade",
+    description: "Infraestrutura da unidade, serviços terceirizados, serviços ofertados aos usuários e especialidades médicas.",
+    order: 2,
+  },
+  {
+    key: "implantacao_processos",
+    title: "03. Implantação dos Processos",
+    description: "Histórico de evolução e atuação nos processos de melhoria executados.",
+    order: 3,
+  },
+  {
+    key: "doc_regulatoria",
+    title: "04. Documentação Regulatória",
+    description: "Alvarás de funcionamento, licenças, registros no CRM, COREN e demais conselhos profissionais.",
+    order: 4,
+  },
+  {
+    key: "doc_operacional",
+    title: "05. Documentação Operacional",
+    description: "Procedimentos Operacional Padrão (POP), instruções sequenciais e documentos operacionais.",
+    order: 5,
+  },
+  {
+    key: "recursos_humanos",
+    title: "06. Recursos Humanos",
+    description: "Contratações, desligamentos, transferências, CNES dos funcionários, escalas, turnover e absenteísmo.",
+    order: 6,
+  },
+  {
+    key: "seg_trabalho",
+    title: "07. Segurança do Trabalho",
+    description: "Acidentes de trabalho e indicadores de segurança ocupacional.",
+    order: 7,
+  },
+  {
+    key: "treinamentos",
+    title: "08. Treinamentos",
+    description: "Indicadores de treinamento: horas de treinamento e total de participantes.",
+    order: 8,
+  },
+  {
+    key: "humanizacao",
+    title: "09. Humanização",
+    description: "Ações de humanização e acolhimento na unidade.",
+    order: 9,
+  },
+  {
+    key: "indicadores_assistenciais",
+    title: "10. Indicadores Assistenciais",
+    description: "Dados sobre óbitos, desempenho assistencial, indicadores de linha cirúrgica, CME, classificação de risco, enfermagem, farmácia/almoxarifado, SADT, referência e contrarreferência.",
+    order: 10,
+  },
+  {
+    key: "indicadores_qualidade",
+    title: "11. Indicadores de Qualidade",
+    description: "Indicadores referentes às comissões, equipe multidisciplinar e serviço de atendimento ao usuário.",
+    order: 11,
+  },
+  {
+    key: "indicadores_acompanhamento",
+    title: "12. Indicadores de Acompanhamento",
+    description: "Indicadores de acompanhamento dos serviços prestados.",
+    order: 12,
+  },
+  {
+    key: "tecnologia_info",
+    title: "13. Tecnologia de Informação",
+    description: "Sistemas, prontuário eletrônico e infraestrutura de TI.",
+    order: 13,
+  },
+  {
+    key: "servicos_terceirizados",
+    title: "14. Serviços Terceirizados",
+    description: "Detalhamento dos serviços terceirizados contratados.",
+    order: 14,
+  },
+  {
+    key: "eventos_campanhas",
+    title: "15. Eventos e Campanhas",
+    description: "Eventos, campanhas e atividades assistenciais e administrativas realizadas.",
+    order: 15,
+  },
+  {
+    key: "faturamento",
+    title: "16. Faturamento",
+    description: "Dados de faturamento e produção do período.",
+    order: 16,
+  },
+  {
+    key: "anexos",
+    title: "17. Anexos",
+    description: "Documentos, planilhas e evidências complementares.",
+    order: 17,
+  },
+  {
+    key: "consideracoes_finais",
+    title: "18. Considerações Finais",
+    description: "Conclusões, observações e recomendações do período.",
+    order: 18,
+  },
 ];
 
-const tooltipStyle = {
-  background: "hsl(var(--card))",
-  border: "1px solid hsl(var(--border))",
-  borderRadius: 8,
-  fontSize: 12,
-};
-
-const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+interface SectionData {
+  id: string | null;
+  content: string;
+  attachments: Array<{
+    id: string;
+    file_name: string;
+    file_url: string;
+    file_type: string;
+  }>;
+}
 
 const RelatorioAssistencialPage = () => {
   const navigate = useNavigate();
   const { contracts } = useContracts();
+  const { user } = useAuth();
   const [selectedContractId, setSelectedContractId] = useState("");
-  const [editableNotes, setEditableNotes] = useState("");
-  const [dbGoals, setDbGoals] = useState<any[]>([]);
-  const [dbEntries, setDbEntries] = useState<any[]>([]);
-  const [dbRubricaEntries, setDbRubricaEntries] = useState<any[]>([]);
-
-  // Personalização state — editable sections
-  const [persContrato, setPersContrato] = useState("");
-  const [persRubricas, setPersRubricas] = useState("");
-  const [persQualitativas, setPersQualitativas] = useState("");
-  const [persQuantitativas, setPersQuantitativas] = useState("");
-  const [persPenalidades, setPersPenalidades] = useState("");
-  const [persEvidencias, setPersEvidencias] = useState("");
-  const [persInitialized, setPersInitialized] = useState("");
-  const [sectionImages, setSectionImages] = useState<Record<string, string[]>>({});
-  const [pontosMelhoria, setPontosMelhoria] = useState<string[]>([]);
-  const [novoPonto, setNovoPonto] = useState("");
-  const reportRef = useRef<HTMLDivElement>(null);
-
-  // Timeline items for Relatório Final
-  interface TimelineItem {
-    id: string;
-    title: string;
-    category: "acao_promocao" | "justificativa" | "meta" | "rubrica";
-    date: string;
-    description: string;
-    status: "pendente" | "aprovado" | "rejeitado";
-    fileName?: string;
-  }
-
-  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
-
-  const categoryLabels: Record<string, { label: string; color: string }> = {
-    acao_promocao: { label: "Ação de Promoção", color: "bg-primary/10 text-primary" },
-    justificativa: { label: "Justificativa", color: "bg-yellow-500/10 text-yellow-600" },
-    meta: { label: "Evidência de Meta", color: "bg-emerald-500/10 text-emerald-600" },
-    rubrica: { label: "Rubrica Estourada", color: "bg-destructive/10 text-destructive" },
-  };
+  const [period, setPeriod] = useState(() => {
+    const now = new Date();
+    return `${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+  });
+  const [activeSection, setActiveSection] = useState(REPORT_SECTIONS[0].key);
+  const [sectionsData, setSectionsData] = useState<Record<string, SectionData>>({});
+  const [generating, setGenerating] = useState(false);
 
   const selectedContract = contracts.find((c) => c.id === selectedContractId);
   const unit = selectedContract?.unit || "";
+  const userId = user?.id || "";
 
-  // Load goals and entries from DB
+  // Load sections from DB
+  const loadSections = useCallback(async () => {
+    if (!selectedContractId || !period) return;
+
+    const { data: sections } = await supabase
+      .from("report_sections")
+      .select("*")
+      .eq("contract_id", selectedContractId)
+      .eq("period", period);
+
+    const sectionIds = (sections || []).map((s: any) => s.id);
+
+    let attachments: any[] = [];
+    if (sectionIds.length > 0) {
+      const { data } = await supabase
+        .from("report_attachments")
+        .select("*")
+        .in("section_id", sectionIds);
+      attachments = data || [];
+    }
+
+    const dataMap: Record<string, SectionData> = {};
+    REPORT_SECTIONS.forEach((sec) => {
+      const dbSection = (sections || []).find((s: any) => s.section_key === sec.key);
+      dataMap[sec.key] = {
+        id: dbSection?.id || null,
+        content: dbSection?.content || "",
+        attachments: attachments
+          .filter((a: any) => a.section_id === dbSection?.id)
+          .map((a: any) => ({
+            id: a.id,
+            file_name: a.file_name,
+            file_url: a.file_url,
+            file_type: a.file_type,
+          })),
+      };
+    });
+
+    setSectionsData(dataMap);
+  }, [selectedContractId, period]);
+
   useEffect(() => {
-    if (!unit) return;
-    const load = async () => {
-      const [goalsRes, entriesRes, rubRes] = await Promise.all([
-        supabase.from("goals").select("*").eq("facility_unit", unit as any),
-        supabase.from("goal_entries").select("*"),
-        supabase.from("rubrica_entries").select("*").eq("facility_unit", unit),
-      ]);
-      setDbGoals(goalsRes.data || []);
-      setDbEntries(entriesRes.data || []);
-      setDbRubricaEntries(rubRes.data || []);
-    };
-    load();
-  }, [unit]);
+    loadSections();
+  }, [loadSections]);
 
-   const goals = useMemo(() => {
-    return dbGoals.map(g => {
-      const entries = dbEntries.filter(e => e.goal_id === g.id);
-      const achieved = entries.reduce((s: number, e: any) => s + Number(e.value), 0);
-      return {
-        name: g.name,
-        type: g.type as "QLT" | "QNT",
-        target: Number(g.target),
-        achieved,
-        weight: Number(g.weight) * 100,
-        penalty: Number(g.risk) > 0 ? Number(g.risk) / (selectedContract?.value || 1) * 100 : 0,
-        sector: g.sector || "Geral",
-      };
-    });
-  }, [dbGoals, dbEntries, selectedContract]);
-
-  // Group goals by sector
-  const goalsBySector = useMemo(() => {
-    const map = new Map<string, typeof goals>();
-    goals.forEach(g => {
-      const list = map.get(g.sector) || [];
-      list.push(g);
-      map.set(g.sector, list);
-    });
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [goals]);
-
-  const qualitativas = useMemo(() => goals.filter(g => g.type === "QLT"), [goals]);
-  const quantitativas = useMemo(() => goals.filter(g => g.type === "QNT"), [goals]);
-
-  const estouradas = useMemo(() => {
-    if (!selectedContract) return [];
-    return (selectedContract.rubricas || []).filter(r => r.percent > 0).map(r => {
-      const allocated = selectedContract.value * (r.percent / 100);
-      const executed = dbRubricaEntries.filter(e => e.rubrica_name === r.name).reduce((s: number, e: any) => s + Number(e.value_executed), 0);
-      return { rubrica: r.name, unit, contract: selectedContract.name, pctExec: allocated > 0 ? Math.round((executed / allocated) * 100) : 0, allocated, executed, excedente: executed - allocated };
-    }).filter(e => e.executed > e.allocated);
-  }, [selectedContract, dbRubricaEntries, unit]);
-
-  const monthlyTrendData = useMemo(() => {
-    return MONTHS.map((month, i) => {
-      const monthEntries = dbRubricaEntries.filter(e => {
-        try { const parts = e.period.split("/"); return parts.length === 3 && parseInt(parts[1]) - 1 === i; } catch { return false; }
-      });
-      const executed = monthEntries.reduce((s: number, e: any) => s + Number(e.value_executed), 0);
-      const allocated = selectedContract ? selectedContract.value / 12 : 0;
-      return { month, alocado: Math.round(allocated / 1000), executado: Math.round(executed / 1000) };
-    });
-  }, [dbRubricaEntries, selectedContract]);
-
-  const totalPenalty = useMemo(() => {
-    return goals.reduce((sum, g) => {
-      const pct = g.target > 0 ? (g.achieved / g.target) * 100 : 0;
-      return sum + (pct < 100 ? g.penalty : 0);
-    }, 0);
-  }, [goals]);
-
-  const totalGlosa = useMemo(() => {
-    if (!selectedContract) return 0;
-    return selectedContract.value * selectedContract.variable * (totalPenalty / 100);
-  }, [selectedContract, totalPenalty]);
-
-  const goalAchievementPct = useMemo(() => {
-    if (goals.length === 0) return 0;
-    const weightedSum = goals.reduce((sum, g) => {
-      const pct = Math.min(100, g.target > 0 ? (g.achieved / g.target) * 100 : 0);
-      return sum + pct * (g.weight / 100);
-    }, 0);
-    return Math.round(weightedSum);
-  }, [goals]);
-
-  const goalsBarData = useMemo(() =>
-    goals.map(g => ({
-      name: g.name.length > 20 ? g.name.substring(0, 20) + "..." : g.name,
-      fullName: g.name,
-      meta: g.target,
-      realizado: g.achieved,
-      tipo: g.type,
-    })),
-  [goals]);
-
-  const rubricaPieData = useMemo(() =>
-    (selectedContract?.rubricas || []).map(r => ({
-      name: r.name,
-      value: r.percent,
-    })),
-  [selectedContract]);
-
-  const radarData = useMemo(() => goals.map(g => ({
-      subject: g.name.length > 15 ? g.name.substring(0, 15) + "..." : g.name,
-      alcance: Math.min(100, g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0),
-      peso: g.weight,
-    })),
-  [goals]);
-
-  const crossAnalysisData = useMemo(() => {
-    if (!selectedContract) return [];
-    return goals.map(g => {
-      const pct = g.target > 0 ? Math.min(100, Math.round((g.achieved / g.target) * 100)) : 0;
-      const penaltyApplied = pct < 100 ? g.penalty : 0;
-      const glosaValue = selectedContract.value * selectedContract.variable * (penaltyApplied / 100);
-      return {
-        meta: g.name,
-        tipo: g.type,
-        target: g.target,
-        achieved: g.achieved,
-        pct,
-        peso: g.weight,
-        penalidade: penaltyApplied,
-        glosa: glosaValue,
-        status: pct >= 100 ? "Atingida" : pct >= 80 ? "Parcial" : "Crítica",
-        sector: g.sector,
-      };
-    });
-  }, [goals, selectedContract]);
-
-  const handleExportPdf = () => {
-    if (!selectedContract) return;
-    const doc = new jsPDF();
-    const primary: [number, number, number] = [30, 58, 95];
-
-    // Header
-    doc.setFillColor(primary[0], primary[1], primary[2]);
-    doc.rect(0, 0, 210, 30, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.text("Moss — Relatório Assistencial", 14, 18);
-    doc.setFontSize(9);
-    doc.text(selectedContract.name, 14, 25);
-
-    let y = 40;
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(12);
-    doc.text("Resumo Geral", 14, y);
-    y += 8;
-
-    autoTable(doc, {
-      startY: y,
-      head: [["Indicador", "Valor"]],
-      body: [
-        ["Valor do contrato", `R$ ${(selectedContract.value / 1e6).toFixed(1)}M`],
-        ["Parte variável", `${(selectedContract.variable * 100).toFixed(0)}%`],
-        ["Alcance ponderado", `${goalAchievementPct}%`],
-        ["Penalidade acumulada", `${totalPenalty.toFixed(1)}%`],
-        ["Glosa estimada", `R$ ${(totalGlosa / 1000).toFixed(0)}k`],
-        ["Metas qualitativas", `${qualitativas.length}`],
-        ["Metas quantitativas", `${quantitativas.length}`],
-        ["Rubricas estouradas", `${estouradas.length}`],
-      ],
-      headStyles: { fillColor: primary },
-      styles: { fontSize: 9 },
-    });
-
-    y = (doc as any).lastAutoTable.finalY + 12;
-    doc.setFontSize(12);
-    doc.text("Detalhamento de Metas", 14, y);
-    y += 6;
-
-    autoTable(doc, {
-      startY: y,
-      head: [["Meta", "Tipo", "Meta", "Realizado", "%", "Peso", "Penalidade", "Status"]],
-      body: crossAnalysisData.map(r => [
-        r.meta, r.tipo, String(r.target), String(r.achieved), `${r.pct}%`, `${r.peso}%`, `${r.penalidade}%`, r.status,
-      ]),
-      headStyles: { fillColor: primary },
-      styles: { fontSize: 7 },
-      columnStyles: { 0: { cellWidth: 40 } },
-    });
-
-    if (estouradas.length > 0) {
-      y = (doc as any).lastAutoTable.finalY + 12;
-      doc.text("Rubricas Estouradas", 14, y);
-      y += 6;
-      autoTable(doc, {
-        startY: y,
-        head: [["Rubrica", "Alocado", "Executado", "Excedente", "% Exec"]],
-        body: estouradas.map(e => [
-          e.rubrica,
-          `R$ ${(e.allocated / 1000).toFixed(0)}k`,
-          `R$ ${(e.executed / 1000).toFixed(0)}k`,
-          `R$ ${(e.excedente / 1000).toFixed(0)}k`,
-          `${e.pctExec}%`,
-        ]),
-        headStyles: { fillColor: [180, 40, 40] },
-        styles: { fontSize: 8 },
-      });
-    }
-
-    if (editableNotes.trim()) {
-      y = (doc as any).lastAutoTable.finalY + 12;
-      doc.setFontSize(12);
-      doc.text("Observações do Analista", 14, y);
-      y += 6;
-      doc.setFontSize(9);
-      const lines = doc.splitTextToSize(editableNotes, 180);
-      doc.text(lines, 14, y);
-    }
-
-    // Footer
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(`Moss — Relatório gerado em ${new Date().toLocaleDateString("pt-BR")} — Página ${i}/${pageCount}`, 14, 290);
-    }
-
-    doc.save(`relatorio_assistencial_${unit.replace(/\s/g, "_")}.pdf`);
-    toast.success("Relatório exportado com sucesso");
+  const handleContentChange = (key: string, content: string) => {
+    setSectionsData((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], content },
+    }));
   };
+
+  // Count filled sections
+  const filledCount = useMemo(() => {
+    return REPORT_SECTIONS.filter((sec) => {
+      const data = sectionsData[sec.key];
+      return data && (data.content.trim().length > 0 || data.attachments.length > 0);
+    }).length;
+  }, [sectionsData]);
+
+  const handleExportPdf = async () => {
+    if (!selectedContract) return;
+    setGenerating(true);
+
+    try {
+      const doc = new jsPDF();
+      const primary: [number, number, number] = [30, 58, 95];
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Cover page
+      doc.setFillColor(primary[0], primary[1], primary[2]);
+      doc.rect(0, 0, pageWidth, 50, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.text("RELATÓRIO ASSISTENCIAL", pageWidth / 2, 25, { align: "center" });
+      doc.setFontSize(12);
+      doc.text("Gerência, Operacionalização e Execução das Ações e Serviços de Saúde", pageWidth / 2, 35, { align: "center" });
+      doc.setFontSize(10);
+      doc.text(`${selectedContract.name} — ${unit}`, pageWidth / 2, 45, { align: "center" });
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(11);
+      doc.text(`Período de Referência: ${period}`, pageWidth / 2, 65, { align: "center" });
+      doc.setFontSize(9);
+      doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, pageWidth / 2, 75, { align: "center" });
+
+      // Sumário page
+      doc.addPage();
+      doc.setFillColor(primary[0], primary[1], primary[2]);
+      doc.rect(0, 0, pageWidth, 15, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.text("SUMÁRIO", 14, 11);
+      doc.setTextColor(0, 0, 0);
+
+      let sy = 25;
+      REPORT_SECTIONS.forEach((sec) => {
+        doc.setFontSize(10);
+        doc.text(sec.title, 14, sy);
+        sy += 7;
+        if (sy > 280) {
+          doc.addPage();
+          sy = 20;
+        }
+      });
+
+      // Content pages
+      REPORT_SECTIONS.forEach((sec) => {
+        const data = sectionsData[sec.key];
+        const content = data?.content || "";
+        const attachments = data?.attachments || [];
+
+        doc.addPage();
+
+        // Section header
+        doc.setFillColor(primary[0], primary[1], primary[2]);
+        doc.rect(0, 0, pageWidth, 15, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(13);
+        doc.text(sec.title, 14, 11);
+
+        doc.setTextColor(0, 0, 0);
+        let y = 25;
+
+        if (content.trim()) {
+          doc.setFontSize(10);
+          const lines = doc.splitTextToSize(content, pageWidth - 28);
+          for (const line of lines) {
+            if (y > 275) {
+              doc.addPage();
+              y = 20;
+            }
+            doc.text(line, 14, y);
+            y += 5;
+          }
+        } else {
+          doc.setFontSize(10);
+          doc.setTextColor(150, 150, 150);
+          doc.text("Seção não preenchida.", 14, y);
+          doc.setTextColor(0, 0, 0);
+        }
+
+        // List attachments
+        if (attachments.length > 0) {
+          y += 8;
+          if (y > 270) { doc.addPage(); y = 20; }
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "bold");
+          doc.text("Anexos:", 14, y);
+          doc.setFont("helvetica", "normal");
+          y += 6;
+          attachments.forEach((att) => {
+            if (y > 280) { doc.addPage(); y = 20; }
+            doc.setFontSize(9);
+            doc.text(`• ${att.file_name}`, 18, y);
+            y += 5;
+          });
+        }
+      });
+
+      // Footer on all pages
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+          `Relatório Assistencial — ${selectedContract.name} — ${period} — Página ${i}/${pageCount}`,
+          14,
+          290
+        );
+      }
+
+      doc.save(`relatorio_assistencial_${unit.replace(/\s/g, "_")}_${period.replace("/", "-")}.pdf`);
+      toast.success("Relatório PDF exportado com sucesso");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const activeSectionDef = REPORT_SECTIONS.find((s) => s.key === activeSection)!;
+  const activeSectionData = sectionsData[activeSection] || { id: null, content: "", attachments: [] };
 
   return (
     <div className="min-h-screen bg-background">
@@ -329,779 +357,117 @@ const RelatorioAssistencialPage = () => {
 
         <PageHeader
           title="Relatório Assistencial"
-          subtitle="Análise de metas, penalizações e desempenho contratual"
+          subtitle="Preencha cada seção do relatório para gerar o documento final em PDF"
           action={
-            <div className="w-64">
-              <Select value={selectedContractId} onValueChange={setSelectedContractId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o contrato" /></SelectTrigger>
-                <SelectContent>
-                  {contracts.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-3">
+              <div className="w-36">
+                <Label className="text-xs text-muted-foreground">Período</Label>
+                <Input
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  placeholder="MM/AAAA"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="w-64">
+                <Label className="text-xs text-muted-foreground">Contrato</Label>
+                <Select value={selectedContractId} onValueChange={setSelectedContractId}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Selecione o contrato" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contracts.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           }
         />
 
         {!selectedContract ? (
           <div className="kpi-card p-8 text-center">
-            <p className="text-muted-foreground">Selecione um contrato para gerar a análise assistencial.</p>
+            <p className="text-muted-foreground">Selecione um contrato para preencher o relatório assistencial.</p>
           </div>
         ) : (
-          <Tabs defaultValue="particularidades" className="space-y-4">
-            <TabsList className="grid grid-cols-6 w-full">
-              <TabsTrigger value="particularidades">Particularidades</TabsTrigger>
-              <TabsTrigger value="compilado">Compilado Unidade</TabsTrigger>
-              <TabsTrigger value="cruzamento">Análise Cruzamento</TabsTrigger>
-              <TabsTrigger value="relatorio">Relatório Final</TabsTrigger>
-              <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
-              <TabsTrigger value="aprovacao">Aprovação</TabsTrigger>
-            </TabsList>
-
-            {/* TAB 1 — Particularidades do contrato */}
-            <TabsContent value="particularidades" className="space-y-6">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Valor global</p><p className="kpi-value">R$ {(selectedContract.value / 1e6).toFixed(1)}M</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Parte variável</p><p className="kpi-value text-destructive">{(selectedContract.variable * 100).toFixed(0)}%</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">R$ variável</p><p className="kpi-value text-destructive">R$ {((selectedContract.value * selectedContract.variable) / 1000).toFixed(0)}k</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Período</p><p className="kpi-value text-sm">{selectedContract.period}</p></div>
-              </div>
-
-              {/* Rubricas */}
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-3">Distribuição de Rubricas</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    {(selectedContract.rubricas || []).map(r => (
-                      <div key={r.id} className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">{r.name}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-primary rounded-full" style={{ width: `${r.percent}%` }} />
-                          </div>
-                          <span className="font-medium w-10 text-right">{r.percent}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="h-52">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={rubricaPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, value }) => `${value}%`}>
-                          {rubricaPieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip contentStyle={tooltipStyle} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+          <div className="flex gap-6 mt-4">
+            {/* Left sidebar - navigation */}
+            <div className="w-72 shrink-0">
+              <div className="bg-card rounded-lg border border-border p-3 sticky top-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-foreground">Sumário</h3>
+                  <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    {filledCount}/{REPORT_SECTIONS.length}
+                  </span>
                 </div>
-              </div>
-
-              {/* Metas qualitativas */}
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-3">Metas Qualitativas ({qualitativas.length})</h3>
-                <div className="space-y-2">
-                  {qualitativas.map((g, i) => {
-                    const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
-                    return (
-                      <div key={i} className="flex justify-between items-center text-sm p-2 rounded bg-muted/30">
-                        <span>{g.name}</span>
-                        <div className="flex items-center gap-3">
-                          <span className={`font-medium ${pct >= 100 ? "text-success" : "text-destructive"}`}>{pct >= 100 ? "Cumprida" : "Não cumprida"}</span>
-                          <span className="text-xs text-muted-foreground">Peso: {g.weight}% | Penalidade: {g.penalty}%</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Metas quantitativas */}
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-3">Metas Quantitativas ({quantitativas.length})</h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={goalsBarData.filter(g => g.tipo === "QNT")} margin={{ left: 0, right: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                      <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Legend />
-                      <Bar dataKey="meta" fill="hsl(var(--primary))" name="Meta" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="realizado" fill="hsl(var(--accent))" name="Realizado" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Penalizações */}
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-3">Penalizações e Glosas</h3>
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20 text-center">
-                    <p className="text-xs text-muted-foreground">Penalidade total</p>
-                    <p className="text-lg font-bold text-destructive">{totalPenalty.toFixed(1)}%</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20 text-center">
-                    <p className="text-xs text-muted-foreground">Glosa estimada</p>
-                    <p className="text-lg font-bold text-destructive">R$ {(totalGlosa / 1000).toFixed(0)}k</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-center">
-                    <p className="text-xs text-muted-foreground">Alcance ponderado</p>
-                    <p className="text-lg font-bold text-primary">{goalAchievementPct}%</p>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  {goals.filter(g => {
-                    const pct = g.target > 0 ? (g.achieved / g.target) * 100 : 0;
-                    return pct < 100;
-                  }).map((g, i) => (
-                    <div key={i} className="flex justify-between text-xs p-2 rounded bg-destructive/5">
-                      <span className="text-foreground">{g.name}</span>
-                      <span className="text-destructive font-medium">-{g.penalty}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* TAB 2 — Compilado Unidade (por Área) */}
-            <TabsContent value="compilado" className="space-y-6">
-              {/* KPI resumo */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Unidade</p><p className="kpi-value text-sm">{unit}</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Total metas</p><p className="kpi-value">{goals.length}</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Alcance</p><p className="kpi-value text-primary">{goalAchievementPct}%</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Estouradas</p><p className="kpi-value text-destructive">{estouradas.length}</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Glosa</p><p className="kpi-value text-destructive">R$ {(totalGlosa / 1000).toFixed(0)}k</p></div>
-              </div>
-
-              {/* Visão geral por setor — barras horizontais */}
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-4">Alcance por Área / Setor</h3>
-                <div className="space-y-3">
-                  {goalsBySector.map(([sector, sectorGoals]) => {
-                    const sectorPct = sectorGoals.length > 0
-                      ? Math.round(sectorGoals.reduce((sum, g) => sum + Math.min(100, g.target > 0 ? (g.achieved / g.target) * 100 : 0), 0) / sectorGoals.length)
-                      : 0;
-                    const atingidas = sectorGoals.filter(g => g.target > 0 && (g.achieved / g.target) * 100 >= 100).length;
-                    return (
-                      <div key={sector} className="flex items-center gap-3">
-                        <span className="text-sm font-medium w-40 truncate" title={sector}>{sector}</span>
-                        <div className="flex-1">
-                          <Progress value={sectorPct} className="h-3" />
-                        </div>
-                        <span className={`text-sm font-bold w-12 text-right ${sectorPct >= 90 ? "text-success" : sectorPct >= 70 ? "text-warning" : "text-destructive"}`}>
-                          {sectorPct}%
-                        </span>
-                        <span className="text-[10px] text-muted-foreground w-16 text-right">{atingidas}/{sectorGoals.length}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Detalhamento por setor — acordeões */}
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-4">Detalhamento por Área</h3>
-                <Accordion type="multiple" className="space-y-2">
-                  {goalsBySector.map(([sector, sectorGoals]) => {
-                    const sectorPct = sectorGoals.length > 0
-                      ? Math.round(sectorGoals.reduce((sum, g) => sum + Math.min(100, g.target > 0 ? (g.achieved / g.target) * 100 : 0), 0) / sectorGoals.length)
-                      : 0;
-                    const atingidas = sectorGoals.filter(g => g.target > 0 && (g.achieved / g.target) * 100 >= 100).length;
-                    const criticas = sectorGoals.filter(g => { const p = g.target > 0 ? (g.achieved / g.target) * 100 : 0; return p < 70; }).length;
-                    return (
-                      <AccordionItem key={sector} value={sector} className="border border-border rounded-lg px-4">
-                        <AccordionTrigger className="py-3 hover:no-underline">
-                          <div className="flex items-center gap-3 w-full mr-4">
-                            <span className="font-semibold text-sm">{sector}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sectorPct >= 90 ? "bg-success/10 text-success" : sectorPct >= 70 ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive"}`}>
-                              {sectorPct}%
-                            </span>
-                            <span className="text-[10px] text-muted-foreground ml-auto">
-                              {atingidas} atingida{atingidas !== 1 ? "s" : ""} · {criticas > 0 ? `${criticas} crítica${criticas !== 1 ? "s" : ""}` : "nenhuma crítica"} · {sectorGoals.length} meta{sectorGoals.length !== 1 ? "s" : ""}
-                            </span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b border-border text-xs text-muted-foreground">
-                                  <th className="text-left py-2 pr-3">Meta</th>
-                                  <th className="py-2 px-2 text-center">Tipo</th>
-                                  <th className="text-right py-2 px-2">Meta</th>
-                                  <th className="text-right py-2 px-2">Realizado</th>
-                                  <th className="text-right py-2 px-2">Alcance</th>
-                                  <th className="text-right py-2 px-2">Peso</th>
-                                  <th className="py-2 pl-2 text-center">Status</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {sectorGoals.sort((a, b) => a.name.localeCompare(b.name)).map((g, i) => {
-                                  const pct = g.target > 0 ? Math.min(100, Math.round((g.achieved / g.target) * 100)) : 0;
-                                  const status = pct >= 100 ? "Atingida" : pct >= 80 ? "Parcial" : "Crítica";
-                                  return (
-                                    <tr key={i} className="border-b border-border last:border-0">
-                                      <td className="py-2 pr-3 font-medium">{g.name}</td>
-                                      <td className="py-2 px-2 text-center">
-                                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${g.type === "QLT" ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground"}`}>{g.type}</span>
-                                      </td>
-                                      <td className="py-2 px-2 text-right text-muted-foreground">{g.target}</td>
-                                      <td className="py-2 px-2 text-right">{g.achieved}</td>
-                                      <td className="py-2 px-2 text-right">
-                                        <span className={`font-medium ${pct >= 100 ? "text-success" : pct >= 80 ? "text-warning" : "text-destructive"}`}>{pct}%</span>
-                                      </td>
-                                      <td className="py-2 px-2 text-right text-muted-foreground">{g.weight}%</td>
-                                      <td className="py-2 pl-2 text-center">
-                                        <span className={`status-badge text-[10px] ${status === "Atingida" ? "status-success" : status === "Parcial" ? "status-warning" : "status-critical"}`}>{status}</span>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                          {/* Mini bar chart per sector */}
-                          <div className="h-48 mt-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={sectorGoals.sort((a, b) => a.name.localeCompare(b.name)).map(g => ({
-                                name: g.name.length > 18 ? g.name.substring(0, 18) + "…" : g.name,
-                                meta: g.target,
-                                realizado: g.achieved,
-                              }))} margin={{ left: 0, right: 10, bottom: 40 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                                <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} interval={0} angle={-25} textAnchor="end" />
-                                <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                                <Tooltip contentStyle={tooltipStyle} />
-                                <Bar dataKey="meta" fill="hsl(var(--primary))" name="Meta" radius={[3, 3, 0, 0]} />
-                                <Bar dataKey="realizado" fill="hsl(var(--accent))" name="Realizado" radius={[3, 3, 0, 0]} />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  })}
-                </Accordion>
-              </div>
-
-              {/* Monthly trend */}
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-3">Evolução Mensal — Alocado vs Executado (R$ mil)</h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={monthlyTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                      <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}k`} />
-                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v}k`} />
-                      <Legend />
-                      <Line type="monotone" dataKey="alocado" stroke="hsl(var(--primary))" strokeWidth={2} name="Alocado" dot={{ r: 4 }} />
-                      <Line type="monotone" dataKey="executado" stroke="hsl(var(--destructive))" strokeWidth={2} name="Executado" dot={{ r: 4 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Estouradas table */}
-              {estouradas.length > 0 && (
-                <div className="bg-card rounded-lg border border-border p-5">
-                  <h3 className="text-sm font-semibold mb-3 text-destructive">Rubricas Estouradas</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border text-xs text-muted-foreground">
-                          <th className="text-left py-2 pr-4">Rubrica</th>
-                          <th className="text-right py-2 px-2">Alocado</th>
-                          <th className="text-right py-2 px-2">Executado</th>
-                          <th className="text-right py-2 px-2">Excedente</th>
-                          <th className="text-right py-2 pl-2">% Exec</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {estouradas.map((e, i) => (
-                          <tr key={i} className="border-b border-border last:border-0">
-                            <td className="py-2 pr-4 font-medium">{e.rubrica}</td>
-                            <td className="py-2 px-2 text-right text-muted-foreground">R$ {(e.allocated / 1000).toFixed(0)}k</td>
-                            <td className="py-2 px-2 text-right">R$ {(e.executed / 1000).toFixed(0)}k</td>
-                            <td className="py-2 px-2 text-right text-destructive font-medium">R$ {(e.excedente / 1000).toFixed(0)}k</td>
-                            <td className="py-2 pl-2 text-right text-destructive font-medium">{e.pctExec}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* TAB 3 — Análise de Cruzamento */}
-            <TabsContent value="cruzamento" className="space-y-6">
-              {/* Summary cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="kpi-card text-center">
-                  <p className="text-xs text-muted-foreground">Atingidas</p>
-                  <p className="kpi-value text-success">{crossAnalysisData.filter(r => r.status === "Atingida").length}</p>
-                </div>
-                <div className="kpi-card text-center">
-                  <p className="text-xs text-muted-foreground">Parciais</p>
-                  <p className="kpi-value text-warning">{crossAnalysisData.filter(r => r.status === "Parcial").length}</p>
-                </div>
-                <div className="kpi-card text-center">
-                  <p className="text-xs text-muted-foreground">Críticas</p>
-                  <p className="kpi-value text-destructive">{crossAnalysisData.filter(r => r.status === "Crítica").length}</p>
-                </div>
-                <div className="kpi-card text-center">
-                  <p className="text-xs text-muted-foreground">Glosa total</p>
-                  <p className="kpi-value text-destructive">R$ {(crossAnalysisData.reduce((s, r) => s + r.glosa, 0) / 1000).toFixed(0)}k</p>
-                </div>
-              </div>
-
-              {/* Distribuição de status — Pie */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-card rounded-lg border border-border p-5">
-                  <h3 className="text-sm font-semibold mb-3">Distribuição de Status</h3>
-                  <div className="h-56">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={[
-                            { name: "Atingida", value: crossAnalysisData.filter(r => r.status === "Atingida").length },
-                            { name: "Parcial", value: crossAnalysisData.filter(r => r.status === "Parcial").length },
-                            { name: "Crítica", value: crossAnalysisData.filter(r => r.status === "Crítica").length },
-                          ].filter(d => d.value > 0)}
-                          dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}
-                          label={({ name, value }) => `${name}: ${value}`}
+                <ScrollArea className="h-[calc(100vh-320px)]">
+                  <div className="space-y-1 pr-2">
+                    {REPORT_SECTIONS.map((sec) => {
+                      const data = sectionsData[sec.key];
+                      const filled = data && (data.content.trim().length > 0 || data.attachments.length > 0);
+                      const isActive = activeSection === sec.key;
+                      return (
+                        <button
+                          key={sec.key}
+                          onClick={() => setActiveSection(sec.key)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-2 ${
+                            isActive
+                              ? "bg-primary text-primary-foreground font-medium"
+                              : "hover:bg-muted text-foreground"
+                          }`}
                         >
-                          <Cell fill="#16a34a" />
-                          <Cell fill="#f59e0b" />
-                          <Cell fill="hsl(var(--destructive))" />
-                        </Pie>
-                        <Tooltip contentStyle={tooltipStyle} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                          <span
+                            className={`w-2 h-2 rounded-full shrink-0 ${
+                              filled ? "bg-emerald-500" : isActive ? "bg-primary-foreground/50" : "bg-muted-foreground/30"
+                            }`}
+                          />
+                          <span className="truncate">{sec.title}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
+                </ScrollArea>
 
-                {/* Glosa por setor */}
-                <div className="bg-card rounded-lg border border-border p-5">
-                  <h3 className="text-sm font-semibold mb-3">Glosa por Área (R$)</h3>
-                  <div className="h-56">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={goalsBySector.map(([sector, sg]) => {
-                        const sectorCross = crossAnalysisData.filter(c => c.sector === sector);
-                        return { name: sector.length > 15 ? sector.substring(0, 15) + "…" : sector, glosa: Math.round(sectorCross.reduce((s, c) => s + c.glosa, 0) / 1000) };
-                      }).filter(d => d.glosa > 0).sort((a, b) => b.glosa - a.glosa)} layout="vertical" margin={{ left: 10, right: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `R$ ${v}k`} />
-                        <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={120} />
-                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v}k`} />
-                        <Bar dataKey="glosa" fill="hsl(var(--destructive))" name="Glosa" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tabela por setor */}
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-4">Cruzamento: Metas × Penalizações × Glosas (por Área)</h3>
-                <Accordion type="multiple" defaultValue={goalsBySector.map(([s]) => s)} className="space-y-2">
-                  {goalsBySector.map(([sector]) => {
-                    const sectorRows = crossAnalysisData.filter(c => c.sector === sector).sort((a, b) => a.meta.localeCompare(b.meta));
-                    const sectorGlosa = sectorRows.reduce((s, r) => s + r.glosa, 0);
-                    const sectorCriticas = sectorRows.filter(r => r.status === "Crítica").length;
-                    return (
-                      <AccordionItem key={sector} value={sector} className="border border-border rounded-lg px-4">
-                        <AccordionTrigger className="py-3 hover:no-underline">
-                          <div className="flex items-center gap-3 w-full mr-4">
-                            <span className="font-semibold text-sm">{sector}</span>
-                            <span className="text-[10px] text-muted-foreground">{sectorRows.length} meta{sectorRows.length !== 1 ? "s" : ""}</span>
-                            {sectorCriticas > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium">{sectorCriticas} crítica{sectorCriticas !== 1 ? "s" : ""}</span>}
-                            {sectorGlosa > 0 && <span className="text-[10px] text-destructive font-medium ml-auto">Glosa: R$ {(sectorGlosa / 1000).toFixed(1)}k</span>}
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b border-border text-xs text-muted-foreground">
-                                  <th className="text-left py-2 pr-3">Meta</th>
-                                  <th className="py-2 px-2 text-center">Tipo</th>
-                                  <th className="text-right py-2 px-2">Meta</th>
-                                  <th className="text-right py-2 px-2">Realizado</th>
-                                  <th className="text-right py-2 px-2">%</th>
-                                  <th className="text-right py-2 px-2">Peso</th>
-                                  <th className="text-right py-2 px-2">Penalidade</th>
-                                  <th className="text-right py-2 px-2">Glosa</th>
-                                  <th className="py-2 pl-2 text-center">Status</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {sectorRows.map((r, i) => (
-                                  <tr key={i} className="border-b border-border last:border-0">
-                                    <td className="py-2 pr-3 font-medium">{r.meta}</td>
-                                    <td className="py-2 px-2 text-center"><span className={`text-[10px] px-1.5 py-0.5 rounded ${r.tipo === "QLT" ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground"}`}>{r.tipo}</span></td>
-                                    <td className="py-2 px-2 text-right text-muted-foreground">{r.target}</td>
-                                    <td className="py-2 px-2 text-right">{r.achieved}</td>
-                                    <td className="py-2 px-2 text-right font-medium">{r.pct}%</td>
-                                    <td className="py-2 px-2 text-right text-muted-foreground">{r.peso}%</td>
-                                    <td className={`py-2 px-2 text-right ${r.penalidade > 0 ? "text-destructive font-medium" : "text-muted-foreground"}`}>{r.penalidade > 0 ? `-${r.penalidade.toFixed(1)}%` : "—"}</td>
-                                    <td className={`py-2 px-2 text-right ${r.glosa > 0 ? "text-destructive font-medium" : "text-muted-foreground"}`}>{r.glosa > 0 ? `R$ ${(r.glosa / 1000).toFixed(1)}k` : "—"}</td>
-                                    <td className="py-2 pl-2 text-center">
-                                      <span className={`status-badge text-[10px] ${r.status === "Atingida" ? "status-success" : r.status === "Parcial" ? "status-warning" : "status-critical"}`}>{r.status}</span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  })}
-                </Accordion>
-              </div>
-            </TabsContent>
-
-            {/* TAB 4 — Relatório Final */}
-            <TabsContent value="relatorio" className="space-y-6" ref={reportRef}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">Relatório Final — {selectedContract.name}</h3>
-                <Button onClick={handleExportPdf}>Exportar PDF</Button>
-              </div>
-
-              {/* Summary cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Alcance geral</p><p className={`kpi-value ${goalAchievementPct >= 80 ? "text-success" : "text-destructive"}`}>{goalAchievementPct}%</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Glosa total</p><p className="kpi-value text-destructive">R$ {(totalGlosa / 1000).toFixed(0)}k</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Metas atingidas</p><p className="kpi-value text-success">{crossAnalysisData.filter(r => r.status === "Atingida").length}/{goals.length}</p></div>
-                <div className="kpi-card"><p className="text-xs text-muted-foreground">Metas críticas</p><p className="kpi-value text-destructive">{crossAnalysisData.filter(r => r.status === "Crítica").length}</p></div>
-              </div>
-
-              {/* Timeline de Evidências, Ações e Justificativas */}
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-1">Timeline de Evidências e Ações</h3>
-                <p className="text-[11px] text-muted-foreground mb-4">Evidências, ações de promoção e justificativas vinculadas a esta unidade. O gestor pode aprovar, rejeitar e editar cada item.</p>
-
-                <div className="relative">
-                  {/* Vertical line */}
-                  <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
-
-                  <div className="space-y-4">
-                    {timelineItems
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .map((item) => {
-                        const cat = categoryLabels[item.category] || { label: item.category, color: "bg-muted text-muted-foreground" };
-                        const isEditing = editingItemId === item.id;
-                        return (
-                          <div key={item.id} className="relative pl-10">
-                            {/* Dot */}
-                            <div className={`absolute left-2.5 top-3 w-3 h-3 rounded-full border-2 border-background ${
-                              item.status === "aprovado" ? "bg-emerald-500" : item.status === "rejeitado" ? "bg-destructive" : "bg-yellow-500"
-                            }`} />
-
-                            <div className={`rounded-lg border p-4 transition-colors ${
-                              item.status === "rejeitado" ? "border-destructive/30 bg-destructive/5" : "border-border"
-                            }`}>
-                              {/* Header */}
-                              <div className="flex items-start justify-between gap-2 mb-2">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${cat.color}`}>{cat.label}</span>
-                                    <span className="text-[10px] text-muted-foreground">{new Date(item.date).toLocaleDateString("pt-BR")}</span>
-                                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                                      item.status === "aprovado" ? "bg-emerald-500/10 text-emerald-600" :
-                                      item.status === "rejeitado" ? "bg-destructive/10 text-destructive" :
-                                      "bg-yellow-500/10 text-yellow-600"
-                                    }`}>
-                                      {item.status === "aprovado" ? "✓ Aprovado" : item.status === "rejeitado" ? "✗ Rejeitado" : "⏳ Pendente"}
-                                    </span>
-                                  </div>
-                                  <h4 className="text-sm font-medium mt-1">{item.title}</h4>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="flex items-center gap-1 shrink-0">
-                                  {!isEditing && (
-                                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setEditingItemId(item.id); setEditText(item.description); }}>
-                                      Editar
-                                    </Button>
-                                  )}
-                                  {isEditing && (
-                                    <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, description: editText } : ti)); setEditingItemId(null); toast.success("Texto atualizado"); }}>
-                                      Salvar
-                                    </Button>
-                                  )}
-                                  {item.status === "pendente" && (
-                                    <>
-                                      <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, status: "aprovado" as const } : ti)); toast.success("Item aprovado"); }}>
-                                        Aprovar
-                                      </Button>
-                                      <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive" onClick={() => { setTimelineItems(prev => prev.map(ti => ti.id === item.id ? { ...ti, status: "rejeitado" as const } : ti)); toast.error("Item rejeitado"); }}>
-                                        Rejeitar
-                                      </Button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Body */}
-                              {isEditing ? (
-                                <Textarea
-                                  value={editText}
-                                  onChange={(e) => setEditText(e.target.value)}
-                                  rows={3}
-                                  className="text-sm"
-                                />
-                              ) : (
-                                <p className="text-sm text-muted-foreground">{item.description}</p>
-                              )}
-
-                              {/* File attachment */}
-                              {item.fileName && (
-                                <div className="mt-2 text-[11px] text-primary">
-                                  📎 {item.fileName}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Editable notes */}
-              <div className="bg-card rounded-lg border border-border p-5">
-                <Label className="text-sm font-semibold">Observações do Analista (editável)</Label>
-                <p className="text-[11px] text-muted-foreground mb-2">Adicione notas, justificativas ou recomendações que serão incluídas no PDF exportado</p>
-                <Textarea
-                  value={editableNotes}
-                  onChange={(e) => setEditableNotes(e.target.value)}
-                  placeholder="Insira suas observações, justificativas e recomendações aqui..."
-                  rows={6}
-                />
-              </div>
-
-              <div className="flex justify-end">
-                <Button onClick={handleExportPdf} className="px-8">
-                  Exportar Relatório PDF
-                </Button>
-              </div>
-            </TabsContent>
-
-            {/* TAB 5 — Personalização (edição completa do relatório) */}
-            <TabsContent value="personalizacao" className="space-y-6">
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h2 className="text-lg font-bold text-foreground mb-1">Personalização do Relatório</h2>
-                <p className="text-sm text-muted-foreground mb-6">Visualize todas as páginas do relatório, edite textos e insira imagens em cada seção.</p>
-
-                {(() => {
-                  const contractKey = selectedContract.id;
-                  if (persInitialized !== contractKey) {
-                    const contratoText = `Contrato: ${selectedContract.name}\nUnidade: ${unit}\nValor global: R$ ${(selectedContract.value / 1e6).toFixed(1)}M\nParte variável: ${(selectedContract.variable * 100).toFixed(0)}%\nR$ variável: R$ ${((selectedContract.value * selectedContract.variable) / 1000).toFixed(0)}k\nPeríodo: ${selectedContract.period}\nAlcance ponderado: ${goalAchievementPct}%`;
-                    const rubricasText = (selectedContract.rubricas || []).map(r => `${r.name}: ${r.percent}%`).join("\n") +
-                      (estouradas.length > 0 ? "\n\n--- Rubricas estouradas ---\n" + estouradas.map(e => `${e.rubrica}: Alocado R$ ${(e.allocated / 1000).toFixed(0)}k | Executado R$ ${(e.executed / 1000).toFixed(0)}k | Excedente R$ ${(e.excedente / 1000).toFixed(0)}k (${e.pctExec}%)`).join("\n") : "");
-                    const qualText = qualitativas.map(g => {
-                      const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
-                      return `${g.name} — ${pct >= 100 ? "Atingida" : "Não atingida"} | Peso: ${g.weight}% | Penalidade: ${g.penalty}%`;
-                    }).join("\n");
-                    const quantText = quantitativas.map(g => {
-                      const pct = g.target > 0 ? Math.round((g.achieved / g.target) * 100) : 0;
-                      return `${g.name} — Meta: ${g.target} | Realizado: ${g.achieved} | Alcance: ${pct}% | Peso: ${g.weight}% | Penalidade: ${g.penalty}%`;
-                    }).join("\n");
-                    const penText = `Penalidade total: ${totalPenalty.toFixed(1)}%\nGlosa estimada: R$ ${(totalGlosa / 1000).toFixed(0)}k\nMetas críticas: ${crossAnalysisData.filter(r => r.status === "Crítica").length}\n\n--- Detalhamento ---\n` +
-                      crossAnalysisData.filter(r => r.penalidade > 0).map(r => `${r.meta}: -${r.penalidade}% (R$ ${(r.glosa / 1000).toFixed(0)}k)`).join("\n");
-                    const evidText = timelineItems
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .map(item => {
-                        const cat = categoryLabels[item.category];
-                        return `[${cat?.label || item.category}] ${new Date(item.date).toLocaleDateString("pt-BR")} — ${item.title}\n${item.description}\nStatus: ${item.status}${item.fileName ? `\nArquivo: ${item.fileName}` : ""}`;
-                      }).join("\n\n");
-                    setTimeout(() => {
-                      setPersContrato(contratoText);
-                      setPersRubricas(rubricasText);
-                      setPersQualitativas(qualText);
-                      setPersQuantitativas(quantText);
-                      setPersPenalidades(penText);
-                      setPersEvidencias(evidText);
-                      setPersInitialized(contractKey);
-                    }, 0);
-                  }
-                  return null;
-                })()}
-
-                {(() => {
-                  const handleImageUpload = (sectionKey: string) => {
-                    const input = document.createElement("input");
-                    input.type = "file";
-                    input.accept = "image/*";
-                    input.multiple = true;
-                    input.onchange = (e) => {
-                      const files = (e.target as HTMLInputElement).files;
-                      if (!files) return;
-                      Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const dataUrl = ev.target?.result as string;
-                          setSectionImages(prev => ({
-                            ...prev,
-                            [sectionKey]: [...(prev[sectionKey] || []), dataUrl],
-                          }));
-                        };
-                        reader.readAsDataURL(file);
-                      });
-                    };
-                    input.click();
-                  };
-
-                  const removeImage = (sectionKey: string, idx: number) => {
-                    setSectionImages(prev => ({
-                      ...prev,
-                      [sectionKey]: (prev[sectionKey] || []).filter((_, i) => i !== idx),
-                    }));
-                  };
-
-                  const sections = [
-                    { key: "contrato", label: "Página 1 — Dados do Contrato", value: persContrato, setter: setPersContrato, rows: 7 },
-                    { key: "rubricas", label: "Página 2 — Distribuição de Rubricas", value: persRubricas, setter: setPersRubricas, rows: 8 },
-                    { key: "qualitativas", label: "Página 3 — Metas Qualitativas", value: persQualitativas, setter: setPersQualitativas, rows: 6 },
-                    { key: "quantitativas", label: "Página 4 — Metas Quantitativas", value: persQuantitativas, setter: setPersQuantitativas, rows: 6 },
-                    { key: "penalidades", label: "Página 5 — Penalizações e Glosas", value: persPenalidades, setter: setPersPenalidades, rows: 8 },
-                    { key: "evidencias", label: "Página 6 — Evidências e Ações", value: persEvidencias, setter: setPersEvidencias, rows: 10 },
-                    { key: "observacoes", label: "Página 7 — Observações do Analista", value: editableNotes, setter: setEditableNotes, rows: 6 },
-                  ];
-
-                  return (
-                    <div className="space-y-6">
-                      {sections.map((section, idx) => (
-                        <div key={section.key} className="border border-border rounded-lg overflow-hidden">
-                          {/* Page header */}
-                          <div className="bg-muted/50 px-4 py-2 border-b border-border flex items-center justify-between">
-                            <span className="text-sm font-semibold text-foreground">{section.label}</span>
-                            <span className="text-[10px] text-muted-foreground">{idx + 1} / {sections.length}</span>
-                          </div>
-
-                          {/* Page body simulating A4 */}
-                          <div className="p-5 bg-background space-y-3" style={{ minHeight: 200 }}>
-                            <Textarea
-                              value={section.value}
-                              onChange={e => section.setter(e.target.value)}
-                              rows={section.rows}
-                              placeholder={`Conteúdo da ${section.label}...`}
-                            />
-
-                            {/* Inserted images */}
-                            {(sectionImages[section.key] || []).length > 0 && (
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
-                                {(sectionImages[section.key] || []).map((src, imgIdx) => (
-                                  <div key={imgIdx} className="relative group rounded-lg overflow-hidden border border-border">
-                                    <img src={src} alt={`Imagem ${imgIdx + 1}`} className="w-full h-32 object-cover" />
-                                    <button
-                                      onClick={() => removeImage(section.key, imgIdx)}
-                                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[10px] rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                      Remover
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs"
-                              onClick={() => handleImageUpload(section.key)}
-                            >
-                              + Inserir imagem nesta seção
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-
-                      <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => toast.success("Alterações salvas localmente")}>Salvar rascunho</Button>
-                        <Button onClick={handleExportPdf} className="px-8">Exportar Relatório PDF</Button>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </TabsContent>
-
-            {/* TAB 6 — Aprovação */}
-            <TabsContent value="aprovacao" className="space-y-6">
-              <div className="kpi-card p-6">
-                <h2 className="text-lg font-bold text-foreground mb-4">Fluxo de Aprovação</h2>
-                <p className="text-sm text-muted-foreground mb-4">Acompanhe o status de aprovação do relatório assistencial antes da publicação final.</p>
-                <div className="space-y-3">
-                  {[
-                    { step: "Preenchimento de metas", status: "done" },
-                    { step: "Inserção de evidências", status: "done" },
-                    { step: "Revisão do gestor", status: "pending" },
-                    { step: "Aprovação final", status: "waiting" },
-                  ].map((item) => (
-                    <div key={item.step} className={`flex items-center gap-3 p-3 rounded-lg border ${item.status === "done" ? "border-primary/20 bg-primary/5" : item.status === "pending" ? "border-accent bg-accent/5" : "border-border bg-muted/30"}`}>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${item.status === "done" ? "bg-primary/10 text-primary" : item.status === "pending" ? "bg-accent/20 text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
-                        {item.status === "done" ? "Concluído" : item.status === "pending" ? "Em andamento" : "Aguardando"}
-                      </span>
-                      <span className={`text-sm ${item.status === "done" ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}>{item.step}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 flex gap-3">
-                  <Button className="rounded-full">Aprovar Relatório</Button>
-                  <Button variant="outline" className="rounded-full">Solicitar Revisão</Button>
-                </div>
-              </div>
-
-              {/* Pontos de Melhoria */}
-              <div className="kpi-card p-6">
-                <h3 className="text-sm font-semibold text-foreground mb-2">Sinalizar Pontos de Melhoria</h3>
-                <p className="text-xs text-muted-foreground mb-4">Registre observações e pontos que precisam de atenção antes da aprovação final.</p>
-                <div className="flex gap-2 mb-4">
-                  <Textarea
-                    value={novoPonto}
-                    onChange={(e) => setNovoPonto(e.target.value)}
-                    placeholder="Descreva o ponto a melhorar..."
-                    rows={2}
-                    className="flex-1"
-                  />
+                {/* Export button */}
+                <div className="mt-4 pt-3 border-t border-border">
                   <Button
-                    variant="outline"
-                    className="shrink-0 self-end"
-                    onClick={() => {
-                      if (novoPonto.trim()) {
-                        setPontosMelhoria(prev => [...prev, novoPonto.trim()]);
-                        setNovoPonto("");
-                        toast.success("Ponto de melhoria registrado");
-                      }
-                    }}
+                    onClick={handleExportPdf}
+                    disabled={generating}
+                    className="w-full"
+                    size="sm"
                   >
-                    Sinalizar
+                    {generating ? "Gerando..." : "Gerar PDF do Relatório"}
                   </Button>
                 </div>
-                {pontosMelhoria.length > 0 && (
-                  <div className="space-y-2">
-                    {pontosMelhoria.map((p, i) => (
-                      <div key={i} className="flex items-start justify-between gap-2 p-3 rounded-lg border border-border bg-muted/30 text-sm">
-                        <span className="flex-1">{p}</span>
-                        <Button variant="ghost" size="sm" className="text-xs text-destructive shrink-0 h-6" onClick={() => setPontosMelhoria(prev => prev.filter((_, idx) => idx !== i))}>
-                          Remover
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+
+            {/* Right content - section editor */}
+            <div className="flex-1 min-w-0">
+              <div className="bg-card rounded-lg border border-border p-6">
+                <ReportSectionEditor
+                  key={`${activeSection}-${selectedContractId}-${period}`}
+                  sectionId={activeSectionData.id}
+                  sectionKey={activeSection}
+                  sectionTitle={activeSectionDef.title}
+                  sectionDescription={activeSectionDef.description}
+                  content={activeSectionData.content}
+                  attachments={activeSectionData.attachments}
+                  contractId={selectedContractId}
+                  facilityUnit={unit}
+                  period={period}
+                  sortOrder={activeSectionDef.order}
+                  userId={userId}
+                  onContentChange={(content) => handleContentChange(activeSection, content)}
+                  onSave={loadSections}
+                  onAttachmentsChange={loadSections}
+                />
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>
