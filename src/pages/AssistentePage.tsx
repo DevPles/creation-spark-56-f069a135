@@ -884,7 +884,7 @@ const AssistentePage = () => {
         <p className="text-xs text-muted-foreground mb-4">Meta: {selectedGoal.target}{selectedGoal.unit} — Peso: {(selectedGoal.weight * 100).toFixed(0)}% — {selectedUnit}</p>
         <div className="flex justify-center mb-4"><GoalGauge percent={attainment} size={100} /></div>
         <div className="bg-secondary/50 rounded-lg p-2 text-center mb-4">
-          <p className="text-xs text-muted-foreground">Faltam <span className="font-semibold text-foreground">{remaining.toFixed(1)}{selectedGoal.unit}</span></p>
+          <p className="text-xs text-muted-foreground">Faltam <span className="font-semibold text-foreground">{remaining.toFixed(1)} {selectedGoal.unit}</span></p>
         </div>
         {existing.length > 0 && (
           <div className="mb-4 p-3 bg-secondary/50 rounded">
@@ -1015,7 +1015,7 @@ const AssistentePage = () => {
                   <GoalGauge percent={attainment} size={70} />
                 </div>
                 <div className="bg-secondary/50 rounded-lg p-2 text-center mb-2">
-                  <p className="text-xs text-muted-foreground">Realizado: <span className="font-semibold text-foreground">{currentVal.toFixed(1)}{goal.unit}</span> — Faltam: <span className="font-semibold text-foreground">{remaining.toFixed(1)}{goal.unit}</span></p>
+                  <p className="text-xs text-muted-foreground">Realizado: <span className="font-semibold text-foreground">{currentVal.toFixed(1)} {goal.unit}</span> — Faltam: <span className="font-semibold text-foreground">{remaining.toFixed(1)} {goal.unit}</span></p>
                 </div>
                 {existing.length > 0 && (
                   <div className="p-2 bg-secondary/30 rounded">

@@ -73,7 +73,7 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
       {goal.target > 0 && (
         <div className="bg-secondary/50 rounded-lg p-2.5 mt-2 text-center space-y-0.5">
           <p className="text-[10px] text-muted-foreground">
-            Faltam <span className="font-semibold text-foreground">{remaining.toFixed(1)}{goal.unit}</span> para bater a meta
+            Faltam <span className="font-semibold text-foreground">{remaining.toFixed(1)} {goal.unit}</span> para bater a meta
           </p>
           {endDate && daysRemaining > 0 ? (
             <p className="text-[10px] text-muted-foreground">
