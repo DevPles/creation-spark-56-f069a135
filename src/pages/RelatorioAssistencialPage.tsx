@@ -640,68 +640,31 @@ const RelatorioAssistencialPage = () => {
 
             {/* TAB 3 — Análise de Cruzamento */}
             <TabsContent value="cruzamento" className="space-y-6">
-              <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-3">Cruzamento: Metas × Penalizações × Glosas</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-xs text-muted-foreground">
-                        <th className="text-left py-2 pr-3">Meta</th>
-                        <th className="py-2 px-2">Tipo</th>
-                        <th className="text-right py-2 px-2">Meta</th>
-                        <th className="text-right py-2 px-2">Realizado</th>
-                        <th className="text-right py-2 px-2">%</th>
-                        <th className="text-right py-2 px-2">Peso</th>
-                        <th className="text-right py-2 px-2">Penalidade</th>
-                        <th className="text-right py-2 px-2">Glosa (R$)</th>
-                        <th className="py-2 pl-2">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {crossAnalysisData.map((r, i) => (
-                        <tr key={i} className="border-b border-border last:border-0">
-                          <td className="py-2 pr-3 font-medium">{r.meta}</td>
-                          <td className="py-2 px-2 text-center"><span className={`text-xs px-1.5 py-0.5 rounded ${r.tipo === "QLT" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"}`}>{r.tipo}</span></td>
-                          <td className="py-2 px-2 text-right text-muted-foreground">{r.target}</td>
-                          <td className="py-2 px-2 text-right">{r.achieved}</td>
-                          <td className="py-2 px-2 text-right font-medium">{r.pct}%</td>
-                          <td className="py-2 px-2 text-right text-muted-foreground">{r.peso}%</td>
-                          <td className={`py-2 px-2 text-right ${r.penalidade > 0 ? "text-destructive font-medium" : "text-muted-foreground"}`}>{r.penalidade > 0 ? `-${r.penalidade}%` : "—"}</td>
-                          <td className={`py-2 px-2 text-right ${r.glosa > 0 ? "text-destructive font-medium" : "text-muted-foreground"}`}>{r.glosa > 0 ? `R$ ${(r.glosa / 1000).toFixed(1)}k` : "—"}</td>
-                          <td className="py-2 pl-2">
-                            <span className={`status-badge ${r.status === "Atingida" ? "status-success" : r.status === "Parcial" ? "status-warning" : "status-critical"}`}>
-                              {r.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {/* Summary cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="kpi-card text-center">
+                  <p className="text-xs text-muted-foreground">Atingidas</p>
+                  <p className="kpi-value text-success">{crossAnalysisData.filter(r => r.status === "Atingida").length}</p>
+                </div>
+                <div className="kpi-card text-center">
+                  <p className="text-xs text-muted-foreground">Parciais</p>
+                  <p className="kpi-value text-warning">{crossAnalysisData.filter(r => r.status === "Parcial").length}</p>
+                </div>
+                <div className="kpi-card text-center">
+                  <p className="text-xs text-muted-foreground">Críticas</p>
+                  <p className="kpi-value text-destructive">{crossAnalysisData.filter(r => r.status === "Crítica").length}</p>
+                </div>
+                <div className="kpi-card text-center">
+                  <p className="text-xs text-muted-foreground">Glosa total</p>
+                  <p className="kpi-value text-destructive">R$ {(crossAnalysisData.reduce((s, r) => s + r.glosa, 0) / 1000).toFixed(0)}k</p>
                 </div>
               </div>
 
-              {/* Visual cross-analysis */}
+              {/* Distribuição de status — Pie */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-card rounded-lg border border-border p-5">
-                  <h3 className="text-sm font-semibold mb-3">Alcance vs Peso (todas as metas)</h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={crossAnalysisData} margin={{ left: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="meta" tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }} interval={0} angle={-30} textAnchor="end" height={60} />
-                        <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                        <Tooltip contentStyle={tooltipStyle} />
-                        <Legend />
-                        <Bar dataKey="pct" fill="hsl(var(--primary))" name="Alcance %" radius={[3, 3, 0, 0]} />
-                        <Bar dataKey="peso" fill="hsl(var(--accent))" name="Peso %" radius={[3, 3, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="bg-card rounded-lg border border-border p-5">
                   <h3 className="text-sm font-semibold mb-3">Distribuição de Status</h3>
-                  <div className="h-64">
+                  <div className="h-56">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -710,11 +673,7 @@ const RelatorioAssistencialPage = () => {
                             { name: "Parcial", value: crossAnalysisData.filter(r => r.status === "Parcial").length },
                             { name: "Crítica", value: crossAnalysisData.filter(r => r.status === "Crítica").length },
                           ].filter(d => d.value > 0)}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
+                          dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}
                           label={({ name, value }) => `${name}: ${value}`}
                         >
                           <Cell fill="#16a34a" />
@@ -726,6 +685,85 @@ const RelatorioAssistencialPage = () => {
                     </ResponsiveContainer>
                   </div>
                 </div>
+
+                {/* Glosa por setor */}
+                <div className="bg-card rounded-lg border border-border p-5">
+                  <h3 className="text-sm font-semibold mb-3">Glosa por Área (R$)</h3>
+                  <div className="h-56">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={goalsBySector.map(([sector, sg]) => {
+                        const sectorCross = crossAnalysisData.filter(c => c.sector === sector);
+                        return { name: sector.length > 15 ? sector.substring(0, 15) + "…" : sector, glosa: Math.round(sectorCross.reduce((s, c) => s + c.glosa, 0) / 1000) };
+                      }).filter(d => d.glosa > 0).sort((a, b) => b.glosa - a.glosa)} layout="vertical" margin={{ left: 10, right: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `R$ ${v}k`} />
+                        <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={120} />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `R$ ${v}k`} />
+                        <Bar dataKey="glosa" fill="hsl(var(--destructive))" name="Glosa" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabela por setor */}
+              <div className="bg-card rounded-lg border border-border p-5">
+                <h3 className="text-sm font-semibold mb-4">Cruzamento: Metas × Penalizações × Glosas (por Área)</h3>
+                <Accordion type="multiple" defaultValue={goalsBySector.map(([s]) => s)} className="space-y-2">
+                  {goalsBySector.map(([sector]) => {
+                    const sectorRows = crossAnalysisData.filter(c => c.sector === sector).sort((a, b) => a.meta.localeCompare(b.meta));
+                    const sectorGlosa = sectorRows.reduce((s, r) => s + r.glosa, 0);
+                    const sectorCriticas = sectorRows.filter(r => r.status === "Crítica").length;
+                    return (
+                      <AccordionItem key={sector} value={sector} className="border border-border rounded-lg px-4">
+                        <AccordionTrigger className="py-3 hover:no-underline">
+                          <div className="flex items-center gap-3 w-full mr-4">
+                            <span className="font-semibold text-sm">{sector}</span>
+                            <span className="text-[10px] text-muted-foreground">{sectorRows.length} meta{sectorRows.length !== 1 ? "s" : ""}</span>
+                            {sectorCriticas > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium">{sectorCriticas} crítica{sectorCriticas !== 1 ? "s" : ""}</span>}
+                            {sectorGlosa > 0 && <span className="text-[10px] text-destructive font-medium ml-auto">Glosa: R$ {(sectorGlosa / 1000).toFixed(1)}k</span>}
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b border-border text-xs text-muted-foreground">
+                                  <th className="text-left py-2 pr-3">Meta</th>
+                                  <th className="py-2 px-2 text-center">Tipo</th>
+                                  <th className="text-right py-2 px-2">Meta</th>
+                                  <th className="text-right py-2 px-2">Realizado</th>
+                                  <th className="text-right py-2 px-2">%</th>
+                                  <th className="text-right py-2 px-2">Peso</th>
+                                  <th className="text-right py-2 px-2">Penalidade</th>
+                                  <th className="text-right py-2 px-2">Glosa</th>
+                                  <th className="py-2 pl-2 text-center">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sectorRows.map((r, i) => (
+                                  <tr key={i} className="border-b border-border last:border-0">
+                                    <td className="py-2 pr-3 font-medium">{r.meta}</td>
+                                    <td className="py-2 px-2 text-center"><span className={`text-[10px] px-1.5 py-0.5 rounded ${r.tipo === "QLT" ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground"}`}>{r.tipo}</span></td>
+                                    <td className="py-2 px-2 text-right text-muted-foreground">{r.target}</td>
+                                    <td className="py-2 px-2 text-right">{r.achieved}</td>
+                                    <td className="py-2 px-2 text-right font-medium">{r.pct}%</td>
+                                    <td className="py-2 px-2 text-right text-muted-foreground">{r.peso}%</td>
+                                    <td className={`py-2 px-2 text-right ${r.penalidade > 0 ? "text-destructive font-medium" : "text-muted-foreground"}`}>{r.penalidade > 0 ? `-${r.penalidade.toFixed(1)}%` : "—"}</td>
+                                    <td className={`py-2 px-2 text-right ${r.glosa > 0 ? "text-destructive font-medium" : "text-muted-foreground"}`}>{r.glosa > 0 ? `R$ ${(r.glosa / 1000).toFixed(1)}k` : "—"}</td>
+                                    <td className="py-2 pl-2 text-center">
+                                      <span className={`status-badge text-[10px] ${r.status === "Atingida" ? "status-success" : r.status === "Parcial" ? "status-warning" : "status-critical"}`}>{r.status}</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
               </div>
             </TabsContent>
 
