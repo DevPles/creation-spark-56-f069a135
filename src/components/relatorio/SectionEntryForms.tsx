@@ -114,12 +114,12 @@ const DOC_STATUS_COLORS: Record<string, string> = {
 };
 
 const SectionEntryForms = ({ sectionKey, reportId, sectionId, entries, editable, userId, onRefresh, onEnsureSection }: Props) => {
-  const config = ENTRY_CONFIGS[sectionKey];
-  if (!config) return null;
-
   const [formOpen, setFormOpen] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  const config = ENTRY_CONFIGS[sectionKey];
+  if (!config) return null;
 
   const handleSave = async () => {
     setSaving(true);
