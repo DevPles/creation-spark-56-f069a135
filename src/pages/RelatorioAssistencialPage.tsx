@@ -1152,6 +1152,97 @@ const RelatorioAssistencialPage = () => {
               </div>
             )}
 
+            {activeSection === "capa" ? (
+              <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-6">
+                <h2 className="text-base font-bold text-foreground">Personalização da Capa</h2>
+
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs">Título principal</Label>
+                    <Input value={coverConfig.title} onChange={e => setCoverConfig(prev => ({ ...prev, title: e.target.value }))} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Subtítulo</Label>
+                    <Input value={coverConfig.subtitle} onChange={e => setCoverConfig(prev => ({ ...prev, subtitle: e.target.value }))} className="mt-1" />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs mb-2 block">Logos do cabeçalho</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {coverConfig.logos.map((logo, idx) => (
+                      <div key={idx} className="bg-muted/30 border border-border rounded-lg p-3 flex flex-col items-center gap-2">
+                        <div className="w-20 h-20 flex items-center justify-center">
+                          <img src={logo.url} alt={logo.name} className="max-w-full max-h-full object-contain" />
+                        </div>
+                        <Input value={logo.name} onChange={e => {
+                          const updated = [...coverConfig.logos];
+                          updated[idx] = { ...updated[idx], name: e.target.value };
+                          setCoverConfig(prev => ({ ...prev, logos: updated }));
+                        }} className="text-center text-[10px] h-7" />
+                        <div className="flex gap-1">
+                          <Button variant="outline" size="sm" className="h-6 text-[9px] px-2" onClick={() => {
+                            const input = document.createElement("input");
+                            input.type = "file"; input.accept = "image/*";
+                            input.onchange = (ev) => {
+                              const file = (ev.target as HTMLInputElement).files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = () => {
+                                const updated = [...coverConfig.logos];
+                                updated[idx] = { ...updated[idx], url: reader.result as string };
+                                setCoverConfig(prev => ({ ...prev, logos: updated }));
+                              };
+                              reader.readAsDataURL(file);
+                            };
+                            input.click();
+                          }}>Trocar</Button>
+                          <Button variant="ghost" size="sm" className="h-6 text-[9px] px-2 text-destructive" onClick={() => {
+                            setCoverConfig(prev => ({ ...prev, logos: prev.logos.filter((_, i) => i !== idx) }));
+                          }}>Remover</Button>
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file"; input.accept = "image/*";
+                      input.onchange = (ev) => {
+                        const file = (ev.target as HTMLInputElement).files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setCoverConfig(prev => ({ ...prev, logos: [...prev.logos, { name: file.name.replace(/\.\w+$/, ""), url: reader.result as string }] }));
+                        };
+                        reader.readAsDataURL(file);
+                      };
+                      input.click();
+                    }} className="bg-muted/20 border border-dashed border-border rounded-lg p-3 flex flex-col items-center justify-center gap-1 hover:bg-muted/40 transition-colors min-h-[120px]">
+                      <span className="text-lg text-muted-foreground">+</span>
+                      <span className="text-[10px] text-muted-foreground">Adicionar logo</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border border-border rounded-lg p-4 bg-muted/10">
+                  <p className="text-[10px] text-muted-foreground mb-3">Pré-visualização da capa</p>
+                  <div className="bg-[hsl(215,60%,30%)] rounded-lg p-6 text-white text-center space-y-3">
+                    {coverConfig.logos.length > 0 && (
+                      <div className="flex items-center justify-center gap-4 mb-4 bg-white/90 rounded-lg py-3 px-4 mx-auto" style={{ maxWidth: `${coverConfig.logos.length * 120}px` }}>
+                        {coverConfig.logos.map((logo, idx) => (
+                          <img key={idx} src={logo.url} alt={logo.name} className="h-10 object-contain" />
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-lg font-bold">{coverConfig.title}</p>
+                    <p className="text-xs opacity-80">{coverConfig.subtitle}</p>
+                    <p className="text-sm">{selectedContract?.name}</p>
+                    <p className="text-sm">{unit}</p>
+                    <p className="text-base font-bold">{MONTHS[refMonth - 1]} de {refYear}</p>
+                    <p className="text-[10px] opacity-70">Versão {currentReport?.version}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
             <AnimatePresence mode="wait">
               <motion.div key={activeSection}
                 initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}
