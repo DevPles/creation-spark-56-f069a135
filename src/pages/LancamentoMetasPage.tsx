@@ -82,6 +82,8 @@ const LancamentoMetasPage = () => {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [heatmapCompare, setHeatmapCompare] = useState<"global" | "meta">("global");
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [filterType, setFilterType] = useState<string>("todos");
+  const [filterGoal, setFilterGoal] = useState<string>("todos");
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
   const totalBedsByCategory = useMemo(() => {
@@ -920,6 +922,37 @@ const LancamentoMetasPage = () => {
                 <SelectContent>{FILTER_MONTHS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            {/* Tipo — apenas Metas e Mapa Térmico */}
+            {(activeTab === "lancar-metas" || activeTab === "mapa-termico") && (
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-1">Tipo</label>
+                <Select value={filterType} onValueChange={(v) => { setFilterType(v); setFilterGoal("todos"); }}>
+                  <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="QNT">Quantitativa</SelectItem>
+                    <SelectItem value="QLT">Qualitativa</SelectItem>
+                    <SelectItem value="DOC">Documental</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* Meta específica — apenas Metas */}
+            {activeTab === "lancar-metas" && (
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-1">Meta</label>
+                <Select value={filterGoal} onValueChange={setFilterGoal}>
+                  <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas</SelectItem>
+                    {goals
+                      .filter(g => filterType === "todos" || g.type === filterType)
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <Button variant="outline" size="sm" className="h-9" onClick={() => setPdfModalOpen(true)}>
               Gerar PDF
             </Button>
@@ -945,7 +978,10 @@ const LancamentoMetasPage = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {goals.map((goal, i) => {
+                {goals
+                  .filter(g => filterType === "todos" || g.type === filterType)
+                  .filter(g => filterGoal === "todos" || g.id === filterGoal)
+                  .map((goal, i) => {
                   const entry = entries[goal.id] || { value: "", period: "", notes: "" };
                   const existing = filterEntriesByDate(existingEntries[goal.id] || []);
                   return (
@@ -974,7 +1010,7 @@ const LancamentoMetasPage = () => {
                               <p className="text-[10px] text-muted-foreground">
                                 Faltam <span className="font-semibold text-foreground">{remaining.toFixed(1)} {goal.unit}</span>
                                 {endDate && daysRemaining > 0 ? (
-                                  <> • Meta diária: <span className="font-semibold text-foreground">{dailyGoal.toFixed(2)}{goal.unit}/dia</span> ({daysRemaining}d)</>
+                                  <> • Meta diária: <span className="font-semibold text-foreground">{dailyGoal.toFixed(2)} {goal.unit}/dia</span> ({daysRemaining}d)</>
                                 ) : endDate && daysRemaining === 0 ? (
                                   <> • <span className="text-destructive font-medium">Prazo encerrado</span></>
                                 ) : null}
