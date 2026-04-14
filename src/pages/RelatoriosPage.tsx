@@ -1012,14 +1012,56 @@ const RelatoriosPage = () => {
   const [isCarouselFullscreen, setIsCarouselFullscreen] = useState(false);
 
   const hasBedData = bedChartData.totalLeitos > 0;
-  const TOTAL_SLIDES = (compareMode ? 11 : 10) + (hasBedData ? 2 : 0);
+  // Heatmap data: goal entries for current month, sorted by most entries first
+  const heatmapData = useMemo(() => {
+    const now = new Date();
+    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const unitGoals = dbGoals.filter(g => g.facility_unit === contract.unit);
+
+    const rows = unitGoals.map(g => {
+      const goalEntries = dbEntries.filter((e: any) => e.goal_id === g.id);
+      // Group by day of month using created_at
+      const dayMap: Record<number, number> = {};
+      let monthEntryCount = 0;
+      goalEntries.forEach((e: any) => {
+        const d = new Date(e.created_at);
+        const eYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (eYM === currentYM) {
+          const day = d.getDate();
+          dayMap[day] = (dayMap[day] || 0) + Number(e.value);
+          monthEntryCount++;
+        }
+      });
+      const dailyTarget = Number(g.target) / (daysInMonth || 30);
+      return {
+        id: g.id,
+        name: g.name as string,
+        unit: g.unit as string,
+        target: Number(g.target),
+        dailyTarget,
+        dayMap,
+        entryCount: monthEntryCount,
+        totalMonth: Object.values(dayMap).reduce((s: number, v) => s + (v as number), 0),
+      };
+    });
+
+    // Sort by most entries first
+    rows.sort((a, b) => b.entryCount - a.entryCount);
+
+    return { rows, daysInMonth, monthLabel: currentYM, todayDay: now.getDate() };
+  }, [dbGoals, dbEntries, contract.unit]);
+
+  const heatmapSlideIdx = hasBedData ? 12 : 10;
+  const compSlideIdx = heatmapSlideIdx + 1;
+  const TOTAL_SLIDES = (compareMode ? compSlideIdx + 1 : heatmapSlideIdx + 1);
   const FULLSCREEN_GROUPS = useMemo(() => {
     const groups: number[][] = [[0, 9], [1, 2], [3, 4], [5, 6], [7, 8]];
     if (hasBedData) groups.push([10, 11]);
-    const compIdx = hasBedData ? 12 : 10;
-    if (compareMode) groups.push([compIdx]);
+    groups.push([heatmapSlideIdx]); // Heatmap full-width
+    if (compareMode) groups.push([compSlideIdx]);
     return groups;
-  }, [compareMode, hasBedData]);
+  }, [compareMode, hasBedData, heatmapSlideIdx, compSlideIdx]);
   const TOTAL_FS_SLIDES = FULLSCREEN_GROUPS.length;
 
   const nextSlide = useCallback(() => setCurrentSlide(prev => {
