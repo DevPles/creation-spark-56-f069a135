@@ -29,11 +29,6 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area,
 } from "recharts";
-import {
-  CalendarIcon, Plus, Trash2, FileText, BarChart3, Database, CheckCircle2,
-  AlertTriangle, TrendingUp, Users, Shield, Activity, Settings, Download,
-  Eye, EyeOff, GripVertical, Image, Paperclip, Save, ChevronRight, Sparkles,
-} from "lucide-react";
 
 /* ══════════════════════════════════════════════
    Types
