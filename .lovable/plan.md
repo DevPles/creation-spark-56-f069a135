@@ -1,34 +1,41 @@
 
 
-# Plano de Revisão Final — Sistema MOSS
+## Plano: Seletor de Visão Cards vs Lista/Calendário na página de Metas
 
-## Problemas Identificados
+### O que muda para o usuário
+Um toggle (ícone de grid / ícone de lista) aparecerá ao lado dos filtros existentes. Ao alternar:
+- **Visão Cards** (atual): grid de cards com gauge, faixas de glosa, etc.
+- **Visão Lista**: tabela compacta estilo calendário mostrando para cada meta uma linha com:
+  - Nome da meta, tipo, unidade
+  - Meta total e meta diária calculada
+  - Realizado acumulado
+  - Déficit (meta acumulada até hoje - realizado)
+  - Barra de progresso visual (% atingimento)
+  - Dias restantes
+  - Status (cor verde/amarelo/vermelho)
 
-### 1. Performance e riskTrend fabricados em RelatoriosPage (CRÍTICO)
-Linhas 548-556: `performance` e `riskTrend` são gerados com dados sintéticos fixos ("Jan", "Fev", "Mar", "Abr") usando cálculos artificiais com fator `(1 - i * 0.1)`. Não refletem dados reais por mês. Devem ser computados a partir de `goal_entries` agrupados por mês/período.
+Os cálculos usam os mesmos dados já carregados (goals + goal_entries): meta diária = target / dias do período; meta acumulada até hoje = meta diária x dias decorridos; déficit = meta acumulada - current.
 
-### 2. Sem filtro de período no RelatoriosPage
-A página tem um seletor `period` ("4M") que não afeta nenhum dado — é puramente decorativo. Os dados não são filtrados por período.
+### Detalhes técnicos
 
-### 3. GoalItem.rubrica sempre "Metas" (MENOR)
-Linha 540: `rubrica: "Metas"` — hardcoded. O radar de rubricas nunca mostra dados reais porque nenhuma goal tem rubrica correspondente ao nome da rubrica do contrato. Sem campo de rubrica na tabela `goals`, este dado deve ser calculado ou removido do radar.
+**Arquivo: `src/pages/MetasPage.tsx`**
+- Adicionar estado `viewMode: "cards" | "list"` 
+- Adicionar toggle com ícones LayoutGrid / List ao lado dos filtros
+- Quando `viewMode === "list"`, renderizar um novo componente `GoalListView`
+- Quando `viewMode === "cards"`, manter o grid atual
 
-## Plano de Correção (2 Etapas)
+**Novo arquivo: `src/components/GoalListView.tsx`**
+- Recebe a lista de goals filtradas e callbacks (onView, onEdit)
+- Renderiza uma tabela responsiva com as colunas:
+  - Meta | Tipo | Realizado | Meta Total | Meta Diária | Acumulado Esperado | Déficit | % | Dias Restantes
+- Cálculos:
+  - `daysTotal` = diferença entre startDate e endDate
+  - `daysElapsed` = diferença entre startDate e hoje
+  - `dailyTarget` = target / daysTotal
+  - `expectedAccum` = dailyTarget x daysElapsed  
+  - `deficit` = expectedAccum - current
+- Barra de progresso inline com cor condicional
+- Linha clicável para abrir o modal de detalhes
 
-### Etapa 1: Corrigir performance e riskTrend em RelatoriosPage
-- Computar `performance` real: agrupar `goal_entries` por mês, calcular % atingidas/parciais/críticas para cada mês que tem lançamentos
-- Computar `riskTrend` real: calcular risco por mês baseado no gap entre lançado e meta proporcional
-- Conectar o filtro `period` para filtrar os meses mostrados (4M = últimos 4 meses, etc.)
-
-### Etapa 2: Corrigir radar de rubricas
-- Como não existe campo `rubrica` na tabela `goals`, remover o radar ou substituí-lo por dados reais de execução de rubricas (`rubrica_entries` vs alocação do contrato)
-
-## Resumo Técnico
-
-```text
-Arquivos a editar:
-  - src/pages/RelatoriosPage.tsx (performance/riskTrend reais + filtro período)
-```
-
-Impacto: Médio. Alteração de lógica de computação dos dados de gráficos sem mudança de DB.
+Nenhuma alteração no banco de dados. Usa exclusivamente os dados já carregados.
 
