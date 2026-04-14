@@ -1302,7 +1302,7 @@ const LancamentoMetasPage = () => {
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto max-h-[65vh] overflow-y-auto">
                     <table className="w-full text-xs border-separate border-spacing-0.5">
                       <thead className="sticky top-0 z-20 bg-background">
                         <tr>
