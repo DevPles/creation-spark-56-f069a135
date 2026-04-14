@@ -23,6 +23,7 @@ const MetasPage = () => {
   const [selectedGoalName, setSelectedGoalName] = useState("Todas");
   const [selectedSector, setSelectedSector] = useState("Todos");
   const [goals, setGoals] = useState<GoalData[]>([]);
+  const [dbSectors, setDbSectors] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGoal, setSelectedGoal] = useState<GoalData | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -33,6 +34,10 @@ const MetasPage = () => {
 
   const fetchGoals = useCallback(async () => {
     setLoading(true);
+    // Fetch sectors from DB
+    const { data: sectorsData } = await supabase.from("sectors").select("name").order("name");
+    setDbSectors([...new Set((sectorsData || []).map(s => s.name))]);
+
     // Fetch goals
     const { data: goalsData, error: goalsError } = await supabase
       .from("goals")
@@ -192,16 +197,10 @@ const MetasPage = () => {
                   <SelectTrigger className="w-[160px] h-9 text-xs">
                     <SelectValue placeholder="Setor" />
                   </SelectTrigger>
-                  <SelectContent>
+                   <SelectContent>
                     <SelectItem value="Todos">Todos os setores</SelectItem>
-                    {[...new Set(
-                      goals
-                        .filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
-                        .filter(g => selectedType === "Todos" || g.type === selectedType)
-                        .map(g => g.sector)
-                        .filter(Boolean)
-                    )].sort().map(sector => (
-                      <SelectItem key={sector} value={sector!}>{sector}</SelectItem>
+                    {dbSectors.map(sector => (
+                      <SelectItem key={sector} value={sector}>{sector}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

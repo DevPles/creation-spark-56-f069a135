@@ -876,7 +876,6 @@ const LancamentoMetasPage = () => {
         <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
           <div>
             <h1 className="font-display text-xl font-bold text-foreground">Lançamentos</h1>
-            <p className="text-sm text-muted-foreground">Lançamento de metas e rubricas</p>
           </div>
           <div className="flex items-end gap-3 flex-wrap">
             {/* Unidade — Metas e Leitos */}
@@ -937,8 +936,8 @@ const LancamentoMetasPage = () => {
                 </Select>
               </div>
             )}
-            {/* Meta específica — apenas Metas */}
-            {activeTab === "lancar-metas" && (
+            {/* Meta específica — Metas e Mapa Térmico */}
+            {(activeTab === "lancar-metas" || activeTab === "mapa-termico") && (
               <div>
                 <label className="text-[10px] text-muted-foreground block mb-1">Meta</label>
                 <Select value={filterGoal} onValueChange={setFilterGoal}>
