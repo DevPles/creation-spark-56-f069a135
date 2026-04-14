@@ -72,6 +72,7 @@ const AutoDataPanel = ({
               </div>
             ))}
           </div>
+          <Accordion type="multiple" className="w-full">
             {Object.entries(goalsBySector).map(([sector, goals]) => (
               <AccordionItem key={sector} value={sector} className="border border-border rounded-lg mb-2 overflow-hidden">
                 <AccordionTrigger className="px-4 py-2 text-sm font-semibold hover:no-underline">
