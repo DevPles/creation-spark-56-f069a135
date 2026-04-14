@@ -1120,7 +1120,7 @@ const RelatoriosPage = () => {
     return () => clearInterval(timer);
   }, [isPaused, nextSlide, currentSlide, isCarouselFullscreen, FULLSCREEN_GROUPS, allSectors, sectorCycleIndex]);
 
-  useEffect(() => { setCurrentSlide(0); }, [selectedContractId, typeFilter, statusFilter, compareMode]);
+  useEffect(() => { setCurrentSlide(0); setSectorCycleIndex(0); }, [selectedContractId, typeFilter, statusFilter, compareMode]);
 
   const toggleCarouselFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
