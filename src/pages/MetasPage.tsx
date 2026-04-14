@@ -6,6 +6,7 @@ import GoalDetailCard from "@/components/GoalDetailCard";
 import GoalModal from "@/components/GoalModal";
 import GoalFormModal, { GoalData } from "@/components/GoalFormModal";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ import { normalizeScoringRules, findGlosaPct } from "@/lib/riskCalculation";
 const MetasPage = () => {
   const navigate = useNavigate();
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
+  const [selectedType, setSelectedType] = useState("Todos");
   const [goals, setGoals] = useState<GoalData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGoal, setSelectedGoal] = useState<GoalData | null>(null);
