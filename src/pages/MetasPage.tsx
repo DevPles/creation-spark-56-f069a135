@@ -8,9 +8,10 @@ import GoalFormModal, { GoalData } from "@/components/GoalFormModal";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GoalListView from "@/components/GoalListView";
+import GoalCalendarView from "@/components/GoalCalendarView";
 import { toast } from "sonner";
 import { normalizeScoringRules, findGlosaPct } from "@/lib/riskCalculation";
 
@@ -25,7 +26,7 @@ const MetasPage = () => {
   const [editGoal, setEditGoal] = useState<GoalData | null>(null);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
-  const [viewMode, setViewMode] = useState<"cards" | "list">("cards");
+  const [viewMode, setViewMode] = useState<"cards" | "list" | "calendar">("cards");
 
   const fetchGoals = useCallback(async () => {
     setLoading(true);
@@ -202,6 +203,14 @@ const MetasPage = () => {
                   >
                     <List className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant={viewMode === "calendar" ? "default" : "ghost"}
+                    size="icon"
+                    className="h-9 w-9 rounded-none"
+                    onClick={() => setViewMode("calendar")}
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             }
@@ -220,6 +229,14 @@ const MetasPage = () => {
             </div>
           ) : viewMode === "list" ? (
             <GoalListView
+              goals={goals
+                .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+                .filter((g) => selectedType === "Todos" || g.type === selectedType)}
+              onView={handleView}
+              onEdit={handleEdit}
+            />
+          ) : viewMode === "calendar" ? (
+            <GoalCalendarView
               goals={goals
                 .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
                 .filter((g) => selectedType === "Todos" || g.type === selectedType)}
