@@ -970,8 +970,7 @@ const RelatorioAssistencialPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
+            <h1 className="font-display text-xl font-bold text-foreground">
               Relatório Assistencial
             </h1>
             <p className="text-xs text-muted-foreground mt-1">
@@ -997,7 +996,6 @@ const RelatorioAssistencialPage = () => {
 
         {!selectedContract ? (
           <div className="kpi-card p-12 text-center">
-            <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-muted-foreground">Selecione um contrato para montar o relatório assistencial.</p>
           </div>
         ) : (
@@ -1011,7 +1009,7 @@ const RelatorioAssistencialPage = () => {
                     <Badge variant="secondary" className="text-[10px]">{filledCount}/{visibleSections.length}</Badge>
                     <Dialog open={addSectionOpen} onOpenChange={setAddSectionOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0"><Plus className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]">+</Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md">
                         <DialogHeader>
@@ -1061,17 +1059,12 @@ const RelatorioAssistencialPage = () => {
                             "hover:bg-muted text-foreground"
                           }`}
                         >
-                          <span className={`shrink-0 ${isActive ? "text-primary-foreground" : "text-muted-foreground"}`}>
-                            {sec.icon}
-                          </span>
                           <span className={`w-2 h-2 rounded-full shrink-0 ${
                             filled && hasAuto ? "bg-emerald-500 ring-1 ring-emerald-500/30" :
                             filled ? "bg-emerald-500" :
                             isActive ? "bg-primary-foreground/40" : "bg-muted-foreground/20"
                           }`} />
                           <span className="truncate flex-1">{sec.title}</span>
-                          {hasAuto && !isActive && (
-                            <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
                           )}
                         </button>
                       );
@@ -1084,7 +1077,7 @@ const RelatorioAssistencialPage = () => {
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="w-full text-xs">
-                        <Settings className="w-3 h-3 mr-1" /> Configurar PDF
+                        Configurar PDF
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-auto">
@@ -1116,8 +1109,7 @@ const RelatorioAssistencialPage = () => {
                             />
                             <span className="text-xs">{sec.title}</span>
                             {sec.custom && (
-                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0 ml-auto text-destructive" onClick={() => removeSection(sec.key)}>
-                                <Trash2 className="w-3 h-3" />
+                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0 ml-auto text-destructive text-[10px]">✕</Button>
                               </Button>
                             )}
                           </div>
