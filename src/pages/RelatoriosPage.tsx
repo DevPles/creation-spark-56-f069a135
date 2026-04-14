@@ -812,9 +812,9 @@ const RelatoriosPage = () => {
   const [includeDetails, setIncludeDetails] = useState(true);
   const [reports, setReports] = useState(GENERATED_REPORTS);
 
-  // Goal modal
   const [selectedGoal, setSelectedGoal] = useState<GoalItem | null>(null);
   const [goalModalOpen, setGoalModalOpen] = useState(false);
+  const [sectorFilter, setSectorFilter] = useState("todos");
 
   // Bed data from DB
   const [bedData, setBedData] = useState<{ facility_unit: string; category: string; specialty: string; quantity: number }[]>([]);
