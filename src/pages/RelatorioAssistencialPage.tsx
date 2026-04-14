@@ -19,6 +19,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import RichTextEditor from "@/components/relatorio/RichTextEditor";
 import AutoDataPanel from "@/components/relatorio/AutoDataPanel";
+import SectionEntryForms from "@/components/relatorio/SectionEntryForms";
 import { useAutoData, useComputedSummaries } from "@/components/relatorio/useAutoData";
 import {
   DEFAULT_SECTIONS, STATUS_LABELS, STATUS_COLORS,
@@ -26,14 +27,17 @@ import {
 } from "@/components/relatorio/types";
 
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const MONTHS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-// Status flow rules
 const STATUS_TRANSITIONS: Record<string, string[]> = {
   rascunho: ["em_revisao"],
   em_revisao: ["rascunho", "fechado"],
   fechado: ["exportado"],
   exportado: [],
 };
+
+// Sections that support complementary entries
+const ENTRY_SECTIONS = ["recursos_humanos", "doc_regulatoria", "doc_operacional", "treinamentos", "seg_trabalho", "servicos_terceirizados"];
 
 const RelatorioAssistencialPage = () => {
   const navigate = useNavigate();
@@ -55,6 +59,7 @@ const RelatorioAssistencialPage = () => {
   const [sections, setSections] = useState<SectionDef[]>(DEFAULT_SECTIONS);
   const [activeSection, setActiveSection] = useState(DEFAULT_SECTIONS[0].key);
   const [sectionsData, setSectionsData] = useState<Record<string, SectionData>>({});
+  const [sectionEntries, setSectionEntries] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -78,7 +83,6 @@ const RelatorioAssistencialPage = () => {
   const { autoData, loading: autoDataLoading } = useAutoData(unit, selectedContractId);
   const { goalsBySector, goalSummary, actionPlanSummary, sauSummary, bedSummary, rubricaSummary } = useComputedSummaries(autoData, refMonth, refYear);
 
-  // ═══ Editability & status rules ═══
   const isLocked = currentReport?.status === "fechado" || currentReport?.status === "exportado";
   const isEditable = currentReport ? (currentReport.status === "rascunho" || currentReport.status === "em_revisao") : false;
   const allowedTransitions = currentReport ? (STATUS_TRANSITIONS[currentReport.status] || []) : [];
@@ -105,24 +109,32 @@ const RelatorioAssistencialPage = () => {
     return r;
   }, [reports, selectedContractId, filterStatus, searchText]);
 
+  // ═══ COMPETENCY CALENDAR ═══
+
+  const calendarData = useMemo(() => {
+    if (!selectedContractId || selectedContractId === "all") return [];
+    const months: { month: number; year: number; reports: ReportRecord[] }[] = [];
+    for (let m = 1; m <= 12; m++) {
+      const reps = reports.filter(r => r.contract_id === selectedContractId && r.reference_month === m && r.reference_year === refYear);
+      months.push({ month: m, year: refYear, reports: reps });
+    }
+    return months;
+  }, [reports, selectedContractId, refYear]);
+
   // ═══ CREATE / OPEN REPORT ═══
 
-  const createNewReport = async (replicateFrom?: "blank" | "text" | "all") => {
+  const createNewReport = async (replicateFrom?: "blank" | "text" | "text_entries" | "all") => {
     if (!selectedContractId || !unit || selectedContractId === "all") { toast.error("Selecione um contrato"); return; }
 
     const existing = reports.filter(r => r.contract_id === selectedContractId && r.facility_unit === unit && r.reference_month === refMonth && r.reference_year === refYear);
     const nextVersion = existing.length > 0 ? Math.max(...existing.map(r => r.version)) + 1 : 1;
 
     const { data, error } = await supabase.from("reports").insert({
-      contract_id: selectedContractId,
-      facility_unit: unit,
-      reference_month: refMonth,
-      reference_year: refYear,
-      version: nextVersion,
-      status: "rascunho" as any,
+      contract_id: selectedContractId, facility_unit: unit,
+      reference_month: refMonth, reference_year: refYear,
+      version: nextVersion, status: "rascunho" as any,
       title: `Relatório ${MONTHS[refMonth - 1]} ${refYear} — ${unit}`,
-      created_by: userId,
-      updated_by: userId,
+      created_by: userId, updated_by: userId,
     }).select().single();
 
     if (error) { toast.error("Erro ao criar relatório: " + error.message); return; }
@@ -140,18 +152,33 @@ const RelatorioAssistencialPage = () => {
             const insertData: any = {
               report_id: report.id, contract_id: selectedContractId, facility_unit: unit, period,
               section_key: sec.section_key, section_title: sec.section_title,
-              content: replicateFrom === "all" ? sec.content : "",
-              manual_content: sec.manual_content || "",
+              content: replicateFrom === "all" || replicateFrom === "text_entries" || replicateFrom === "text" ? sec.content : "",
+              manual_content: replicateFrom === "all" || replicateFrom === "text_entries" || replicateFrom === "text" ? (sec.manual_content || "") : "",
               sort_order: sec.sort_order, updated_by: userId, completion_status: "pendente",
             };
             const { data: newSec } = await supabase.from("report_sections").insert(insertData).select("id").single();
-            if (replicateFrom === "all" && newSec) {
+
+            if (newSec && (replicateFrom === "all")) {
               const { data: prevAtts } = await supabase.from("report_attachments").select("*").eq("section_id", sec.id);
               if (prevAtts) {
                 for (const att of prevAtts) {
                   await supabase.from("report_attachments").insert({
                     report_id: report.id, section_id: newSec.id, file_name: att.file_name,
                     file_url: att.file_url, file_type: att.file_type, uploaded_by: userId, sort_order: att.sort_order,
+                  });
+                }
+              }
+            }
+
+            // Copy complementary entries if requested
+            if (newSec && (replicateFrom === "text_entries" || replicateFrom === "all")) {
+              const { data: prevEntries } = await supabase.from("report_section_entries" as any).select("*").eq("section_id", sec.id);
+              if (prevEntries) {
+                for (const entry of prevEntries as any[]) {
+                  await supabase.from("report_section_entries" as any).insert({
+                    report_id: report.id, section_id: newSec.id,
+                    entry_type: entry.entry_type, entry_json: entry.entry_json,
+                    created_by: userId, updated_by: userId,
                   });
                 }
               }
@@ -175,12 +202,9 @@ const RelatorioAssistencialPage = () => {
     const nextVersion = Math.max(...existing.map(r => r.version)) + 1;
 
     const { data, error } = await supabase.from("reports").insert({
-      contract_id: currentReport.contract_id,
-      facility_unit: currentReport.facility_unit,
-      reference_month: currentReport.reference_month,
-      reference_year: currentReport.reference_year,
-      version: nextVersion,
-      status: "rascunho" as any,
+      contract_id: currentReport.contract_id, facility_unit: currentReport.facility_unit,
+      reference_month: currentReport.reference_month, reference_year: currentReport.reference_year,
+      version: nextVersion, status: "rascunho" as any,
       title: `Relatório ${MONTHS[currentReport.reference_month - 1]} ${currentReport.reference_year} — ${currentReport.facility_unit}`,
       created_by: userId, updated_by: userId,
     }).select().single();
@@ -188,7 +212,6 @@ const RelatorioAssistencialPage = () => {
     if (error) { toast.error("Erro: " + error.message); return; }
     const newReport = data as unknown as ReportRecord;
 
-    // Copy all sections and attachments
     const { data: srcSections } = await supabase.from("report_sections").select("*").eq("report_id", currentReport.id);
     if (srcSections) {
       for (const sec of srcSections) {
@@ -205,6 +228,16 @@ const RelatorioAssistencialPage = () => {
               await supabase.from("report_attachments").insert({
                 report_id: newReport.id, section_id: newSec.id, file_name: att.file_name,
                 file_url: att.file_url, file_type: att.file_type, uploaded_by: userId, sort_order: att.sort_order,
+              });
+            }
+          }
+          const { data: entries } = await supabase.from("report_section_entries" as any).select("*").eq("section_id", sec.id);
+          if (entries) {
+            for (const entry of entries as any[]) {
+              await supabase.from("report_section_entries" as any).insert({
+                report_id: newReport.id, section_id: newSec.id,
+                entry_type: entry.entry_type, entry_json: entry.entry_json,
+                created_by: userId, updated_by: userId,
               });
             }
           }
@@ -258,6 +291,10 @@ const RelatorioAssistencialPage = () => {
       const { data } = await supabase.from("report_attachments").select("*").in("section_id", sectionIds);
       attachments = data || [];
     }
+    // Load complementary entries
+    const { data: entriesData } = await supabase.from("report_section_entries" as any).select("*").eq("report_id", reportId);
+    setSectionEntries((entriesData || []) as any[]);
+
     const dataMap: Record<string, SectionData> = {};
     sections.forEach(sec => {
       const dbSec = (dbSections || []).find((s: any) => s.section_key === sec.key);
@@ -276,6 +313,24 @@ const RelatorioAssistencialPage = () => {
   const handleContentChange = (key: string, html: string) => {
     if (isLocked) return;
     setSectionsData(prev => ({ ...prev, [key]: { ...prev[key], manual_content: html } }));
+  };
+
+  const ensureSectionExists = async (sectionKey: string): Promise<string | null> => {
+    if (!currentReport) return null;
+    const existing = sectionsData[sectionKey];
+    if (existing?.id) return existing.id;
+    const sec = sections.find(s => s.key === sectionKey);
+    if (!sec) return null;
+    const { data } = await supabase.from("report_sections").insert({
+      report_id: currentReport.id, contract_id: selectedContractId, facility_unit: unit, period,
+      section_key: sectionKey, section_title: sec.title,
+      content: "", manual_content: "", sort_order: sec.order, updated_by: userId,
+    }).select("id").single();
+    if (data) {
+      await loadReportSections(currentReport.id);
+      return data.id;
+    }
+    return null;
   };
 
   const handleSaveSection = async (sectionKey: string) => {
@@ -367,7 +422,6 @@ const RelatorioAssistencialPage = () => {
       return;
     }
 
-    // On close/export, snapshot auto data
     if (newStatus === "fechado" || newStatus === "exportado") {
       const snapshot = { goalSummary, actionPlanSummary, sauSummary, bedSummary, rubricaSummary, goalsBySector };
       for (const sec of sections) {
@@ -400,21 +454,33 @@ const RelatorioAssistencialPage = () => {
 
   // ═══ COMPUTED ═══
 
+  const sectionHasAutoData = (sec: SectionDef) => {
+    return sec.autoData && (
+      (sec.autoData === "goals" && goalSummary.total > 0) ||
+      (sec.autoData === "goals_trend" && goalSummary.total > 0) ||
+      (sec.autoData === "actionPlans" && actionPlanSummary.total > 0) ||
+      (sec.autoData === "sau" && sauSummary.total > 0) ||
+      (sec.autoData === "beds" && bedSummary.total > 0) ||
+      (sec.autoData === "rubricas" && rubricaSummary.totalExecuted > 0) ||
+      (sec.autoData === "contract" && selectedContract)
+    );
+  };
+
+  const sectionHasEntries = (secKey: string) => {
+    const secData = sectionsData[secKey];
+    if (!secData?.id) return false;
+    return sectionEntries.some(e => e.section_id === secData.id);
+  };
+
   const filledCount = useMemo(() =>
     sections.filter(sec => {
       const data = sectionsData[sec.key];
-      const hasAutoData = sec.autoData && (
-        (sec.autoData === "goals" && goalSummary.total > 0) ||
-        (sec.autoData === "goals_trend" && goalSummary.total > 0) ||
-        (sec.autoData === "actionPlans" && actionPlanSummary.total > 0) ||
-        (sec.autoData === "sau" && sauSummary.total > 0) ||
-        (sec.autoData === "beds" && bedSummary.total > 0) ||
-        (sec.autoData === "rubricas" && rubricaSummary.totalExecuted > 0) ||
-        (sec.autoData === "contract" && selectedContract)
-      );
-      return (data && ((data.manual_content || "").trim().length > 0 || data.attachments.length > 0)) || hasAutoData;
+      const hasManual = data && ((data.manual_content || "").trim().length > 0 || data.attachments.length > 0);
+      const hasAuto = sectionHasAutoData(sec);
+      const hasEntries = sectionHasEntries(sec.key);
+      return hasManual || hasAuto || hasEntries;
     }).length,
-    [sectionsData, sections, goalSummary, actionPlanSummary, sauSummary, bedSummary, rubricaSummary, selectedContract]
+    [sectionsData, sections, goalSummary, actionPlanSummary, sauSummary, bedSummary, rubricaSummary, selectedContract, sectionEntries]
   );
 
   const progressPct = sections.length > 0 ? Math.round((filledCount / sections.length) * 100) : 0;
@@ -423,7 +489,6 @@ const RelatorioAssistencialPage = () => {
   const activeImages = activeData.attachments.filter(a => a.file_type === "image");
   const activeFiles = activeData.attachments.filter(a => a.file_type !== "image");
 
-  // Available reports for comparison (same contract, different month/version)
   const compareableReports = useMemo(() => {
     if (!currentReport) return [];
     return reports.filter(r => r.contract_id === currentReport.contract_id && r.id !== currentReport.id);
@@ -453,23 +518,18 @@ const RelatorioAssistencialPage = () => {
       doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
       doc.rect(0, 0, W, 100, "F");
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(22);
-      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22); doc.setFont("helvetica", "bold");
       doc.text("RELATÓRIO ASSISTENCIAL", W / 2, 30, { align: "center" });
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11); doc.setFont("helvetica", "normal");
       doc.text("Gerência, Operacionalização e Execução das Ações e Serviços de Saúde", W / 2, 42, { align: "center" });
       doc.setFontSize(13);
       doc.text(`${selectedContract.name}`, W / 2, 58, { align: "center" });
       doc.text(`${unit}`, W / 2, 66, { align: "center" });
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14); doc.setFont("helvetica", "bold");
       doc.text(`${MONTHS[refMonth - 1]} de ${refYear}`, W / 2, 78, { align: "center" });
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9); doc.setFont("helvetica", "normal");
       doc.text(`Versão ${currentReport.version}`, W / 2, 88, { align: "center" });
-      doc.setTextColor(0);
-      doc.setFontSize(9);
+      doc.setTextColor(0); doc.setFontSize(9);
       doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, W / 2, 115, { align: "center" });
       doc.text(`Status: ${STATUS_LABELS[currentReport.status]}`, W / 2, 122, { align: "center" });
 
@@ -481,8 +541,7 @@ const RelatorioAssistencialPage = () => {
       const pdfVisibleSections = sections.filter(s => pdfSections.has(s.key));
       pdfVisibleSections.forEach((sec) => {
         doc.setFontSize(9); doc.setFont("helvetica", "normal");
-        doc.text(`${sec.title}`, margin, ty);
-        ty += 6;
+        doc.text(`${sec.title}`, margin, ty); ty += 6;
         if (ty > 280) { doc.addPage(); drawHeader(); ty = 20; }
       });
 
@@ -495,32 +554,26 @@ const RelatorioAssistencialPage = () => {
         doc.text(sec.title, margin + 4, 23); doc.setTextColor(0);
         let y = 32;
 
+        // Auto data tables in PDF
         if (sec.autoData === "contract" && selectedContract) {
-          doc.setFontSize(8); doc.setFont("helvetica", "normal");
           autoTable(doc, {
             startY: y,
             head: [["Campo", "Valor"]],
             body: [
-              ["Contrato", selectedContract.name],
-              ["Unidade", unit],
+              ["Contrato", selectedContract.name], ["Unidade", unit],
               ["Valor mensal", `R$ ${Number(selectedContract.value).toLocaleString("pt-BR")}`],
-              ["Status", selectedContract.status],
-              ["Vigência", selectedContract.period],
-              ["Variável", `${(Number(selectedContract.variable) * 100).toFixed(0)}%`],
-              ["Metas vinculadas", String(selectedContract.goals)],
+              ["Status", selectedContract.status], ["Vigência", selectedContract.period],
             ],
             margin: { left: margin, right: margin },
             styles: { fontSize: 8, cellPadding: 2 },
             headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255] },
-            alternateRowStyles: { fillColor: [248, 249, 252] },
           });
           y = (doc as any).lastAutoTable.finalY + 6;
         }
 
         if (sec.autoData === "goals" && goalSummary.total > 0) {
-          doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(80, 80, 80);
-          doc.text(`Total de metas: ${goalSummary.total} | Atingimento médio: ${goalSummary.avg}% | Atingidas: ${goalSummary.atingidas} | Parciais: ${goalSummary.parciais} | Críticas: ${goalSummary.criticas}`, margin, y);
-          y += 8;
+          doc.setFontSize(8);
+          doc.text(`Atingimento médio: ${goalSummary.avg}% | Metas atingidas: ${goalSummary.atingidas}/${goalSummary.total}`, margin, y); y += 8;
           autoTable(doc, {
             startY: y,
             head: [["Meta", "Setor", "Alvo", "Realizado", "Ating."]],
@@ -531,49 +584,29 @@ const RelatorioAssistencialPage = () => {
             margin: { left: margin, right: margin },
             styles: { fontSize: 7, cellPadding: 2 },
             headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255] },
-            alternateRowStyles: { fillColor: [248, 249, 252] },
-            didParseCell: (data: any) => {
-              if (data.section === "body" && data.column.index === 4) {
-                const val = parseFloat(data.cell.raw);
-                if (val >= 90) data.cell.styles.textColor = [40, 160, 90];
-                else if (val >= 60) data.cell.styles.textColor = [230, 160, 30];
-                else data.cell.styles.textColor = [220, 60, 60];
-                data.cell.styles.fontStyle = "bold";
-              }
-            },
           });
           y = (doc as any).lastAutoTable.finalY + 6;
         }
 
         if (sec.autoData === "actionPlans" && actionPlanSummary.total > 0) {
-          doc.setFontSize(8); doc.setFont("helvetica", "normal");
-          doc.text(`Total: ${actionPlanSummary.total} | Concluídas: ${actionPlanSummary.concluidas} | Em andamento: ${actionPlanSummary.emAndamento} | Vencidas: ${actionPlanSummary.vencidos}`, margin, y);
-          y += 8;
+          doc.setFontSize(8);
+          doc.text(`Total: ${actionPlanSummary.total} | Concluídas: ${actionPlanSummary.concluidas} | Em andamento: ${actionPlanSummary.emAndamento}`, margin, y); y += 8;
           autoTable(doc, {
             startY: y,
-            head: [["Referência", "Prioridade", "Status", "Responsável", "Prazo"]],
-            body: (autoData.actionPlans || []).map((p: any) => [p.reference_name, p.prioridade, p.status_acao.replace(/_/g, " "), p.responsavel || "—", p.prazo || "—"]),
+            head: [["Referência", "Status", "Responsável", "Prazo"]],
+            body: (autoData.actionPlans || []).map((p: any) => [p.reference_name, p.status_acao === "concluida" ? "Concluída" : p.status_acao === "em_andamento" ? "Em andamento" : "Não iniciada", p.responsavel || "—", p.prazo || "—"]),
             margin: { left: margin, right: margin },
             styles: { fontSize: 7, cellPadding: 2 },
             headStyles: { fillColor: [PRIMARY[0], PRIMARY[1], PRIMARY[2]], textColor: [255, 255, 255] },
-            alternateRowStyles: { fillColor: [248, 249, 252] },
           });
           y = (doc as any).lastAutoTable.finalY + 6;
         }
 
-        if (sec.autoData === "sau" && sauSummary.total > 0) {
-          doc.setFontSize(8);
-          doc.text(`SAU — Total: ${sauSummary.total} | Elogios: ${sauSummary.elogios} | Reclamações: ${sauSummary.reclamacoes} | Resolvidos: ${sauSummary.resolvidos}`, margin, y);
-          y += 6;
-        }
-
         if (sec.autoData === "beds" && bedSummary.total > 0) {
           doc.setFontSize(8);
-          doc.text(`Leitos: ${bedSummary.total} | Internação: ${bedSummary.totalInternacao} | Internações mês: ${bedSummary.movements.totalAdmissions} | Altas: ${bedSummary.movements.totalDischarges}`, margin, y);
-          y += 8;
+          doc.text(`Leitos: ${bedSummary.total} | Internações: ${bedSummary.movements.totalAdmissions} | Altas: ${bedSummary.movements.totalDischarges}`, margin, y); y += 8;
           autoTable(doc, {
-            startY: y,
-            head: [["Especialidade", "Categoria", "Qtd"]],
+            startY: y, head: [["Especialidade", "Categoria", "Qtd"]],
             body: bedSummary.breakdown.map((b: any) => [b.specialty, b.category, b.quantity]),
             margin: { left: margin, right: margin },
             styles: { fontSize: 7, cellPadding: 2 },
@@ -586,8 +619,7 @@ const RelatorioAssistencialPage = () => {
           doc.setFontSize(8);
           doc.text(`Total executado: R$ ${rubricaSummary.totalExecuted.toLocaleString("pt-BR")}`, margin, y); y += 8;
           autoTable(doc, {
-            startY: y,
-            head: [["Rubrica", "Valor Executado"]],
+            startY: y, head: [["Rubrica", "Valor Executado"]],
             body: Object.entries(rubricaSummary.byRubrica).map(([name, value]) => [name, `R$ ${(value as number).toLocaleString("pt-BR")}`]),
             margin: { left: margin, right: margin },
             styles: { fontSize: 7, cellPadding: 2 },
@@ -596,15 +628,40 @@ const RelatorioAssistencialPage = () => {
           y = (doc as any).lastAutoTable.finalY + 6;
         }
 
+        if (sec.autoData === "sau" && sauSummary.total > 0) {
+          doc.setFontSize(8);
+          doc.text(`SAU — Total: ${sauSummary.total} | Elogios: ${sauSummary.elogios} | Resolvidos: ${sauSummary.resolvidos}`, margin, y); y += 6;
+        }
+
         if (sec.autoData === "goals_trend" && goalSummary.total > 0) {
-          doc.setFontSize(8); doc.setFont("helvetica", "normal");
-          doc.text(`Indicadores: ${goalSummary.total} metas | Atingimento médio: ${goalSummary.avg}% | Desempenho: ${goalSummary.avg >= 90 ? "Satisfatório" : goalSummary.avg >= 60 ? "Parcial" : "Crítico"}`, margin, y);
-          y += 6;
+          doc.setFontSize(8);
+          doc.text(`Indicadores: ${goalSummary.total} metas | Atingimento médio: ${goalSummary.avg}% | Desempenho: ${goalSummary.avg >= 90 ? "Satisfatório" : goalSummary.avg >= 60 ? "Parcial" : "Em evolução"}`, margin, y); y += 6;
+        }
+
+        // Complementary entries in PDF
+        const secData = sectionsData[sec.key];
+        if (secData?.id && ENTRY_SECTIONS.includes(sec.key)) {
+          const secEntries = sectionEntries.filter(e => e.section_id === secData.id);
+          if (secEntries.length > 0) {
+            if (y > 250) { doc.addPage(); drawHeader(); y = 20; }
+            doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+            doc.text("Dados Complementares", margin, y); y += 5; doc.setTextColor(0);
+            const keys = Object.keys(secEntries[0].entry_json || {});
+            if (keys.length > 0) {
+              autoTable(doc, {
+                startY: y, head: [keys],
+                body: secEntries.map(e => keys.map(k => e.entry_json[k] || "—")),
+                margin: { left: margin, right: margin },
+                styles: { fontSize: 7, cellPadding: 2 },
+                headStyles: { fillColor: [200, 210, 225], textColor: [30, 30, 30] },
+              });
+              y = (doc as any).lastAutoTable.finalY + 6;
+            }
+          }
         }
 
         // Manual content
-        const data = sectionsData[sec.key];
-        const rawText = (data?.manual_content || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+        const rawText = (secData?.manual_content || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
         if (rawText) {
           if (y > 260) { doc.addPage(); drawHeader(); y = 20; }
           doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
@@ -617,14 +674,14 @@ const RelatorioAssistencialPage = () => {
           }
         }
 
-        if (data?.attachments?.length) {
+        if (secData?.attachments?.length) {
           y += 4;
           if (y > 270) { doc.addPage(); drawHeader(); y = 20; }
           doc.setFont("helvetica", "bold"); doc.setFontSize(9);
           doc.text("Anexos:", margin, y); doc.setFont("helvetica", "normal"); y += 5;
-          data.attachments.forEach(att => {
+          secData.attachments.forEach(att => {
             if (y > 280) { doc.addPage(); drawHeader(); y = 20; }
-            doc.setFontSize(8); doc.text(`• ${att.file_name}`, margin + 4, y); y += 4;
+            doc.setFontSize(8); doc.text(`  ${att.file_name}`, margin + 4, y); y += 4;
           });
         }
       });
@@ -635,13 +692,12 @@ const RelatorioAssistencialPage = () => {
         doc.text(`MOSS — ${selectedContract.name} — ${MONTHS[refMonth - 1]}/${refYear} v${currentReport.version} — Página ${i}/${pageCount}`, margin, H - 6);
       }
 
-      // Mark as exported if not already
       if (currentReport.status !== "exportado" && currentReport.status === "fechado") {
         await changeStatus("exportado");
       }
 
       doc.save(`relatorio_${unit.replace(/\s/g, "_")}_${MONTHS[refMonth - 1]}_${refYear}_v${currentReport.version}.pdf`);
-      toast.success("PDF exportado!");
+      toast.success("PDF exportado");
     } catch (err) {
       console.error(err); toast.error("Erro ao gerar PDF");
     } finally { setGenerating(false); }
@@ -656,13 +712,12 @@ const RelatorioAssistencialPage = () => {
         <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full mb-4">Voltar</Button>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="font-display text-xl font-bold text-foreground">Relatório Assistencial</h1>
-              <p className="text-xs text-muted-foreground mt-1">Compilador institucional — histórico mensal, versionamento e memória operacional</p>
-            </div>
+          <div className="mb-6">
+            <h1 className="font-display text-xl font-bold text-foreground">Relatório Assistencial</h1>
+            <p className="text-xs text-muted-foreground mt-1">Compilador institucional — histórico mensal, versionamento e memória operacional</p>
           </div>
 
+          {/* Filters */}
           <div className="bg-card rounded-xl border border-border p-4 mb-4">
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
               <div>
@@ -676,15 +731,19 @@ const RelatorioAssistencialPage = () => {
                 </Select>
               </div>
               <div>
+                <Label className="text-[10px] text-muted-foreground">Ano</Label>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-9 px-2 text-xs" onClick={() => setRefYear(y => y - 1)}>{"<"}</Button>
+                  <Input type="number" value={refYear} onChange={e => setRefYear(Number(e.target.value))} className="h-9 text-center" />
+                  <Button variant="ghost" size="sm" className="h-9 px-2 text-xs" onClick={() => setRefYear(y => y + 1)}>{">"}</Button>
+                </div>
+              </div>
+              <div>
                 <Label className="text-[10px] text-muted-foreground">Mês</Label>
                 <Select value={String(refMonth)} onValueChange={v => setRefMonth(Number(v))}>
                   <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
                 </Select>
-              </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Ano</Label>
-                <Input type="number" value={refYear} onChange={e => setRefYear(Number(e.target.value))} className="h-9" />
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">Status</Label>
@@ -703,6 +762,40 @@ const RelatorioAssistencialPage = () => {
             </div>
           </div>
 
+          {/* Competency Calendar */}
+          {selectedContractId && selectedContractId !== "all" && (
+            <div className="bg-card rounded-xl border border-border p-4 mb-4">
+              <p className="text-xs font-semibold text-foreground mb-3">Calendário de Competências — {refYear}</p>
+              <div className="grid grid-cols-6 sm:grid-cols-12 gap-2">
+                {calendarData.map(({ month, reports: reps }) => {
+                  const hasReport = reps.length > 0;
+                  const latestStatus = hasReport ? reps[0].status : null;
+                  const isCurrentMonth = month === refMonth;
+                  return (
+                    <button key={month}
+                      onClick={() => setRefMonth(month)}
+                      className={`rounded-lg p-2 text-center border transition-all ${
+                        isCurrentMonth ? "border-primary bg-primary/10 ring-1 ring-primary/30" :
+                        hasReport ? "border-border bg-card hover:border-primary/40" :
+                        "border-border/50 bg-muted/20 hover:bg-muted/40"
+                      }`}>
+                      <p className={`text-xs font-semibold ${isCurrentMonth ? "text-primary" : "text-foreground"}`}>{MONTHS_SHORT[month - 1]}</p>
+                      {hasReport ? (
+                        <span className={`text-[8px] px-1 py-0.5 rounded border mt-1 inline-block ${STATUS_COLORS[latestStatus!]}`}>
+                          {STATUS_LABELS[latestStatus!]}
+                        </span>
+                      ) : (
+                        <span className="text-[8px] text-muted-foreground mt-1 block">—</span>
+                      )}
+                      {reps.length > 1 && <span className="text-[8px] text-muted-foreground block">{reps.length} versões</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
           <div className="flex gap-2 mb-4">
             <Dialog open={replicateOpen} onOpenChange={setReplicateOpen}>
               <DialogTrigger asChild>
@@ -713,22 +806,26 @@ const RelatorioAssistencialPage = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Contrato: {selectedContract?.name || "—"} | Unidade: {unit || "—"}
                 </p>
-                <p className="text-xs text-muted-foreground mb-3">Como deseja criar este relatório?</p>
+                <p className="text-xs text-muted-foreground mb-3">Deseja usar o relatório anterior como base?</p>
                 <div className="space-y-2">
                   <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("blank")}>
                     <div><p className="font-semibold">Criar em branco</p><p className="text-[10px] text-muted-foreground">Seções vazias, dados automáticos recalculados</p></div>
                   </Button>
                   <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("text")}>
-                    <div><p className="font-semibold">Copiar textos do mês anterior</p><p className="text-[10px] text-muted-foreground">Replica textos manuais, dados automáticos recalculados</p></div>
+                    <div><p className="font-semibold">Copiar apenas textos</p><p className="text-[10px] text-muted-foreground">Textos manuais do mês anterior</p></div>
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("text_entries")}>
+                    <div><p className="font-semibold">Copiar textos e lançamentos complementares</p><p className="text-[10px] text-muted-foreground">Textos + registros de RH, documentos, treinamentos</p></div>
                   </Button>
                   <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("all")}>
-                    <div><p className="font-semibold">Copiar tudo do mês anterior</p><p className="text-[10px] text-muted-foreground">Textos, imagens e anexos, dados automáticos recalculados</p></div>
+                    <div><p className="font-semibold">Copiar tudo</p><p className="text-[10px] text-muted-foreground">Textos, lançamentos, imagens e anexos</p></div>
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
 
+          {/* Reports List */}
           {loadingReports ? (
             <div className="text-center py-12 text-muted-foreground text-sm">Carregando relatórios...</div>
           ) : filteredReports.length === 0 ? (
@@ -790,7 +887,7 @@ const RelatorioAssistencialPage = () => {
               </span>
             )}
             {isLocked && (
-              <span className="text-[10px] px-2 py-1 rounded bg-destructive/10 text-destructive font-medium">
+              <span className="text-[10px] px-2 py-1 rounded bg-muted text-muted-foreground font-medium">
                 Documento congelado
               </span>
             )}
@@ -799,8 +896,8 @@ const RelatorioAssistencialPage = () => {
 
         {/* Locked banner */}
         {isLocked && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-            <p className="text-xs text-amber-800">
+          <div className="bg-muted/50 border border-border rounded-lg p-3 mb-4">
+            <p className="text-xs text-foreground">
               Este relatório está <strong>{STATUS_LABELS[currentReport!.status]}</strong> e não pode ser editado.
               {currentReport?.status === "fechado" && " Para exportar como PDF, clique em \"Exportar PDF\". Para editar, crie uma nova versão."}
               {currentReport?.status === "exportado" && " Este é o documento oficial. Para fazer alterações, crie uma nova versão."}
@@ -813,8 +910,7 @@ const RelatorioAssistencialPage = () => {
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader><DialogTitle>Criar nova versão</DialogTitle></DialogHeader>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Uma cópia deste relatório será criada como rascunho com a próxima versão.
-                    Todos os textos, imagens e anexos serão copiados.
+                    Uma cópia deste relatório será criada como rascunho. Todos os textos, lançamentos complementares, imagens e anexos serão copiados.
                   </p>
                   <div className="flex justify-end gap-2">
                     <DialogClose asChild><Button variant="outline" size="sm">Cancelar</Button></DialogClose>
@@ -833,12 +929,12 @@ const RelatorioAssistencialPage = () => {
 
         {/* Progress */}
         <div className="bg-card rounded-lg border border-border p-3 mb-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <span className="text-xs text-muted-foreground">Progresso</span>
-            <div className="flex-1"><Progress value={progressPct} className="h-2" /></div>
+            <div className="flex-1 min-w-[120px]"><Progress value={progressPct} className="h-2" /></div>
             <span className="text-xs font-semibold text-foreground">{filledCount}/{sections.length} ({progressPct}%)</span>
             {!isLocked && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={handleSaveAll} disabled={saving}>
                   {saving ? "Salvando..." : "Salvar Tudo"}
                 </Button>
@@ -848,9 +944,14 @@ const RelatorioAssistencialPage = () => {
                   </Button>
                 )}
                 {currentReport?.status === "em_revisao" && (
-                  <Button size="sm" className="h-7 text-[10px]" onClick={() => changeStatus("fechado")}>
-                    Fechar Relatório
-                  </Button>
+                  <>
+                    <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => changeStatus("rascunho")}>
+                      Voltar para Rascunho
+                    </Button>
+                    <Button size="sm" className="h-7 text-[10px]" onClick={() => changeStatus("fechado")}>
+                      Fechar Relatório
+                    </Button>
+                  </>
                 )}
               </div>
             )}
@@ -876,7 +977,7 @@ const RelatorioAssistencialPage = () => {
                         <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]">+</Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md">
-                        <DialogHeader><DialogTitle>Adicionar Seção</DialogTitle></DialogHeader>
+                        <DialogHeader><DialogTitle>Adicionar Seção ao Sumário</DialogTitle></DialogHeader>
                         <div className="space-y-3">
                           <div>
                             <Label className="text-xs">Título</Label>
@@ -887,7 +988,7 @@ const RelatorioAssistencialPage = () => {
                             <Input value={newSectionDesc} onChange={e => setNewSectionDesc(e.target.value)} placeholder="Breve descrição" className="mt-1" />
                           </div>
                           <DialogClose asChild>
-                            <Button onClick={addCustomSection} className="w-full">Adicionar ao Sumário</Button>
+                            <Button onClick={addCustomSection} className="w-full">Adicionar</Button>
                           </DialogClose>
                         </div>
                       </DialogContent>
@@ -901,16 +1002,9 @@ const RelatorioAssistencialPage = () => {
                   {sections.map(sec => {
                     const data = sectionsData[sec.key];
                     const hasManual = data && ((data.manual_content || "").trim().length > 0 || data.attachments.length > 0);
-                    const hasAuto = sec.autoData && (
-                      (sec.autoData === "goals" && goalSummary.total > 0) ||
-                      (sec.autoData === "goals_trend" && goalSummary.total > 0) ||
-                      (sec.autoData === "actionPlans" && actionPlanSummary.total > 0) ||
-                      (sec.autoData === "sau" && sauSummary.total > 0) ||
-                      (sec.autoData === "beds" && bedSummary.total > 0) ||
-                      (sec.autoData === "rubricas" && rubricaSummary.totalExecuted > 0) ||
-                      (sec.autoData === "contract" && selectedContract)
-                    );
-                    const filled = hasManual || hasAuto;
+                    const hasAuto = sectionHasAutoData(sec);
+                    const hasEntries = sectionHasEntries(sec.key);
+                    const filled = hasManual || hasAuto || hasEntries;
                     const isActive = activeSection === sec.key;
                     return (
                       <button key={sec.key} onClick={() => setActiveSection(sec.key)}
@@ -918,19 +1012,20 @@ const RelatorioAssistencialPage = () => {
                           isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "hover:bg-muted text-foreground"
                         }`}>
                         <span className={`w-2 h-2 rounded-full shrink-0 ${
-                          hasManual && hasAuto ? "bg-emerald-500 ring-1 ring-emerald-500/30" :
+                          (hasManual && hasAuto) || (hasManual && hasEntries) ? "bg-emerald-500 ring-1 ring-emerald-500/30" :
                           filled ? "bg-emerald-500" :
                           isActive ? "bg-primary-foreground/40" : "bg-muted-foreground/20"
                         }`} />
                         <span className="truncate flex-1">{sec.title}</span>
                         {hasAuto && <span className="text-[8px] opacity-60">auto</span>}
+                        {hasEntries && !hasAuto && <span className="text-[8px] opacity-60">compl</span>}
                       </button>
                     );
                   })}
                 </div>
               </ScrollArea>
 
-              {/* Actions */}
+              {/* Sidebar Actions */}
               <div className="mt-3 pt-3 border-t border-border space-y-2">
                 {compareableReports.length > 0 && (
                   <Dialog>
@@ -950,6 +1045,11 @@ const RelatorioAssistencialPage = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
+                )}
+                {isEditable && (
+                  <Button variant="outline" size="sm" className="w-full text-xs" onClick={handleExportPdf} disabled={generating}>
+                    {generating ? "Gerando..." : "Pré-visualizar PDF"}
+                  </Button>
                 )}
                 <Dialog>
                   <DialogTrigger asChild>
@@ -976,13 +1076,13 @@ const RelatorioAssistencialPage = () => {
           <div className="flex-1 min-w-0">
             {/* Compare view */}
             {compareOpen && compareReport && (
-              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="mb-4 bg-secondary/30 border border-border rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="text-xs font-bold text-blue-800">Comparação: {compareReport.title} (v{compareReport.version})</p>
-                    <p className="text-[10px] text-blue-600">{STATUS_LABELS[compareReport.status]} — {new Date(compareReport.updated_at).toLocaleDateString("pt-BR")}</p>
+                    <p className="text-xs font-bold text-foreground">Comparação: {compareReport.title} (v{compareReport.version})</p>
+                    <p className="text-[10px] text-muted-foreground">{STATUS_LABELS[compareReport.status]} — {new Date(compareReport.updated_at).toLocaleDateString("pt-BR")}</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-6 text-[10px] text-blue-800" onClick={() => { setCompareOpen(false); setCompareReport(null); }}>
+                  <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => { setCompareOpen(false); setCompareReport(null); }}>
                     Fechar comparação
                   </Button>
                 </div>
@@ -993,12 +1093,12 @@ const RelatorioAssistencialPage = () => {
                   const changed = currentText !== compareText;
                   return (
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-white rounded-lg p-3 border border-blue-100">
-                        <p className="text-[10px] font-semibold text-blue-800 mb-1">Versão atual (v{currentReport?.version})</p>
+                      <div className="bg-card rounded-lg p-3 border border-border">
+                        <p className="text-[10px] font-semibold text-foreground mb-1">Versão atual (v{currentReport?.version})</p>
                         <p className="text-xs text-foreground">{currentText || <em className="text-muted-foreground">Sem conteúdo</em>}</p>
                       </div>
-                      <div className={`bg-white rounded-lg p-3 border ${changed ? "border-amber-300" : "border-blue-100"}`}>
-                        <p className="text-[10px] font-semibold text-blue-800 mb-1">{compareReport.title} (v{compareReport.version})</p>
+                      <div className={`bg-card rounded-lg p-3 border ${changed ? "border-amber-300" : "border-border"}`}>
+                        <p className="text-[10px] font-semibold text-foreground mb-1">{compareReport.title} (v{compareReport.version})</p>
                         {changed && <span className="text-[9px] text-amber-600 font-medium">Diferenças detectadas</span>}
                         <p className="text-xs text-foreground">{compareText || <em className="text-muted-foreground">Sem conteúdo</em>}</p>
                       </div>
@@ -1027,6 +1127,7 @@ const RelatorioAssistencialPage = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       {activeSec?.autoData && <Badge variant="outline" className="text-[10px]">Dados automáticos</Badge>}
+                      {ENTRY_SECTIONS.includes(activeSection) && <Badge variant="outline" className="text-[10px]">Lançamento complementar</Badge>}
                       <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
                         activeData.completion_status === "preenchido" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-amber-100 text-amber-800 border-amber-300"
                       }`}>
@@ -1045,9 +1146,9 @@ const RelatorioAssistencialPage = () => {
                   {/* Auto-data panel */}
                   {activeSec?.autoData && (
                     <div className="rounded-xl bg-secondary/20 border border-primary/10 p-4">
-                      <p className="text-[10px] text-primary font-semibold mb-2">BLOCO AUTOMÁTICO — dados compilados do sistema</p>
+                      <p className="text-[10px] text-primary font-semibold mb-2">DADOS AUTOMÁTICOS — compilados do sistema</p>
                       {isLocked && activeData.auto_snapshot_json && (
-                        <p className="text-[9px] text-amber-600 mb-2">Dados congelados no momento do fechamento (snapshot)</p>
+                        <p className="text-[9px] text-muted-foreground mb-2">Dados preservados no momento do fechamento (snapshot histórico)</p>
                       )}
                       {autoDataLoading ? (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -1067,14 +1168,28 @@ const RelatorioAssistencialPage = () => {
                     </div>
                   )}
 
+                  {/* Complementary entry forms */}
+                  {ENTRY_SECTIONS.includes(activeSection) && currentReport && (
+                    <SectionEntryForms
+                      sectionKey={activeSection}
+                      reportId={currentReport.id}
+                      sectionId={activeData.id}
+                      entries={sectionEntries.filter(e => e.section_id === activeData.id)}
+                      editable={isEditable}
+                      userId={userId}
+                      onRefresh={() => loadReportSections(currentReport.id)}
+                      onEnsureSection={() => ensureSectionExists(activeSection)}
+                    />
+                  )}
+
                   {/* Manual content */}
                   <div>
-                    <p className="text-[10px] text-muted-foreground font-semibold mb-2">BLOCO MANUAL — análise, complemento e observações</p>
+                    <p className="text-[10px] text-muted-foreground font-semibold mb-2">ANÁLISE E COMPLEMENTO MANUAL</p>
                     {isEditable ? (
                       <RichTextEditor
                         content={activeData.manual_content || ""}
                         onChange={(html) => handleContentChange(activeSection, html)}
-                        placeholder={`Adicione análise complementar para "${activeSec?.title}"...`}
+                        placeholder={`Adicione análise institucional para "${activeSec?.title}"...`}
                       />
                     ) : (
                       <div className="border border-input rounded-lg p-3 bg-muted/30 prose prose-sm max-w-none text-sm"
