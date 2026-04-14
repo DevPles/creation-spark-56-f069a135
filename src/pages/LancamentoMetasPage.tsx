@@ -776,9 +776,10 @@ const LancamentoMetasPage = () => {
   useEffect(() => {
     if (!selectedUnit) return;
     loadGoals(selectedUnit);
-    // Load bed data for the selected unit
     supabase.from("beds").select("category, specialty, quantity").eq("facility_unit", selectedUnit)
       .then(({ data }) => setBedData((data as any[]) || []));
+    supabase.from("sectors").select("name").eq("facility_unit", selectedUnit).order("name")
+      .then(({ data }) => setDbSectors([...new Set((data || []).map((s: any) => s.name))]));
   }, [selectedUnit]);
 
   const loadGoals = async (unit: string) => {
