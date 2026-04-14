@@ -180,23 +180,25 @@ const ReportSectionEditor = ({
       <div>
         <Label className="text-sm font-semibold mb-2 block">Imagens</Label>
         {images.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-            {images.map((img) => (
-              <div key={img.id} className="relative group rounded-lg overflow-hidden border border-border">
-                <img src={img.file_url} alt={img.file_name} className="w-full h-32 object-cover" />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => handleDeleteAttachment(img.id)}
-                  >
-                    Remover
-                  </Button>
+          <div className="rounded-xl border-2 border-blue-200 bg-blue-50/80 p-4 mb-3">
+            <div className={`flex flex-wrap justify-center gap-3 ${images.length === 1 ? "items-center" : ""}`}>
+              {images.map((img) => (
+                <div key={img.id} className="relative group rounded-lg overflow-hidden border border-blue-300 shadow-sm bg-white" style={{ maxWidth: images.length === 1 ? "80%" : "48%" }}>
+                  <img src={img.file_url} alt={img.file_name} className="w-full object-contain max-h-64" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => handleDeleteAttachment(img.id)}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-blue-700 p-1 truncate text-center bg-blue-50">{img.file_name}</p>
                 </div>
-                <p className="text-[10px] text-muted-foreground p-1 truncate">{img.file_name}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
         <input
