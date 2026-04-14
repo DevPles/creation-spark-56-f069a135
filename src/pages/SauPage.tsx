@@ -148,7 +148,7 @@ const SauPage = () => {
 
         <PageHeader
           title="SAU"
-          subtitle="Serviço de Atendimento ao Usuário — Ouvidoria, Elogios, Reclamações e Sugestões"
+          
           selectedUnit={selectedUnit}
           onUnitChange={setSelectedUnit}
           action={

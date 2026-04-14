@@ -95,7 +95,7 @@ const AdminPage = () => {
 
         <PageHeader
           title="Administração"
-          subtitle="Clique em um usuário para editar ou criar novo"
+          
           selectedUnit={selectedUnit}
           onUnitChange={setSelectedUnit}
           action={

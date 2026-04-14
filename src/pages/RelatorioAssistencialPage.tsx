@@ -714,7 +714,7 @@ const RelatorioAssistencialPage = () => {
 
           <div className="mb-6">
             <h1 className="font-display text-xl font-bold text-foreground">Relatório Assistencial</h1>
-            <p className="text-xs text-muted-foreground mt-1">Compilador institucional — histórico mensal, versionamento e memória operacional</p>
+            
           </div>
 
           {/* Filters */}
