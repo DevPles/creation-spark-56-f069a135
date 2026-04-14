@@ -465,8 +465,9 @@ const RelatorioAssistencialPage = () => {
               </div>
             </TabsContent>
 
-            {/* TAB 2 — Compilado Unidade */}
+            {/* TAB 2 — Compilado Unidade (por Área) */}
             <TabsContent value="compilado" className="space-y-6">
+              {/* KPI resumo */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                 <div className="kpi-card"><p className="text-xs text-muted-foreground">Unidade</p><p className="kpi-value text-sm">{unit}</p></div>
                 <div className="kpi-card"><p className="text-xs text-muted-foreground">Total metas</p><p className="kpi-value">{goals.length}</p></div>
@@ -475,22 +476,115 @@ const RelatorioAssistencialPage = () => {
                 <div className="kpi-card"><p className="text-xs text-muted-foreground">Glosa</p><p className="kpi-value text-destructive">R$ {(totalGlosa / 1000).toFixed(0)}k</p></div>
               </div>
 
-              {/* Radar */}
+              {/* Visão geral por setor — barras horizontais */}
               <div className="bg-card rounded-lg border border-border p-5">
-                <h3 className="text-sm font-semibold mb-3">Radar de Alcance por Meta</h3>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={radarData}>
-                      <PolarGrid stroke="hsl(var(--border))" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
-                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 9 }} />
-                      <Radar name="Alcance %" dataKey="alcance" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
-                      <Radar name="Peso %" dataKey="peso" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive))" fillOpacity={0.15} />
-                      <Legend />
-                      <Tooltip contentStyle={tooltipStyle} />
-                    </RadarChart>
-                  </ResponsiveContainer>
+                <h3 className="text-sm font-semibold mb-4">Alcance por Área / Setor</h3>
+                <div className="space-y-3">
+                  {goalsBySector.map(([sector, sectorGoals]) => {
+                    const sectorPct = sectorGoals.length > 0
+                      ? Math.round(sectorGoals.reduce((sum, g) => sum + Math.min(100, g.target > 0 ? (g.achieved / g.target) * 100 : 0), 0) / sectorGoals.length)
+                      : 0;
+                    const atingidas = sectorGoals.filter(g => g.target > 0 && (g.achieved / g.target) * 100 >= 100).length;
+                    return (
+                      <div key={sector} className="flex items-center gap-3">
+                        <span className="text-sm font-medium w-40 truncate" title={sector}>{sector}</span>
+                        <div className="flex-1">
+                          <Progress value={sectorPct} className="h-3" />
+                        </div>
+                        <span className={`text-sm font-bold w-12 text-right ${sectorPct >= 90 ? "text-success" : sectorPct >= 70 ? "text-warning" : "text-destructive"}`}>
+                          {sectorPct}%
+                        </span>
+                        <span className="text-[10px] text-muted-foreground w-16 text-right">{atingidas}/{sectorGoals.length}</span>
+                      </div>
+                    );
+                  })}
                 </div>
+              </div>
+
+              {/* Detalhamento por setor — acordeões */}
+              <div className="bg-card rounded-lg border border-border p-5">
+                <h3 className="text-sm font-semibold mb-4">Detalhamento por Área</h3>
+                <Accordion type="multiple" className="space-y-2">
+                  {goalsBySector.map(([sector, sectorGoals]) => {
+                    const sectorPct = sectorGoals.length > 0
+                      ? Math.round(sectorGoals.reduce((sum, g) => sum + Math.min(100, g.target > 0 ? (g.achieved / g.target) * 100 : 0), 0) / sectorGoals.length)
+                      : 0;
+                    const atingidas = sectorGoals.filter(g => g.target > 0 && (g.achieved / g.target) * 100 >= 100).length;
+                    const criticas = sectorGoals.filter(g => { const p = g.target > 0 ? (g.achieved / g.target) * 100 : 0; return p < 70; }).length;
+                    return (
+                      <AccordionItem key={sector} value={sector} className="border border-border rounded-lg px-4">
+                        <AccordionTrigger className="py-3 hover:no-underline">
+                          <div className="flex items-center gap-3 w-full mr-4">
+                            <span className="font-semibold text-sm">{sector}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sectorPct >= 90 ? "bg-success/10 text-success" : sectorPct >= 70 ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive"}`}>
+                              {sectorPct}%
+                            </span>
+                            <span className="text-[10px] text-muted-foreground ml-auto">
+                              {atingidas} atingida{atingidas !== 1 ? "s" : ""} · {criticas > 0 ? `${criticas} crítica${criticas !== 1 ? "s" : ""}` : "nenhuma crítica"} · {sectorGoals.length} meta{sectorGoals.length !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b border-border text-xs text-muted-foreground">
+                                  <th className="text-left py-2 pr-3">Meta</th>
+                                  <th className="py-2 px-2 text-center">Tipo</th>
+                                  <th className="text-right py-2 px-2">Meta</th>
+                                  <th className="text-right py-2 px-2">Realizado</th>
+                                  <th className="text-right py-2 px-2">Alcance</th>
+                                  <th className="text-right py-2 px-2">Peso</th>
+                                  <th className="py-2 pl-2 text-center">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sectorGoals.sort((a, b) => a.name.localeCompare(b.name)).map((g, i) => {
+                                  const pct = g.target > 0 ? Math.min(100, Math.round((g.achieved / g.target) * 100)) : 0;
+                                  const status = pct >= 100 ? "Atingida" : pct >= 80 ? "Parcial" : "Crítica";
+                                  return (
+                                    <tr key={i} className="border-b border-border last:border-0">
+                                      <td className="py-2 pr-3 font-medium">{g.name}</td>
+                                      <td className="py-2 px-2 text-center">
+                                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${g.type === "QLT" ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground"}`}>{g.type}</span>
+                                      </td>
+                                      <td className="py-2 px-2 text-right text-muted-foreground">{g.target}</td>
+                                      <td className="py-2 px-2 text-right">{g.achieved}</td>
+                                      <td className="py-2 px-2 text-right">
+                                        <span className={`font-medium ${pct >= 100 ? "text-success" : pct >= 80 ? "text-warning" : "text-destructive"}`}>{pct}%</span>
+                                      </td>
+                                      <td className="py-2 px-2 text-right text-muted-foreground">{g.weight}%</td>
+                                      <td className="py-2 pl-2 text-center">
+                                        <span className={`status-badge text-[10px] ${status === "Atingida" ? "status-success" : status === "Parcial" ? "status-warning" : "status-critical"}`}>{status}</span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          {/* Mini bar chart per sector */}
+                          <div className="h-48 mt-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={sectorGoals.sort((a, b) => a.name.localeCompare(b.name)).map(g => ({
+                                name: g.name.length > 18 ? g.name.substring(0, 18) + "…" : g.name,
+                                meta: g.target,
+                                realizado: g.achieved,
+                              }))} margin={{ left: 0, right: 10, bottom: 40 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} interval={0} angle={-25} textAnchor="end" />
+                                <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                                <Tooltip contentStyle={tooltipStyle} />
+                                <Bar dataKey="meta" fill="hsl(var(--primary))" name="Meta" radius={[3, 3, 0, 0]} />
+                                <Bar dataKey="realizado" fill="hsl(var(--accent))" name="Realizado" radius={[3, 3, 0, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
               </div>
 
               {/* Monthly trend */}
