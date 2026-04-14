@@ -82,6 +82,8 @@ const LancamentoMetasPage = () => {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [heatmapCompare, setHeatmapCompare] = useState<"global" | "meta">("global");
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [filterType, setFilterType] = useState<string>("todos");
+  const [filterGoal, setFilterGoal] = useState<string>("todos");
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
   const totalBedsByCategory = useMemo(() => {
@@ -974,7 +976,7 @@ const LancamentoMetasPage = () => {
                               <p className="text-[10px] text-muted-foreground">
                                 Faltam <span className="font-semibold text-foreground">{remaining.toFixed(1)} {goal.unit}</span>
                                 {endDate && daysRemaining > 0 ? (
-                                  <> • Meta diária: <span className="font-semibold text-foreground">{dailyGoal.toFixed(2)}{goal.unit}/dia</span> ({daysRemaining}d)</>
+                                  <> • Meta diária: <span className="font-semibold text-foreground">{dailyGoal.toFixed(2)} {goal.unit}/dia</span> ({daysRemaining}d)</>
                                 ) : endDate && daysRemaining === 0 ? (
                                   <> • <span className="text-destructive font-medium">Prazo encerrado</span></>
                                 ) : null}
