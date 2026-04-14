@@ -20,6 +20,7 @@ const MetasPage = () => {
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
   const [selectedType, setSelectedType] = useState("Todos");
   const [selectedGoalName, setSelectedGoalName] = useState("Todas");
+  const [selectedSector, setSelectedSector] = useState("Todos");
   const [goals, setGoals] = useState<GoalData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGoal, setSelectedGoal] = useState<GoalData | null>(null);
@@ -172,10 +173,10 @@ const MetasPage = () => {
             title="Metas e indicadores"
             subtitle="Clique para ver detalhes ou use o botão para cadastrar"
             selectedUnit={selectedUnit}
-            onUnitChange={(v) => { setSelectedUnit(v); setSelectedGoalName("Todas"); }}
+            onUnitChange={(v) => { setSelectedUnit(v); setSelectedGoalName("Todas"); setSelectedSector("Todos"); }}
             action={
-              <div className="flex items-center gap-2">
-                <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setSelectedGoalName("Todas"); }}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setSelectedGoalName("Todas"); setSelectedSector("Todos"); }}>
                   <SelectTrigger className="w-[140px] h-9 text-xs">
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
@@ -184,6 +185,23 @@ const MetasPage = () => {
                     <SelectItem value="QNT">Quantitativa</SelectItem>
                     <SelectItem value="QLT">Qualitativa</SelectItem>
                     <SelectItem value="DOC">Documental</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedSector} onValueChange={(v) => { setSelectedSector(v); setSelectedGoalName("Todas"); }}>
+                  <SelectTrigger className="w-[160px] h-9 text-xs">
+                    <SelectValue placeholder="Setor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todos">Todos os setores</SelectItem>
+                    {[...new Set(
+                      goals
+                        .filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+                        .filter(g => selectedType === "Todos" || g.type === selectedType)
+                        .map(g => g.sector)
+                        .filter(Boolean)
+                    )].sort().map(sector => (
+                      <SelectItem key={sector} value={sector!}>{sector}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Select value={selectedGoalName} onValueChange={setSelectedGoalName}>
@@ -196,6 +214,7 @@ const MetasPage = () => {
                       goals
                         .filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
                         .filter(g => selectedType === "Todos" || g.type === selectedType)
+                        .filter(g => selectedSector === "Todos" || g.sector === selectedSector)
                         .map(g => g.name)
                     )].sort().map(name => (
                       <SelectItem key={name} value={name}>{name}</SelectItem>
@@ -240,6 +259,7 @@ const MetasPage = () => {
           ) : goals
               .filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
               .filter(g => selectedType === "Todos" || g.type === selectedType)
+              .filter(g => selectedSector === "Todos" || g.sector === selectedSector)
               .filter(g => selectedGoalName === "Todas" || g.name === selectedGoalName)
               .length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
@@ -250,6 +270,7 @@ const MetasPage = () => {
               goals={goals
                 .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
                 .filter((g) => selectedType === "Todos" || g.type === selectedType)
+                .filter((g) => selectedSector === "Todos" || g.sector === selectedSector)
                 .filter((g) => selectedGoalName === "Todas" || g.name === selectedGoalName)}
               onView={handleView}
               onEdit={handleEdit}
@@ -259,6 +280,7 @@ const MetasPage = () => {
               goals={goals
                 .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
                 .filter((g) => selectedType === "Todos" || g.type === selectedType)
+                .filter((g) => selectedSector === "Todos" || g.sector === selectedSector)
                 .filter((g) => selectedGoalName === "Todas" || g.name === selectedGoalName)}
               onView={handleView}
               onEdit={handleEdit}
@@ -268,6 +290,7 @@ const MetasPage = () => {
               {goals
                 .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
                 .filter((g) => selectedType === "Todos" || g.type === selectedType)
+                .filter((g) => selectedSector === "Todos" || g.sector === selectedSector)
                 .filter((g) => selectedGoalName === "Todas" || g.name === selectedGoalName)
                 .map((goal, i) => (
                 <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
