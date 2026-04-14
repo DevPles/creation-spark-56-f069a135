@@ -223,13 +223,14 @@ const RelatorioAssistencialPage = () => {
   const filteredReports = useMemo(() => {
     let r = reports;
     if (selectedContractId && selectedContractId !== "all") r = r.filter(rep => rep.contract_id === selectedContractId);
+    r = r.filter(rep => rep.reference_year === refYear && rep.reference_month === refMonth);
     if (filterStatus !== "all") r = r.filter(rep => rep.status === filterStatus);
     if (searchText) {
       const s = searchText.toLowerCase();
       r = r.filter(rep => rep.title.toLowerCase().includes(s) || rep.facility_unit.toLowerCase().includes(s));
     }
     return r;
-  }, [reports, selectedContractId, filterStatus, searchText]);
+  }, [reports, selectedContractId, filterStatus, searchText, refYear, refMonth]);
 
   // ═══ COMPETENCY CALENDAR ═══
 
