@@ -805,6 +805,7 @@ const RelatoriosPage = () => {
   // Carousel
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [sectorCycleIndex, setSectorCycleIndex] = useState(0);
 
   // Report generation
   const [selectedType, setSelectedType] = useState("consolidado");
