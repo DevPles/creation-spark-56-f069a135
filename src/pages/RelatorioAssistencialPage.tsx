@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -250,6 +251,15 @@ const RelatorioAssistencialPage = () => {
     await loadReports();
     setDuplicateOpen(false);
     toast.success(`Nova versão v${nextVersion} criada como rascunho`);
+  };
+
+  const deleteReport = async (reportId: string) => {
+    await supabase.from("report_attachments").delete().eq("report_id", reportId);
+    await supabase.from("report_section_entries").delete().eq("report_id", reportId);
+    await supabase.from("report_sections").delete().eq("report_id", reportId);
+    await supabase.from("reports").delete().eq("id", reportId);
+    await loadReports();
+    toast.success("Relatório excluído");
   };
 
   const openReport = async (report: ReportRecord) => {
@@ -851,6 +861,26 @@ const RelatorioAssistencialPage = () => {
                         <span className="text-[10px] text-muted-foreground">
                           {new Date(rep.updated_at).toLocaleDateString("pt-BR")}
                         </span>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => e.stopPropagation()}>
+                              Excluir
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir relatório</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir "{rep.title || `Relatório ${MONTHS[rep.reference_month - 1]} ${rep.reference_year}`}"? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteReport(rep.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   </button>
