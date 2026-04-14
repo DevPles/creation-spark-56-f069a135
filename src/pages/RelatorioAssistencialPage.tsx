@@ -32,8 +32,8 @@ const MONTHS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out
 const STATUS_TRANSITIONS: Record<string, string[]> = {
   rascunho: ["em_revisao"],
   em_revisao: ["rascunho", "fechado"],
-  fechado: ["exportado"],
-  exportado: [],
+  fechado: ["exportado", "em_revisao"],
+  exportado: ["em_revisao"],
 };
 
 // Sections that support complementary entries
