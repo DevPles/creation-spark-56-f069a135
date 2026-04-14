@@ -55,12 +55,24 @@ const GoalCalendarView = ({ goals, onView, onEdit }: GoalCalendarViewProps) => {
   const entriesByGoalDay = useMemo(() => {
     const map: Record<string, Record<number, number>> = {};
     entries.forEach((e) => {
-      const day = new Date(e.created_at).getDate();
+      // Use period (dd/MM/yyyy) to extract the day, not created_at
+      let day: number;
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(e.period)) {
+        const [dd, mm, yyyy] = e.period.split("/");
+        const periodDate = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+        // Only include entries matching the current month view
+        if (periodDate.getMonth() !== currentMonth.month || periodDate.getFullYear() !== currentMonth.year) return;
+        day = Number(dd);
+      } else {
+        const periodDate = new Date(e.period);
+        if (periodDate.getMonth() !== currentMonth.month || periodDate.getFullYear() !== currentMonth.year) return;
+        day = periodDate.getDate();
+      }
       if (!map[e.goal_id]) map[e.goal_id] = {};
       map[e.goal_id][day] = (map[e.goal_id][day] || 0) + Number(e.value);
     });
     return map;
-  }, [entries]);
+  }, [entries, currentMonth]);
 
   const prevMonth = () => {
     setCurrentMonth((p) =>

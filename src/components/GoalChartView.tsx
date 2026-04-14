@@ -87,7 +87,13 @@ const GoalChartView = ({ goals, onView }: GoalChartViewProps) => {
   const chartData = useMemo(() => {
     const entriesByGoalDay = new Map<string, number>();
     entries.forEach((e) => {
-      const key = `${e.goal_id}_${e.period}`;
+      // Convert period from dd/MM/yyyy to yyyy-MM-dd for matching
+      let normalizedPeriod = e.period;
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(e.period)) {
+        const [dd, mm, yyyy] = e.period.split("/");
+        normalizedPeriod = `${yyyy}-${mm}-${dd}`;
+      }
+      const key = `${e.goal_id}_${normalizedPeriod}`;
       entriesByGoalDay.set(key, (entriesByGoalDay.get(key) || 0) + e.value);
     });
 
