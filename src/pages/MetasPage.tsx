@@ -20,6 +20,7 @@ const MetasPage = () => {
   const [selectedUnit, setSelectedUnit] = useState("Todas as unidades");
   const [selectedType, setSelectedType] = useState("Todos");
   const [selectedGoalName, setSelectedGoalName] = useState("Todas");
+  const [selectedSector, setSelectedSector] = useState("Todos");
   const [goals, setGoals] = useState<GoalData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGoal, setSelectedGoal] = useState<GoalData | null>(null);
