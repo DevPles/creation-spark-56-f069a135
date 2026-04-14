@@ -1706,22 +1706,25 @@ const RelatorioAssistencialPage = () => {
                     )}
                   </div>
 
-                  {/* Media */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Media - Images in blue card */}
+                  <div className="space-y-4">
                     <div>
                       <p className="text-[10px] text-muted-foreground font-semibold mb-2">IMAGENS</p>
                       {activeImages.length > 0 && (
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                          {activeImages.map(img => (
-                            <div key={img.id} className="relative group rounded-lg overflow-hidden border border-border">
-                              <img src={img.file_url} alt={img.file_name} className="w-full h-24 object-cover" />
-                              {isEditable && (
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <Button variant="destructive" size="sm" className="text-[10px] h-6" onClick={() => handleDeleteAttachment(img.id)}>Remover</Button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                        <div className="rounded-xl border-2 border-blue-200 bg-blue-50/80 p-4 mb-2">
+                          <div className={`flex flex-wrap justify-center gap-3 ${activeImages.length === 1 ? "items-center" : ""}`}>
+                            {activeImages.map(img => (
+                              <div key={img.id} className="relative group rounded-lg overflow-hidden border border-blue-300 shadow-sm bg-white" style={{ maxWidth: activeImages.length === 1 ? "80%" : "48%" }}>
+                                <img src={img.file_url} alt={img.file_name} className="w-full object-contain max-h-64" />
+                                {isEditable && (
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Button variant="destructive" size="sm" className="text-[10px] h-6" onClick={() => handleDeleteAttachment(img.id)}>Remover</Button>
+                                  </div>
+                                )}
+                                <p className="text-[10px] text-blue-700 p-1 truncate text-center bg-blue-50">{img.file_name}</p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                       {isEditable && (
@@ -1739,8 +1742,8 @@ const RelatorioAssistencialPage = () => {
                         <div className="space-y-1 mb-2">
                           {activeFiles.map(file => (
                             <div key={file.id} className="flex items-center justify-between p-2 rounded-lg border border-border bg-muted/20 text-xs">
-                              <a href={file.file_url} target="_blank" rel="noreferrer" className="text-primary hover:underline truncate flex-1">
-                                {file.file_name}
+                              <a href={file.file_url} target="_blank" rel="noreferrer" className="text-primary hover:underline truncate flex-1" download>
+                                📎 {file.file_name}
                               </a>
                               {isEditable && (
                                 <Button variant="ghost" size="sm" className="h-5 text-[10px] text-destructive" onClick={() => handleDeleteAttachment(file.id)}>
