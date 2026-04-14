@@ -8,10 +8,11 @@ import GoalFormModal, { GoalData } from "@/components/GoalFormModal";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
-import { LayoutGrid, List, CalendarDays } from "lucide-react";
+import { LayoutGrid, List, CalendarDays, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GoalListView from "@/components/GoalListView";
 import GoalCalendarView from "@/components/GoalCalendarView";
+import GoalChartView from "@/components/GoalChartView";
 import { toast } from "sonner";
 import { normalizeScoringRules, findGlosaPct } from "@/lib/riskCalculation";
 
@@ -28,7 +29,7 @@ const MetasPage = () => {
   const [editGoal, setEditGoal] = useState<GoalData | null>(null);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
-  const [viewMode, setViewMode] = useState<"cards" | "list" | "calendar">("cards");
+  const [viewMode, setViewMode] = useState<"cards" | "list" | "calendar" | "chart">("cards");
 
   const fetchGoals = useCallback(async () => {
     setLoading(true);
