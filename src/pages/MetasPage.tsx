@@ -8,7 +8,7 @@ import GoalFormModal, { GoalData } from "@/components/GoalFormModal";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GoalListView from "@/components/GoalListView";
 import { toast } from "sonner";
