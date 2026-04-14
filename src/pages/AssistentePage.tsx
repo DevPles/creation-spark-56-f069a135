@@ -890,7 +890,7 @@ const AssistentePage = () => {
           <div className="mb-4 p-3 bg-secondary/50 rounded">
             <p className="text-xs text-muted-foreground mb-1">Lançamentos anteriores:</p>
             <div className="flex flex-wrap gap-1">
-              {existing.map((e, idx) => <span key={idx} className="text-xs bg-background px-1.5 py-0.5 rounded border border-border">{e.period}: {e.value}{selectedGoal.unit}</span>)}
+              {existing.map((e, idx) => <span key={idx} className="text-xs bg-background px-1.5 py-0.5 rounded border border-border">{e.period} : {e.value} {selectedGoal.unit}</span>)}
             </div>
           </div>
         )}
