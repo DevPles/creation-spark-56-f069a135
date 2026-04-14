@@ -829,35 +829,6 @@ const RelatorioAssistencialPage = () => {
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex gap-2 mb-4">
-            <Dialog open={replicateOpen} onOpenChange={setReplicateOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" disabled={!selectedContractId || selectedContractId === "all"}>Novo Relatório</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader><DialogTitle>Novo Relatório — {MONTHS[refMonth - 1]} {refYear}</DialogTitle></DialogHeader>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Contrato: {selectedContract?.name || "—"} | Unidade: {unit || "—"}
-                </p>
-                <p className="text-xs text-muted-foreground mb-3">Deseja usar o relatório anterior como base?</p>
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("blank")}>
-                    <div><p className="font-semibold">Criar em branco</p><p className="text-[10px] text-muted-foreground">Seções vazias, dados automáticos recalculados</p></div>
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("text")}>
-                    <div><p className="font-semibold">Copiar apenas textos</p><p className="text-[10px] text-muted-foreground">Textos manuais do mês anterior</p></div>
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("text_entries")}>
-                    <div><p className="font-semibold">Copiar textos e lançamentos complementares</p><p className="text-[10px] text-muted-foreground">Textos + registros de RH, documentos, treinamentos</p></div>
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start text-left text-sm h-auto py-3" onClick={() => createNewReport("all")}>
-                    <div><p className="font-semibold">Copiar tudo</p><p className="text-[10px] text-muted-foreground">Textos, lançamentos, imagens e anexos</p></div>
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
 
           {/* Reports List */}
           {loadingReports ? (
