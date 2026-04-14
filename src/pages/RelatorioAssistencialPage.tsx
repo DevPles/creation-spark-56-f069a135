@@ -100,12 +100,20 @@ const RelatorioAssistencialPage = () => {
   const isEditable = currentReport ? (currentReport.status === "rascunho" || currentReport.status === "em_revisao") : false;
   const allowedTransitions = currentReport ? (STATUS_TRANSITIONS[currentReport.status] || []) : [];
 
+  const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
+
   // ═══ REPORTS LISTING ═══
 
   const loadReports = useCallback(async () => {
     setLoadingReports(true);
-    const { data } = await supabase.from("reports").select("*").order("reference_year", { ascending: false }).order("reference_month", { ascending: false }).order("version", { ascending: false });
+    const [{ data }, { data: profiles }] = await Promise.all([
+      supabase.from("reports").select("*").order("reference_year", { ascending: false }).order("reference_month", { ascending: false }).order("version", { ascending: false }),
+      supabase.from("profiles").select("id, name"),
+    ]);
     setReports((data || []) as unknown as ReportRecord[]);
+    const map: Record<string, string> = {};
+    (profiles || []).forEach((p: any) => { map[p.id] = p.name; });
+    setProfilesMap(map);
     setLoadingReports(false);
   }, []);
 
