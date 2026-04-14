@@ -861,6 +861,26 @@ const RelatorioAssistencialPage = () => {
                         <span className="text-[10px] text-muted-foreground">
                           {new Date(rep.updated_at).toLocaleDateString("pt-BR")}
                         </span>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => e.stopPropagation()}>
+                              Excluir
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir relatório</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir "{rep.title || `Relatório ${MONTHS[rep.reference_month - 1]} ${rep.reference_year}`}"? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteReport(rep.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   </button>
