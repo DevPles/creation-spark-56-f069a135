@@ -985,7 +985,7 @@ const RelatorioAssistencialPage = () => {
       });
 
       // Content pages
-      pdfVisibleSections.forEach(sec => {
+      for (const sec of pdfVisibleSections) {
         doc.addPage(); drawHeader();
         doc.setFillColor(235, 239, 245);
         doc.roundedRect(margin, 16, W - 2 * margin, 10, 2, 2, "F");
