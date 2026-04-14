@@ -1110,7 +1110,6 @@ const RelatorioAssistencialPage = () => {
                             {sec.custom && (
                               <button className="h-5 w-5 p-0 ml-auto text-destructive text-[10px]" onClick={() => removeSection(sec.key)}>✕</button>
                             )}
-                            )}
                           </div>
                         ))}
                       </div>
