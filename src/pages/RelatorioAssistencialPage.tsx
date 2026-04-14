@@ -41,6 +41,110 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
 // Sections that support complementary entries
 const ENTRY_SECTIONS = ["recursos_humanos", "doc_regulatoria", "doc_operacional", "treinamentos", "seg_trabalho", "servicos_terceirizados"];
 
+const toSafeNumber = (value: unknown) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const countLabels = (values: Array<string | null | undefined>) => (
+  values.reduce<Record<string, number>>((acc, value) => {
+    const label = typeof value === "string" ? value.trim() : "";
+    if (!label) return acc;
+    acc[label] = (acc[label] || 0) + 1;
+    return acc;
+  }, {})
+);
+
+const buildEntrySectionSummary = (sectionKey: string, entries: any[]) => {
+  const rows = entries.map((entry) => entry.entry_json || {});
+
+  switch (sectionKey) {
+    case "recursos_humanos": {
+      const roleBreakdown = rows.reduce<Record<string, number>>((acc, row) => {
+        const cargo = String(row.cargo || "Não informado").trim();
+        acc[cargo] = (acc[cargo] || 0) + toSafeNumber(row.quantidade);
+        return acc;
+      }, {});
+
+      return {
+        sectionType: "recursos_humanos",
+        totalRecords: rows.length,
+        totalProfessionals: rows.reduce((sum, row) => sum + toSafeNumber(row.quantidade), 0),
+        roleBreakdown,
+        shifts: countLabels(rows.map((row) => row.turno)),
+      };
+    }
+
+    case "doc_regulatoria":
+    case "doc_operacional":
+      return {
+        sectionType: sectionKey,
+        totalDocuments: rows.length,
+        statusBreakdown: countLabels(rows.map((row) => row.status)),
+        documents: rows.slice(0, 8).map((row) => ({
+          nome: row.nome || null,
+          numero: row.numero || null,
+          status: row.status || null,
+          emissao: row.emissao || null,
+          validade: row.validade || null,
+        })),
+      };
+
+    case "treinamentos":
+      return {
+        sectionType: "treinamentos",
+        totalTrainings: rows.length,
+        totalParticipants: rows.reduce((sum, row) => sum + toSafeNumber(row.participantes), 0),
+        totalHours: rows.reduce((sum, row) => sum + toSafeNumber(row.carga_horaria), 0),
+        audiences: countLabels(rows.map((row) => row.publico_alvo)),
+        trainings: rows.slice(0, 8).map((row) => ({
+          nome: row.nome || null,
+          data: row.data || null,
+          publico_alvo: row.publico_alvo || null,
+          participantes: toSafeNumber(row.participantes),
+          carga_horaria: toSafeNumber(row.carga_horaria),
+        })),
+      };
+
+    case "seg_trabalho":
+      return {
+        sectionType: "seg_trabalho",
+        totalRecords: rows.length,
+        typeBreakdown: countLabels(rows.map((row) => row.tipo)),
+        statusBreakdown: countLabels(rows.map((row) => row.status)),
+        occurrences: rows.slice(0, 8).map((row) => ({
+          tipo: row.tipo || null,
+          data: row.data || null,
+          status: row.status || null,
+          descricao: row.descricao || null,
+          providencia: row.providencia || null,
+        })),
+      };
+
+    case "servicos_terceirizados":
+      return {
+        sectionType: "servicos_terceirizados",
+        totalServices: rows.length,
+        statusBreakdown: countLabels(rows.map((row) => row.status)),
+        complianceBreakdown: countLabels(rows.map((row) => row.conformidade)),
+        services: rows.slice(0, 8).map((row) => ({
+          fornecedor: row.fornecedor || null,
+          escopo: row.escopo || null,
+          status: row.status || null,
+          conformidade: row.conformidade || null,
+          vigencia: row.vigencia || null,
+        })),
+      };
+
+    default:
+      return {
+        sectionType: sectionKey,
+        totalEntries: rows.length,
+        entries: rows.slice(0, 8),
+      };
+  }
+};
+
 const RelatorioAssistencialPage = () => {
   const navigate = useNavigate();
   const { contracts } = useContracts();
@@ -517,6 +621,151 @@ const RelatorioAssistencialPage = () => {
   const activeData = sectionsData[activeSection] || { id: null, content: "", manual_content: "", auto_snapshot_json: null, completion_status: "pendente", attachments: [] };
   const activeImages = activeData.attachments.filter(a => a.file_type === "image");
   const activeFiles = activeData.attachments.filter(a => a.file_type !== "image");
+  const activeSectionEntries = useMemo(() => {
+    if (!activeData.id) return [];
+    return sectionEntries.filter(entry => entry.section_id === activeData.id);
+  }, [sectionEntries, activeData.id]);
+
+  const activeSuggestionContext = useMemo(() => {
+    if (!activeSec) return null;
+
+    const baseContext = {
+      sectionKey: activeSec.key,
+      sectionTitle: activeSec.title,
+      sectionDescription: activeSec.description,
+      sectionAutoData: activeSec.autoData ?? null,
+      completionStatus: activeData.completion_status,
+      hasManualContent: Boolean(activeData.manual_content?.replace(/<[^>]+>/g, " ").trim()),
+      attachmentsCount: activeData.attachments.length,
+    };
+
+    if (ENTRY_SECTIONS.includes(activeSec.key)) {
+      return {
+        ...baseContext,
+        contextSource: "complementary_entries",
+        structuredData: buildEntrySectionSummary(activeSec.key, activeSectionEntries),
+      };
+    }
+
+    switch (activeSec.autoData) {
+      case "contract":
+        return {
+          ...baseContext,
+          contextSource: "contract",
+          structuredData: {
+            contractName: selectedContract?.name || null,
+            contractStatus: selectedContract?.status || null,
+            contractPeriod: selectedContract?.period || null,
+            monthlyValue: Number(selectedContract?.value || 0),
+            variablePercentage: Math.round(Number(selectedContract?.variable || 0) * 100),
+            linkedGoals: Number(selectedContract?.goals || 0),
+          },
+        };
+
+      case "beds":
+        return {
+          ...baseContext,
+          contextSource: "beds",
+          structuredData: {
+            totalBeds: bedSummary.total,
+            inpatientBeds: bedSummary.totalInternacao,
+            supportBeds: bedSummary.totalComplementar,
+            movement: bedSummary.movements,
+            specialties: bedSummary.breakdown.slice(0, 12),
+          },
+        };
+
+      case "goals":
+      case "goals_trend":
+        return {
+          ...baseContext,
+          contextSource: activeSec.autoData,
+          structuredData: {
+            totalGoals: goalSummary.total,
+            achievedGoals: goalSummary.atingidas,
+            partialGoals: goalSummary.parciais,
+            evolvingGoals: goalSummary.criticas,
+            averageAchievement: goalSummary.avg,
+            sectors: Object.entries(goalsBySector).map(([sector, goals]) => ({
+              sector,
+              totalGoals: goals.length,
+              averageAchievement: goals.length
+                ? Math.round(goals.reduce((sum: number, goal: any) => sum + goal.pct, 0) / goals.length)
+                : 0,
+              goals: [...goals]
+                .sort((a: any, b: any) => b.pct - a.pct)
+                .slice(0, 5)
+                .map((goal: any) => ({
+                  name: goal.name,
+                  current: goal.current,
+                  target: goal.target,
+                  achievement: goal.pct,
+                  type: goal.type,
+                })),
+            })),
+          },
+        };
+
+      case "actionPlans":
+        return {
+          ...baseContext,
+          contextSource: "actionPlans",
+          structuredData: {
+            totalPlans: actionPlanSummary.total,
+            completed: actionPlanSummary.concluidas,
+            inProgress: actionPlanSummary.emAndamento,
+            notStarted: actionPlanSummary.naoIniciadas,
+            cancelled: actionPlanSummary.canceladas,
+            overdue: actionPlanSummary.vencidos,
+            byPriority: actionPlanSummary.byPriority,
+            plans: actionPlanSummary.plans.slice(0, 8).map((plan: any) => ({
+              referencia: plan.reference_name,
+              prioridade: plan.prioridade,
+              status: plan.status_acao,
+              responsavel: plan.responsavel || null,
+              prazo: plan.prazo || null,
+            })),
+          },
+        };
+
+      case "sau":
+        return {
+          ...baseContext,
+          contextSource: "sau",
+          structuredData: {
+            totalRecords: sauSummary.total,
+            compliments: sauSummary.elogios,
+            complaints: sauSummary.reclamacoes,
+            suggestions: sauSummary.sugestoes,
+            ombudsman: sauSummary.ouvidoria,
+            resolved: sauSummary.resolvidos,
+            resolutionRate: sauSummary.total > 0 ? Math.round((sauSummary.resolvidos / sauSummary.total) * 100) : 0,
+          },
+        };
+
+      case "rubricas":
+        return {
+          ...baseContext,
+          contextSource: "rubricas",
+          structuredData: {
+            totalExecuted: rubricaSummary.totalExecuted,
+            rubricas: Object.entries(rubricaSummary.byRubrica)
+              .sort(([, a], [, b]) => Number(b) - Number(a))
+              .slice(0, 10)
+              .map(([name, value]) => ({ name, value })),
+          },
+        };
+
+      default:
+        return {
+          ...baseContext,
+          contextSource: "section_theme_only",
+          structuredData: {
+            note: "Sem dados automáticos ou lançamentos complementares específicos disponíveis para esta seção no período.",
+          },
+        };
+    }
+  }, [activeSec, activeData.attachments.length, activeData.completion_status, activeData.manual_content, activeSectionEntries, actionPlanSummary, bedSummary, goalSummary, goalsBySector, rubricaSummary, sauSummary, selectedContract]);
 
   const compareableReports = useMemo(() => {
     if (!currentReport) return [];
@@ -1390,12 +1639,11 @@ const RelatorioAssistencialPage = () => {
                   {/* AI Suggestions */}
                   {isEditable && (
                     <AISuggestionsPanel
+                      key={`${currentReport?.id || "draft"}-${activeSection}-${period}`}
+                      sectionKey={activeSection}
                       sectionTitle={activeSec?.title || ""}
-                      goalSummary={goalSummary}
-                      actionPlanSummary={actionPlanSummary}
-                      sauSummary={sauSummary}
-                      bedSummary={bedSummary}
-                      rubricaSummary={rubricaSummary}
+                      sectionDescription={activeSec?.description || ""}
+                      sectionContext={activeSuggestionContext}
                       unit={unit}
                       period={period}
                       editable={isEditable}
