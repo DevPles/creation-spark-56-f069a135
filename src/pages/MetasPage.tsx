@@ -197,16 +197,10 @@ const MetasPage = () => {
                   <SelectTrigger className="w-[160px] h-9 text-xs">
                     <SelectValue placeholder="Setor" />
                   </SelectTrigger>
-                  <SelectContent>
+                   <SelectContent>
                     <SelectItem value="Todos">Todos os setores</SelectItem>
-                    {[...new Set(
-                      goals
-                        .filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
-                        .filter(g => selectedType === "Todos" || g.type === selectedType)
-                        .map(g => g.sector)
-                        .filter(Boolean)
-                    )].sort().map(sector => (
-                      <SelectItem key={sector} value={sector!}>{sector}</SelectItem>
+                    {dbSectors.map(sector => (
+                      <SelectItem key={sector} value={sector}>{sector}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
