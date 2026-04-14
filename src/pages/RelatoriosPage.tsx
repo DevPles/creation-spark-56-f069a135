@@ -1012,14 +1012,56 @@ const RelatoriosPage = () => {
   const [isCarouselFullscreen, setIsCarouselFullscreen] = useState(false);
 
   const hasBedData = bedChartData.totalLeitos > 0;
-  const TOTAL_SLIDES = (compareMode ? 11 : 10) + (hasBedData ? 2 : 0);
+  // Heatmap data: goal entries for current month, sorted by most entries first
+  const heatmapData = useMemo(() => {
+    const now = new Date();
+    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const unitGoals = dbGoals.filter(g => g.facility_unit === contract.unit);
+
+    const rows = unitGoals.map(g => {
+      const goalEntries = dbEntries.filter((e: any) => e.goal_id === g.id);
+      // Group by day of month using created_at
+      const dayMap: Record<number, number> = {};
+      let monthEntryCount = 0;
+      goalEntries.forEach((e: any) => {
+        const d = new Date(e.created_at);
+        const eYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (eYM === currentYM) {
+          const day = d.getDate();
+          dayMap[day] = (dayMap[day] || 0) + Number(e.value);
+          monthEntryCount++;
+        }
+      });
+      const dailyTarget = Number(g.target) / (daysInMonth || 30);
+      return {
+        id: g.id,
+        name: g.name as string,
+        unit: g.unit as string,
+        target: Number(g.target),
+        dailyTarget,
+        dayMap,
+        entryCount: monthEntryCount,
+        totalMonth: Object.values(dayMap).reduce((s: number, v) => s + (v as number), 0),
+      };
+    });
+
+    // Sort by most entries first
+    rows.sort((a, b) => b.entryCount - a.entryCount);
+
+    return { rows, daysInMonth, monthLabel: currentYM, todayDay: now.getDate() };
+  }, [dbGoals, dbEntries, contract.unit]);
+
+  const heatmapSlideIdx = hasBedData ? 12 : 10;
+  const compSlideIdx = heatmapSlideIdx + 1;
+  const TOTAL_SLIDES = (compareMode ? compSlideIdx + 1 : heatmapSlideIdx + 1);
   const FULLSCREEN_GROUPS = useMemo(() => {
     const groups: number[][] = [[0, 9], [1, 2], [3, 4], [5, 6], [7, 8]];
     if (hasBedData) groups.push([10, 11]);
-    const compIdx = hasBedData ? 12 : 10;
-    if (compareMode) groups.push([compIdx]);
+    groups.push([heatmapSlideIdx]); // Heatmap full-width
+    if (compareMode) groups.push([compSlideIdx]);
     return groups;
-  }, [compareMode, hasBedData]);
+  }, [compareMode, hasBedData, heatmapSlideIdx, compSlideIdx]);
   const TOTAL_FS_SLIDES = FULLSCREEN_GROUPS.length;
 
   const nextSlide = useCallback(() => setCurrentSlide(prev => {
@@ -1555,11 +1597,70 @@ const RelatoriosPage = () => {
             )}
           </div>
         );
-      case (hasBedData ? 12 : 10): // Comparison (only in compare mode)
+      case heatmapSlideIdx: // Heatmap
+        return renderHeatmapSlide();
+      case compSlideIdx: // Comparison (only in compare mode)
         if (!compareMode || !compareContract) return null;
         return renderComparisonSlide();
       default: return null;
     }
+  };
+
+  const renderHeatmapSlide = () => {
+    const { rows, daysInMonth, todayDay } = heatmapData;
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const fmt = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+
+    const getCellColor = (val: number | undefined, dailyTarget: number) => {
+      if (!val) return "";
+      const ratio = dailyTarget > 0 ? val / dailyTarget : 1;
+      if (ratio >= 1) return "bg-green-500/20 text-green-700";
+      if (ratio >= 0.7) return "bg-yellow-500/20 text-yellow-700";
+      return "bg-red-500/20 text-red-700";
+    };
+
+    return (
+      <div>
+        <h3 className="font-display font-semibold text-lg text-foreground mb-1">Mapa Térmico — Produção Diária</h3>
+        <p className="text-xs text-muted-foreground mb-4">{contract.unit} • Metas ordenadas por volume de lançamentos</p>
+        <div className="bg-card rounded-lg border border-border overflow-auto max-h-[calc(100vh-200px)]">
+          <table className="w-full text-[11px]">
+            <thead className="sticky top-0 bg-card z-10">
+              <tr className="border-b border-border">
+                <th className="text-left px-2 py-2 min-w-[160px] sticky left-0 bg-card z-20 font-medium text-muted-foreground">Meta</th>
+                {days.map(d => (
+                  <th key={d} className={`text-center px-0.5 py-2 min-w-[28px] font-medium ${d === todayDay ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}>{d}</th>
+                ))}
+                <th className="text-right px-2 py-2 min-w-[60px] font-medium text-muted-foreground">Total</th>
+                <th className="text-right px-2 py-2 min-w-[50px] font-medium text-muted-foreground">Lanç.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="border-b border-border/50 hover:bg-muted/30">
+                  <td className="px-2 py-1.5 sticky left-0 bg-card z-10">
+                    <span className="truncate block max-w-[150px] font-medium text-foreground">{row.name}</span>
+                  </td>
+                  {days.map(d => {
+                    const val = row.dayMap[d];
+                    return (
+                      <td key={d} className={`text-center px-0.5 py-1.5 ${d === todayDay ? "bg-primary/5" : ""} ${val ? getCellColor(val, row.dailyTarget) : ""}`}>
+                        {val ? (val >= 1000 ? `${(val / 1000).toFixed(0)}k` : fmt(val)) : <span className="text-muted-foreground/20">–</span>}
+                      </td>
+                    );
+                  })}
+                  <td className="text-right px-2 py-1.5 font-semibold text-foreground">{fmt(row.totalMonth)}</td>
+                  <td className="text-right px-2 py-1.5 text-muted-foreground">{row.entryCount}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td colSpan={daysInMonth + 3} className="text-center py-8 text-muted-foreground">Sem lançamentos neste mês</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   };
 
   const renderComparisonSlide = () => {
