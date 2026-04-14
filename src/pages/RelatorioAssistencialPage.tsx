@@ -1356,6 +1356,26 @@ const RelatorioAssistencialPage = () => {
                     />
                   )}
 
+                  {/* AI Suggestions */}
+                  {isEditable && (
+                    <AISuggestionsPanel
+                      sectionTitle={activeSec?.title || ""}
+                      goalSummary={goalSummary}
+                      actionPlanSummary={actionPlanSummary}
+                      sauSummary={sauSummary}
+                      bedSummary={bedSummary}
+                      rubricaSummary={rubricaSummary}
+                      unit={unit}
+                      period={period}
+                      editable={isEditable}
+                      onInsert={(text) => {
+                        const current = activeData.manual_content || "";
+                        const separator = current.trim() ? "<p><br></p>" : "";
+                        handleContentChange(activeSection, current + separator + `<p>${text}</p>`);
+                      }}
+                    />
+                  )}
+
                   {/* Manual content */}
                   <div>
                     <p className="text-[10px] text-muted-foreground font-semibold mb-2">ANÁLISE E COMPLEMENTO MANUAL</p>
