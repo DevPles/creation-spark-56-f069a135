@@ -20,6 +20,7 @@ export interface SectionDef {
   order: number;
   autoData?: string;
   custom?: boolean;
+  parentKey?: string; // if set, this section is a subtopic of the parent
 }
 
 export interface SectionData {
