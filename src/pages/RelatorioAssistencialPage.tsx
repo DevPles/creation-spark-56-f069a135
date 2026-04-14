@@ -21,6 +21,7 @@ import autoTable from "jspdf-autotable";
 import RichTextEditor from "@/components/relatorio/RichTextEditor";
 import AutoDataPanel from "@/components/relatorio/AutoDataPanel";
 import SectionEntryForms from "@/components/relatorio/SectionEntryForms";
+import AISuggestionsPanel from "@/components/relatorio/AISuggestionsPanel";
 import { useAutoData, useComputedSummaries } from "@/components/relatorio/useAutoData";
 import {
   DEFAULT_SECTIONS, STATUS_LABELS, STATUS_COLORS,
