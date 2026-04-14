@@ -116,7 +116,7 @@ const GoalDetailCard = ({ goal, onEdit }: { goal: GoalDetail; onEdit?: () => voi
         </div>
         <div>
           <p className="text-[10px] text-muted-foreground">Meta</p>
-          <p className="font-display font-bold text-foreground text-sm">{goal.target}{goal.unit}</p>
+          <p className="font-display font-bold text-foreground text-sm">{goal.target} {goal.unit}</p>
         </div>
         {isAdmin && (
           <div>
