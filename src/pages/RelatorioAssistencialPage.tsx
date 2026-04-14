@@ -1065,7 +1065,6 @@ const RelatorioAssistencialPage = () => {
                             isActive ? "bg-primary-foreground/40" : "bg-muted-foreground/20"
                           }`} />
                           <span className="truncate flex-1">{sec.title}</span>
-                          )}
                         </button>
                       );
                     })}
@@ -1109,8 +1108,8 @@ const RelatorioAssistencialPage = () => {
                             />
                             <span className="text-xs">{sec.title}</span>
                             {sec.custom && (
-                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0 ml-auto text-destructive text-[10px]">✕</Button>
-                              </Button>
+                              <button className="h-5 w-5 p-0 ml-auto text-destructive text-[10px]" onClick={() => removeSection(sec.key)}>✕</button>
+                            )}
                             )}
                           </div>
                         ))}
@@ -1119,7 +1118,7 @@ const RelatorioAssistencialPage = () => {
                   </Dialog>
 
                   <Button onClick={handleExportPdf} disabled={generating} className="w-full" size="sm">
-                    <Download className="w-3.5 h-3.5 mr-1" />
+                    {generating ? "Gerando PDF..." : "Gerar PDF do Relatório"}
                     {generating ? "Gerando PDF..." : "Gerar PDF do Relatório"}
                   </Button>
                 </div>
