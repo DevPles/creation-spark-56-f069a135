@@ -1451,6 +1451,7 @@ const RelatorioAssistencialPage = () => {
                 </div>
               </motion.div>
             </AnimatePresence>
+            )}
           </div>
         </div>
       </main>
