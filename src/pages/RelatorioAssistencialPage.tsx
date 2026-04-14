@@ -535,24 +535,62 @@ const RelatorioAssistencialPage = () => {
         doc.text(`${selectedContract.name} — ${unit} — ${MONTHS[refMonth - 1]}/${refYear} — v${currentReport.version}`, W - margin, 8, { align: "right" });
       };
 
+      // Load cover logos as base64 for PDF
+      const loadImage = (url: string): Promise<string | null> => {
+        return new Promise(resolve => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+            canvas.getContext("2d")!.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = () => resolve(null);
+          img.src = url;
+        });
+      };
+      const logoImages = await Promise.all(coverConfig.logos.map(l => loadImage(l.url)));
+
       // Cover
       doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.rect(0, 0, W, 100, "F");
+      doc.rect(0, 0, W, 110, "F");
+
+      // Logos bar
+      const validLogos = logoImages.filter(Boolean) as string[];
+      if (validLogos.length > 0) {
+        const logoH = 14;
+        const logoSpacing = 8;
+        const totalLogosW = validLogos.length * 20 + (validLogos.length - 1) * logoSpacing;
+        const barW = totalLogosW + 16;
+        const barX = (W - barW) / 2;
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(barX, 8, barW, logoH + 6, 3, 3, "F");
+        let lx = barX + 8;
+        validLogos.forEach(dataUrl => {
+          try { doc.addImage(dataUrl, "PNG", lx, 10, 20, logoH); } catch {}
+          lx += 20 + logoSpacing;
+        });
+      }
+
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(22); doc.setFont("helvetica", "bold");
-      doc.text("RELATÓRIO ASSISTENCIAL", W / 2, 30, { align: "center" });
-      doc.setFontSize(11); doc.setFont("helvetica", "normal");
-      doc.text("Gerência, Operacionalização e Execução das Ações e Serviços de Saúde", W / 2, 42, { align: "center" });
+      doc.setFontSize(20); doc.setFont("helvetica", "bold");
+      doc.text(coverConfig.title, W / 2, 42, { align: "center" });
+      doc.setFontSize(10); doc.setFont("helvetica", "normal");
+      const subtitleLines = doc.splitTextToSize(coverConfig.subtitle, W - 40);
+      subtitleLines.forEach((line: string, i: number) => {
+        doc.text(line, W / 2, 52 + i * 5, { align: "center" });
+      });
       doc.setFontSize(13);
-      doc.text(`${selectedContract.name}`, W / 2, 58, { align: "center" });
-      doc.text(`${unit}`, W / 2, 66, { align: "center" });
+      doc.text(`${selectedContract.name}`, W / 2, 68, { align: "center" });
+      doc.text(`${unit}`, W / 2, 76, { align: "center" });
       doc.setFontSize(14); doc.setFont("helvetica", "bold");
-      doc.text(`${MONTHS[refMonth - 1]} de ${refYear}`, W / 2, 78, { align: "center" });
+      doc.text(`${MONTHS[refMonth - 1]} de ${refYear}`, W / 2, 88, { align: "center" });
       doc.setFontSize(9); doc.setFont("helvetica", "normal");
-      doc.text(`Versão ${currentReport.version}`, W / 2, 88, { align: "center" });
+      doc.text(`Versão ${currentReport.version}`, W / 2, 98, { align: "center" });
       doc.setTextColor(0); doc.setFontSize(9);
-      doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, W / 2, 115, { align: "center" });
-      doc.text(`Status: ${STATUS_LABELS[currentReport.status]}`, W / 2, 122, { align: "center" });
+      doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, W / 2, 125, { align: "center" });
+      doc.text(`Status: ${STATUS_LABELS[currentReport.status]}`, W / 2, 132, { align: "center" });
 
       // TOC
       doc.addPage(); drawHeader();
