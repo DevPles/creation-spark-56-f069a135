@@ -203,6 +203,14 @@ const MetasPage = () => {
                   >
                     <List className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant={viewMode === "calendar" ? "default" : "ghost"}
+                    size="icon"
+                    className="h-9 w-9 rounded-none"
+                    onClick={() => setViewMode("calendar")}
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             }
