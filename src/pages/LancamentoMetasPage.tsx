@@ -1448,6 +1448,64 @@ const LancamentoMetasPage = () => {
                       );
                     })()}
                   </div>
+
+                  {/* Ranking: Melhores e Piores */}
+                  {(() => {
+                    const ranked = heatmapGoals.map(g => {
+                      const dayEntries = goalDayMap[g.id] || {};
+                      const vals = Object.values(dayEntries);
+                      const totalValue = vals.reduce((s, v) => s + v, 0);
+                      const pct = g.target > 0 ? Math.round((totalValue / g.target) * 100) : 0;
+                      const hasEntries = vals.length > 0;
+                      return { ...g, totalValue, pct, hasEntries };
+                    }).filter(g => g.hasEntries);
+
+                    if (ranked.length === 0) return null;
+
+                    const sorted = [...ranked].sort((a, b) => b.pct - a.pct);
+                    const topCount = Math.min(5, Math.ceil(sorted.length / 2));
+                    const best = sorted.slice(0, topCount);
+                    const worst = [...sorted].reverse().slice(0, topCount);
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Best */}
+                        <div className="kpi-card p-4">
+                          <h4 className="text-xs font-bold text-emerald-700 mb-3 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            Melhores Resultados
+                          </h4>
+                          <div className="space-y-2">
+                            {best.map((g, i) => (
+                              <div key={g.id} className="flex items-center gap-2 text-xs">
+                                <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0">{i + 1}</span>
+                                <span className="truncate flex-1 text-foreground font-medium" title={g.name}>{g.name}</span>
+                                <span className="text-muted-foreground">{g.totalValue}/{g.target} {g.unit}</span>
+                                <span className={cn("font-bold min-w-[40px] text-right", g.pct >= 90 ? "text-emerald-600" : g.pct >= 70 ? "text-amber-500" : "text-destructive")}>{g.pct}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Worst */}
+                        <div className="kpi-card p-4">
+                          <h4 className="text-xs font-bold text-destructive mb-3 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-destructive" />
+                            Piores Resultados
+                          </h4>
+                          <div className="space-y-2">
+                            {worst.map((g, i) => (
+                              <div key={g.id} className="flex items-center gap-2 text-xs">
+                                <span className="w-5 h-5 rounded-full bg-red-100 text-destructive flex items-center justify-center font-bold text-[10px] shrink-0">{i + 1}</span>
+                                <span className="truncate flex-1 text-foreground font-medium" title={g.name}>{g.name}</span>
+                                <span className="text-muted-foreground">{g.totalValue}/{g.target} {g.unit}</span>
+                                <span className={cn("font-bold min-w-[40px] text-right", g.pct >= 90 ? "text-emerald-600" : g.pct >= 70 ? "text-amber-500" : "text-destructive")}>{g.pct}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })()}
