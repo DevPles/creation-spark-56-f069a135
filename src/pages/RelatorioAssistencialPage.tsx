@@ -1819,6 +1819,54 @@ const RelatorioAssistencialPage = () => {
                   </div>
                 </div>
 
+                {/* Central image */}
+                <div>
+                  <Label className="text-xs mb-2 block">Imagem central do relatório</Label>
+                  {coverConfig.centralImage ? (
+                    <div className="bg-muted/30 border border-border rounded-lg p-4 flex flex-col items-center gap-3">
+                      <div className="w-full max-w-xs flex items-center justify-center">
+                        <img src={coverConfig.centralImage.url} alt={coverConfig.centralImage.name} className="max-w-full max-h-40 object-contain rounded" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">{coverConfig.centralImage.name}</p>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="h-6 text-[9px] px-2" onClick={() => {
+                          const input = document.createElement("input");
+                          input.type = "file"; input.accept = "image/*";
+                          input.onchange = async (ev) => {
+                            const file = (ev.target as HTMLInputElement).files?.[0];
+                            if (!file) return;
+                            const publicUrl = await uploadLogoToStorage(file);
+                            if (publicUrl) {
+                              setCoverConfig(prev => ({ ...prev, centralImage: { name: file.name.replace(/\.\w+$/, ""), url: publicUrl } }));
+                            }
+                          };
+                          input.click();
+                        }}>Trocar</Button>
+                        <Button variant="ghost" size="sm" className="h-6 text-[9px] px-2 text-destructive" onClick={() => {
+                          setCoverConfig(prev => ({ ...prev, centralImage: null }));
+                        }}>Remover</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file"; input.accept = "image/*";
+                      input.onchange = async (ev) => {
+                        const file = (ev.target as HTMLInputElement).files?.[0];
+                        if (!file) return;
+                        const publicUrl = await uploadLogoToStorage(file);
+                        if (publicUrl) {
+                          setCoverConfig(prev => ({ ...prev, centralImage: { name: file.name.replace(/\.\w+$/, ""), url: publicUrl } }));
+                        }
+                      };
+                      input.click();
+                    }} className="w-full bg-muted/20 border border-dashed border-border rounded-lg p-4 flex flex-col items-center justify-center gap-1 hover:bg-muted/40 transition-colors">
+                      <span className="text-lg text-muted-foreground">+</span>
+                      <span className="text-[10px] text-muted-foreground">Adicionar imagem central</span>
+                    </button>
+                  )}
+                </div>
+
                 <div className="border border-border rounded-lg p-4 bg-muted/10">
                   <p className="text-[10px] text-muted-foreground mb-3">Pré-visualização da capa</p>
                   <div className="bg-[hsl(215,60%,30%)] rounded-lg p-6 text-white text-center space-y-3">
@@ -1836,6 +1884,11 @@ const RelatorioAssistencialPage = () => {
                     <p className="text-base font-bold">{MONTHS[refMonth - 1]} de {refYear}</p>
                     <p className="text-[10px] opacity-70">Versão {currentReport?.version}</p>
                   </div>
+                  {coverConfig.centralImage && (
+                    <div className="mt-3 flex justify-center">
+                      <img src={coverConfig.centralImage.url} alt={coverConfig.centralImage.name} className="max-w-[60%] max-h-32 object-contain rounded" />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
