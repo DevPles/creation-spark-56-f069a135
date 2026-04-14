@@ -1043,7 +1043,7 @@ const LancamentoMetasPage = () => {
                           <p className="text-[10px] text-muted-foreground mb-1">Lançamentos anteriores:</p>
                           <div className="flex flex-wrap gap-1">
                             {existing.map((e, idx) => (
-                              <span key={idx} className="text-[10px] bg-background px-1.5 py-0.5 rounded border border-border">{e.period}: {e.value}{goal.unit}</span>
+                              <span key={idx} className="text-[10px] bg-background px-1.5 py-0.5 rounded border border-border">{e.period} : {e.value} {goal.unit}</span>
                             ))}
                           </div>
                         </div>
