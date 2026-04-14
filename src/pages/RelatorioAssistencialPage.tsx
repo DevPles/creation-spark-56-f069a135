@@ -1135,27 +1135,19 @@ const RelatorioAssistencialPage = () => {
                   transition={{ duration: 0.15 }}
                   className="bg-card rounded-xl border border-border shadow-sm"
                 >
-                  {/* Section header */}
                   <div className="p-5 border-b border-border">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                          {activeSec?.icon}
-                        </div>
-                        <div>
-                          <h2 className="text-base font-bold text-foreground">{activeSec?.title}</h2>
-                          <p className="text-xs text-muted-foreground">{activeSec?.description}</p>
-                        </div>
+                      <div>
+                        <h2 className="text-base font-bold text-foreground">{activeSec?.title}</h2>
+                        <p className="text-xs text-muted-foreground">{activeSec?.description}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {activeSec?.autoData && (
-                          <Badge variant="outline" className="text-[10px] gap-1">
-                            <Sparkles className="w-3 h-3 text-amber-500" />
+                          <Badge variant="outline" className="text-[10px]">
                             Dados automáticos
                           </Badge>
                         )}
                         <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => handleSaveSection(activeSection)} disabled={saving}>
-                          <Save className="w-3 h-3 mr-1" />
                           {saving ? "Salvando..." : "Salvar"}
                         </Button>
                       </div>
@@ -1177,8 +1169,7 @@ const RelatorioAssistencialPage = () => {
 
                     {/* Content editor */}
                     <div>
-                      <Label className="text-xs font-semibold mb-2 block flex items-center gap-1">
-                        <FileText className="w-3 h-3" />
+                      <Label className="text-xs font-semibold mb-2 block">
                         Conteúdo Textual
                       </Label>
                       <Textarea
@@ -1194,8 +1185,8 @@ const RelatorioAssistencialPage = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {/* Images */}
                       <div>
-                        <Label className="text-xs font-semibold mb-2 block flex items-center gap-1">
-                          <Image className="w-3 h-3" /> Imagens
+                        <Label className="text-xs font-semibold mb-2 block">
+                          Imagens
                         </Label>
                         {activeImages.length > 0 && (
                           <div className="grid grid-cols-2 gap-2 mb-2">
@@ -1211,13 +1202,13 @@ const RelatorioAssistencialPage = () => {
                         )}
                         <input ref={imageInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleFileUpload(e.target.files, "image")} />
                         <Button variant="outline" size="sm" className="text-xs w-full" onClick={() => imageInputRef.current?.click()} disabled={uploading}>
-                          <Image className="w-3 h-3 mr-1" /> {uploading ? "Enviando..." : "Inserir imagens"}
+                          {uploading ? "Enviando..." : "Inserir imagens"}
                         </Button>
                       </div>
                       {/* Files */}
                       <div>
-                        <Label className="text-xs font-semibold mb-2 block flex items-center gap-1">
-                          <Paperclip className="w-3 h-3" /> Anexos (PDF, Excel, etc.)
+                        <Label className="text-xs font-semibold mb-2 block">
+                          Anexos (PDF, Excel, etc.)
                         </Label>
                         {activeFiles.length > 0 && (
                           <div className="space-y-1 mb-2">
@@ -1227,7 +1218,7 @@ const RelatorioAssistencialPage = () => {
                                   📎 {file.file_name}
                                 </a>
                                 <Button variant="ghost" size="sm" className="h-5 text-[10px] text-destructive" onClick={() => handleDeleteAttachment(file.id)}>
-                                  <Trash2 className="w-3 h-3" />
+                                  ✕
                                 </Button>
                               </div>
                             ))}
@@ -1235,7 +1226,7 @@ const RelatorioAssistencialPage = () => {
                         )}
                         <input ref={fileInputRef} type="file" accept=".pdf,.xlsx,.xls,.doc,.docx,.csv" multiple className="hidden" onChange={e => handleFileUpload(e.target.files, "document")} />
                         <Button variant="outline" size="sm" className="text-xs w-full" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                          <Paperclip className="w-3 h-3 mr-1" /> {uploading ? "Enviando..." : "Inserir anexo"}
+                          {uploading ? "Enviando..." : "Inserir anexo"}
                         </Button>
                       </div>
                     </div>
