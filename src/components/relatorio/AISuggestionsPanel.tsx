@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,12 +9,10 @@ interface Suggestion {
 }
 
 interface Props {
+  sectionKey: string;
   sectionTitle: string;
-  goalSummary: any;
-  actionPlanSummary: any;
-  sauSummary: any;
-  bedSummary: any;
-  rubricaSummary: any;
+  sectionDescription: string;
+  sectionContext: Record<string, any> | null;
   unit: string;
   period: string;
   onInsert: (text: string) => void;
@@ -22,32 +20,46 @@ interface Props {
 }
 
 const AISuggestionsPanel = ({
-  sectionTitle, goalSummary, actionPlanSummary, sauSummary,
-  bedSummary, rubricaSummary, unit, period, onInsert, editable,
+  sectionKey, sectionTitle, sectionDescription, sectionContext,
+  unit, period, onInsert, editable,
 }: Props) => {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
+  useEffect(() => {
+    setSuggestions([]);
+    setDismissed(false);
+  }, [sectionKey, unit, period]);
+
   const fetchSuggestions = async () => {
     setLoading(true);
+    setDismissed(false);
     try {
       const { data, error } = await supabase.functions.invoke("report-suggestions", {
-        body: { sectionTitle, goalSummary, actionPlanSummary, sauSummary, bedSummary, rubricaSummary, unit, period },
+        body: { sectionKey, sectionTitle, sectionDescription, sectionContext, unit, period },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       if (data?.suggestions) {
         setSuggestions(data.suggestions);
       }
     } catch (err: any) {
       console.error("Erro ao gerar sugestões:", err);
-      toast.error("Erro ao gerar sugestões de IA");
+      const message = String(err?.message || "");
+      if (message.includes("Rate limit")) {
+        toast.error("Limite temporário da IA atingido. Tente novamente em instantes.");
+      } else if (message.includes("Payment required")) {
+        toast.error("Créditos da IA indisponíveis no momento.");
+      } else {
+        toast.error("Erro ao gerar sugestões de IA");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  if (!editable || dismissed) return null;
+  if (!editable) return null;
 
   const CATEGORY_COLORS: Record<number, string> = {
     0: "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/30",
@@ -83,7 +95,7 @@ const AISuggestionsPanel = ({
         </div>
       </div>
 
-      {suggestions.length > 0 && (
+      {!dismissed && suggestions.length > 0 && (
         <div className="grid grid-cols-1 gap-2">
           {suggestions.map((s, i) => (
             <div key={i} className={`rounded-lg border p-3 ${CATEGORY_COLORS[i] || ""}`}>

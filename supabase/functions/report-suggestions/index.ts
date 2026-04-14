@@ -10,14 +10,35 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { sectionTitle, goalSummary, actionPlanSummary, sauSummary, bedSummary, rubricaSummary, unit, period } =
-      await req.json();
+    const body = await req.json();
+    const sectionTitle = String(body?.sectionTitle ?? "").trim();
+    const sectionKey = String(body?.sectionKey ?? "").trim();
+    const sectionDescription = String(body?.sectionDescription ?? "").trim();
+    const unit = String(body?.unit ?? "").trim();
+    const period = String(body?.period ?? "").trim();
+
+    if (!sectionTitle || !unit || !period) {
+      return new Response(JSON.stringify({ error: "sectionTitle, unit and period are required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const sectionContext = body?.sectionContext ?? {
+      legacyContext: {
+        goalSummary: body?.goalSummary ?? null,
+        actionPlanSummary: body?.actionPlanSummary ?? null,
+        sauSummary: body?.sauSummary ?? null,
+        bedSummary: body?.bedSummary ?? null,
+        rubricaSummary: body?.rubricaSummary ?? null,
+      },
+    };
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const dataContext = JSON.stringify(
-      { sectionTitle, unit, period, goalSummary, actionPlanSummary, sauSummary, bedSummary, rubricaSummary },
+      { sectionKey, sectionTitle, sectionDescription, unit, period, sectionContext },
       null,
       2,
     );
@@ -25,14 +46,34 @@ serve(async (req) => {
     const systemPrompt = `Você é um analista institucional hospitalar especializado em relatórios assistenciais.
 Sua tarefa é gerar EXATAMENTE 3 sugestões de texto analítico para a seção "${sectionTitle}" do relatório assistencial da unidade "${unit}", competência ${period}.
 
+IDENTIFICAÇÃO DA SEÇÃO:
+- chave interna: "${sectionKey || "não informada"}"
+- título: "${sectionTitle}"
+- descrição: "${sectionDescription || "não informada"}"
+
 REGRAS OBRIGATÓRIAS:
-1. Cada sugestão DEVE ser específica para a seção "${sectionTitle}" — analise os dados fornecidos e descreva o que é relevante para ESTA seção.
-2. Use linguagem técnica, institucional e POSITIVA. Termos negativos como "queda", "piora", "risco", "glosa", "prejuízo" são PROIBIDOS.
-3. Substitua situações desfavoráveis por: "potencial de crescimento", "oportunidade de fortalecimento", "espaço para evolução".
-4. Cite números reais dos dados fornecidos quando disponíveis (metas atingidas, leitos, movimentações, SAU, rubricas, planos de ação).
-5. Se a seção não tiver dados automáticos relevantes, gere texto institucional contextualizado para o tema da seção.
-6. Cada sugestão deve ter entre 2 e 4 frases.
-7. NÃO repita o mesmo texto para seções diferentes — cada seção tem um foco distinto.
+1. Use APENAS os dados presentes em "DADOS DA SEÇÃO". É proibido citar números, setores, exames, leitos, SAU, planos de ação, metas, rubricas, documentos ou treinamentos que não apareçam nesse contexto.
+2. Cada sugestão DEVE ser específica para a seção "${sectionTitle}" e permanecer 100% no eixo temático dessa seção.
+3. Se o contexto indicar ausência de dados estruturados ou totais zerados, explicite isso de forma institucional, sem inventar números ou resultados.
+4. Quando houver números, status, listas ou totais na própria seção, cite apenas esses dados reais.
+5. Não reutilize textos de outras seções. Exemplo: treinamento não pode mencionar leitos; execução financeira não pode mencionar produção assistencial; documentação não pode mencionar SAU, salvo se isso estiver explicitamente no contexto recebido.
+6. Use linguagem técnica, institucional e POSITIVA. Termos negativos como "queda", "piora", "risco", "glosa", "prejuízo" são PROIBIDOS.
+7. Substitua situações desfavoráveis por: "potencial de crescimento", "oportunidade de fortalecimento", "espaço para evolução".
+8. Cada sugestão deve ter entre 2 e 4 frases.
+
+EIXOS TEMÁTICOS DE REFERÊNCIA:
+- info_contrato/contract: dados contratuais e vigência
+- caract_unidade/beds: leitos, capacidade instalada e movimentação assistencial
+- producao_assistencial/goals: metas, setores, produção e atingimento
+- indicadores_qualidade/sau: registros do atendimento ao usuário e resolutividade
+- plano_acao/actionPlans: tratativas, prioridades, responsáveis e status
+- indicadores_acompanhamento/goals_trend: comportamento agregado dos indicadores
+- execucao_financeira/rubricas: rubricas e valores executados
+- treinamentos: ações educativas, participantes, carga horária e público-alvo
+- recursos_humanos: quadro de pessoal, cargos, turnos e quantitativos
+- doc_regulatoria/doc_operacional: documentos, vigência, status e conformidade
+- seg_trabalho: ocorrências, inspeções, providências e status
+- servicos_terceirizados: fornecedores, escopo, status e conformidade
 
 CATEGORIAS DAS 3 SUGESTÕES:
 - "Desempenho Geral": Panorama do desempenho da unidade nesta seção específica.
@@ -49,9 +90,10 @@ Responda usando a tool suggest_texts.`;
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
+        temperature: 0.3,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Dados do relatório para a seção "${sectionTitle}":\n${dataContext}` },
+          { role: "user", content: `DADOS DA SEÇÃO (JSON):\n${dataContext}` },
         ],
         tools: [
           {
@@ -71,12 +113,14 @@ Responda usando a tool suggest_texts.`;
                         text: { type: "string", description: "The suggestion text (2-4 sentences)" },
                       },
                       required: ["title", "text"],
+                      additionalProperties: false,
                     },
                     minItems: 3,
                     maxItems: 3,
                   },
                 },
                 required: ["suggestions"],
+                additionalProperties: false,
               },
             },
           },
@@ -106,8 +150,19 @@ Responda usando a tool suggest_texts.`;
     if (!toolCall) throw new Error("No tool call in response");
 
     const parsed = JSON.parse(toolCall.function.arguments);
+    const categoryFallback = ["Desempenho Geral", "Eficiência/Qualidade", "Evolução/Oportunidade"];
+    const suggestions = Array.isArray(parsed?.suggestions)
+      ? parsed.suggestions.slice(0, 3).map((item: any, index: number) => ({
+          title: String(item?.title || categoryFallback[index]).trim() || categoryFallback[index],
+          text: String(item?.text || "").trim(),
+        }))
+      : [];
 
-    return new Response(JSON.stringify({ suggestions: parsed.suggestions }), {
+    if (suggestions.length !== 3 || suggestions.some((item) => !item.text)) {
+      throw new Error("Invalid suggestions payload");
+    }
+
+    return new Response(JSON.stringify({ suggestions }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
