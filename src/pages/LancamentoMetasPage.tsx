@@ -1304,18 +1304,18 @@ const LancamentoMetasPage = () => {
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs border-separate border-spacing-0.5">
-                      <thead>
+                      <thead className="sticky top-0 z-20 bg-background">
                         <tr>
-                          <th className="text-left font-semibold text-foreground p-1.5 min-w-[180px] sticky left-0 bg-background z-10">Meta</th>
-                          <th className="text-center font-semibold text-muted-foreground p-1 min-w-[28px]">Alvo</th>
+                          <th className="text-left font-semibold text-foreground p-1.5 min-w-[180px] sticky left-0 bg-background z-30">Meta</th>
+                          <th className="text-center font-semibold text-muted-foreground p-1 min-w-[28px] bg-background">Alvo</th>
                           {days.map(d => (
                             <th key={d} className={cn(
-                              "text-center font-medium p-1 min-w-[28px]",
+                              "text-center font-medium p-1 min-w-[28px] bg-background",
                               d === new Date().getDate() && month === currentMonth && year === currentYear ? "text-primary font-bold" : "text-muted-foreground"
                             )}>{d}</th>
                           ))}
-                          <th className="text-center font-semibold text-foreground p-1 min-w-[40px]">Total</th>
-                          <th className="text-center font-semibold text-foreground p-1 min-w-[40px]">%</th>
+                          <th className="text-center font-semibold text-foreground p-1 min-w-[40px] bg-background">Total</th>
+                          <th className="text-center font-semibold text-foreground p-1 min-w-[40px] bg-background">%</th>
                         </tr>
                       </thead>
                       <tbody>
