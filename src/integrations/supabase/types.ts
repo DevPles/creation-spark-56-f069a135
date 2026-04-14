@@ -606,6 +606,7 @@ export type Database = {
       reports: {
         Row: {
           contract_id: string
+          cover_config: Json | null
           created_at: string
           created_by: string
           facility_unit: string
@@ -620,6 +621,7 @@ export type Database = {
         }
         Insert: {
           contract_id: string
+          cover_config?: Json | null
           created_at?: string
           created_by: string
           facility_unit: string
@@ -634,6 +636,7 @@ export type Database = {
         }
         Update: {
           contract_id?: string
+          cover_config?: Json | null
           created_at?: string
           created_by?: string
           facility_unit?: string

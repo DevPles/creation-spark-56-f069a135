@@ -182,12 +182,9 @@ const RelatorioAssistencialPage = () => {
     title: "RELATÓRIO ASSISTENCIAL",
     subtitle: "Gerência, Operacionalização e Execução das Ações e Serviços de Saúde",
     logos: [
-      { name: "CEBAS", url: "/images/logo-cebas.png" },
-      { name: "Hospital Pimentas", url: "/images/logo-hospital.png" },
-      { name: "Guarulhos", url: "/images/logo-guarulhos.png" },
-      { name: "Instituto Univida", url: "/images/logo-univida.png" },
-    ],
+      ] as { name: string; url: string }[],
   });
+  const [savingCover, setSavingCover] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -392,6 +389,17 @@ const RelatorioAssistencialPage = () => {
     setCurrentReport(report);
     setView("editor");
     await loadReportSections(report.id);
+    // Load cover config from DB
+    const raw = (report as any).cover_config;
+    if (raw && typeof raw === "object" && raw.title) {
+      setCoverConfig({
+        title: raw.title || "RELATÓRIO ASSISTENCIAL",
+        subtitle: raw.subtitle || "",
+        logos: Array.isArray(raw.logos) ? raw.logos : [],
+      });
+    } else {
+      setCoverConfig({ title: "RELATÓRIO ASSISTENCIAL", subtitle: "Gerência, Operacionalização e Execução das Ações e Serviços de Saúde", logos: [] });
+    }
   };
 
   // ═══ COMPARE ═══
@@ -446,6 +454,29 @@ const RelatorioAssistencialPage = () => {
   const handleContentChange = (key: string, html: string) => {
     if (isLocked) return;
     setSectionsData(prev => ({ ...prev, [key]: { ...prev[key], manual_content: html } }));
+  };
+
+  const uploadLogoToStorage = async (file: File): Promise<string | null> => {
+    if (!currentReport) return null;
+    const ext = file.name.split(".").pop() || "png";
+    const path = `cover-logos/${currentReport.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("report-files").upload(path, file);
+    if (error) { toast.error("Erro no upload: " + error.message); return null; }
+    const { data: urlData } = supabase.storage.from("report-files").getPublicUrl(path);
+    return urlData.publicUrl;
+  };
+
+  const saveCoverConfig = async () => {
+    if (!currentReport) return;
+    setSavingCover(true);
+    try {
+      await supabase.from("reports").update({
+        cover_config: coverConfig as any,
+        updated_by: userId,
+      } as any).eq("id", currentReport.id);
+      toast.success("Capa salva com sucesso");
+    } catch { toast.error("Erro ao salvar capa"); }
+    finally { setSavingCover(false); }
   };
 
   const ensureSectionExists = async (sectionKey: string): Promise<string | null> => {
@@ -1473,7 +1504,14 @@ const RelatorioAssistencialPage = () => {
 
             {activeSection === "capa" ? (
               <div className="bg-card rounded-xl border border-border shadow-sm p-6 space-y-6">
-                <h2 className="text-base font-bold text-foreground">Personalização da Capa</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-bold text-foreground">Personalização da Capa</h2>
+                  {isEditable && (
+                    <Button size="sm" className="h-8 text-xs" onClick={saveCoverConfig} disabled={savingCover}>
+                      {savingCover ? "Salvando..." : "Salvar Capa"}
+                    </Button>
+                  )}
+                </div>
 
                 <div className="space-y-3">
                   <div>
@@ -1503,16 +1541,15 @@ const RelatorioAssistencialPage = () => {
                           <Button variant="outline" size="sm" className="h-6 text-[9px] px-2" onClick={() => {
                             const input = document.createElement("input");
                             input.type = "file"; input.accept = "image/*";
-                            input.onchange = (ev) => {
+                            input.onchange = async (ev) => {
                               const file = (ev.target as HTMLInputElement).files?.[0];
                               if (!file) return;
-                              const reader = new FileReader();
-                              reader.onload = () => {
+                              const publicUrl = await uploadLogoToStorage(file);
+                              if (publicUrl) {
                                 const updated = [...coverConfig.logos];
-                                updated[idx] = { ...updated[idx], url: reader.result as string };
+                                updated[idx] = { ...updated[idx], url: publicUrl };
                                 setCoverConfig(prev => ({ ...prev, logos: updated }));
-                              };
-                              reader.readAsDataURL(file);
+                              }
                             };
                             input.click();
                           }}>Trocar</Button>
@@ -1525,14 +1562,13 @@ const RelatorioAssistencialPage = () => {
                     <button onClick={() => {
                       const input = document.createElement("input");
                       input.type = "file"; input.accept = "image/*";
-                      input.onchange = (ev) => {
+                      input.onchange = async (ev) => {
                         const file = (ev.target as HTMLInputElement).files?.[0];
                         if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          setCoverConfig(prev => ({ ...prev, logos: [...prev.logos, { name: file.name.replace(/\.\w+$/, ""), url: reader.result as string }] }));
-                        };
-                        reader.readAsDataURL(file);
+                        const publicUrl = await uploadLogoToStorage(file);
+                        if (publicUrl) {
+                          setCoverConfig(prev => ({ ...prev, logos: [...prev.logos, { name: file.name.replace(/\.\w+$/, ""), url: publicUrl }] }));
+                        }
                       };
                       input.click();
                     }} className="bg-muted/20 border border-dashed border-border rounded-lg p-3 flex flex-col items-center justify-center gap-1 hover:bg-muted/40 transition-colors min-h-[120px]">
