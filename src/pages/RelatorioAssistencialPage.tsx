@@ -898,11 +898,12 @@ const RelatorioAssistencialPage = () => {
         {isLocked && (
           <div className="bg-muted/50 border border-border rounded-lg p-3 mb-4">
             <p className="text-xs text-foreground">
-              Este relatório está <strong>{STATUS_LABELS[currentReport!.status]}</strong> e não pode ser editado.
-              {currentReport?.status === "fechado" && " Para exportar como PDF, clique em \"Exportar PDF\". Para editar, crie uma nova versão."}
-              {currentReport?.status === "exportado" && " Este é o documento oficial. Para fazer alterações, crie uma nova versão."}
+              Este relatório está <strong>{STATUS_LABELS[currentReport!.status]}</strong>.
             </p>
             <div className="flex gap-2 mt-2">
+              <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => changeStatus("em_revisao")}>
+                Reabrir para edição
+              </Button>
               <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="h-7 text-[10px]">Criar nova versão (rascunho)</Button>
