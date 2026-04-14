@@ -407,6 +407,7 @@ export type Database = {
           file_type: string
           file_url: string
           id: string
+          report_id: string | null
           section_id: string
           sort_order: number
           uploaded_by: string
@@ -417,6 +418,7 @@ export type Database = {
           file_type?: string
           file_url: string
           id?: string
+          report_id?: string | null
           section_id: string
           sort_order?: number
           uploaded_by: string
@@ -427,11 +429,19 @@ export type Database = {
           file_type?: string
           file_url?: string
           id?: string
+          report_id?: string | null
           section_id?: string
           sort_order?: number
           uploaded_by?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "report_attachments_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "report_attachments_section_id_fkey"
             columns: ["section_id"]
@@ -443,12 +453,16 @@ export type Database = {
       }
       report_sections: {
         Row: {
+          auto_snapshot_json: Json | null
+          completion_status: string
           content: string
           contract_id: string
           created_at: string
           facility_unit: string
           id: string
+          manual_content: string
           period: string
+          report_id: string | null
           section_key: string
           section_title: string
           sort_order: number
@@ -456,12 +470,16 @@ export type Database = {
           updated_by: string
         }
         Insert: {
+          auto_snapshot_json?: Json | null
+          completion_status?: string
           content?: string
           contract_id: string
           created_at?: string
           facility_unit: string
           id?: string
+          manual_content?: string
           period?: string
+          report_id?: string | null
           section_key: string
           section_title: string
           sort_order?: number
@@ -469,12 +487,16 @@ export type Database = {
           updated_by: string
         }
         Update: {
+          auto_snapshot_json?: Json | null
+          completion_status?: string
           content?: string
           contract_id?: string
           created_at?: string
           facility_unit?: string
           id?: string
+          manual_content?: string
           period?: string
+          report_id?: string | null
           section_key?: string
           section_title?: string
           sort_order?: number
@@ -484,6 +506,98 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "report_sections_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_sections_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          source_report_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          source_report_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          source_report_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_templates_source_report_id_fkey"
+            columns: ["source_report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          contract_id: string
+          created_at: string
+          created_by: string
+          facility_unit: string
+          id: string
+          reference_month: number
+          reference_year: number
+          status: Database["public"]["Enums"]["report_status"]
+          title: string
+          updated_at: string
+          updated_by: string
+          version: number
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          created_by: string
+          facility_unit: string
+          id?: string
+          reference_month: number
+          reference_year: number
+          status?: Database["public"]["Enums"]["report_status"]
+          title?: string
+          updated_at?: string
+          updated_by: string
+          version?: number
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          created_by?: string
+          facility_unit?: string
+          id?: string
+          reference_month?: number
+          reference_year?: number
+          status?: Database["public"]["Enums"]["report_status"]
+          title?: string
+          updated_at?: string
+          updated_by?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_contract_id_fkey"
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
@@ -710,6 +824,7 @@ export type Database = {
         | "insumo"
         | "infraestrutura"
         | "outro"
+      report_status: "rascunho" | "em_revisao" | "fechado" | "exportado"
       sau_status: "aberto" | "em_andamento" | "resolvido" | "cancelado"
       sau_tipo: "elogio" | "reclamacao" | "sugestao" | "ouvidoria"
     }
@@ -852,6 +967,7 @@ export const Constants = {
         "infraestrutura",
         "outro",
       ],
+      report_status: ["rascunho", "em_revisao", "fechado", "exportado"],
       sau_status: ["aberto", "em_andamento", "resolvido", "cancelado"],
       sau_tipo: ["elogio", "reclamacao", "sugestao", "ouvidoria"],
     },
