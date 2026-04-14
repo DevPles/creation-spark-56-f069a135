@@ -986,7 +986,7 @@ const LancamentoMetasPage = () => {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {goals
-                  .filter(g => filterType === "todos" || g.type === filterType)
+                  .filter(g => filterSector === "todos" || g.sector === filterSector)
                   .filter(g => filterGoal === "todos" || g.id === filterGoal)
                   .map((goal, i) => {
                   const entry = entries[goal.id] || { value: "", period: "", notes: "" };
