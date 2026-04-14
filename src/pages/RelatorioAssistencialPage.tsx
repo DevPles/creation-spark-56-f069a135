@@ -182,8 +182,8 @@ const RelatorioAssistencialPage = () => {
   const [coverConfig, setCoverConfig] = useState({
     title: "RELATÓRIO ASSISTENCIAL",
     subtitle: "Gerência, Operacionalização e Execução das Ações e Serviços de Saúde",
-    logos: [
-      ] as { name: string; url: string }[],
+    logos: [] as { name: string; url: string }[],
+    centralImage: null as { name: string; url: string } | null,
   });
   const [savingCover, setSavingCover] = useState(false);
 
@@ -398,9 +398,10 @@ const RelatorioAssistencialPage = () => {
         title: raw.title || "RELATÓRIO ASSISTENCIAL",
         subtitle: raw.subtitle || "",
         logos: Array.isArray(raw.logos) ? raw.logos : [],
+        centralImage: raw.centralImage || null,
       });
     } else {
-      setCoverConfig({ title: "RELATÓRIO ASSISTENCIAL", subtitle: "Gerência, Operacionalização e Execução das Ações e Serviços de Saúde", logos: [] });
+      setCoverConfig({ title: "RELATÓRIO ASSISTENCIAL", subtitle: "Gerência, Operacionalização e Execução das Ações e Serviços de Saúde", logos: [], centralImage: null });
     }
   };
 
