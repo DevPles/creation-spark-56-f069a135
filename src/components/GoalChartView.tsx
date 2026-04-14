@@ -107,16 +107,20 @@ const GoalChartView = ({ goals, onView }: GoalChartViewProps) => {
         row[g.name] = val;
 
         // Daily target (trend line value)
+        let dailyTarget: number;
         if (g.startDate && g.endDate) {
           const start = parseISO(g.startDate);
           const end = parseISO(g.endDate);
           const totalDays = differenceInCalendarDays(end, start) + 1;
-          const dailyTarget = totalDays > 0 ? Math.round((g.target / totalDays) * 100) / 100 : 0;
-          // Only show trend within goal period
+          dailyTarget = totalDays > 0 ? Math.round((g.target / totalDays) * 100) / 100 : 0;
           const dayDate = parseISO(dayStr);
           if (!isBefore(dayDate, start) && !isAfter(dayDate, end)) {
             row[`${g.name}_meta`] = dailyTarget;
           }
+        } else {
+          // Fallback: divide target by days in current month
+          dailyTarget = daysInMonth.length > 0 ? Math.round((g.target / daysInMonth.length) * 100) / 100 : 0;
+          row[`${g.name}_meta`] = dailyTarget;
         }
       });
 
