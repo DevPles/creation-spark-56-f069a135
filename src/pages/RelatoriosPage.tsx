@@ -59,6 +59,17 @@ const formatFullCurrency = (v: number) => `R$ ${v.toLocaleString("pt-BR")}`;
 const tooltipStyle = { background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 };
 
 /* ── Helpers ── */
+/** Check if an entry period (dd/MM/yyyy or yyyy-MM-dd or yyyy-MM) matches a given yyyy-MM string */
+function entryMatchesYM(period: string, ym: string): boolean {
+  if (period.includes("/")) {
+    // dd/MM/yyyy
+    const parts = period.split("/");
+    if (parts.length === 3) return `${parts[2]}-${parts[1]}` === ym;
+  }
+  // yyyy-MM or yyyy-MM-dd
+  return period.startsWith(ym);
+}
+
 function getGoalPct(g: GoalItem) {
   if (g.type === "DOC") return g.current >= g.target ? 100 : 0;
   return Math.min(100, (g.current / g.target) * 100);
