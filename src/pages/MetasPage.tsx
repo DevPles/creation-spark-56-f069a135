@@ -166,13 +166,31 @@ const MetasPage = () => {
           title="Metas e indicadores"
           subtitle="Clique para ver detalhes ou use o botão para cadastrar"
           selectedUnit={selectedUnit}
-          onUnitChange={setSelectedUnit}
-          action={<Button onClick={handleNew}>Nova meta</Button>}
+          onUnitChange={(v) => { setSelectedUnit(v); }}
+          action={
+            <div className="flex items-center gap-2">
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger className="w-[140px] h-9 text-xs">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Todos">Todos os tipos</SelectItem>
+                  <SelectItem value="QNT">Quantitativa</SelectItem>
+                  <SelectItem value="QLT">Qualitativa</SelectItem>
+                  <SelectItem value="DOC">Documental</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={handleNew}>Nova meta</Button>
+            </div>
+          }
         />
 
         {loading ? (
           <div className="py-12 text-center text-sm text-muted-foreground">Carregando metas...</div>
-        ) : goals.filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit).length === 0 ? (
+        ) : goals
+            .filter(g => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+            .filter(g => selectedType === "Todos" || g.type === selectedType)
+            .length === 0 ? (
           <div className="py-12 text-center text-sm text-muted-foreground">
             Nenhuma meta cadastrada{selectedUnit !== "Todas as unidades" ? ` para ${selectedUnit}` : ""}. Clique em "Nova meta" para começar.
           </div>
@@ -180,6 +198,7 @@ const MetasPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {goals
               .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+              .filter((g) => selectedType === "Todos" || g.type === selectedType)
               .map((goal, i) => (
               <motion.div key={goal.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <div className="cursor-pointer" onClick={() => handleView(goal)}>
