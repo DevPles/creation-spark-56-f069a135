@@ -83,7 +83,7 @@ const LancamentoMetasPage = () => {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [heatmapCompare, setHeatmapCompare] = useState<"global" | "meta">("global");
   const [pdfGenerating, setPdfGenerating] = useState(false);
-  const [filterType, setFilterType] = useState<string>("todos");
+  
   const [filterSector, setFilterSector] = useState<string>("todos");
   const [filterGoal, setFilterGoal] = useState<string>("todos");
   const [dbSectors, setDbSectors] = useState<string[]>([]);
