@@ -970,9 +970,30 @@ const RelatorioAssistencialPage = () => {
       doc.text(`${MONTHS[refMonth - 1]} de ${refYear}`, W / 2, afterSubtitle + 20, { align: "center" });
       doc.setFontSize(9); doc.setFont("helvetica", "normal");
       doc.text(`Versão ${currentReport.version}`, W / 2, afterSubtitle + 28, { align: "center" });
+
+      // Central image on cover
+      let afterCoverBlock = coverH;
+      if (coverConfig.centralImage?.url) {
+        const centralDataUrl = await loadImageAsBase64(coverConfig.centralImage.url);
+        if (centralDataUrl) {
+          const cImg = new Image();
+          await new Promise<void>(res => { cImg.onload = () => res(); cImg.src = centralDataUrl; });
+          const ratio = cImg.naturalWidth / cImg.naturalHeight;
+          const maxW = W - 2 * margin - 20;
+          const maxH = 80;
+          let imgW = maxW;
+          let imgH = imgW / ratio;
+          if (imgH > maxH) { imgH = maxH; imgW = imgH * ratio; }
+          const imgX = (W - imgW) / 2;
+          const imgY = coverH + 6;
+          doc.addImage(centralDataUrl, "PNG", imgX, imgY, imgW, imgH);
+          afterCoverBlock = imgY + imgH + 4;
+        }
+      }
+
       doc.setTextColor(0); doc.setFontSize(9);
-      doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, W / 2, coverH + 15, { align: "center" });
-      doc.text(`Status: ${STATUS_LABELS[currentReport.status]}`, W / 2, coverH + 22, { align: "center" });
+      doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, W / 2, afterCoverBlock + 8, { align: "center" });
+      doc.text(`Status: ${STATUS_LABELS[currentReport.status]}`, W / 2, afterCoverBlock + 15, { align: "center" });
 
       // TOC
       doc.addPage(); drawHeader();
