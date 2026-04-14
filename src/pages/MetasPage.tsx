@@ -242,6 +242,7 @@ const MetasPage = () => {
           </div>
           </div>
         )}
+        </div>
       </main>
 
       {selectedGoal && <GoalModal goal={{ ...selectedGoal, trend: selectedGoal.trend }} open={viewModalOpen} onOpenChange={setViewModalOpen} />}
