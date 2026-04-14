@@ -69,9 +69,9 @@ const LancamentoMetasPage = () => {
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth(); // 0-indexed
-  const [filterYear, setFilterYear] = useState<string>(String(currentYear));
-  const [filterMonth, setFilterMonth] = useState<string>(String(currentMonth));
-  const FILTER_YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date(currentYear, currentMonth, 1));
+  const filterYear = String(selectedDate.getFullYear());
+  const filterMonth = String(selectedDate.getMonth());
   const FILTER_MONTHS = [
     { value: "todos", label: "Todos" },
     { value: "0", label: "Janeiro" }, { value: "1", label: "Fevereiro" }, { value: "2", label: "Março" },
@@ -84,7 +84,9 @@ const LancamentoMetasPage = () => {
   const [heatmapCompare, setHeatmapCompare] = useState<"global" | "meta">("global");
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [filterType, setFilterType] = useState<string>("todos");
+  const [filterSector, setFilterSector] = useState<string>("todos");
   const [filterGoal, setFilterGoal] = useState<string>("todos");
+  const [dbSectors, setDbSectors] = useState<string[]>([]);
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
   const totalBedsByCategory = useMemo(() => {
