@@ -98,12 +98,20 @@ const RelatorioAssistencialPage = () => {
   const isEditable = currentReport ? (currentReport.status === "rascunho" || currentReport.status === "em_revisao") : false;
   const allowedTransitions = currentReport ? (STATUS_TRANSITIONS[currentReport.status] || []) : [];
 
+  const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
+
   // ═══ REPORTS LISTING ═══
 
   const loadReports = useCallback(async () => {
     setLoadingReports(true);
-    const { data } = await supabase.from("reports").select("*").order("reference_year", { ascending: false }).order("reference_month", { ascending: false }).order("version", { ascending: false });
+    const [{ data }, { data: profiles }] = await Promise.all([
+      supabase.from("reports").select("*").order("reference_year", { ascending: false }).order("reference_month", { ascending: false }).order("version", { ascending: false }),
+      supabase.from("profiles").select("id, name"),
+    ]);
     setReports((data || []) as unknown as ReportRecord[]);
+    const map: Record<string, string> = {};
+    (profiles || []).forEach((p: any) => { map[p.id] = p.name; });
+    setProfilesMap(map);
     setLoadingReports(false);
   }, []);
 
@@ -926,7 +934,7 @@ const RelatorioAssistencialPage = () => {
                           {STATUS_LABELS[rep.status]}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
-                          {new Date(rep.updated_at).toLocaleDateString("pt-BR")}
+                          {profilesMap[rep.updated_by] || "—"} · {new Date(rep.updated_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </span>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
