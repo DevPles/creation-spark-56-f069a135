@@ -155,7 +155,7 @@ const RelatorioAssistencialPage = () => {
       setAutoDataLoading(true);
       try {
         const [goalsR, entriesR, plansR, sauR, bedsR, bedMovR, rubR, sectorsR] = await Promise.all([
-          supabase.from("goals").select("*").eq("facility_unit", unit),
+          supabase.from("goals").select("*").eq("facility_unit", unit as any),
           supabase.from("goal_entries").select("*"),
           supabase.from("action_plans").select("*").eq("facility_unit", unit),
           supabase.from("sau_records").select("*").eq("facility_unit", unit),
