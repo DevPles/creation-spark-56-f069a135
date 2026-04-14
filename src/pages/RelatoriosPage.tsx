@@ -1333,47 +1333,58 @@ const RelatoriosPage = () => {
             </div>
           </div>
         );
-      case 6: { // Individual goal attainment bars — sorted by data first, grouped by sector
-        const sortedGoals = [...filteredGoals].sort((a, b) => {
-          // Goals with data (current > 0) come first
-          const aHasData = a.current > 0 ? 0 : 1;
-          const bHasData = b.current > 0 ? 0 : 1;
-          if (aHasData !== bHasData) return aHasData - bHasData;
-          // Then sort by sector
-          const sectorCmp = (a.sector || "").localeCompare(b.sector || "");
-          if (sectorCmp !== 0) return sectorCmp;
-          // Then by attainment descending
-          return getGoalPct(b) - getGoalPct(a);
-        });
-        const chartData = sortedGoals.map(g => ({
-          name: g.name.length > 25 ? g.name.slice(0, 25) + "…" : g.name,
+      case 6: { // Individual goal attainment — split by sector with tabs
+        const sectors = [...new Set(filteredGoals.map(g => g.sector || "Sem setor"))].sort();
+        const activeSector = sectorFilter === "todos" ? sectors[0] || "Sem setor" : sectorFilter;
+        const sectorGoals = filteredGoals
+          .filter(g => (g.sector || "Sem setor") === activeSector)
+          .sort((a, b) => {
+            const aD = a.current > 0 ? 0 : 1;
+            const bD = b.current > 0 ? 0 : 1;
+            if (aD !== bD) return aD - bD;
+            return getGoalPct(b) - getGoalPct(a);
+          });
+        const sectorChartData = sectorGoals.map(g => ({
+          name: g.name.length > 30 ? g.name.slice(0, 30) + "…" : g.name,
           pct: Math.round(getGoalPct(g)),
-          sector: g.sector || "Sem setor",
+          current: g.current,
+          target: g.target,
         }));
-        // Get unique sectors for section headers
-        const sectors = [...new Set(sortedGoals.map(g => g.sector || "Sem setor"))];
+        // Summary per sector
+        const sectorSummary = sectors.map(s => {
+          const sg = filteredGoals.filter(g => (g.sector || "Sem setor") === s);
+          const avg = sg.length ? Math.round(sg.reduce((sum, g) => sum + getGoalPct(g), 0) / sg.length) : 0;
+          return { sector: s, count: sg.length, avg, withData: sg.filter(g => g.current > 0).length };
+        });
         return (
           <div>
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Atingimento individual por meta</h3>
-            <p className="text-xs text-muted-foreground mb-4">% realizado vs meta pactuada — {contract.unit} • Agrupado por setor</p>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {sectors.map(s => (
-                <span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{s}</span>
-              ))}
+            <p className="text-xs text-muted-foreground mb-3">% realizado vs meta pactuada — {contract.unit} • Agrupado por setor</p>
+            {/* Sector tabs */}
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {sectors.map(s => {
+                const info = sectorSummary.find(ss => ss.sector === s)!;
+                const isActive = activeSector === s;
+                return (
+                  <button key={s} onClick={() => setSectorFilter(s)}
+                    className={`text-[11px] px-3 py-1.5 rounded-full font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 text-muted-foreground hover:bg-muted"}`}>
+                    {s} <span className="opacity-70">({info.count})</span> <span className={`ml-0.5 ${info.avg >= 90 ? "text-emerald-400" : info.avg >= 60 ? "text-amber-400" : "text-red-400"}`}>{info.avg}%</span>
+                  </button>
+                );
+              })}
             </div>
-            <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={Math.max(isCarouselFullscreen ? 420 : 280, sortedGoals.length * 32)}>
-                <BarChart data={chartData} layout="vertical" barGap={2}>
+            <div className="bg-card rounded-lg border border-border p-4">
+              <ResponsiveContainer width="100%" height={Math.max(isCarouselFullscreen ? 380 : 250, sectorGoals.length * 28)}>
+                <BarChart data={sectorChartData} layout="vertical" barGap={2}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                  <XAxis type="number" domain={[0, 110]} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}%`} />
-                  <YAxis type="category" dataKey="name" width={180} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number, name: string, props: any) => [`${v}%`, `${props.payload.sector}`]} />
-                  <Bar dataKey="pct" radius={[0, 6, 6, 0]} name="Realizado" label={{ position: "right", fontSize: 10, fill: "hsl(var(--muted-foreground))", formatter: (v: number) => `${v}%` }}>
-                    {chartData.map((entry, i) => (
-                      <Cell key={i} fill={entry.pct > 0 ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.3)"} />
+                  <XAxis type="number" domain={[0, 110]} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}%`} />
+                  <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number, _: string, props: any) => [`${v}%  (${props.payload.current}/${props.payload.target})`, "Atingimento"]} />
+                  <Bar dataKey="pct" radius={[0, 6, 6, 0]} name="Atingimento">
+                    {sectorChartData.map((entry, i) => (
+                      <Cell key={i} fill={entry.pct >= 90 ? "hsl(142 71% 45%)" : entry.pct >= 60 ? "hsl(38 92% 50%)" : entry.pct > 0 ? "hsl(var(--destructive))" : "hsl(var(--muted-foreground) / 0.2)"} />
                     ))}
                   </Bar>
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1414,26 +1425,45 @@ const RelatoriosPage = () => {
             </div>
           </div>
         );
-      case 8: // Meta vs Realizado
+      case 8: { // Meta vs Realizado — split by sector
+        const mvSectors = [...new Set(filteredGoals.map(g => g.sector || "Sem setor"))].sort();
+        const mvActiveSector = sectorFilter === "todos" ? mvSectors[0] || "Sem setor" : sectorFilter;
+        const mvGoals = filteredGoals
+          .filter(g => (g.sector || "Sem setor") === mvActiveSector)
+          .sort((a, b) => (b.current > 0 ? 1 : 0) - (a.current > 0 ? 1 : 0) || b.current - a.current);
+        const mvData = mvGoals.map(g => ({
+          name: g.name.length > 22 ? g.name.slice(0, 22) + "…" : g.name,
+          meta: g.target,
+          realizado: g.current,
+        }));
         return (
           <div>
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Meta vs Realizado</h3>
-            <p className="text-xs text-muted-foreground mb-4">Comparação direta entre valor pactuado e alcançado — {contract.unit}</p>
-            <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={isCarouselFullscreen ? 400 : 300}>
-                <BarChart data={filteredGoals.map(g => ({ name: g.name.length > 18 ? g.name.slice(0, 18) + "…" : g.name, meta: g.target, realizado: g.current, unidade: g.unit }))} barGap={4}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} angle={-25} textAnchor="end" height={70} />
-                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+            <p className="text-xs text-muted-foreground mb-3">Comparação direta — {contract.unit} • {mvActiveSector}</p>
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {mvSectors.map(s => (
+                <button key={s} onClick={() => setSectorFilter(s)}
+                  className={`text-[11px] px-3 py-1.5 rounded-full font-medium transition-all ${mvActiveSector === s ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 text-muted-foreground hover:bg-muted"}`}>
+                  {s}
+                </button>
+              ))}
+            </div>
+            <div className="bg-card rounded-lg border border-border p-4">
+              <ResponsiveContainer width="100%" height={Math.max(isCarouselFullscreen ? 380 : 260, mvGoals.length * 28)}>
+                <BarChart data={mvData} layout="vertical" barGap={2}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                  <YAxis type="category" dataKey="name" width={180} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="meta" fill="hsl(var(--muted-foreground) / 0.3)" radius={[6, 6, 0, 0]} name="Meta" label={{ position: "top", fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
-                  <Bar dataKey="realizado" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name="Realizado" label={{ position: "top", fontSize: 9, fill: "hsl(var(--primary))" }} />
+                  <Bar dataKey="meta" fill="hsl(var(--muted-foreground) / 0.25)" radius={[0, 4, 4, 0]} name="Meta" />
+                  <Bar dataKey="realizado" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} name="Realizado" label={{ position: "right", fontSize: 9, fill: "hsl(var(--primary))" }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         );
+      }
       case 9: // Executive summary
         return (
           <div>
