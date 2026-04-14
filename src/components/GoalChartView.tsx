@@ -216,13 +216,37 @@ const GoalChartView = ({ goals, onView }: GoalChartViewProps) => {
               meta_diaria: row[`${g.name}_meta`],
             }));
 
+            // Calculate metrics
+            const pct = g.target > 0 ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
+            const today = new Date();
+            let daysRemaining = 0;
+            let totalDays = daysInMonth.length;
+            let daysElapsed = today.getDate();
+
+            if (g.startDate && g.endDate) {
+              const start = parseISO(g.startDate);
+              const end = parseISO(g.endDate);
+              totalDays = differenceInCalendarDays(end, start) + 1;
+              daysElapsed = Math.max(0, differenceInCalendarDays(today, start) + 1);
+              daysRemaining = Math.max(0, differenceInCalendarDays(end, today));
+            } else {
+              daysRemaining = Math.max(0, daysInMonth.length - today.getDate());
+            }
+
+            // Probability: project current pace to end of period
+            const dailyAvg = daysElapsed > 0 ? g.current / daysElapsed : 0;
+            const projected = dailyAvg * totalDays;
+            const probability = g.target > 0 ? Math.min(100, Math.round((projected / g.target) * 100)) : 0;
+            const probColor = probability >= 80 ? "text-green-600" : probability >= 50 ? "text-yellow-600" : "text-red-600";
+            const pctColor = pct >= 80 ? "text-green-600" : pct >= 50 ? "text-yellow-600" : "text-red-600";
+
             return (
               <Card
                 key={g.id}
                 className="p-4 cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => onView(g)}
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-1">
                   <div>
                     <h3 className="text-sm font-semibold">{g.name}</h3>
                     <p className="text-xs text-muted-foreground">
@@ -233,6 +257,13 @@ const GoalChartView = ({ goals, onView }: GoalChartViewProps) => {
                     <p className="text-lg font-bold">{g.current}</p>
                     <p className="text-xs text-muted-foreground">realizado</p>
                   </div>
+                </div>
+                <div className="flex items-center gap-3 mb-3 text-xs">
+                  <span className={`font-semibold ${pctColor}`}>{pct}% atingido</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{daysRemaining} dias restantes</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className={`font-semibold ${probColor}`}>Prob: {probability}%</span>
                 </div>
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
