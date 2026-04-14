@@ -248,6 +248,14 @@ const MetasPage = () => {
                   >
                     <CalendarDays className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant={viewMode === "chart" ? "default" : "ghost"}
+                    size="icon"
+                    className="h-9 w-9 rounded-none"
+                    onClick={() => setViewMode("chart")}
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             }
