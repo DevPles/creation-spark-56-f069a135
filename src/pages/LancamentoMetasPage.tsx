@@ -35,6 +35,7 @@ interface Goal {
   facility_unit: string;
   start_date?: string | null;
   end_date?: string | null;
+  sector?: string | null;
 }
 
 interface EntryForm {
