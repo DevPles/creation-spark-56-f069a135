@@ -72,71 +72,33 @@ const AutoDataPanel = ({
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-card rounded-lg border border-border p-4">
-              <p className="text-xs font-semibold text-muted-foreground mb-3">Desempenho por Meta</p>
-              <ResponsiveContainer width="100%" height={Math.max(200, goalSummary.all.length * 24)}>
-                <BarChart data={[...goalSummary.all].sort((a: any, b: any) => (b.current > 0 ? 1 : 0) - (a.current > 0 ? 1 : 0) || b.pct - a.pct).map((g: any) => ({ name: g.name.length > 22 ? g.name.slice(0, 22) + "…" : g.name, pct: g.pct }))} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                  <XAxis type="number" domain={[0, 110]} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v: number) => `${v}%`} />
-                  <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
-                  <Bar dataKey="pct" radius={[0, 4, 4, 0]} label={{ position: "right", fontSize: 9, formatter: (v: number) => `${v}%` }}>
-                    {[...goalSummary.all].sort((a: any, b: any) => (b.current > 0 ? 1 : 0) - (a.current > 0 ? 1 : 0) || b.pct - a.pct).map((g: any, i: number) => (
-                      <Cell key={i} fill={g.pct >= 90 ? "hsl(142 71% 45%)" : g.pct >= 60 ? "hsl(38 92% 50%)" : "hsl(var(--muted-foreground))"} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="bg-card rounded-lg border border-border p-4">
-              <p className="text-xs font-semibold text-muted-foreground mb-3">Distribuição de Desempenho</p>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie data={[
-                    { name: "Atingidas", value: goalSummary.atingidas, fill: "hsl(142 71% 45%)" },
-                    { name: "Em evolução", value: goalSummary.parciais, fill: "hsl(38 92% 50%)" },
-                    { name: "A desenvolver", value: goalSummary.criticas, fill: "hsl(var(--muted-foreground))" },
-                  ].filter(d => d.value > 0)} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} label={({ name, value }) => `${name}: ${value}`}>
-                    {[
-                      { fill: "hsl(142 71% 45%)" }, { fill: "hsl(38 92% 50%)" }, { fill: "hsl(var(--muted-foreground))" },
-                    ].filter((_, i) => [goalSummary.atingidas, goalSummary.parciais, goalSummary.criticas][i] > 0).map((c, i) => (
-                      <Cell key={i} fill={c.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend wrapperStyle={{ fontSize: 10 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          <Accordion type="multiple" className="w-full">
-            {Object.entries(goalsBySector).map(([sector, goals]) => (
-              <AccordionItem key={sector} value={sector} className="border border-border rounded-lg mb-2 overflow-hidden">
-                <AccordionTrigger className="px-4 py-2 text-sm font-semibold hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <span>{sector}</span>
-                    <Badge variant="outline" className="text-[10px]">{goals.length} metas</Badge>
-                    <Badge className="text-[10px]" variant="secondary">
-                      {Math.round(goals.reduce((s: number, g: any) => s + g.pct, 0) / goals.length)}% médio
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-3">
-                  <div className="space-y-2">
-                    {goals.sort((a: any, b: any) => b.pct - a.pct).map((g: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <span className="text-xs text-foreground w-48 truncate">{g.name}</span>
-                        <div className="flex-1"><Progress value={g.pct} className="h-2" /></div>
-                        <span className={`text-xs font-semibold w-12 text-right ${g.pct >= 90 ? "text-emerald-600" : g.pct >= 60 ? "text-amber-500" : "text-foreground"}`}>{g.pct}%</span>
-                        <span className="text-[10px] text-muted-foreground w-24 text-right">{g.current}/{g.target}</span>
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          {Object.entries(goalsBySector).map(([sector, goals]) => {
+            const sectorGoals = [...goals].sort((a: any, b: any) => b.pct - a.pct);
+            const sectorAvg = Math.round(sectorGoals.reduce((s: number, g: any) => s + g.pct, 0) / sectorGoals.length);
+            const chartData = sectorGoals.map((g: any) => ({ name: g.name.length > 25 ? g.name.slice(0, 25) + "…" : g.name, pct: g.pct }));
+            return (
+              <div key={sector} className="bg-card rounded-lg border border-border p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs font-semibold text-foreground">{sector}</span>
+                  <Badge variant="outline" className="text-[10px]">{goals.length} metas</Badge>
+                  <Badge className="text-[10px]" variant="secondary">{sectorAvg}% médio</Badge>
+                </div>
+                <ResponsiveContainer width="100%" height={Math.max(150, sectorGoals.length * 28)}>
+                  <BarChart data={chartData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis type="number" domain={[0, 110]} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v: number) => `${v}%`} />
+                    <YAxis type="category" dataKey="name" width={180} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
+                    <Bar dataKey="pct" radius={[0, 4, 4, 0]} label={{ position: "right", fontSize: 9, formatter: (v: number) => `${v}%` }}>
+                      {sectorGoals.map((g: any, i: number) => (
+                        <Cell key={i} fill={g.pct >= 90 ? "hsl(142 71% 45%)" : g.pct >= 60 ? "hsl(38 92% 50%)" : "hsl(var(--muted-foreground))"} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            );
+          })}
         </div>
       );
 
