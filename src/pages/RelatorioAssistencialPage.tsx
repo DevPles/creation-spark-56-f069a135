@@ -21,7 +21,6 @@ import autoTable from "jspdf-autotable";
 import RichTextEditor from "@/components/relatorio/RichTextEditor";
 import AutoDataPanel from "@/components/relatorio/AutoDataPanel";
 import SectionEntryForms from "@/components/relatorio/SectionEntryForms";
-import AISuggestionsPanel from "@/components/relatorio/AISuggestionsPanel";
 import { useAutoData, useComputedSummaries } from "@/components/relatorio/useAutoData";
 import {
   DEFAULT_SECTIONS, STATUS_LABELS, STATUS_COLORS,
@@ -84,7 +83,6 @@ const RelatorioAssistencialPage = () => {
       { name: "Instituto Univida", url: "/images/logo-univida.png" },
     ],
   });
-  const coverLogoInputRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -536,62 +534,86 @@ const RelatorioAssistencialPage = () => {
         doc.text(`${selectedContract.name} — ${unit} — ${MONTHS[refMonth - 1]}/${refYear} — v${currentReport.version}`, W - margin, 8, { align: "right" });
       };
 
-      // Load cover logos as base64 for PDF
-      const loadImage = (url: string): Promise<string | null> => {
-        return new Promise(resolve => {
+      // Helper to load image as base64
+      const loadImageAsBase64 = (url: string): Promise<string | null> => {
+        return new Promise((resolve) => {
           const img = new Image();
           img.crossOrigin = "anonymous";
           img.onload = () => {
             const canvas = document.createElement("canvas");
-            canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
-            canvas.getContext("2d")!.drawImage(img, 0, 0);
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) { resolve(null); return; }
+            ctx.drawImage(img, 0, 0);
             resolve(canvas.toDataURL("image/png"));
           };
           img.onerror = () => resolve(null);
           img.src = url;
         });
       };
-      const logoImages = await Promise.all(coverConfig.logos.map(l => loadImage(l.url)));
 
-      // Cover
+      // Cover - load logos
+      const logoBarH = 18;
+      const coverLogos: { dataUrl: string; ratio: number }[] = [];
+      if (coverConfig.logos.length > 0) {
+        const loaded = await Promise.all(coverConfig.logos.map(l => loadImageAsBase64(l.url)));
+        for (const dataUrl of loaded) {
+          if (dataUrl) {
+            const img = new Image();
+            await new Promise<void>((res) => { img.onload = () => res(); img.src = dataUrl; });
+            coverLogos.push({ dataUrl, ratio: img.naturalWidth / img.naturalHeight });
+          }
+        }
+      }
+
+      // Draw cover background
+      const coverH = coverLogos.length > 0 ? 120 : 100;
       doc.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
-      doc.rect(0, 0, W, 110, "F");
+      doc.rect(0, 0, W, coverH, "F");
 
-      // Logos bar
-      const validLogos = logoImages.filter(Boolean) as string[];
-      if (validLogos.length > 0) {
-        const logoH = 14;
-        const logoSpacing = 8;
-        const totalLogosW = validLogos.length * 20 + (validLogos.length - 1) * logoSpacing;
-        const barW = totalLogosW + 16;
-        const barX = (W - barW) / 2;
+      // Draw logos bar spanning full width
+      let coverTextStart = 8;
+      if (coverLogos.length > 0) {
+        const barPadX = margin;
+        const barW = W - 2 * barPadX;
+        const barY = 6;
         doc.setFillColor(255, 255, 255);
-        doc.roundedRect(barX, 8, barW, logoH + 6, 3, 3, "F");
-        let lx = barX + 8;
-        validLogos.forEach(dataUrl => {
-          try { doc.addImage(dataUrl, "PNG", lx, 10, 20, logoH); } catch {}
-          lx += 20 + logoSpacing;
+        doc.roundedRect(barPadX, barY, barW, logoBarH + 4, 3, 3, "F");
+
+        // Calculate proportional widths for each logo
+        const totalRatio = coverLogos.reduce((s, l) => s + l.ratio, 0);
+        const logoGap = 4;
+        const availableW = barW - 8 - logoGap * (coverLogos.length - 1);
+        let lx = barPadX + 4;
+        coverLogos.forEach((logo, i) => {
+          const lw = (logo.ratio / totalRatio) * availableW;
+          const lh = logoBarH;
+          doc.addImage(logo.dataUrl, "PNG", lx, barY + 2, lw, lh);
+          lx += lw + logoGap;
         });
+        coverTextStart = barY + logoBarH + 10;
       }
 
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(20); doc.setFont("helvetica", "bold");
-      doc.text(coverConfig.title, W / 2, 42, { align: "center" });
-      doc.setFontSize(10); doc.setFont("helvetica", "normal");
-      const subtitleLines = doc.splitTextToSize(coverConfig.subtitle, W - 40);
+      doc.setFontSize(22); doc.setFont("helvetica", "bold");
+      doc.text(coverConfig.title, W / 2, coverTextStart + 10, { align: "center" });
+      doc.setFontSize(11); doc.setFont("helvetica", "normal");
+      const subtitleLines = doc.splitTextToSize(coverConfig.subtitle, W - 2 * margin);
       subtitleLines.forEach((line: string, i: number) => {
-        doc.text(line, W / 2, 52 + i * 5, { align: "center" });
+        doc.text(line, W / 2, coverTextStart + 22 + i * 5, { align: "center" });
       });
+      const afterSubtitle = coverTextStart + 22 + subtitleLines.length * 5 + 8;
       doc.setFontSize(13);
-      doc.text(`${selectedContract.name}`, W / 2, 68, { align: "center" });
-      doc.text(`${unit}`, W / 2, 76, { align: "center" });
+      doc.text(`${selectedContract.name}`, W / 2, afterSubtitle, { align: "center" });
+      doc.text(`${unit}`, W / 2, afterSubtitle + 8, { align: "center" });
       doc.setFontSize(14); doc.setFont("helvetica", "bold");
-      doc.text(`${MONTHS[refMonth - 1]} de ${refYear}`, W / 2, 88, { align: "center" });
+      doc.text(`${MONTHS[refMonth - 1]} de ${refYear}`, W / 2, afterSubtitle + 20, { align: "center" });
       doc.setFontSize(9); doc.setFont("helvetica", "normal");
-      doc.text(`Versão ${currentReport.version}`, W / 2, 98, { align: "center" });
+      doc.text(`Versão ${currentReport.version}`, W / 2, afterSubtitle + 28, { align: "center" });
       doc.setTextColor(0); doc.setFontSize(9);
-      doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, W / 2, 125, { align: "center" });
-      doc.text(`Status: ${STATUS_LABELS[currentReport.status]}`, W / 2, 132, { align: "center" });
+      doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, W / 2, coverH + 15, { align: "center" });
+      doc.text(`Status: ${STATUS_LABELS[currentReport.status]}`, W / 2, coverH + 22, { align: "center" });
 
       // TOC
       doc.addPage(); drawHeader();
@@ -1266,9 +1288,9 @@ const RelatorioAssistencialPage = () => {
                   <p className="text-[10px] text-muted-foreground mb-3">Pré-visualização da capa</p>
                   <div className="bg-[hsl(215,60%,30%)] rounded-lg p-6 text-white text-center space-y-3">
                     {coverConfig.logos.length > 0 && (
-                      <div className="flex items-center justify-center gap-4 mb-4 bg-white/90 rounded-lg py-3 px-4 mx-auto" style={{ maxWidth: `${coverConfig.logos.length * 120}px` }}>
+                      <div className="flex items-center justify-center gap-6 mb-4 bg-white/90 rounded-lg py-3 px-6 mx-4">
                         {coverConfig.logos.map((logo, idx) => (
-                          <img key={idx} src={logo.url} alt={logo.name} className="h-10 object-contain" />
+                          <img key={idx} src={logo.url} alt={logo.name} className="h-12 object-contain flex-1 max-w-[25%]" />
                         ))}
                       </div>
                     )}
@@ -1353,26 +1375,6 @@ const RelatorioAssistencialPage = () => {
                       userId={userId}
                       onRefresh={() => loadReportSections(currentReport.id)}
                       onEnsureSection={() => ensureSectionExists(activeSection)}
-                    />
-                  )}
-
-                  {/* AI Suggestions */}
-                  {isEditable && (
-                    <AISuggestionsPanel
-                      sectionTitle={activeSec?.title || ""}
-                      goalSummary={goalSummary}
-                      actionPlanSummary={actionPlanSummary}
-                      sauSummary={sauSummary}
-                      bedSummary={bedSummary}
-                      rubricaSummary={rubricaSummary}
-                      unit={unit}
-                      period={period}
-                      editable={isEditable}
-                      onInsert={(text) => {
-                        const current = activeData.manual_content || "";
-                        const separator = current.trim() ? "<p><br></p>" : "";
-                        handleContentChange(activeSection, current + separator + `<p>${text}</p>`);
-                      }}
                     />
                   )}
 
