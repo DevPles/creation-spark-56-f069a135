@@ -172,7 +172,7 @@ const MetasPage = () => {
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b">
           <PageHeader
             title="Metas e indicadores"
-            subtitle="Clique para ver detalhes ou use o botão para cadastrar"
+            subtitle=""
             selectedUnit={selectedUnit}
             onUnitChange={(v) => { setSelectedUnit(v); setSelectedGoalName("Todas"); setSelectedSector("Todos"); }}
             action={
