@@ -294,6 +294,16 @@ const MetasPage = () => {
               onView={handleView}
               onEdit={handleEdit}
             />
+          ) : viewMode === "chart" ? (
+            <GoalChartView
+              goals={goals
+                .filter((g) => selectedUnit === "Todas as unidades" || g.facilityUnit === selectedUnit)
+                .filter((g) => selectedType === "Todos" || g.type === selectedType)
+                .filter((g) => selectedSector === "Todos" || g.sector === selectedSector)
+                .filter((g) => selectedGoalName === "Todas" || g.name === selectedGoalName)}
+              onView={handleView}
+              onEdit={handleEdit}
+            />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {goals
