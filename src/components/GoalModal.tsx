@@ -69,7 +69,7 @@ const GoalModal = ({ goal, open, onOpenChange }: GoalModalProps) => {
           <div>
             <div className="flex justify-between text-sm mb-1.5">
               <span className="text-muted-foreground">Progresso</span>
-              <span className="font-display font-semibold text-foreground">{goal.current}{goal.unit} / {goal.target}{goal.unit}</span>
+              <span className="font-display font-semibold text-foreground">{goal.current} {goal.unit} / {goal.target} {goal.unit}</span>
             </div>
             <Progress value={attainment} className="h-2" />
           </div>
@@ -78,11 +78,11 @@ const GoalModal = ({ goal, open, onOpenChange }: GoalModalProps) => {
           <div className="grid grid-cols-3 gap-3">
             <div className="kpi-card !p-3">
               <p className="text-[10px] text-muted-foreground">Meta</p>
-              <p className="font-display font-bold text-foreground">{goal.target}{goal.unit}</p>
+              <p className="font-display font-bold text-foreground">{goal.target} {goal.unit}</p>
             </div>
             <div className="kpi-card !p-3">
               <p className="text-[10px] text-muted-foreground">Realizado</p>
-              <p className="font-display font-bold text-foreground">{goal.current}{goal.unit}</p>
+              <p className="font-display font-bold text-foreground">{goal.current} {goal.unit}</p>
             </div>
             {isAdmin && (
               <div className="kpi-card !p-3">
