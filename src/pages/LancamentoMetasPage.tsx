@@ -35,6 +35,7 @@ interface Goal {
   facility_unit: string;
   start_date?: string | null;
   end_date?: string | null;
+  sector?: string | null;
 }
 
 interface EntryForm {
@@ -68,9 +69,9 @@ const LancamentoMetasPage = () => {
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth(); // 0-indexed
-  const [filterYear, setFilterYear] = useState<string>(String(currentYear));
-  const [filterMonth, setFilterMonth] = useState<string>(String(currentMonth));
-  const FILTER_YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date(currentYear, currentMonth, 1));
+  const filterYear = String(selectedDate.getFullYear());
+  const filterMonth = String(selectedDate.getMonth());
   const FILTER_MONTHS = [
     { value: "todos", label: "Todos" },
     { value: "0", label: "Janeiro" }, { value: "1", label: "Fevereiro" }, { value: "2", label: "Março" },
@@ -82,8 +83,10 @@ const LancamentoMetasPage = () => {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [heatmapCompare, setHeatmapCompare] = useState<"global" | "meta">("global");
   const [pdfGenerating, setPdfGenerating] = useState(false);
-  const [filterType, setFilterType] = useState<string>("todos");
+  
+  const [filterSector, setFilterSector] = useState<string>("todos");
   const [filterGoal, setFilterGoal] = useState<string>("todos");
+  const [dbSectors, setDbSectors] = useState<string[]>([]);
   const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 
   const totalBedsByCategory = useMemo(() => {
@@ -773,9 +776,10 @@ const LancamentoMetasPage = () => {
   useEffect(() => {
     if (!selectedUnit) return;
     loadGoals(selectedUnit);
-    // Load bed data for the selected unit
     supabase.from("beds").select("category, specialty, quantity").eq("facility_unit", selectedUnit)
       .then(({ data }) => setBedData((data as any[]) || []));
+    supabase.from("sectors").select("name").eq("facility_unit", selectedUnit).order("name")
+      .then(({ data }) => setDbSectors([...new Set((data || []).map((s: any) => s.name))]));
   }, [selectedUnit]);
 
   const loadGoals = async (unit: string) => {
@@ -905,33 +909,37 @@ const LancamentoMetasPage = () => {
                 </Select>
               </div>
             )}
-            {/* Ano — todas as abas */}
+            {/* Período — calendário inteligente */}
             <div>
-              <label className="text-[10px] text-muted-foreground block mb-1">Ano</label>
-              <Select value={filterYear} onValueChange={setFilterYear}>
-                <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
-                <SelectContent>{FILTER_YEARS.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
-              </Select>
+              <label className="text-[10px] text-muted-foreground block mb-1">Período</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[180px] h-9 justify-start text-left font-normal text-sm">
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {format(selectedDate, "MMMM yyyy", { locale: ptBR })}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={date => { if (date) setSelectedDate(new Date(date.getFullYear(), date.getMonth(), 1)); }}
+                    locale={ptBR}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-            {/* Mês — todas as abas (filtro único) */}
-            <div>
-              <label className="text-[10px] text-muted-foreground block mb-1">Mês</label>
-              <Select value={filterMonth} onValueChange={(v) => { setFilterMonth(v); if (activeTab === "lancamento-rubricas") { const m = FILTER_MONTHS.find(fm => fm.value === v); if (m && m.value !== "todos") setSelectedMonth(m.label); } }}>
-                <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-                <SelectContent>{FILTER_MONTHS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            {/* Tipo — apenas Metas e Mapa Térmico */}
+            {/* Setor — Metas e Mapa Térmico */}
             {(activeTab === "lancar-metas" || activeTab === "mapa-termico") && (
               <div>
-                <label className="text-[10px] text-muted-foreground block mb-1">Tipo</label>
-                <Select value={filterType} onValueChange={(v) => { setFilterType(v); setFilterGoal("todos"); }}>
-                  <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                <label className="text-[10px] text-muted-foreground block mb-1">Setor</label>
+                <Select value={filterSector} onValueChange={(v) => { setFilterSector(v); setFilterGoal("todos"); }}>
+                  <SelectTrigger className="w-[160px] h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="QNT">Quantitativa</SelectItem>
-                    <SelectItem value="QLT">Qualitativa</SelectItem>
-                    <SelectItem value="DOC">Documental</SelectItem>
+                    <SelectItem value="todos">Todos os setores</SelectItem>
+                    {dbSectors.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -941,11 +949,11 @@ const LancamentoMetasPage = () => {
               <div>
                 <label className="text-[10px] text-muted-foreground block mb-1">Meta</label>
                 <Select value={filterGoal} onValueChange={setFilterGoal}>
-                  <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-[180px] h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todas</SelectItem>
                     {goals
-                      .filter(g => filterType === "todos" || g.type === filterType)
+                      .filter(g => filterSector === "todos" || g.sector === filterSector)
                       .sort((a, b) => a.name.localeCompare(b.name))
                       .map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                   </SelectContent>
@@ -978,7 +986,7 @@ const LancamentoMetasPage = () => {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {goals
-                  .filter(g => filterType === "todos" || g.type === filterType)
+                  .filter(g => filterSector === "todos" || g.sector === filterSector)
                   .filter(g => filterGoal === "todos" || g.id === filterGoal)
                   .map((goal, i) => {
                   const entry = entries[goal.id] || { value: "", period: "", notes: "" };
@@ -1209,7 +1217,10 @@ const LancamentoMetasPage = () => {
               const monthLabel = FILTER_MONTHS.find(m => m.value === String(month))?.label || "";
 
               // Build a map: goalId -> { day -> value }
-              const heatmapGoals = goals.filter(g => !selectedUnit || g.facility_unit === selectedUnit);
+              const heatmapGoals = goals
+                .filter(g => !selectedUnit || g.facility_unit === selectedUnit)
+                .filter(g => filterSector === "todos" || g.sector === filterSector)
+                .filter(g => filterGoal === "todos" || g.id === filterGoal);
               const goalDayMap: Record<string, Record<number, number>> = {};
 
               heatmapGoals.forEach(g => {
