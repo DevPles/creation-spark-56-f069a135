@@ -978,7 +978,10 @@ const LancamentoMetasPage = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {goals.map((goal, i) => {
+                {goals
+                  .filter(g => filterType === "todos" || g.type === filterType)
+                  .filter(g => filterGoal === "todos" || g.id === filterGoal)
+                  .map((goal, i) => {
                   const entry = entries[goal.id] || { value: "", period: "", notes: "" };
                   const existing = filterEntriesByDate(existingEntries[goal.id] || []);
                   return (
