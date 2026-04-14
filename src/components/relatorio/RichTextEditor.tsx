@@ -61,7 +61,7 @@ const RichTextEditor = ({ content, onChange, placeholder = "Digite aqui...", edi
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content, false);
+      editor.commands.setContent(content, false as any);
     }
   }, [content]);
 
