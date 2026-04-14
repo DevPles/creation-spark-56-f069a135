@@ -73,6 +73,17 @@ const RelatorioAssistencialPage = () => {
   const [compareReport, setCompareReport] = useState<ReportRecord | null>(null);
   const [compareSectionsData, setCompareSectionsData] = useState<Record<string, SectionData>>({});
   const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [coverConfig, setCoverConfig] = useState({
+    title: "RELATÓRIO ASSISTENCIAL",
+    subtitle: "Gerência, Operacionalização e Execução das Ações e Serviços de Saúde",
+    logos: [
+      { name: "CEBAS", url: "/images/logo-cebas.png" },
+      { name: "Hospital Pimentas", url: "/images/logo-hospital.png" },
+      { name: "Guarulhos", url: "/images/logo-guarulhos.png" },
+      { name: "Instituto Univida", url: "/images/logo-univida.png" },
+    ],
+  });
+  const coverLogoInputRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
