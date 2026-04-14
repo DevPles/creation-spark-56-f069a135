@@ -173,6 +173,7 @@ const RelatorioAssistencialPage = () => {
   const [addSectionOpen, setAddSectionOpen] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newSectionDesc, setNewSectionDesc] = useState("");
+  const [newSectionParent, setNewSectionParent] = useState<string>("");
   const [replicateOpen, setReplicateOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareReport, setCompareReport] = useState<ReportRecord | null>(null);
