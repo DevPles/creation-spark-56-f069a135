@@ -1218,7 +1218,7 @@ const RelatorioAssistencialPage = () => {
             doc.setFontSize(8); doc.text(`  ${att.file_name}`, margin + 4, y); y += 4;
           });
         }
-      });
+      }
 
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
