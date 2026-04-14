@@ -40,7 +40,7 @@ interface ContractData {
 interface GoalItem {
   id: string; name: string; target: number; current: number; unit: string;
   type: "QNT" | "QLT" | "DOC"; risk: number; trend: "up" | "down" | "stable";
-  rubrica: string; pesoFinanceiro: number;
+  rubrica: string; pesoFinanceiro: number; sector: string;
 }
 
 const REPORT_TYPES = [
@@ -864,6 +864,7 @@ const RelatoriosPage = () => {
           type: g.type as "QNT" | "QLT" | "DOC", risk: Number(g.risk),
           trend: pct >= 90 ? "up" as const : pct >= 60 ? "stable" as const : "down" as const,
           rubrica: "Metas", pesoFinanceiro: Number(g.weight) * 100,
+          sector: (g.sector as string) || "Sem setor",
         };
       });
       const totalRisk = goalItems.reduce((s, g) => s + g.risk, 0);
@@ -1021,14 +1022,27 @@ const RelatoriosPage = () => {
 
     const rows = unitGoals.map(g => {
       const goalEntries = dbEntries.filter((e: any) => e.goal_id === g.id);
-      // Group by day of month using created_at
+      // Group by day of month using period field (format: dd/MM/yyyy or yyyy-MM-dd)
       const dayMap: Record<number, number> = {};
       let monthEntryCount = 0;
       goalEntries.forEach((e: any) => {
-        const d = new Date(e.created_at);
-        const eYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        if (eYM === currentYM) {
-          const day = d.getDate();
+        const periodStr = e.period as string;
+        let day: number | null = null;
+        let eYM: string | null = null;
+        if (periodStr.includes("/")) {
+          // dd/MM/yyyy
+          const parts = periodStr.split("/");
+          if (parts.length === 3) {
+            eYM = `${parts[2]}-${parts[1]}`;
+            day = parseInt(parts[0], 10);
+          }
+        } else if (periodStr.includes("-")) {
+          // yyyy-MM-dd or yyyy-MM
+          const parts = periodStr.split("-");
+          eYM = `${parts[0]}-${parts[1]}`;
+          day = parts[2] ? parseInt(parts[2], 10) : null;
+        }
+        if (eYM === currentYM && day) {
           dayMap[day] = (dayMap[day] || 0) + Number(e.value);
           monthEntryCount++;
         }
@@ -1308,25 +1322,53 @@ const RelatoriosPage = () => {
             </div>
           </div>
         );
-      case 6: // Individual goal attainment bars
+      case 6: { // Individual goal attainment bars — sorted by data first, grouped by sector
+        const sortedGoals = [...filteredGoals].sort((a, b) => {
+          // Goals with data (current > 0) come first
+          const aHasData = a.current > 0 ? 0 : 1;
+          const bHasData = b.current > 0 ? 0 : 1;
+          if (aHasData !== bHasData) return aHasData - bHasData;
+          // Then sort by sector
+          const sectorCmp = (a.sector || "").localeCompare(b.sector || "");
+          if (sectorCmp !== 0) return sectorCmp;
+          // Then by attainment descending
+          return getGoalPct(b) - getGoalPct(a);
+        });
+        const chartData = sortedGoals.map(g => ({
+          name: g.name.length > 25 ? g.name.slice(0, 25) + "…" : g.name,
+          pct: Math.round(getGoalPct(g)),
+          sector: g.sector || "Sem setor",
+        }));
+        // Get unique sectors for section headers
+        const sectors = [...new Set(sortedGoals.map(g => g.sector || "Sem setor"))];
         return (
           <div>
             <h3 className="font-display font-semibold text-lg text-foreground mb-1">Atingimento individual por meta</h3>
-            <p className="text-xs text-muted-foreground mb-4">% realizado vs meta pactuada — {contract.unit}</p>
+            <p className="text-xs text-muted-foreground mb-4">% realizado vs meta pactuada — {contract.unit} • Agrupado por setor</p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {sectors.map(s => (
+                <span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{s}</span>
+              ))}
+            </div>
             <div className="bg-card rounded-lg border border-border p-5">
-              <ResponsiveContainer width="100%" height={Math.max(isCarouselFullscreen ? 420 : 280, filteredGoals.length * 40)}>
-                <BarChart data={filteredGoals.map(g => ({ name: g.name.length > 25 ? g.name.slice(0, 25) + "…" : g.name, pct: Math.round(getGoalPct(g)), meta: 100 }))} layout="vertical" barGap={2}>
+              <ResponsiveContainer width="100%" height={Math.max(isCarouselFullscreen ? 420 : 280, sortedGoals.length * 32)}>
+                <BarChart data={chartData} layout="vertical" barGap={2}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                   <XAxis type="number" domain={[0, 110]} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={v => `${v}%`} />
-                  <YAxis type="category" dataKey="name" width={180} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v}%`} />
-                  <Bar dataKey="pct" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} name="Realizado" label={{ position: "right", fontSize: 10, fill: "hsl(var(--muted-foreground))", formatter: (v: number) => `${v}%` }} />
+                  <YAxis type="category" dataKey="name" width={180} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number, name: string, props: any) => [`${v}%`, `${props.payload.sector}`]} />
+                  <Bar dataKey="pct" radius={[0, 6, 6, 0]} name="Realizado" label={{ position: "right", fontSize: 10, fill: "hsl(var(--muted-foreground))", formatter: (v: number) => `${v}%` }}>
+                    {chartData.map((entry, i) => (
+                      <Cell key={i} fill={entry.pct > 0 ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.3)"} />
+                    ))}
+                  </Bar>
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         );
+      }
       case 7: // Risk distribution per goal
         return (
           <div>
