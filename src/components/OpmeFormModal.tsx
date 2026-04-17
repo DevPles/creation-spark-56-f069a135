@@ -260,15 +260,19 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
           <DialogTitle>{recordId ? "Editar solicitação OPME" : "Nova solicitação OPME"}</DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="parte1" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-7 w-full">
             <TabsTrigger value="parte1">Solicitante</TabsTrigger>
             <TabsTrigger value="parte2">Auditor pré</TabsTrigger>
             <TabsTrigger value="consumo">Consumo</TabsTrigger>
             <TabsTrigger value="parte3">Auditor pós</TabsTrigger>
             <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
-            <TabsTrigger value="anexos">Anexos</TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
+            <TabsTrigger value="anexos" disabled={!currentId} title={!currentId ? "Salve a solicitação primeiro" : ""}>
+              Anexos {!currentId && "🔒"}
+            </TabsTrigger>
+            <TabsTrigger value="historico" disabled={!currentId} title={!currentId ? "Salve a solicitação primeiro" : ""}>
+              Histórico {!currentId && "🔒"}
+            </TabsTrigger>
           </TabsList>
 
           {/* PARTE 1 */}
