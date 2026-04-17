@@ -227,10 +227,10 @@ const Login = () => {
               <motion.div key="login-form" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="w-full max-w-xs space-y-5">
                 <h2 className="text-4xl font-extrabold text-primary text-center tracking-tight drop-shadow-[0_2px_6px_rgba(59,130,246,0.3)]">MOSS</h2>
                 <h3 className="text-sm text-muted-foreground text-center">Métricas para Organizações de Serviço Social</h3>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
+                <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
+                  <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} autoComplete="off" name="moss-user" />
                   <div className="relative">
-                    <Input type={showPw ? "text" : "password"} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pr-12`} />
+                    <Input type={showPw ? "text" : "password"} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pr-12`} autoComplete="new-password" name="moss-pw" />
                     <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors">
                       {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
