@@ -233,19 +233,19 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
       payload.preop_image_count = Number(payload.preop_image_count) || 0;
       payload.postop_image_count = Number(payload.postop_image_count) || 0;
 
-      if (recordId) {
+      if (currentId) {
         delete payload.id; delete payload.created_at; delete payload.updated_at; delete payload.created_by;
-        const { error } = await supabase.from("opme_requests").update(payload).eq("id", recordId);
+        const { error } = await supabase.from("opme_requests").update(payload).eq("id", currentId);
         if (error) throw error;
         toast.success("Solicitação atualizada");
       } else {
         payload.created_by = user.id;
-        const { error } = await supabase.from("opme_requests").insert(payload);
+        const { data, error } = await supabase.from("opme_requests").insert(payload).select("id").single();
         if (error) throw error;
-        toast.success("Solicitação criada");
+        if (data?.id) setCurrentId(data.id);
+        toast.success("Solicitação criada — agora você pode anexar evidências");
       }
       onSaved();
-      onOpenChange(false);
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar");
     } finally {
@@ -261,12 +261,14 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
         </DialogHeader>
 
         <Tabs defaultValue="parte1" className="w-full">
-          <TabsList className="grid grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-7 w-full">
             <TabsTrigger value="parte1">Solicitante</TabsTrigger>
-            <TabsTrigger value="parte2">Auditor pré + Admin</TabsTrigger>
-            <TabsTrigger value="consumo">Consumo + Pós</TabsTrigger>
-            <TabsTrigger value="parte3">Auditor pós + Incidente</TabsTrigger>
+            <TabsTrigger value="parte2">Auditor pré</TabsTrigger>
+            <TabsTrigger value="consumo">Consumo</TabsTrigger>
+            <TabsTrigger value="parte3">Auditor pós</TabsTrigger>
             <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
+            <TabsTrigger value="anexos">Anexos</TabsTrigger>
+            <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
 
           {/* PARTE 1 */}
