@@ -220,6 +220,80 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
     });
   };
 
+  const loadSimulation = (kind: "ortopedia" | "cardio") => {
+    const today = new Date().toISOString().split("T")[0];
+    if (kind === "ortopedia") {
+      setForm((p: any) => ({
+        ...p,
+        status: "aguardando_auditor_pre",
+        patient_name: "Maria Silva Souza",
+        patient_record: "PR-2025-0142",
+        patient_birthdate: "1962-04-18",
+        patient_mother_name: "Ana Silva",
+        patient_sus: "898 0012 3456 7890",
+        procedure_date: today,
+        procedure_type: "eletivo",
+        procedure_name: "Artroplastia total de quadril",
+        procedure_sigtap_code: "04.08.05.005-0",
+        procedure_room: "Centro Cirúrgico — Sala 02",
+        requester_name: "Dr. Carlos Andrade",
+        requester_register: "CRM-SP 123456",
+        clinical_indication: "Coxartrose grave à direita, dor incapacitante refratária ao tratamento conservador.",
+        committee_opinion: "Aprovado pelo comitê de OPME em reunião ordinária.",
+        opme_requested: [
+          { description: "Prótese total de quadril cimentada", quantity: "1", size_model: "Tam. M", sigtap: "07.02.06.013-2" },
+          { description: "Cimento ósseo com antibiótico", quantity: "2", size_model: "40g", sigtap: "07.02.06.020-5" },
+        ],
+        instruments_specific: true,
+        instruments_loan: true,
+        instruments_specify: "Caixa de instrumental específico do fornecedor (comodato).",
+        preop_image_types: ["Radiografia", "Ressonância"],
+        preop_exam_date: today,
+        preop_finding_description: "Redução do espaço articular com osteófitos marginais.",
+        preop_image_attached: true,
+        preop_image_count: 4,
+        preop_validation_responsible: "Enf. Joana Lima",
+        notes: "Caso simulado — Ortopedia (eletivo).",
+      }));
+      toast.success("Caso 1 (Ortopedia) carregado");
+    } else {
+      setForm((p: any) => ({
+        ...p,
+        status: "em_execucao",
+        patient_name: "João Pedro Oliveira",
+        patient_record: "PR-2025-0867",
+        patient_birthdate: "1955-11-02",
+        patient_mother_name: "Rosa Oliveira",
+        patient_sus: "700 1122 3344 5566",
+        procedure_date: today,
+        procedure_type: "urgencia",
+        procedure_name: "Implante de marca-passo definitivo",
+        procedure_sigtap_code: "04.06.02.005-1",
+        procedure_room: "Hemodinâmica — Sala 01",
+        requester_name: "Dra. Helena Costa",
+        requester_register: "CRM-SP 654321",
+        clinical_indication: "Bloqueio AV total sintomático com episódios de síncope.",
+        committee_opinion: "Caso urgente, autorizado pela auditoria de plantão.",
+        opme_requested: [
+          { description: "Gerador de marca-passo dupla câmara", quantity: "1", size_model: "DDDR", sigtap: "07.02.03.018-7" },
+          { description: "Eletrodo atrial ativo", quantity: "1", size_model: "52 cm", sigtap: "07.02.03.020-9" },
+          { description: "Eletrodo ventricular ativo", quantity: "1", size_model: "58 cm", sigtap: "07.02.03.021-7" },
+        ],
+        instruments_specific: true,
+        instruments_specify: "Programador do fabricante necessário em sala.",
+        preop_image_types: ["Outro"],
+        preop_image_other: "ECG e Holter 24h",
+        preop_exam_date: today,
+        preop_finding_description: "BAVT, FC média 32 bpm.",
+        preop_image_attached: true,
+        preop_image_count: 2,
+        preop_validation_responsible: "Enf. Marcos Pinto",
+        notes: "Caso simulado — Cardiologia (urgência).",
+      }));
+      toast.success("Caso 2 (Cardiologia) carregado");
+    }
+  };
+
   const handleSave = async () => {
     if (!user) { toast.error("Não autenticado"); return; }
     if (!form.patient_name?.trim()) { toast.error("Informe o nome do paciente"); return; }
