@@ -39,6 +39,8 @@ interface OpmeFormModalProps {
   onOpenChange: (open: boolean) => void;
   recordId?: string | null;
   onSaved: () => void;
+  defaultUnit?: string;
+  defaultStatus?: string;
 }
 
 
@@ -67,15 +69,15 @@ const BILLING_DOCS = [
   { key: "exames_imagem", label: "Exames de imagem (pré e pós)" },
 ];
 
-export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }: OpmeFormModalProps) {
+export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved, defaultUnit, defaultStatus }: OpmeFormModalProps) {
   const { user, profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(recordId || null);
   const [activeTab, setActiveTab] = useState("parte1");
   const [facilities, setFacilities] = useState<string[]>([]);
   const [form, setForm] = useState<any>({
-    facility_unit: profile?.facility_unit || "Hospital Geral",
-    status: "rascunho",
+    facility_unit: defaultUnit || profile?.facility_unit || "Hospital Geral",
+    status: defaultStatus || "rascunho",
     patient_name: "",
     patient_record: "",
     patient_birthdate: "",
@@ -193,8 +195,10 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
           });
         }
       })();
+    } else {
+      setForm((p: any) => ({ ...p, facility_unit: defaultUnit || profile?.facility_unit || "Hospital Geral", status: defaultStatus || "rascunho" }));
     }
-  }, [open, recordId]);
+  }, [open, recordId, defaultUnit, defaultStatus, profile?.facility_unit]);
 
   const set = (k: string, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
 
@@ -355,22 +359,6 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
 
           {/* PARTE 1 */}
           <TabsContent value="parte1" className="space-y-6 pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <Label>Unidade *</Label>
-                <Select value={form.facility_unit} onValueChange={(v) => set("facility_unit", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{facilities.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{STATUS_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
 
             <section className="space-y-3">
               <h3 className="font-semibold">1. Identificação do paciente</h3>

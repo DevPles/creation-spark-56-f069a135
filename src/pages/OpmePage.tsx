@@ -177,7 +177,14 @@ export default function OpmePage() {
         </Card>
       </main>
 
-      <OpmeFormModal open={modalOpen} onOpenChange={setModalOpen} recordId={editingId} onSaved={load} />
+      <OpmeFormModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        recordId={editingId}
+        onSaved={load}
+        defaultUnit={unitFilter !== "all" ? unitFilter : undefined}
+        defaultStatus={statusFilter !== "all" ? statusFilter : undefined}
+      />
 
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
