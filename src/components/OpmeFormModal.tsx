@@ -243,7 +243,10 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
         payload.created_by = user.id;
         const { data, error } = await supabase.from("opme_requests").insert(payload).select("id").single();
         if (error) throw error;
-        if (data?.id) setCurrentId(data.id);
+        if (data?.id) {
+          setCurrentId(data.id);
+          setActiveTab("anexos");
+        }
         toast.success("Solicitação criada — agora você pode anexar evidências");
       }
       onSaved();
