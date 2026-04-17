@@ -356,6 +356,115 @@ export type Database = {
         }
         Relationships: []
       }
+      opme_attachments: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string
+          file_url: string
+          id: string
+          is_required: boolean
+          opme_request_id: string
+          stage: string
+          uploaded_by: string
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string
+          file_url: string
+          id?: string
+          is_required?: boolean
+          opme_request_id: string
+          stage: string
+          uploaded_by: string
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          is_required?: boolean
+          opme_request_id?: string
+          stage?: string
+          uploaded_by?: string
+          uploaded_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opme_attachments_opme_request_id_fkey"
+            columns: ["opme_request_id"]
+            isOneToOne: false
+            referencedRelation: "opme_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opme_history: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string
+          changed_by_name: string | null
+          field_changed: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          opme_request_id: string
+          reason: string | null
+          signature_name: string | null
+          signature_register: string | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by: string
+          changed_by_name?: string | null
+          field_changed?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          opme_request_id: string
+          reason?: string | null
+          signature_name?: string | null
+          signature_register?: string | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string
+          changed_by_name?: string | null
+          field_changed?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          opme_request_id?: string
+          reason?: string | null
+          signature_name?: string | null
+          signature_register?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opme_history_opme_request_id_fkey"
+            columns: ["opme_request_id"]
+            isOneToOne: false
+            referencedRelation: "opme_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opme_requests: {
         Row: {
           auditor_post_crm: string | null
