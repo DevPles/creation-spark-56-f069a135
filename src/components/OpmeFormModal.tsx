@@ -11,6 +11,8 @@ import { Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import OpmeAttachmentsTab from "@/components/opme/OpmeAttachmentsTab";
+import OpmeHistoryTab from "@/components/opme/OpmeHistoryTab";
 
 interface OpmeItem {
   description: string;
@@ -39,7 +41,7 @@ interface OpmeFormModalProps {
   onSaved: () => void;
 }
 
-const FACILITIES = ["Hospital Geral", "UPA Norte", "UBS Centro"];
+
 const STATUS_OPTIONS = [
   { value: "rascunho", label: "Rascunho" },
   { value: "aguardando_auditor_pre", label: "Aguardando auditor (pré)" },
@@ -68,6 +70,8 @@ const BILLING_DOCS = [
 export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }: OpmeFormModalProps) {
   const { user, profile } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [currentId, setCurrentId] = useState<string | null>(recordId || null);
+  const [facilities, setFacilities] = useState<string[]>([]);
   const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
     status: "rascunho",
