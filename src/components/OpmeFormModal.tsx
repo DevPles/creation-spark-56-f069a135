@@ -71,6 +71,7 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
   const { user, profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(recordId || null);
+  const [activeTab, setActiveTab] = useState("parte1");
   const [facilities, setFacilities] = useState<string[]>([]);
   const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
