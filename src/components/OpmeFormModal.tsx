@@ -195,8 +195,10 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved, d
           });
         }
       })();
+    } else {
+      setForm((p: any) => ({ ...p, facility_unit: defaultUnit || profile?.facility_unit || "Hospital Geral", status: defaultStatus || "rascunho" }));
     }
-  }, [open, recordId]);
+  }, [open, recordId, defaultUnit, defaultStatus, profile?.facility_unit]);
 
   const set = (k: string, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
 
