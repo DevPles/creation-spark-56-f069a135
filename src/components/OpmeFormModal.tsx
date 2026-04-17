@@ -69,15 +69,15 @@ const BILLING_DOCS = [
   { key: "exames_imagem", label: "Exames de imagem (pré e pós)" },
 ];
 
-export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }: OpmeFormModalProps) {
+export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved, defaultUnit, defaultStatus }: OpmeFormModalProps) {
   const { user, profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(recordId || null);
   const [activeTab, setActiveTab] = useState("parte1");
   const [facilities, setFacilities] = useState<string[]>([]);
   const [form, setForm] = useState<any>({
-    facility_unit: profile?.facility_unit || "Hospital Geral",
-    status: "rascunho",
+    facility_unit: defaultUnit || profile?.facility_unit || "Hospital Geral",
+    status: defaultStatus || "rascunho",
     patient_name: "",
     patient_record: "",
     patient_birthdate: "",
