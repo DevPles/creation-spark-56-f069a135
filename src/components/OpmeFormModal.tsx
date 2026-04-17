@@ -39,6 +39,8 @@ interface OpmeFormModalProps {
   onOpenChange: (open: boolean) => void;
   recordId?: string | null;
   onSaved: () => void;
+  defaultUnit?: string;
+  defaultStatus?: string;
 }
 
 
