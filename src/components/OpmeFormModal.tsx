@@ -153,6 +153,18 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
 
   useEffect(() => {
     if (!open) return;
+    setCurrentId(recordId || null);
+    // Load dynamic facilities from profiles + contracts (alphabetical, dedup)
+    (async () => {
+      const [{ data: profs }, { data: ctrs }] = await Promise.all([
+        supabase.from("profiles").select("facility_unit"),
+        supabase.from("contracts").select("unit"),
+      ]);
+      const set = new Set<string>();
+      (profs || []).forEach((p: any) => p.facility_unit && set.add(p.facility_unit));
+      (ctrs || []).forEach((c: any) => c.unit && set.add(c.unit));
+      setFacilities(Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR")));
+    })();
     if (recordId) {
       (async () => {
         const { data, error } = await supabase.from("opme_requests").select("*").eq("id", recordId).maybeSingle();
@@ -264,7 +276,7 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
                 <Label>Unidade *</Label>
                 <Select value={form.facility_unit} onValueChange={(v) => set("facility_unit", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{FACILITIES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                  <SelectContent>{facilities.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
