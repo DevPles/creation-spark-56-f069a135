@@ -613,11 +613,21 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
               <div><Label>Observações gerais</Label><Textarea value={form.notes} onChange={e => set("notes", e.target.value)} /></div>
             </section>
           </TabsContent>
+
+          {/* ANEXOS / EVIDÊNCIAS */}
+          <TabsContent value="anexos" className="pt-4">
+            <OpmeAttachmentsTab opmeRequestId={currentId} />
+          </TabsContent>
+
+          {/* HISTÓRICO / AUDITORIA */}
+          <TabsContent value="historico" className="pt-4">
+            <OpmeHistoryTab opmeRequestId={currentId} />
+          </TabsContent>
         </Tabs>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Fechar</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : currentId ? "Atualizar" : "Salvar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
