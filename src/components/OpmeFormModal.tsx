@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2 } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -272,10 +272,10 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
             <TabsTrigger value="parte3">Auditor pós</TabsTrigger>
             <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
             <TabsTrigger value="anexos" disabled={!currentId} title={!currentId ? "Salve a solicitação primeiro" : ""}>
-              Anexos {!currentId && "🔒"}
+              Anexos
             </TabsTrigger>
             <TabsTrigger value="historico" disabled={!currentId} title={!currentId ? "Salve a solicitação primeiro" : ""}>
-              Histórico {!currentId && "🔒"}
+              Histórico
             </TabsTrigger>
           </TabsList>
 
@@ -341,7 +341,7 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">4. OPME solicitada</h3>
-                <Button type="button" variant="outline" size="sm" onClick={() => addItem("opme_requested")}><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => addItem("opme_requested")}>Adicionar</Button>
               </div>
               {form.opme_requested.map((it: OpmeItem, idx: number) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-end">
@@ -349,7 +349,7 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
                   <div className="col-span-4 md:col-span-2"><Label className="text-xs">Quant.</Label><Input value={it.quantity} onChange={e => updateItem("opme_requested", idx, "quantity", e.target.value)} /></div>
                   <div className="col-span-4 md:col-span-2"><Label className="text-xs">Tamanho/Modelo</Label><Input value={it.size_model} onChange={e => updateItem("opme_requested", idx, "size_model", e.target.value)} /></div>
                   <div className="col-span-3 md:col-span-2"><Label className="text-xs">SIGTAP</Label><Input value={it.sigtap} onChange={e => updateItem("opme_requested", idx, "sigtap", e.target.value)} /></div>
-                  <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => removeItem("opme_requested", idx)}><Trash2 className="h-4 w-4" /></Button></div>
+                  <div className="col-span-1"><Button type="button" variant="ghost" size="sm" onClick={() => removeItem("opme_requested", idx)}>Remover</Button></div>
                 </div>
               ))}
             </section>
@@ -475,7 +475,7 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">10. Registro de consumo — OPME utilizada</h3>
-                <Button type="button" variant="outline" size="sm" onClick={() => addItem("opme_used")}><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => addItem("opme_used")}>Adicionar</Button>
               </div>
               {form.opme_used.map((it: OpmeUsedItem, idx: number) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-end border-b pb-2">
@@ -484,7 +484,7 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
                   <div className="col-span-4 md:col-span-2"><Label className="text-xs">Lote</Label><Input value={it.lot} onChange={e => updateItem("opme_used", idx, "lot", e.target.value)} /></div>
                   <div className="col-span-4 md:col-span-2"><Label className="text-xs">Validade</Label><Input type="date" value={it.validity} onChange={e => updateItem("opme_used", idx, "validity", e.target.value)} /></div>
                   <div className="col-span-12 md:col-span-2 flex items-center gap-2 pt-4"><Checkbox checked={it.label_attached} onCheckedChange={(c) => updateItem("opme_used", idx, "label_attached", !!c)} /><span className="text-xs">Etiqueta fixada</span></div>
-                  <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => removeItem("opme_used", idx)}><Trash2 className="h-4 w-4" /></Button></div>
+                  <div className="col-span-1"><Button type="button" variant="ghost" size="sm" onClick={() => removeItem("opme_used", idx)}>Remover</Button></div>
                 </div>
               ))}
             </section>
@@ -492,7 +492,7 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">OPME devolvida (não utilizada / aberta)</h3>
-                <Button type="button" variant="outline" size="sm" onClick={() => addItem("opme_returned")}><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => addItem("opme_returned")}>Adicionar</Button>
               </div>
               {form.opme_returned.map((it: OpmeReturnedItem, idx: number) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-end">
@@ -500,7 +500,7 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
                   <div className="col-span-3 md:col-span-2"><Label className="text-xs">Quant.</Label><Input value={it.quantity} onChange={e => updateItem("opme_returned", idx, "quantity", e.target.value)} /></div>
                   <div className="col-span-5 md:col-span-3"><Label className="text-xs">Motivo</Label><Input value={it.reason} onChange={e => updateItem("opme_returned", idx, "reason", e.target.value)} /></div>
                   <div className="col-span-3 md:col-span-2"><Label className="text-xs">Responsável</Label><Input value={it.responsible} onChange={e => updateItem("opme_returned", idx, "responsible", e.target.value)} /></div>
-                  <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => removeItem("opme_returned", idx)}><Trash2 className="h-4 w-4" /></Button></div>
+                  <div className="col-span-1"><Button type="button" variant="ghost" size="sm" onClick={() => removeItem("opme_returned", idx)}>Remover</Button></div>
                 </div>
               ))}
             </section>
