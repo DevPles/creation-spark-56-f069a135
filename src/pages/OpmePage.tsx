@@ -98,33 +98,43 @@ export default function OpmePage() {
     <div className="min-h-screen bg-background">
       <TopBar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <PageHeader title="Gestão de OPME" subtitle="Órteses, Próteses e Materiais Especiais" />
+        <PageHeader
+          title="Gestão de OPME"
+          subtitle="Órteses, Próteses e Materiais Especiais"
+          action={
+            <>
+              <Input
+                placeholder="Buscar paciente, prontuário, procedimento..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="h-9 w-full sm:w-64 text-xs"
+              />
+              <Select value={unitFilter} onValueChange={setUnitFilter}>
+                <SelectTrigger className="w-[160px] h-9 text-xs"><SelectValue placeholder="Unidade" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as unidades</SelectItem>
+                  {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[160px] h-9 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  {Object.entries(STATUS_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleNew} size="sm" className="rounded-full h-9">
+                <Plus className="h-4 w-4 mr-1" />Nova solicitação
+              </Button>
+            </>
+          }
+        />
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats.total}</p></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Pendentes</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats.pendentes}</p></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Concluídos</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats.concluidos}</p></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Reprovados</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats.reprovados}</p></CardContent></Card>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-3 mb-4">
-          <Input placeholder="Buscar por paciente, prontuário, procedimento..." value={search} onChange={e => setSearch(e.target.value)} className="md:max-w-md" />
-          <Select value={unitFilter} onValueChange={setUnitFilter}>
-            <SelectTrigger className="md:w-56"><SelectValue placeholder="Unidade" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as unidades</SelectItem>
-              {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="md:w-56"><SelectValue placeholder="Status" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os status</SelectItem>
-              {Object.entries(STATUS_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <div className="flex-1" />
-          <Button onClick={handleNew} className="rounded-full"><Plus className="h-4 w-4 mr-1" />Nova solicitação</Button>
         </div>
 
         <Card>
