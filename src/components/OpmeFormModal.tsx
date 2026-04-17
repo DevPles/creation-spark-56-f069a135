@@ -633,7 +633,9 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 flex-wrap">
+          <Button variant="secondary" type="button" onClick={() => loadSimulation("ortopedia")} disabled={saving}>Simular caso 1 — Ortopedia</Button>
+          <Button variant="secondary" type="button" onClick={() => loadSimulation("cardio")} disabled={saving}>Simular caso 2 — Cardiologia</Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Fechar</Button>
           <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : currentId ? "Atualizar" : "Salvar"}</Button>
         </DialogFooter>
