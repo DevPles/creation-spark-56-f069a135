@@ -21,6 +21,7 @@ import RelatorioAssistencialPage from "./pages/RelatorioAssistencialPage";
 import ControleRubricaPage from "./pages/ControleRubricaPage";
 import TreinamentoPage from "./pages/TreinamentoPage";
 import AssistentePage from "./pages/AssistentePage";
+import OpmePage from "./pages/OpmePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/controle-rubrica" element={<ProtectedRoute financialOnly><ControleRubricaPage /></ProtectedRoute>} />
             <Route path="/treinamento" element={<ProtectedRoute><TreinamentoPage /></ProtectedRoute>} />
             <Route path="/assistente" element={<ProtectedRoute><AssistentePage /></ProtectedRoute>} />
+            <Route path="/opme" element={<ProtectedRoute><OpmePage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

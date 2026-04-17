@@ -356,6 +356,255 @@ export type Database = {
         }
         Relationships: []
       }
+      opme_requests: {
+        Row: {
+          auditor_post_crm: string | null
+          auditor_post_date: string | null
+          auditor_post_final_opinion: string | null
+          auditor_post_image_conformity: string | null
+          auditor_post_name: string | null
+          auditor_post_procedure_compat: string | null
+          auditor_post_sigtap_compat: string | null
+          auditor_pre_analysis: string | null
+          auditor_pre_crm: string | null
+          auditor_pre_date: string | null
+          auditor_pre_name: string | null
+          auditor_pre_opinion: string | null
+          auditor_pre_sigtap_compat: string | null
+          billing_aih_generated: boolean | null
+          billing_aih_number: string | null
+          billing_divergence: boolean | null
+          billing_divergence_description: string | null
+          billing_docs: Json
+          billing_opme_compatibility: string | null
+          billing_prior_authorization: string | null
+          billing_procedure_name: string | null
+          billing_sigtap_code: string | null
+          clinical_indication: string | null
+          cme_processing_date: string | null
+          cme_responsible: string | null
+          committee_opinion: string | null
+          created_at: string
+          created_by: string
+          facility_unit: string
+          id: string
+          incident_date: string | null
+          incident_description: string | null
+          incident_responsible: string | null
+          instruments_loan: boolean | null
+          instruments_na: boolean | null
+          instruments_specific: boolean | null
+          instruments_specify: string | null
+          notes: string | null
+          opme_requested: Json
+          opme_returned: Json
+          opme_used: Json
+          patient_birthdate: string | null
+          patient_mother_name: string | null
+          patient_name: string
+          patient_record: string | null
+          patient_sus: string | null
+          postop_exam_date: string | null
+          postop_exam_number: string | null
+          postop_image_attached: boolean | null
+          postop_image_count: number | null
+          postop_image_other: string | null
+          postop_image_types: string[] | null
+          postop_result_description: string | null
+          postop_validation_responsible: string | null
+          preop_exam_date: string | null
+          preop_exam_number: string | null
+          preop_finding_description: string | null
+          preop_image_attached: boolean | null
+          preop_image_count: number | null
+          preop_image_other: string | null
+          preop_image_types: string[] | null
+          preop_validation_responsible: string | null
+          procedure_date: string | null
+          procedure_name: string | null
+          procedure_room: string | null
+          procedure_sigtap_code: string | null
+          procedure_type: string | null
+          request_date: string | null
+          request_time: string | null
+          requester_name: string | null
+          requester_register: string | null
+          sent_to_cme: boolean | null
+          status: Database["public"]["Enums"]["opme_status"]
+          stock_available: string | null
+          surgery_dispatch_date: string | null
+          surgery_dispatch_responsible: string | null
+          updated_at: string
+          warehouse_date: string | null
+          warehouse_received_by: string | null
+          warehouse_time: string | null
+        }
+        Insert: {
+          auditor_post_crm?: string | null
+          auditor_post_date?: string | null
+          auditor_post_final_opinion?: string | null
+          auditor_post_image_conformity?: string | null
+          auditor_post_name?: string | null
+          auditor_post_procedure_compat?: string | null
+          auditor_post_sigtap_compat?: string | null
+          auditor_pre_analysis?: string | null
+          auditor_pre_crm?: string | null
+          auditor_pre_date?: string | null
+          auditor_pre_name?: string | null
+          auditor_pre_opinion?: string | null
+          auditor_pre_sigtap_compat?: string | null
+          billing_aih_generated?: boolean | null
+          billing_aih_number?: string | null
+          billing_divergence?: boolean | null
+          billing_divergence_description?: string | null
+          billing_docs?: Json
+          billing_opme_compatibility?: string | null
+          billing_prior_authorization?: string | null
+          billing_procedure_name?: string | null
+          billing_sigtap_code?: string | null
+          clinical_indication?: string | null
+          cme_processing_date?: string | null
+          cme_responsible?: string | null
+          committee_opinion?: string | null
+          created_at?: string
+          created_by: string
+          facility_unit: string
+          id?: string
+          incident_date?: string | null
+          incident_description?: string | null
+          incident_responsible?: string | null
+          instruments_loan?: boolean | null
+          instruments_na?: boolean | null
+          instruments_specific?: boolean | null
+          instruments_specify?: string | null
+          notes?: string | null
+          opme_requested?: Json
+          opme_returned?: Json
+          opme_used?: Json
+          patient_birthdate?: string | null
+          patient_mother_name?: string | null
+          patient_name?: string
+          patient_record?: string | null
+          patient_sus?: string | null
+          postop_exam_date?: string | null
+          postop_exam_number?: string | null
+          postop_image_attached?: boolean | null
+          postop_image_count?: number | null
+          postop_image_other?: string | null
+          postop_image_types?: string[] | null
+          postop_result_description?: string | null
+          postop_validation_responsible?: string | null
+          preop_exam_date?: string | null
+          preop_exam_number?: string | null
+          preop_finding_description?: string | null
+          preop_image_attached?: boolean | null
+          preop_image_count?: number | null
+          preop_image_other?: string | null
+          preop_image_types?: string[] | null
+          preop_validation_responsible?: string | null
+          procedure_date?: string | null
+          procedure_name?: string | null
+          procedure_room?: string | null
+          procedure_sigtap_code?: string | null
+          procedure_type?: string | null
+          request_date?: string | null
+          request_time?: string | null
+          requester_name?: string | null
+          requester_register?: string | null
+          sent_to_cme?: boolean | null
+          status?: Database["public"]["Enums"]["opme_status"]
+          stock_available?: string | null
+          surgery_dispatch_date?: string | null
+          surgery_dispatch_responsible?: string | null
+          updated_at?: string
+          warehouse_date?: string | null
+          warehouse_received_by?: string | null
+          warehouse_time?: string | null
+        }
+        Update: {
+          auditor_post_crm?: string | null
+          auditor_post_date?: string | null
+          auditor_post_final_opinion?: string | null
+          auditor_post_image_conformity?: string | null
+          auditor_post_name?: string | null
+          auditor_post_procedure_compat?: string | null
+          auditor_post_sigtap_compat?: string | null
+          auditor_pre_analysis?: string | null
+          auditor_pre_crm?: string | null
+          auditor_pre_date?: string | null
+          auditor_pre_name?: string | null
+          auditor_pre_opinion?: string | null
+          auditor_pre_sigtap_compat?: string | null
+          billing_aih_generated?: boolean | null
+          billing_aih_number?: string | null
+          billing_divergence?: boolean | null
+          billing_divergence_description?: string | null
+          billing_docs?: Json
+          billing_opme_compatibility?: string | null
+          billing_prior_authorization?: string | null
+          billing_procedure_name?: string | null
+          billing_sigtap_code?: string | null
+          clinical_indication?: string | null
+          cme_processing_date?: string | null
+          cme_responsible?: string | null
+          committee_opinion?: string | null
+          created_at?: string
+          created_by?: string
+          facility_unit?: string
+          id?: string
+          incident_date?: string | null
+          incident_description?: string | null
+          incident_responsible?: string | null
+          instruments_loan?: boolean | null
+          instruments_na?: boolean | null
+          instruments_specific?: boolean | null
+          instruments_specify?: string | null
+          notes?: string | null
+          opme_requested?: Json
+          opme_returned?: Json
+          opme_used?: Json
+          patient_birthdate?: string | null
+          patient_mother_name?: string | null
+          patient_name?: string
+          patient_record?: string | null
+          patient_sus?: string | null
+          postop_exam_date?: string | null
+          postop_exam_number?: string | null
+          postop_image_attached?: boolean | null
+          postop_image_count?: number | null
+          postop_image_other?: string | null
+          postop_image_types?: string[] | null
+          postop_result_description?: string | null
+          postop_validation_responsible?: string | null
+          preop_exam_date?: string | null
+          preop_exam_number?: string | null
+          preop_finding_description?: string | null
+          preop_image_attached?: boolean | null
+          preop_image_count?: number | null
+          preop_image_other?: string | null
+          preop_image_types?: string[] | null
+          preop_validation_responsible?: string | null
+          procedure_date?: string | null
+          procedure_name?: string | null
+          procedure_room?: string | null
+          procedure_sigtap_code?: string | null
+          procedure_type?: string | null
+          request_date?: string | null
+          request_time?: string | null
+          requester_name?: string | null
+          requester_register?: string | null
+          sent_to_cme?: boolean | null
+          status?: Database["public"]["Enums"]["opme_status"]
+          stock_available?: string | null
+          surgery_dispatch_date?: string | null
+          surgery_dispatch_responsible?: string | null
+          updated_at?: string
+          warehouse_date?: string | null
+          warehouse_received_by?: string | null
+          warehouse_time?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           allowed_cards: string[] | null
@@ -871,6 +1120,15 @@ export type Database = {
       app_role: "admin" | "gestor" | "analista" | "clinico" | "funcionario"
       evidence_status: "pendente" | "enviada" | "validada" | "rejeitada"
       facility_unit: "Hospital Geral" | "UPA Norte" | "UBS Centro"
+      opme_status:
+        | "rascunho"
+        | "aguardando_auditor_pre"
+        | "aprovado_pre"
+        | "em_execucao"
+        | "aguardando_auditor_pos"
+        | "concluido"
+        | "cancelado"
+        | "reprovado"
       problem_type:
         | "processo"
         | "equipamento"
@@ -1013,6 +1271,16 @@ export const Constants = {
       app_role: ["admin", "gestor", "analista", "clinico", "funcionario"],
       evidence_status: ["pendente", "enviada", "validada", "rejeitada"],
       facility_unit: ["Hospital Geral", "UPA Norte", "UBS Centro"],
+      opme_status: [
+        "rascunho",
+        "aguardando_auditor_pre",
+        "aprovado_pre",
+        "em_execucao",
+        "aguardando_auditor_pos",
+        "concluido",
+        "cancelado",
+        "reprovado",
+      ],
       problem_type: [
         "processo",
         "equipamento",
