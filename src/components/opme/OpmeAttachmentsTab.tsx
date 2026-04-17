@@ -144,7 +144,7 @@ export default function OpmeAttachmentsTab({ opmeRequestId }: Props) {
       )}
 
       {opmeRequestId && requiredMissing.length > 0 && (
-        <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/20">
+        <Card className="border-destructive/40">
           <CardContent className="py-3 text-sm">
             <strong>Anexos obrigatórios pendentes:</strong>{" "}
             {requiredMissing.map(c => c.label).join(", ")}
