@@ -355,22 +355,6 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
 
           {/* PARTE 1 */}
           <TabsContent value="parte1" className="space-y-6 pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <Label>Unidade *</Label>
-                <Select value={form.facility_unit} onValueChange={(v) => set("facility_unit", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{facilities.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{STATUS_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
 
             <section className="space-y-3">
               <h3 className="font-semibold">1. Identificação do paciente</h3>
