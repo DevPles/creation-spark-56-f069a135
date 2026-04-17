@@ -21,6 +21,7 @@ const ALL_NAV_CARDS = [
   { id: "sau", title: "SAU", description: "Serviço de Atendimento ao Usuário", route: "/sau" },
   { id: "relatorio-assistencial", title: "Relatório Assistencial", description: "Indicadores e dados assistenciais", route: "/relatorio-assistencial" },
   { id: "controle-rubrica", title: "Controle de Rubrica", description: "Gestão e acompanhamento de rubricas", route: "/controle-rubrica" },
+  { id: "opme", title: "Gestão de OPME", description: "Órteses, próteses e materiais especiais", route: "/opme" },
 ];
 
 type CardOffset = { x: number; y: number };
