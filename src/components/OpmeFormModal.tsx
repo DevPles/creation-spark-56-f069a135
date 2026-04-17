@@ -71,6 +71,7 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
   const { user, profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(recordId || null);
+  const [activeTab, setActiveTab] = useState("parte1");
   const [facilities, setFacilities] = useState<string[]>([]);
   const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
@@ -242,7 +243,10 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
         payload.created_by = user.id;
         const { data, error } = await supabase.from("opme_requests").insert(payload).select("id").single();
         if (error) throw error;
-        if (data?.id) setCurrentId(data.id);
+        if (data?.id) {
+          setCurrentId(data.id);
+          setActiveTab("anexos");
+        }
         toast.success("Solicitação criada — agora você pode anexar evidências");
       }
       onSaved();
@@ -260,15 +264,19 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved }:
           <DialogTitle>{recordId ? "Editar solicitação OPME" : "Nova solicitação OPME"}</DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="parte1" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-7 w-full">
             <TabsTrigger value="parte1">Solicitante</TabsTrigger>
             <TabsTrigger value="parte2">Auditor pré</TabsTrigger>
             <TabsTrigger value="consumo">Consumo</TabsTrigger>
             <TabsTrigger value="parte3">Auditor pós</TabsTrigger>
             <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
-            <TabsTrigger value="anexos">Anexos</TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
+            <TabsTrigger value="anexos" disabled={!currentId} title={!currentId ? "Salve a solicitação primeiro" : ""}>
+              Anexos {!currentId && "🔒"}
+            </TabsTrigger>
+            <TabsTrigger value="historico" disabled={!currentId} title={!currentId ? "Salve a solicitação primeiro" : ""}>
+              Histórico {!currentId && "🔒"}
+            </TabsTrigger>
           </TabsList>
 
           {/* PARTE 1 */}
