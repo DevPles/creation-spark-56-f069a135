@@ -665,7 +665,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         <DialogHeader>
           <DialogTitle>Dossiê de Auditoria — OC nº {order?.numero || "..."}{req?.numero ? ` • Requisição nº ${req.numero}` : ""}</DialogTitle>
           <DialogDescription>
-            Documento completo do processo, pronto para envio ao Tribunal de Contas.
+            Processo documental completo (Requisição + Cotação + Ordem de Compra + Dossiê) agrupado em um único PDF, pronto para envio ao Tribunal de Contas.
           </DialogDescription>
         </DialogHeader>
 
@@ -792,9 +792,9 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         )}
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Fechar</Button>
-          <Button className="rounded-full" onClick={generatePDF} disabled={!dossier || loading}>
-            Baixar PDF
+          <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)} disabled={generating}>Fechar</Button>
+          <Button className="rounded-full" onClick={generatePDF} disabled={!dossier || loading || generating}>
+            {generating ? "Gerando processo..." : "Baixar processo completo (PDF único)"}
           </Button>
         </div>
       </DialogContent>
