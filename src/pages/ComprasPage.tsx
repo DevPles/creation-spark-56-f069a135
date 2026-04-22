@@ -40,7 +40,7 @@ const fmtBRL = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
 export default function ComprasPage() {
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const [tab, setTab] = useState("requisicoes");
 
   const [requisitions, setRequisitions] = useState<any[]>([]);
@@ -157,6 +157,36 @@ export default function ComprasPage() {
   const openEditOrder = (orderId: string) => { setOrderContext({ orderId }); setOrderModalOpen(true); };
   const openInvite = (r: any) => { setInviteContext({ requisitionId: r.id, numero: r.numero }); setInviteModalOpen(true); };
 
+  const handleDeleteRequisition = async (r: any) => {
+    if (!confirm(`Excluir requisição ${r.numero}? Esta ação não pode ser desfeita.`)) return;
+    // Apaga itens primeiro (sem FK cascade declarada)
+    await (supabase as any).from("purchase_requisition_items").delete().eq("requisition_id", r.id);
+    const { error } = await supabase.from("purchase_requisitions").delete().eq("id", r.id);
+    if (error) { toast.error("Sem permissão para excluir requisição"); return; }
+    toast.success("Requisição excluída");
+    loadAll();
+  };
+
+  const handleDeleteQuotation = async (q: any) => {
+    if (!confirm(`Excluir cotação ${q.numero}? Esta ação não pode ser desfeita.`)) return;
+    await (supabase as any).from("purchase_quotation_prices").delete().eq("quotation_id", q.id);
+    await (supabase as any).from("purchase_quotation_suppliers").delete().eq("quotation_id", q.id);
+    const { error } = await supabase.from("purchase_quotations").delete().eq("id", q.id);
+    if (error) { toast.error("Sem permissão para excluir cotação"); return; }
+    toast.success("Cotação excluída");
+    loadAll();
+  };
+
+  const handleDeleteOrder = async (o: any) => {
+    if (!confirm(`Excluir ordem de compra ${o.numero}? Esta ação não pode ser desfeita.`)) return;
+    await (supabase as any).from("purchase_order_items").delete().eq("purchase_order_id", o.id);
+    await (supabase as any).from("purchase_order_approvals").delete().eq("purchase_order_id", o.id);
+    const { error } = await supabase.from("purchase_orders").delete().eq("id", o.id);
+    if (error) { toast.error("Sem permissão para excluir ordem de compra"); return; }
+    toast.success("Ordem de compra excluída");
+    loadAll();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
@@ -234,6 +264,9 @@ export default function ComprasPage() {
                             <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditRequisition(r)}>Abrir</Button>
                             <Button size="sm" variant="secondary" className="rounded-full" onClick={() => openInvite(r)}>Convidar</Button>
                             <Button size="sm" className="rounded-full" onClick={() => openCreateQuote(r.id)}>Cotar</Button>
+                            {isAdmin && (
+                              <Button size="sm" variant="destructive" className="rounded-full" onClick={() => handleDeleteRequisition(r)}>Excluir</Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -325,6 +358,9 @@ export default function ComprasPage() {
                             <div className="flex gap-1 justify-end">
                               <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditQuote(q.id)}>Abrir</Button>
                               <Button size="sm" className="rounded-full" onClick={() => openCreateOrder(q.id)}>Gerar OC</Button>
+                              {isAdmin && (
+                                <Button size="sm" variant="destructive" className="rounded-full" onClick={() => handleDeleteQuotation(q)}>Excluir</Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -373,7 +409,12 @@ export default function ComprasPage() {
                           <TableCell className="text-right">{fmtBRL(Number(o.valor_total))}</TableCell>
                           <TableCell><Badge variant="outline">{OC_STATUS_LABEL[o.status] || o.status}</Badge></TableCell>
                           <TableCell className="text-right">
-                            <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditOrder(o.id)}>Abrir</Button>
+                            <div className="flex gap-1 justify-end">
+                              <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditOrder(o.id)}>Abrir</Button>
+                              {isAdmin && (
+                                <Button size="sm" variant="destructive" className="rounded-full" onClick={() => handleDeleteOrder(o)}>Excluir</Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
