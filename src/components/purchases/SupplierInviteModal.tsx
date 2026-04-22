@@ -55,6 +55,7 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
   const [showNewSupplier, setShowNewSupplier] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
+  const [expiresInDays, setExpiresInDays] = useState<number>(7);
   const [form, setForm] = useState({ fornecedor_nome: "", fornecedor_cnpj: "", fornecedor_email: "", fornecedor_telefone: "" });
   const [newSupplierForm, setNewSupplierForm] = useState({ nome: "", cnpj: "", email: "", telefone: "" });
 
@@ -63,6 +64,20 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
     suppliers.forEach(s => { if (s.cnpj) map.set(onlyDigits(s.cnpj), s); });
     return map;
   }, [suppliers]);
+
+  const defaultMessageTemplate = useMemo(() => {
+    const expiraDate = new Date(Date.now() + expiresInDays * 86400000).toLocaleDateString("pt-BR");
+    return `Prezado(a) Fornecedor(a),
+
+A ${facilityUnit || "nossa instituição"} cumprimenta-o(a) cordialmente e vem, por meio deste, convidá-lo(a) a participar do processo de cotação ${requisitionNumero ? `nº ${requisitionNumero}` : ""}.
+
+Sua participação é muito importante para garantirmos as melhores condições comerciais. Pedimos a gentileza de acessar o link abaixo e enviar sua proposta até ${expiraDate}.
+
+Em caso de dúvidas, estamos à disposição.
+
+Atenciosamente,
+Setor de Compras`;
+  }, [facilityUnit, requisitionNumero, expiresInDays]);
 
   const load = async () => {
     if (!requisitionId) return;
@@ -84,6 +99,8 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
       setShowNewSupplier(false);
       setForm({ fornecedor_nome: "", fornecedor_cnpj: "", fornecedor_email: "", fornecedor_telefone: "" });
       setNewSupplierForm({ nome: "", cnpj: "", email: "", telefone: "" });
+      setExpiresInDays(7);
+      setCustomMessage("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, requisitionId]);
@@ -93,9 +110,10 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
   const buildMessage = (invite: any) => {
     const link = buildLink(invite.token);
     const expira = new Date(invite.expires_at).toLocaleDateString("pt-BR");
-    const base = customMessage?.trim()
-      || `Olá ${invite.fornecedor_nome},\n\nGostaríamos de convidá-lo a participar da cotação ${requisitionNumero || ""}${facilityUnit ? ` — ${facilityUnit}` : ""}.\n\nAcesse o link abaixo para enviar sua proposta. Válido até ${expira}.`;
-    return `${base}\n\n${link}`;
+    const base = (customMessage?.trim() || defaultMessageTemplate)
+      .replace(/\{\{fornecedor\}\}/g, invite.fornecedor_nome || "")
+      .replace(/\{\{validade\}\}/g, expira);
+    return `${base}\n\nLink de acesso: ${link}\nVálido até: ${expira}`;
   };
 
   const pickSupplier = (s: Supplier) => {
@@ -122,6 +140,7 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
   const handleAdd = async () => {
     if (!form.fornecedor_nome.trim()) { toast.error("Informe o nome do fornecedor"); return; }
     if (!requisitionId || !user) return;
+    const expiresAt = new Date(Date.now() + Math.max(1, expiresInDays) * 86400000).toISOString();
     const { error } = await (supabase as any).from("quotation_invites").insert({
       requisition_id: requisitionId,
       fornecedor_nome: form.fornecedor_nome.trim(),
@@ -130,6 +149,7 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
       fornecedor_telefone: form.fornecedor_telefone.trim() || null,
       created_by: user.id,
       status: "pendente",
+      expires_at: expiresAt,
     });
     if (error) { toast.error("Erro ao criar convite"); return; }
     toast.success("Convite criado");
@@ -334,14 +354,45 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <Label>Validade do convite (dias)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={90}
+                  value={expiresInDays}
+                  onChange={e => setExpiresInDays(Math.max(1, Number(e.target.value) || 1))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Expira em {new Date(Date.now() + expiresInDays * 86400000).toLocaleDateString("pt-BR")}
+                </p>
+              </div>
+            </div>
+
             <div>
-              <Label>Mensagem padrão (opcional)</Label>
+              <div className="flex items-center justify-between">
+                <Label>Mensagem do convite (editável)</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setCustomMessage(defaultMessageTemplate)}
+                >
+                  Usar texto padrão
+                </Button>
+              </div>
               <Textarea
-                placeholder="Personalize a mensagem que será enviada por e-mail e WhatsApp. Se vazio, usa um texto padrão."
-                value={customMessage}
+                placeholder="Personalize a mensagem que será enviada por e-mail e WhatsApp."
+                value={customMessage || defaultMessageTemplate}
                 onChange={e => setCustomMessage(e.target.value)}
-                className="mt-1 min-h-[80px]"
+                className="mt-1 min-h-[180px] font-mono text-xs"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                O link da cotação e a data de validade serão anexados automaticamente ao final.
+              </p>
             </div>
 
             <div className="flex justify-end">
