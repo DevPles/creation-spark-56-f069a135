@@ -584,7 +584,67 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       doc.text(`Página ${i} de ${total}`, pageW - margin, pageH - 20, { align: "right" });
     }
 
-    doc.save(`Dossie_OC_${order.numero || "sem-numero"}_${format(generatedAt, "yyyyMMdd")}.pdf`);
+    return doc.output("blob") as Blob;
+  };
+
+  const generatePDF = async () => {
+    if (!dossier) return;
+    const order = dossier.order || {};
+    const reqId = dossier.requisition?.id || null;
+    const quotId = dossier.quotation?.id || null;
+    const orderIdLocal = order.id || orderId;
+    const stamp = format(
+      dossier.generated_at ? new Date(dossier.generated_at) : new Date(),
+      "yyyyMMdd"
+    );
+    setGenerating(true);
+    try {
+      // 1. Gera os 4 PDFs em paralelo (cada um retorna um Blob independente)
+      const [reqBlob, quotBlob, orderBlob, dossieBlob] = await Promise.all([
+        reqId ? (generateRequisitionPdf(reqId, { returnBlob: true }) as Promise<Blob>) : Promise.resolve(null),
+        quotId ? (generateQuotationPdf(quotId, { returnBlob: true }) as Promise<Blob>) : Promise.resolve(null),
+        orderIdLocal ? (generateOrderPdf(orderIdLocal, { returnBlob: true }) as Promise<Blob>) : Promise.resolve(null),
+        Promise.resolve(buildDossierPdf()),
+      ]);
+
+      // 2. Monta um PDF único contendo os 4 documentos como seções (com bookmarks)
+      const merged = await PDFDocument.create();
+      merged.setTitle(`Processo OC ${order.numero || ""}`);
+      merged.setAuthor(profile?.name || "Sistema MetricOss");
+      merged.setSubject("Processo documental completo — Tribunal de Contas");
+
+      const sections: Array<{ title: string; blob: Blob | null }> = [
+        { title: "1. Requisição de Compra", blob: reqBlob },
+        { title: "2. Mapa de Cotação", blob: quotBlob },
+        { title: "3. Ordem de Compra", blob: orderBlob },
+        { title: "4. Dossiê de Auditoria", blob: dossieBlob },
+      ];
+
+      for (const section of sections) {
+        if (!section.blob) continue;
+        const buf = await section.blob.arrayBuffer();
+        const src = await PDFDocument.load(buf);
+        const pages = await merged.copyPages(src, src.getPageIndices());
+        pages.forEach((p) => merged.addPage(p));
+      }
+
+      const mergedBytes = await merged.save();
+      const blob = new Blob([mergedBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Processo_Completo_OC_${order.numero || "sem-numero"}_${stamp}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Processo documental gerado com sucesso");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao gerar o processo documental");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const order = dossier?.order;
