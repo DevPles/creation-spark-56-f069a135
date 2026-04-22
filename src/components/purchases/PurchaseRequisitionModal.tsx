@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCatalogModal from "./ProductCatalogModal";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const CLASSIF_LABEL: Record<string, string> = {
   alimenticio: "Alimentício",
@@ -159,6 +160,29 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       descricao: prod.descricao,
       unidade_medida: prod.unidade_medida || "UN",
     } : it));
+  };
+
+  const [descFocusIdx, setDescFocusIdx] = useState<number | null>(null);
+
+  const getSuggestions = (query: string) => {
+    const q = query.trim().toLowerCase();
+    if (!q || q.length < 2) return [];
+    return catalog
+      .filter(c =>
+        (c.descricao || "").toLowerCase().includes(q) ||
+        (c.codigo || "").toLowerCase().includes(q)
+      )
+      .slice(0, 8);
+  };
+
+  const applySuggestion = (idx: number, prod: any) => {
+    setItems(prev => prev.map((it, i) => i === idx ? {
+      ...it,
+      codigo: prod.codigo,
+      descricao: prod.descricao,
+      unidade_medida: prod.unidade_medida || it.unidade_medida || "UN",
+    } : it));
+    setDescFocusIdx(null);
   };
 
   const generateNumero = () => {
@@ -324,7 +348,42 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell><Input value={it.descricao} onChange={e => updateItem(idx, "descricao", e.target.value)} /></TableCell>
+                    <TableCell>
+                      <Popover
+                        open={descFocusIdx === idx && getSuggestions(it.descricao).length > 0}
+                        onOpenChange={(o) => { if (!o) setDescFocusIdx(null); }}
+                      >
+                        <PopoverTrigger asChild>
+                          <Input
+                            value={it.descricao}
+                            onChange={e => { updateItem(idx, "descricao", e.target.value); setDescFocusIdx(idx); }}
+                            onFocus={() => setDescFocusIdx(idx)}
+                            onBlur={() => setTimeout(() => setDescFocusIdx(c => c === idx ? null : c), 150)}
+                            placeholder="Digite para buscar no catálogo..."
+                          />
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="p-0 w-[360px]"
+                          align="start"
+                          onOpenAutoFocus={(e) => e.preventDefault()}
+                        >
+                          <div className="max-h-64 overflow-y-auto">
+                            {getSuggestions(it.descricao).map(prod => (
+                              <button
+                                type="button"
+                                key={prod.id}
+                                onMouseDown={(e) => { e.preventDefault(); applySuggestion(idx, prod); }}
+                                className="w-full text-left px-3 py-2 hover:bg-accent text-sm border-b last:border-b-0"
+                              >
+                                <div className="font-mono text-xs text-primary">{prod.codigo}</div>
+                                <div className="text-foreground">{prod.descricao}</div>
+                                <div className="text-xs text-muted-foreground">{prod.unidade_medida}</div>
+                              </button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </TableCell>
                     <TableCell><Input type="number" value={it.quantidade} onChange={e => updateItem(idx, "quantidade", e.target.value)} /></TableCell>
                     <TableCell><Input value={it.unidade_medida} onChange={e => updateItem(idx, "unidade_medida", e.target.value)} /></TableCell>
                     <TableCell><Input value={it.observacao || ""} onChange={e => updateItem(idx, "observacao", e.target.value)} /></TableCell>
