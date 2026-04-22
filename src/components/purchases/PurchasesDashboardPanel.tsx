@@ -7,10 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import {
-  AlertTriangle, ArrowDownRight, ArrowUpRight, CheckCircle2, Clock,
-  FileText, Mail, Package, ShoppingCart, TrendingUp, Truck, Users,
-} from "lucide-react";
-import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis, Cell,
 } from "recharts";
 import {
