@@ -376,14 +376,124 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
         <CardHeader>
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <CardTitle className="text-base">Histórico de preços</CardTitle>
-            {selectedHistory.size > 0 && (
-              <Button size="sm" variant="destructive" className="rounded-full" onClick={deleteSelected}>
-                Apagar selecionados ({selectedHistory.size})
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={supplierFilter} onValueChange={(v) => { setSupplierFilter(v); setExpandedProduct(null); }}>
+                <SelectTrigger className="h-8 w-[240px] rounded-full text-xs"><SelectValue placeholder="Fornecedor" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os fornecedores</SelectItem>
+                  {suppliers.filter(s => s.ativo).map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.nome} — {fmtCnpj(s.cnpj)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                <SelectTrigger className="h-8 w-[140px] rounded-full text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todo período</SelectItem>
+                  <SelectItem value="30">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90">Últimos 90 dias</SelectItem>
+                  <SelectItem value="180">Últimos 180 dias</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" className="h-8 rounded-full" onClick={() => setSupplierModalOpen(true)}>
+                Gerenciar fornecedores
               </Button>
-            )}
+              {selectedHistory.size > 0 && (
+                <Button size="sm" variant="destructive" className="rounded-full" onClick={deleteSelected}>
+                  Apagar selecionados ({selectedHistory.size})
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
+          {selectedSupplier ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border p-4 bg-muted/30">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div>
+                    <div className="text-lg font-semibold">{selectedSupplier.nome}</div>
+                    <div className="text-xs text-muted-foreground font-mono">{fmtCnpj(selectedSupplier.cnpj)}</div>
+                    {(selectedSupplier.contato_responsavel || selectedSupplier.email || selectedSupplier.telefone) && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {[selectedSupplier.contato_responsavel, selectedSupplier.email, selectedSupplier.telefone].filter(Boolean).join(" · ")}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-6 text-sm">
+                    <div><div className="text-xs text-muted-foreground">Itens cotados</div><div className="font-semibold">{supplierStats?.itensUnicos || 0}</div></div>
+                    <div><div className="text-xs text-muted-foreground">Total de cotações</div><div className="font-semibold">{supplierStats?.total || 0}</div></div>
+                    <div><div className="text-xs text-muted-foreground">Última cotação</div><div className="font-semibold">{supplierStats?.ultimoPreco ? fmtDate(supplierStats.ultimoPreco.data_referencia) : "—"}</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8"></TableHead>
+                    <TableHead>Produto</TableHead>
+                    <TableHead>Última cotação</TableHead>
+                    <TableHead className="text-right">Preço atual</TableHead>
+                    <TableHead className="text-right">Variação</TableHead>
+                    <TableHead className="text-right">Nº cotações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {supplierProductHistory.map(p => {
+                    const expanded = expandedProduct === p.key;
+                    const varColor = p.variacao == null ? "" : p.variacao > 0 ? "text-destructive" : p.variacao < 0 ? "text-emerald-600" : "";
+                    return (
+                      <>
+                        <TableRow key={p.key} className="cursor-pointer" onClick={() => setExpandedProduct(expanded ? null : p.key)}>
+                          <TableCell>{expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}</TableCell>
+                          <TableCell className="text-xs">{p.descricao}</TableCell>
+                          <TableCell className="text-xs">{fmtDate(p.ultimaData)}</TableCell>
+                          <TableCell className="text-right font-medium">{fmtBRL(p.precoAtual)}</TableCell>
+                          <TableCell className={`text-right text-xs font-medium ${varColor}`}>
+                            {p.variacao == null ? "—" : `${p.variacao > 0 ? "+" : ""}${p.variacao.toFixed(1)}%`}
+                          </TableCell>
+                          <TableCell className="text-right">{p.cotacoes}</TableCell>
+                        </TableRow>
+                        {expanded && (
+                          <TableRow key={`${p.key}-tl`}>
+                            <TableCell colSpan={6} className="bg-muted/20">
+                              <div className="px-4 py-2">
+                                <div className="text-xs font-medium text-muted-foreground mb-2">Linha do tempo</div>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Data</TableHead>
+                                      <TableHead className="text-right">Preço unitário</TableHead>
+                                      <TableHead>Unidade</TableHead>
+                                      <TableHead>Fonte</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {p.timeline.map((t: any) => (
+                                      <TableRow key={t.id}>
+                                        <TableCell className="text-xs">{fmtDate(t.data_referencia)}</TableCell>
+                                        <TableCell className="text-right">{fmtBRL(Number(t.valor_unitario))}</TableCell>
+                                        <TableCell className="text-xs">{t.unidade_medida || "UN"}</TableCell>
+                                        <TableCell><Badge variant="outline" className="text-xs">{t.fonte}</Badge></TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    );
+                  })}
+                  {supplierProductHistory.length === 0 && (
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum preço deste fornecedor no período</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -424,6 +534,7 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
               )}
             </TableBody>
           </Table>
+          )}
         </CardContent>
           </Card>
         </TabsContent>
