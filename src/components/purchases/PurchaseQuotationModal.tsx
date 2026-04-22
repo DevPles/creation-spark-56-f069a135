@@ -307,7 +307,7 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
             const winnerTotal = winnerIdx >= 0 ? totals[winnerIdx] : 0;
             if (winnerTotal > 1000) {
               return (
-                <div className="text-xs px-3 py-2 rounded-md border border-amber-300 bg-amber-50 text-amber-900">
+                <div className="text-xs px-3 py-2 rounded-md border border-destructive/30 bg-destructive/5 text-destructive">
                   Compra acima de R$ 1.000,00 — exige <strong>mínimo de 3 orçamentos</strong> (Art. 10).
                 </div>
               );
