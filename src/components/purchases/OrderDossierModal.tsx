@@ -132,13 +132,16 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     let y = 138;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text(`OC ${order.numero || "—"}`, margin, y);
+    doc.text(`Ordem de Compra nº ${order.numero || "—"}${req?.numero ? `  •  Requisição nº ${req.numero}` : ""}`, margin, y);
     y += 18;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
 
     const coverRows = [
       ["Unidade hospitalar", order.facility_unit || "—"],
+      ["Nº da Ordem de Compra", order.numero || "—"],
+      ["Nº da Requisição", req?.numero || "—"],
+      ["Nº da Cotação", quotation?.numero || "—"],
       ["Fornecedor vencedor", order.fornecedor_nome || "—"],
       ["CNPJ do fornecedor", order.fornecedor_cnpj || "—"],
       ["Valor total", fmtBRL(Number(order.valor_total || 0))],
