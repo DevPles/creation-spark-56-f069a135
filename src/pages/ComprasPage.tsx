@@ -65,6 +65,9 @@ export default function ComprasPage() {
   const [search, setSearch] = useState("");
   const [panelPeriod, setPanelPeriod] = useState<PeriodKey>("month");
   const [panelUnit, setPanelUnit] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [dossierOrderId, setDossierOrderId] = useState<string | null>(null);
+  const [dossierOpen, setDossierOpen] = useState(false);
 
   const [reqModalOpen, setReqModalOpen] = useState(false);
   const [editingReq, setEditingReq] = useState<any>(null);
@@ -119,6 +122,12 @@ export default function ComprasPage() {
     return requisitions.filter(r => {
       if (unitFilter !== "all" && r.facility_unit !== unitFilter) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (dateRange?.from || dateRange?.to) {
+        const d = r.data_requisicao ? new Date(r.data_requisicao) : (r.created_at ? new Date(r.created_at) : null);
+        if (!d) return false;
+        if (dateRange.from && d < dateRange.from) return false;
+        if (dateRange.to && d > new Date(dateRange.to.getTime() + 86400000 - 1)) return false;
+      }
       if (search) {
         const q = search.toLowerCase();
         const hay = [r.numero, r.setor, r.solicitante_nome].filter(Boolean).join(" ").toLowerCase();
@@ -126,11 +135,17 @@ export default function ComprasPage() {
       }
       return true;
     });
-  }, [requisitions, search, unitFilter, statusFilter]);
+  }, [requisitions, search, unitFilter, statusFilter, dateRange]);
 
   const filteredQuotes = useMemo(() => {
     return quotations.filter(q => {
       if (unitFilter !== "all" && q.facility_unit !== unitFilter) return false;
+      if (dateRange?.from || dateRange?.to) {
+        const d = q.data_cotacao ? new Date(q.data_cotacao) : (q.created_at ? new Date(q.created_at) : null);
+        if (!d) return false;
+        if (dateRange.from && d < dateRange.from) return false;
+        if (dateRange.to && d > new Date(dateRange.to.getTime() + 86400000 - 1)) return false;
+      }
       if (search) {
         const s = search.toLowerCase();
         const hay = [q.numero, q.winner_supplier, q.setor_comprador].filter(Boolean).join(" ").toLowerCase();
@@ -138,12 +153,18 @@ export default function ComprasPage() {
       }
       return true;
     });
-  }, [quotations, search, unitFilter]);
+  }, [quotations, search, unitFilter, dateRange]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
       if (unitFilter !== "all" && o.facility_unit !== unitFilter) return false;
       if (statusFilter !== "all" && o.status !== statusFilter) return false;
+      if (dateRange?.from || dateRange?.to) {
+        const d = o.created_at ? new Date(o.created_at) : null;
+        if (!d) return false;
+        if (dateRange.from && d < dateRange.from) return false;
+        if (dateRange.to && d > new Date(dateRange.to.getTime() + 86400000 - 1)) return false;
+      }
       if (search) {
         const s = search.toLowerCase();
         const hay = [o.numero, o.fornecedor_nome, o.rubrica_name].filter(Boolean).join(" ").toLowerCase();
@@ -151,7 +172,7 @@ export default function ComprasPage() {
       }
       return true;
     });
-  }, [orders, search, unitFilter, statusFilter]);
+  }, [orders, search, unitFilter, statusFilter, dateRange]);
 
   const kpis = useMemo(() => {
     const reqsAbertas = requisitions.filter(r => ["rascunho","aguardando_cotacao","em_cotacao"].includes(r.status)).length;
