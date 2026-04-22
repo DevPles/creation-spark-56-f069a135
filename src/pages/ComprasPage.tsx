@@ -171,8 +171,8 @@ export default function ComprasPage() {
             <TabsList className="inline-flex w-auto h-auto flex-wrap shrink-0">
               <TabsTrigger value="requisicoes">Requisições</TabsTrigger>
               <TabsTrigger value="cotacoes">Cotações</TabsTrigger>
-              <TabsTrigger value="banco">Banco de Preços</TabsTrigger>
               <TabsTrigger value="ordens">Ordens de Compra</TabsTrigger>
+              <TabsTrigger value="banco">Banco de Preços</TabsTrigger>
               <TabsTrigger value="painel">Painel</TabsTrigger>
             </TabsList>
             {tab !== "painel" && (
