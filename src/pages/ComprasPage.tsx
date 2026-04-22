@@ -363,6 +363,21 @@ export default function ComprasPage() {
                             <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditRequisition(r)}>Abrir</Button>
                             <Button size="sm" variant="secondary" className="rounded-full" onClick={() => openInvite(r)}>Convidar</Button>
                             <Button size="sm" className="rounded-full" onClick={() => openCreateQuote(r.id)}>Cotar</Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="rounded-full"
+                              onClick={async () => {
+                                try {
+                                  await generateRequisitionPdf(r.id);
+                                  toast.success("PDF gerado");
+                                } catch (e: any) {
+                                  toast.error(e?.message || "Erro ao gerar PDF");
+                                }
+                              }}
+                            >
+                              PDF
+                            </Button>
                             {isAdmin && (
                               <Button size="sm" variant="destructive" className="rounded-full" onClick={() => handleDeleteRequisition(r)}>Excluir</Button>
                             )}
