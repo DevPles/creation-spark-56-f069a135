@@ -110,9 +110,10 @@ Setor de Compras`;
   const buildMessage = (invite: any) => {
     const link = buildLink(invite.token);
     const expira = new Date(invite.expires_at).toLocaleDateString("pt-BR");
-    const base = customMessage?.trim()
-      || `Olá ${invite.fornecedor_nome},\n\nGostaríamos de convidá-lo a participar da cotação ${requisitionNumero || ""}${facilityUnit ? ` — ${facilityUnit}` : ""}.\n\nAcesse o link abaixo para enviar sua proposta. Válido até ${expira}.`;
-    return `${base}\n\n${link}`;
+    const base = (customMessage?.trim() || defaultMessageTemplate)
+      .replace(/\{\{fornecedor\}\}/g, invite.fornecedor_nome || "")
+      .replace(/\{\{validade\}\}/g, expira);
+    return `${base}\n\nLink de acesso: ${link}\nVálido até: ${expira}`;
   };
 
   const pickSupplier = (s: Supplier) => {
