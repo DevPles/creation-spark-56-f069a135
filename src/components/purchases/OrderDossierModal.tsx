@@ -34,6 +34,7 @@ const fmtDate = (s?: string | null) =>
 export default function OrderDossierModal({ open, onOpenChange, orderId }: Props) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [dossier, setDossier] = useState<any>(null);
 
   useEffect(() => {
@@ -51,8 +52,8 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     })();
   }, [open, orderId]);
 
-  const generatePDF = () => {
-    if (!dossier) return;
+  const buildDossierPdf = (): Blob | null => {
+    if (!dossier) return null;
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
