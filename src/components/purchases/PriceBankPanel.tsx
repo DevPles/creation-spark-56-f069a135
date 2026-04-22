@@ -254,14 +254,30 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
                   <TableCell className="text-xs">{c.setor || "—"}</TableCell>
                   <TableCell>{c.unidade_medida}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditingProduct(c); setCatalogModalOpen(true); }}>Editar</Button>
-                    <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive" onClick={async () => {
-                      if (!confirm(`Excluir item "${c.descricao}"?`)) return;
-                      const { error } = await supabase.from("product_catalog").update({ ativo: false }).eq("id", c.id);
-                      if (error) { toast.error(error.message); return; }
-                      toast.success("Item removido");
-                      load();
-                    }}>Excluir</Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-full px-3"
+                        onClick={() => { setEditingProduct(c); setCatalogModalOpen(true); }}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 rounded-full px-3"
+                        onClick={async () => {
+                          if (!confirm(`Excluir item "${c.descricao}"?`)) return;
+                          const { error } = await supabase.from("product_catalog").update({ ativo: false }).eq("id", c.id);
+                          if (error) { toast.error(error.message); return; }
+                          toast.success("Item removido");
+                          load();
+                        }}
+                      >
+                        Excluir
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
