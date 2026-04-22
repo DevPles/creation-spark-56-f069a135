@@ -727,6 +727,7 @@ export type Database = {
           fornecedor_nome: string | null
           id: string
           quotation_id: string | null
+          supplier_id: string | null
           unidade_medida: string | null
           valor_unitario: number
         }
@@ -742,6 +743,7 @@ export type Database = {
           fornecedor_nome?: string | null
           id?: string
           quotation_id?: string | null
+          supplier_id?: string | null
           unidade_medida?: string | null
           valor_unitario: number
         }
@@ -757,6 +759,7 @@ export type Database = {
           fornecedor_nome?: string | null
           id?: string
           quotation_id?: string | null
+          supplier_id?: string | null
           unidade_medida?: string | null
           valor_unitario?: number
         }
@@ -766,6 +769,13 @@ export type Database = {
             columns: ["quotation_id"]
             isOneToOne: false
             referencedRelation: "purchase_quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_history_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -1851,6 +1861,51 @@ export type Database = {
         }
         Relationships: []
       }
+      suppliers: {
+        Row: {
+          ativo: boolean
+          cnpj: string
+          contato_responsavel: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cnpj: string
+          contato_responsavel?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cnpj?: string
+          contato_responsavel?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       training_modules: {
         Row: {
           created_at: string
@@ -1973,6 +2028,10 @@ export type Database = {
           _token: string
         }
         Returns: Json
+      }
+      upsert_supplier_from_cnpj: {
+        Args: { _cnpj: string; _nome: string }
+        Returns: string
       }
     }
     Enums: {
