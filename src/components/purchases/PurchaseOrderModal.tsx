@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
@@ -40,6 +42,14 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
   const [motivoNegacao, setMotivoNegacao] = useState("");
   const [facilityUnit, setFacilityUnit] = useState("");
   const [reqId, setReqId] = useState<string | null>(null);
+  // Quotation supplier selection
+  const [quotation, setQuotation] = useState<any>(null);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [prices, setPrices] = useState<any[]>([]);
+  const [reqItems, setReqItems] = useState<any[]>([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+  const [justificativaTroca, setJustificativaTroca] = useState("");
+  const [winnerSupplierId, setWinnerSupplierId] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
@@ -70,42 +80,84 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         setReqId(o?.requisition_id || null);
         const { data: itemsData } = await supabase.from("purchase_order_items").select("*").eq("purchase_order_id", orderId).order("item_num");
         setItems(itemsData || []);
+        // Also load quotation context if present (for re-selecting supplier)
+        if (o?.quotation_id) {
+          const { data: q } = await supabase.from("purchase_quotations").select("*").eq("id", o.quotation_id).single();
+          setQuotation(q);
+          const { data: sups } = await supabase.from("purchase_quotation_suppliers").select("*").eq("quotation_id", o.quotation_id);
+          const supList = sups || [];
+          setSuppliers(supList);
+          const winner = supList.find((s: any) => s.fornecedor_nome === q?.winner_supplier);
+          setWinnerSupplierId(winner?.id || "");
+          const matched = supList.find((s: any) => s.fornecedor_nome === o.fornecedor_nome);
+          setSelectedSupplierId(matched?.id || winner?.id || "");
+          const { data: pr } = await supabase.from("purchase_quotation_prices").select("*").eq("quotation_id", o.quotation_id);
+          setPrices(pr || []);
+          const { data: ri } = await supabase.from("purchase_requisition_items").select("*").eq("requisition_id", q?.requisition_id).order("item_num");
+          setReqItems(ri || []);
+        }
       } else if (quotationId) {
         // Pre-fill from quotation winner
         const { data: q } = await supabase.from("purchase_quotations").select("*").eq("id", quotationId).single();
         if (!q) return;
+        setQuotation(q);
         setFacilityUnit(q.facility_unit);
         setReqId(q.requisition_id);
-        setFornecedor(q.winner_supplier || "");
         const auto = contractsList.find((c: any) => c.unit === q.facility_unit && c.status === "Vigente")
           || contractsList.find((c: any) => c.unit === q.facility_unit);
         if (auto) setContractId(auto.id);
         const { data: sups } = await supabase.from("purchase_quotation_suppliers").select("*").eq("quotation_id", quotationId);
-        const winner = (sups || []).find((s: any) => s.fornecedor_nome === q.winner_supplier);
-        if (winner) {
-          setFornecedorCnpj(winner.fornecedor_cnpj || "");
-          setPrazo(winner.prazo_entrega || "");
-        }
-        // Build items from winning prices
-        const { data: prices } = await supabase.from("purchase_quotation_prices").select("*").eq("quotation_id", quotationId).eq("is_winner", true);
-        const { data: reqItems } = await supabase.from("purchase_requisition_items").select("*").eq("requisition_id", q.requisition_id).order("item_num");
-        const orderItems = (reqItems || []).map((ri: any, idx: number) => {
-          const wp = (prices || []).find((p: any) => p.requisition_item_id === ri.id);
-          const unit = wp ? Number(wp.valor_unitario) : 0;
-          return {
-            item_num: idx + 1,
-            descricao: ri.descricao,
-            quantidade: Number(ri.quantidade),
-            unidade_medida: ri.unidade_medida,
-            valor_unitario: unit,
-            valor_total: unit * Number(ri.quantidade),
-          };
-        });
-        setItems(orderItems);
+        const supList = sups || [];
+        setSuppliers(supList);
+        const winner = supList.find((s: any) => s.fornecedor_nome === q.winner_supplier) || supList[0];
+        setWinnerSupplierId(winner?.id || "");
+        setSelectedSupplierId(winner?.id || "");
+        const { data: pr } = await supabase.from("purchase_quotation_prices").select("*").eq("quotation_id", quotationId);
+        setPrices(pr || []);
+        const { data: ri } = await supabase.from("purchase_requisition_items").select("*").eq("requisition_id", q.requisition_id).order("item_num");
+        setReqItems(ri || []);
       }
     };
     load();
   }, [open, orderId, quotationId]);
+
+  // Recalculate supplier-derived fields whenever selection changes
+  useEffect(() => {
+    if (!selectedSupplierId || !suppliers.length || !reqItems.length) return;
+    const sup = suppliers.find((s: any) => s.id === selectedSupplierId);
+    if (!sup) return;
+    setFornecedor(sup.fornecedor_nome || "");
+    setFornecedorCnpj(sup.fornecedor_cnpj || "");
+    setPrazo(sup.prazo_entrega || "");
+    const orderItems = reqItems.map((ri: any, idx: number) => {
+      const sp = prices.find((p: any) => p.requisition_item_id === ri.id && p.supplier_id === selectedSupplierId);
+      const unit = sp ? Number(sp.valor_unitario) : 0;
+      return {
+        item_num: idx + 1,
+        descricao: ri.descricao,
+        quantidade: Number(ri.quantidade),
+        unidade_medida: ri.unidade_medida,
+        valor_unitario: unit,
+        valor_total: unit * Number(ri.quantidade),
+      };
+    });
+    setItems(orderItems);
+  }, [selectedSupplierId, suppliers, reqItems, prices]);
+
+  const supplierTotals = useMemo(() => {
+    const map: Record<string, number> = {};
+    suppliers.forEach((s: any) => {
+      map[s.id] = prices
+        .filter((p: any) => p.supplier_id === s.id)
+        .reduce((sum: number, p: any) => {
+          const ri = reqItems.find((r: any) => r.id === p.requisition_item_id);
+          return sum + Number(p.valor_unitario || 0) * Number(ri?.quantidade || 0);
+        }, 0);
+    });
+    return map;
+  }, [suppliers, prices, reqItems]);
+
+  const isOverridingWinner = !!winnerSupplierId && !!selectedSupplierId && selectedSupplierId !== winnerSupplierId;
 
   const valorTotal = useMemo(() => items.reduce((s, i) => s + Number(i.valor_total || 0), 0), [items]);
 
@@ -135,6 +187,10 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
   const saveDraft = async () => {
     if (!profile) return;
     if (!fornecedor.trim()) { toast.error("Informe o fornecedor"); return; }
+    if (isOverridingWinner && !justificativaTroca.trim()) {
+      toast.error("Justifique a escolha de um fornecedor diferente do campeão");
+      return;
+    }
     setSaving(true);
     try {
       const payload: any = {
@@ -149,7 +205,9 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         endereco_entrega: endereco || null,
         prazo_entrega: prazo || null,
         valor_total: valorTotal,
-        observacoes: observacoes || null,
+        observacoes: isOverridingWinner
+          ? `${observacoes ? observacoes + "\n\n" : ""}Justificativa de troca de fornecedor: ${justificativaTroca}`
+          : (observacoes || null),
         responsavel_emissao_nome: profile.name,
         cargo: profile.cargo || null,
       };
@@ -174,6 +232,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
       await supabase.from("purchase_audit_log").insert({
         entity_type: "purchase_order", entity_id: oid,
         action: order ? "updated" : "created",
+        motivo: isOverridingWinner ? `Fornecedor não-campeão: ${justificativaTroca}` : null,
         changed_by: profile.id, changed_by_name: profile.name,
       });
       toast.success("Ordem de compra salva");
@@ -181,6 +240,60 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar");
     } finally { setSaving(false); }
+  };
+
+  const generatePdf = () => {
+    const doc = new jsPDF();
+    const numero = order?.numero || "OC (rascunho)";
+    doc.setFontSize(16);
+    doc.text(`Ordem de Compra ${numero}`, 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Unidade: ${facilityUnit || "-"}`, 14, 28);
+    doc.text(`Fornecedor: ${fornecedor || "-"}`, 14, 34);
+    doc.text(`CNPJ: ${fornecedorCnpj || "-"}`, 14, 40);
+    doc.text(`Endereço de entrega: ${endereco || "-"}`, 14, 46);
+    doc.text(`Prazo de entrega: ${prazo || "-"}`, 14, 52);
+    doc.text(`Rubrica: ${selectedRubrica?.name || "-"}`, 14, 58);
+    doc.text(`Contrato: ${contract?.name || "-"}`, 14, 64);
+
+    autoTable(doc, {
+      startY: 72,
+      head: [["#", "Descrição", "Qtd", "Un", "Valor unit.", "Total"]],
+      body: items.map((it, idx) => [
+        idx + 1,
+        it.descricao,
+        it.quantidade,
+        it.unidade_medida,
+        fmtBRL(Number(it.valor_unitario)),
+        fmtBRL(Number(it.valor_total)),
+      ]),
+      foot: [["", "", "", "", "Total geral", fmtBRL(valorTotal)]],
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [30, 64, 92] },
+    });
+
+    let y = (doc as any).lastAutoTable.finalY + 10;
+    if (observacoes) {
+      doc.text("Observações:", 14, y);
+      const lines = doc.splitTextToSize(observacoes, 180);
+      doc.text(lines, 14, y + 6);
+      y += 6 + lines.length * 5;
+    }
+    if (isOverridingWinner && justificativaTroca) {
+      y += 4;
+      doc.text("Justificativa de troca de fornecedor:", 14, y);
+      const lines = doc.splitTextToSize(justificativaTroca, 180);
+      doc.text(lines, 14, y + 6);
+      y += 6 + lines.length * 5;
+    }
+    y += 10;
+    doc.text(`Emitido por: ${profile?.name || "-"}${profile?.cargo ? " — " + profile.cargo : ""}`, 14, y);
+    doc.text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, 14, y + 6);
+    if (order?.aprovado_em) {
+      doc.text(`Status: ${order.status}`, 14, y + 12);
+    }
+
+    doc.save(`${numero.replace(/[\/\s]/g, "_")}.pdf`);
   };
 
   const authorize = async () => {
