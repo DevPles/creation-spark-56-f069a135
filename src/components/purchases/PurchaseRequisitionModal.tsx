@@ -121,11 +121,21 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setAprovadorImediato(requisition.aprovador_imediato_nome || "");
       setAprovadorDiretoria(requisition.aprovador_diretoria_nome || "");
       supabase.from("purchase_requisition_items").select("*").eq("requisition_id", requisition.id).order("item_num").then(({ data }) => {
-        setItems((data || []).map((i: any) => ({
-          id: i.id, item_num: i.item_num, codigo: i.observacao?.startsWith("[COD:") ? i.observacao.match(/\[COD:([^\]]+)\]/)?.[1] : undefined,
-          descricao: i.descricao, quantidade: Number(i.quantidade),
-          unidade_medida: i.unidade_medida, observacao: i.observacao
-        })));
+        setItems((data || []).map((i: any) => {
+          const raw: string = i.observacao || "";
+          const codMatch = raw.match(/^\[COD:([^\]]+)\]\s?/);
+          const codigo = codMatch ? codMatch[1] : undefined;
+          const observacao = codMatch ? raw.replace(codMatch[0], "").trim() : raw;
+          return {
+            id: i.id,
+            item_num: i.item_num,
+            codigo,
+            descricao: i.descricao,
+            quantidade: Number(i.quantidade),
+            unidade_medida: i.unidade_medida,
+            observacao: observacao || undefined,
+          };
+        }));
       });
     } else {
       setFacilityUnit(profile?.facility_unit || "Hospital Geral");
