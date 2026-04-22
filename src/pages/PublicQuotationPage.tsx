@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 type Item = {
   id: string;
@@ -17,6 +18,7 @@ type Item = {
   quantidade: number;
   unidade_medida: string;
   observacao?: string;
+  image_url?: string | null;
 };
 
 type Row = {
@@ -40,6 +42,7 @@ export default function PublicQuotationPage() {
   const [condPagamento, setCondPagamento] = useState("");
   const [obs, setObs] = useState("");
   const [submittedOk, setSubmittedOk] = useState(false);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
 
   const load = async () => {
     if (!token) return;
