@@ -301,10 +301,15 @@ export async function generateRequisitionPdf(requisitionId: string) {
     });
     y = (doc as any).lastAutoTable.finalY + 16;
 
-    // ===== Evidências anexadas (Inexigibilidade — comprovação de exclusividade) =====
-    if (justTipo === "inexigibilidade" && Array.isArray(legal?.fornecedor_unico_anexos) && legal.fornecedor_unico_anexos.length > 0) {
-      // Gera links assinados (7 dias) para cada anexo
-      const anexos: Array<{ name: string; path: string }> = legal.fornecedor_unico_anexos;
+    // ===== Evidências anexadas (Inexigibilidade ou Dispensa) =====
+    const anexosLegais: Array<{ name: string; path: string }> | null =
+      justTipo === "inexigibilidade" && Array.isArray(legal?.fornecedor_unico_anexos) && legal.fornecedor_unico_anexos.length > 0
+        ? legal.fornecedor_unico_anexos
+        : justTipo === "dispensa" && Array.isArray(legal?.dispensa_anexos) && legal.dispensa_anexos.length > 0
+        ? legal.dispensa_anexos
+        : null;
+    if (anexosLegais) {
+      const anexos = anexosLegais;
       const signed: Array<{ name: string; url: string | null }> = [];
       for (const a of anexos) {
         try {
@@ -317,7 +322,11 @@ export async function generateRequisitionPdf(requisitionId: string) {
         }
       }
 
-      sectionTitle("Evidências de exclusividade do fornecedor (anexos)");
+      sectionTitle(
+        justTipo === "dispensa"
+          ? "Evidências da fundamentação técnica e pesquisa de preços (anexos)"
+          : "Evidências de exclusividade do fornecedor (anexos)"
+      );
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(...TEXT_MUTED);
