@@ -382,8 +382,18 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
           </div>
 
           {winnerIdx >= 0 && totals[winnerIdx] > 0 && (
-            <div className="p-3 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-sm">
+            <div className="p-3 rounded-md bg-primary/10 text-sm">
               Fornecedor campeão: <strong>{suppliers[winnerIdx]?.fornecedor_nome}</strong> com total <strong>{fmtBRL(totals[winnerIdx])}</strong>
+              {rankedIdxs.length > 1 && (
+                <span className="ml-2 text-muted-foreground">
+                  · 2º: {suppliers[rankedIdxs[1]]?.fornecedor_nome} ({fmtBRL(totals[rankedIdxs[1]])})
+                </span>
+              )}
+              {rankedIdxs.length > 2 && (
+                <span className="ml-2 text-muted-foreground">
+                  · 3º: {suppliers[rankedIdxs[2]]?.fornecedor_nome} ({fmtBRL(totals[rankedIdxs[2]])})
+                </span>
+              )}
             </div>
           )}
         </div>
