@@ -79,7 +79,7 @@ export default function PriceBankPanel() {
   const filteredCatalog = catalog.filter(c => {
     if (!catalogSearch) return true;
     const q = catalogSearch.toLowerCase();
-    return [c.codigo, c.descricao, c.tipo, c.classificacao].filter(Boolean).join(" ").toLowerCase().includes(q);
+    return [c.codigo, c.descricao, c.tipo, c.classificacao, c.facility_unit, c.setor].filter(Boolean).join(" ").toLowerCase().includes(q);
   });
 
   // Agrupa histórico por unidade + descrição para calcular curva de consumo
