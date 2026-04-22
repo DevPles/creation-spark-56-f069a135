@@ -370,11 +370,11 @@ export async function generateRequisitionPdf(requisitionId: string) {
   }
 
   // ===== Observações =====
-  if (req.observacoes) {
+  if (cleanObs) {
     sectionTitle("Observações");
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    const lines = doc.splitTextToSize(req.observacoes, pageW - margin * 2);
+    const lines = doc.splitTextToSize(cleanObs, pageW - margin * 2);
     y = ensureSpace(lines.length * 12 + 10, y);
     doc.setFillColor(...ALT_ROW);
     doc.setDrawColor(...BORDER_BLUE);
