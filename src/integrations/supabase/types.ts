@@ -1195,6 +1195,7 @@ export type Database = {
           prazo_entrega: string | null
           quotation_id: string
           slot: string
+          submission_ip: string | null
           total: number | null
         }
         Insert: {
@@ -1207,6 +1208,7 @@ export type Database = {
           prazo_entrega?: string | null
           quotation_id: string
           slot?: string
+          submission_ip?: string | null
           total?: number | null
         }
         Update: {
@@ -1219,6 +1221,7 @@ export type Database = {
           prazo_entrega?: string | null
           quotation_id?: string
           slot?: string
+          submission_ip?: string | null
           total?: number | null
         }
         Relationships: [
@@ -1458,6 +1461,7 @@ export type Database = {
           prazo_entrega: string | null
           requisition_id: string
           status: string
+          submission_ip: string | null
           submitted_at: string | null
           token: string
           updated_at: string
@@ -1476,6 +1480,7 @@ export type Database = {
           prazo_entrega?: string | null
           requisition_id: string
           status?: string
+          submission_ip?: string | null
           submitted_at?: string | null
           token?: string
           updated_at?: string
@@ -1494,6 +1499,7 @@ export type Database = {
           prazo_entrega?: string | null
           requisition_id?: string
           status?: string
+          submission_ip?: string | null
           submitted_at?: string | null
           token?: string
           updated_at?: string
@@ -2014,6 +2020,7 @@ export type Database = {
       can_edit_quotation: { Args: { _q_id: string }; Returns: boolean }
       can_edit_requisition: { Args: { _req_id: string }; Returns: boolean }
       get_invite_by_token: { Args: { _token: string }; Returns: Json }
+      get_order_dossier: { Args: { _order_id: string }; Returns: Json }
       get_order_for_approval: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
@@ -2022,16 +2029,28 @@ export type Database = {
         }
         Returns: boolean
       }
-      submit_invite_response: {
-        Args: {
-          _condicao_pagamento: string
-          _observacoes: string
-          _prazo_entrega: string
-          _responses: Json
-          _token: string
-        }
-        Returns: Json
-      }
+      submit_invite_response:
+        | {
+            Args: {
+              _condicao_pagamento: string
+              _observacoes: string
+              _prazo_entrega: string
+              _responses: Json
+              _token: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _condicao_pagamento: string
+              _ip?: string
+              _observacoes: string
+              _prazo_entrega: string
+              _responses: Json
+              _token: string
+            }
+            Returns: Json
+          }
       submit_order_approval: {
         Args: {
           _approver_cargo: string

@@ -8,6 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +25,7 @@ import PriceBankPanel from "@/components/purchases/PriceBankPanel";
 import SupplierInviteModal from "@/components/purchases/SupplierInviteModal";
 import PurchasesDashboardPanel from "@/components/purchases/PurchasesDashboardPanel";
 import { PERIOD_LABEL, type PeriodKey } from "@/components/purchases/PurchasesDashboardPanel";
+import OrderDossierModal from "@/components/purchases/OrderDossierModal";
 
 const REQ_STATUS_LABEL: Record<string, string> = {
   rascunho: "Rascunho",
@@ -57,6 +65,9 @@ export default function ComprasPage() {
   const [search, setSearch] = useState("");
   const [panelPeriod, setPanelPeriod] = useState<PeriodKey>("month");
   const [panelUnit, setPanelUnit] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [dossierOrderId, setDossierOrderId] = useState<string | null>(null);
+  const [dossierOpen, setDossierOpen] = useState(false);
 
   const [reqModalOpen, setReqModalOpen] = useState(false);
   const [editingReq, setEditingReq] = useState<any>(null);
@@ -111,6 +122,12 @@ export default function ComprasPage() {
     return requisitions.filter(r => {
       if (unitFilter !== "all" && r.facility_unit !== unitFilter) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (dateRange?.from || dateRange?.to) {
+        const d = r.data_requisicao ? new Date(r.data_requisicao) : (r.created_at ? new Date(r.created_at) : null);
+        if (!d) return false;
+        if (dateRange.from && d < dateRange.from) return false;
+        if (dateRange.to && d > new Date(dateRange.to.getTime() + 86400000 - 1)) return false;
+      }
       if (search) {
         const q = search.toLowerCase();
         const hay = [r.numero, r.setor, r.solicitante_nome].filter(Boolean).join(" ").toLowerCase();
@@ -118,11 +135,17 @@ export default function ComprasPage() {
       }
       return true;
     });
-  }, [requisitions, search, unitFilter, statusFilter]);
+  }, [requisitions, search, unitFilter, statusFilter, dateRange]);
 
   const filteredQuotes = useMemo(() => {
     return quotations.filter(q => {
       if (unitFilter !== "all" && q.facility_unit !== unitFilter) return false;
+      if (dateRange?.from || dateRange?.to) {
+        const d = q.data_cotacao ? new Date(q.data_cotacao) : (q.created_at ? new Date(q.created_at) : null);
+        if (!d) return false;
+        if (dateRange.from && d < dateRange.from) return false;
+        if (dateRange.to && d > new Date(dateRange.to.getTime() + 86400000 - 1)) return false;
+      }
       if (search) {
         const s = search.toLowerCase();
         const hay = [q.numero, q.winner_supplier, q.setor_comprador].filter(Boolean).join(" ").toLowerCase();
@@ -130,12 +153,18 @@ export default function ComprasPage() {
       }
       return true;
     });
-  }, [quotations, search, unitFilter]);
+  }, [quotations, search, unitFilter, dateRange]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
       if (unitFilter !== "all" && o.facility_unit !== unitFilter) return false;
       if (statusFilter !== "all" && o.status !== statusFilter) return false;
+      if (dateRange?.from || dateRange?.to) {
+        const d = o.created_at ? new Date(o.created_at) : null;
+        if (!d) return false;
+        if (dateRange.from && d < dateRange.from) return false;
+        if (dateRange.to && d > new Date(dateRange.to.getTime() + 86400000 - 1)) return false;
+      }
       if (search) {
         const s = search.toLowerCase();
         const hay = [o.numero, o.fornecedor_nome, o.rubrica_name].filter(Boolean).join(" ").toLowerCase();
@@ -143,7 +172,7 @@ export default function ComprasPage() {
       }
       return true;
     });
-  }, [orders, search, unitFilter, statusFilter]);
+  }, [orders, search, unitFilter, statusFilter, dateRange]);
 
   const kpis = useMemo(() => {
     const reqsAbertas = requisitions.filter(r => ["rascunho","aguardando_cotacao","em_cotacao"].includes(r.status)).length;
@@ -212,6 +241,52 @@ export default function ComprasPage() {
             {tab !== "painel" && (
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end">
                 <Input placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)} className="w-full xl:max-w-[260px]" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full xl:w-[240px] justify-start text-left font-normal rounded-md",
+                        !dateRange && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>{format(dateRange.from, "dd/MM/yy", { locale: ptBR })} – {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}</>
+                        ) : (
+                          format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                        )
+                      ) : (
+                        <span>Período</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <div className="flex flex-wrap gap-1 p-2 border-b">
+                      <Button size="sm" variant="ghost" className="rounded-full text-xs h-7" onClick={() => {
+                        const t = new Date(); setDateRange({ from: t, to: t });
+                      }}>Hoje</Button>
+                      <Button size="sm" variant="ghost" className="rounded-full text-xs h-7" onClick={() => {
+                        const t = new Date(); const f = new Date(); f.setDate(f.getDate() - 6);
+                        setDateRange({ from: f, to: t });
+                      }}>Últimos 7 dias</Button>
+                      <Button size="sm" variant="ghost" className="rounded-full text-xs h-7" onClick={() => {
+                        const t = new Date(); const f = new Date(t.getFullYear(), t.getMonth(), 1);
+                        setDateRange({ from: f, to: t });
+                      }}>Mês atual</Button>
+                      <Button size="sm" variant="ghost" className="rounded-full text-xs h-7" onClick={() => setDateRange(undefined)}>Limpar</Button>
+                    </div>
+                    <Calendar
+                      mode="range"
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={2}
+                      locale={ptBR}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
                 <Select value={unitFilter} onValueChange={setUnitFilter}>
                   <SelectTrigger className="w-full xl:w-[210px]"><SelectValue placeholder="Unidade" /></SelectTrigger>
                   <SelectContent>
@@ -434,6 +509,7 @@ export default function ComprasPage() {
                           <TableCell className="text-right">
                             <div className="flex gap-1 justify-end">
                               <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditOrder(o.id)}>Abrir</Button>
+                              <Button size="sm" variant="secondary" className="rounded-full" onClick={() => { setDossierOrderId(o.id); setDossierOpen(true); }}>Dossiê</Button>
                               {isAdmin && (
                                 <Button size="sm" variant="destructive" className="rounded-full" onClick={() => handleDeleteOrder(o)}>Excluir</Button>
                               )}
@@ -494,6 +570,11 @@ export default function ComprasPage() {
         requisitionId={inviteContext?.requisitionId || null}
         requisitionNumero={inviteContext?.numero}
         facilityUnit={inviteContext?.facilityUnit}
+      />
+      <OrderDossierModal
+        open={dossierOpen}
+        onOpenChange={setDossierOpen}
+        orderId={dossierOrderId}
       />
     </div>
   );
