@@ -300,6 +300,59 @@ export async function generateRequisitionPdf(requisitionId: string) {
       columnStyles: { 0: { cellWidth: 200, fontStyle: "bold", textColor: NAVY } },
     });
     y = (doc as any).lastAutoTable.finalY + 16;
+
+    // ===== Evidências anexadas (Inexigibilidade — comprovação de exclusividade) =====
+    if (justTipo === "inexigibilidade" && Array.isArray(legal?.fornecedor_unico_anexos) && legal.fornecedor_unico_anexos.length > 0) {
+      // Gera links assinados (7 dias) para cada anexo
+      const anexos: Array<{ name: string; path: string }> = legal.fornecedor_unico_anexos;
+      const signed: Array<{ name: string; url: string | null }> = [];
+      for (const a of anexos) {
+        try {
+          const { data } = await supabase.storage
+            .from("purchase-attachments")
+            .createSignedUrl(a.path, 60 * 60 * 24 * 7);
+          signed.push({ name: a.name || a.path, url: data?.signedUrl || null });
+        } catch {
+          signed.push({ name: a.name || a.path, url: null });
+        }
+      }
+
+      sectionTitle("Evidências de exclusividade do fornecedor (anexos)");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...TEXT_MUTED);
+      doc.text(
+        "Clique no nome do arquivo para baixar/visualizar. Links válidos por 7 dias a partir da emissão deste relatório.",
+        margin, y
+      );
+      y += 14;
+
+      for (let i = 0; i < signed.length; i++) {
+        y = ensureSpace(18, y);
+        const item = signed[i];
+        const prefix = `${i + 1}. `;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(...TEXT_DARK);
+        doc.text(prefix, margin, y);
+        const prefixW = doc.getTextWidth(prefix);
+        if (item.url) {
+          doc.setTextColor(29, 78, 156);
+          (doc as any).textWithLink(item.name, margin + prefixW, y, { url: item.url });
+          // Sublinhado simples
+          const textW = doc.getTextWidth(item.name);
+          doc.setDrawColor(29, 78, 156);
+          doc.setLineWidth(0.4);
+          doc.line(margin + prefixW, y + 1.5, margin + prefixW + textW, y + 1.5);
+        } else {
+          doc.setTextColor(...TEXT_MUTED);
+          doc.text(`${item.name} (link indisponível)`, margin + prefixW, y);
+        }
+        y += 14;
+      }
+      doc.setTextColor(...TEXT_DARK);
+      y += 6;
+    }
   }
 
   // ===== Convites a fornecedores =====

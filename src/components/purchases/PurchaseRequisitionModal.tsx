@@ -108,6 +108,9 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
   const [justPlanoAcao, setJustPlanoAcao] = useState("");
   const [justPlanoResponsavel, setJustPlanoResponsavel] = useState("");
   const [justPlanoPrazo, setJustPlanoPrazo] = useState("");
+  // Anexos de comprovação de exclusividade (Inexigibilidade)
+  const [justFornecedorAnexos, setJustFornecedorAnexos] = useState<Array<{ name: string; path: string }>>([]);
+  const [uploadingAnexo, setUploadingAnexo] = useState(false);
   const [solicitante, setSolicitante] = useState(profile?.name || "");
   const [aprovadorImediato, setAprovadorImediato] = useState("");
   const [aprovadorDiretoria, setAprovadorDiretoria] = useState("");
@@ -164,6 +167,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           setJustPlanoAcao(data.plano_acao || "");
           setJustPlanoResponsavel(data.plano_responsavel || "");
           setJustPlanoPrazo(data.plano_prazo || "");
+          setJustFornecedorAnexos(Array.isArray(data.fornecedor_unico_anexos) ? data.fornecedor_unico_anexos : []);
         } catch { /* ignora */ }
         setObservacoes(rawObs.replace(blockMatch[0], "").trim());
       } else {
@@ -186,6 +190,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
         setJustPlanoAcao("");
         setJustPlanoResponsavel("");
         setJustPlanoPrazo("");
+        setJustFornecedorAnexos([]);
       }
       setSolicitante(requisition.solicitante_nome || "");
       setAprovadorImediato(requisition.aprovador_imediato_nome || "");
@@ -235,6 +240,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setJustPlanoAcao("");
       setJustPlanoResponsavel("");
       setJustPlanoPrazo("");
+      setJustFornecedorAnexos([]);
       setSolicitante(profile?.name || "");
       setAprovadorImediato("");
       setAprovadorDiretoria("");
@@ -327,6 +333,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           plano_acao: justPlanoAcao,
           plano_responsavel: justPlanoResponsavel,
           plano_prazo: justPlanoPrazo,
+          fornecedor_unico_anexos: justFornecedorAnexos,
         };
         observacoesFinal = `${observacoesFinal}\n\n[JUST_LEGAL]${JSON.stringify(legalBlock)}[/JUST_LEGAL]`.trim();
       }
@@ -521,6 +528,82 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                     rows={2}
                     placeholder="Atestado de exclusividade, registro em cartório, marca/patente única etc."
                   />
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-xs">Evidências anexadas (atestado, certidão, registro)</Label>
+                      <label className="inline-flex items-center gap-2 text-xs cursor-pointer rounded-full border border-input px-3 py-1 hover:bg-accent">
+                        <input
+                          type="file"
+                          multiple
+                          className="hidden"
+                          accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                          disabled={uploadingAnexo || !profile}
+                          onChange={async (e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (!files.length || !profile) return;
+                            setUploadingAnexo(true);
+                            try {
+                              const uploaded: Array<{ name: string; path: string }> = [];
+                              for (const f of files) {
+                                const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+                                const path = `${profile.id}/inexigibilidade/${Date.now()}-${safeName}`;
+                                const { error } = await supabase.storage
+                                  .from("purchase-attachments")
+                                  .upload(path, f, { upsert: false, contentType: f.type || undefined });
+                                if (error) throw error;
+                                uploaded.push({ name: f.name, path });
+                              }
+                              setJustFornecedorAnexos(prev => [...prev, ...uploaded]);
+                              toast.success(`${uploaded.length} arquivo(s) anexado(s)`);
+                            } catch (err: any) {
+                              toast.error(err?.message || "Falha ao anexar evidência");
+                            } finally {
+                              setUploadingAnexo(false);
+                              (e.target as HTMLInputElement).value = "";
+                            }
+                          }}
+                        />
+                        {uploadingAnexo ? "Enviando…" : "Anexar evidência"}
+                      </label>
+                    </div>
+                    {justFornecedorAnexos.length === 0 ? (
+                      <p className="text-[11px] text-muted-foreground">Nenhuma evidência anexada. PDF, JPG, PNG, DOC ou DOCX.</p>
+                    ) : (
+                      <ul className="space-y-1">
+                        {justFornecedorAnexos.map((a, i) => (
+                          <li key={`${a.path}-${i}`} className="flex items-center justify-between gap-2 text-xs rounded-md border border-input bg-background px-2 py-1">
+                            <button
+                              type="button"
+                              className="truncate text-left underline-offset-2 hover:underline text-primary"
+                              onClick={async () => {
+                                const { data, error } = await supabase.storage
+                                  .from("purchase-attachments")
+                                  .createSignedUrl(a.path, 60 * 10);
+                                if (error || !data?.signedUrl) {
+                                  toast.error("Não foi possível abrir o arquivo");
+                                  return;
+                                }
+                                window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+                              }}
+                              title={a.name}
+                            >
+                              {a.name}
+                            </button>
+                            <button
+                              type="button"
+                              className="text-destructive hover:underline"
+                              onClick={async () => {
+                                await supabase.storage.from("purchase-attachments").remove([a.path]);
+                                setJustFornecedorAnexos(prev => prev.filter((_, idx) => idx !== i));
+                              }}
+                            >
+                              remover
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               )}
 
