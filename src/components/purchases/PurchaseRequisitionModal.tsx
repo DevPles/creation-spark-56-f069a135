@@ -354,7 +354,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
                   <TableHead className="w-40">Código</TableHead>
-                  <TableHead>Descrição</TableHead>
+                  <TableHead className="w-[260px]">Descrição</TableHead>
                   <TableHead className="w-24">Qtd</TableHead>
                   <TableHead className="w-24">Un</TableHead>
                   <TableHead>Observação</TableHead>
@@ -378,7 +378,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-w-[260px]">
                       <Popover
                         open={descFocusIdx === idx && getSuggestions(it.descricao).length > 0}
                         onOpenChange={(o) => { if (!o) setDescFocusIdx(null); }}
@@ -390,6 +390,12 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                             onFocus={() => setDescFocusIdx(idx)}
                             onBlur={() => setTimeout(() => setDescFocusIdx(c => c === idx ? null : c), 150)}
                             placeholder="Digite para buscar no catálogo..."
+                            title={it.descricao}
+                            className={
+                              descFocusIdx === idx
+                                ? "w-full"
+                                : "w-full text-ellipsis overflow-hidden whitespace-nowrap"
+                            }
                           />
                         </PopoverTrigger>
                         <PopoverContent
