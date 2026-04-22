@@ -14,7 +14,16 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const prompt = `Pesquise no mercado brasileiro preços atuais para o produto: "${descricao}". Retorne até 5 ofertas reais com fornecedor (loja/distribuidor), preço unitário em reais (apenas número, sem R$) e link da fonte. Responda APENAS via tool call.`;
+    const prompt = `Pesquise preços de mercado para o produto hospitalar: "${descricao}".
+
+REGRAS OBRIGATÓRIAS:
+- Busque APENAS em sites de FABRICANTES e DISTRIBUIDORES/FORNECEDORES hospitalares brasileiros (ex.: Cremer, BD Becton Dickinson, Descarpack, Embramed, Medix, Cirúrgica Fernandes, Cirúrgica São José, Cirúrgica Mafra, Hospfar, Cremer, Polar Fix, Nipro, Solidor, Medsonda, Vitalmedical, etc.).
+- Inclua portais B2B do setor de saúde (Bionexo, Hospitalar.com, ComprasNet, Banco de Preços em Saúde - BPS Ministério da Saúde, painel de preços do governo).
+- NÃO use marketplaces genéricos como Mercado Livre, Amazon, Shopee, Magalu, Americanas, OLX, AliExpress.
+- Priorize CNPJ/distribuidor real, fonte oficial e preço unitário em reais (apenas número, sem R$).
+- Retorne até 5 ofertas reais com fornecedor (fabricante ou distribuidor), preço unitário e link direto da fonte.
+
+Responda APENAS via tool call.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -22,7 +31,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "Você é um assistente de pesquisa de preços para hospitais brasileiros. Sempre responda usando a ferramenta fornecida." },
+          { role: "system", content: "Você é um assistente de pesquisa de preços hospitalares brasileiros. Busque exclusivamente em fabricantes, distribuidores especializados em saúde e portais oficiais (Bionexo, BPS/Ministério da Saúde, ComprasNet). NUNCA use marketplaces genéricos (Mercado Livre, Amazon, Shopee, Magalu, Americanas). Sempre responda usando a ferramenta fornecida." },
           { role: "user", content: prompt },
         ],
         tools: [{
