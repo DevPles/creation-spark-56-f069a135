@@ -339,6 +339,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           plano_responsavel: justPlanoResponsavel,
           plano_prazo: justPlanoPrazo,
           fornecedor_unico_anexos: justFornecedorAnexos,
+          dispensa_anexos: justDispensaAnexos,
         };
         observacoesFinal = `${observacoesFinal}\n\n[JUST_LEGAL]${JSON.stringify(legalBlock)}[/JUST_LEGAL]`.trim();
       }
