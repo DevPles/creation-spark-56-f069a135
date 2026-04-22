@@ -241,6 +241,52 @@ export default function ComprasPage() {
             {tab !== "painel" && (
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end">
                 <Input placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)} className="w-full xl:max-w-[260px]" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full xl:w-[240px] justify-start text-left font-normal rounded-md",
+                        !dateRange && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>{format(dateRange.from, "dd/MM/yy", { locale: ptBR })} – {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}</>
+                        ) : (
+                          format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                        )
+                      ) : (
+                        <span>Período</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <div className="flex flex-wrap gap-1 p-2 border-b">
+                      <Button size="sm" variant="ghost" className="rounded-full text-xs h-7" onClick={() => {
+                        const t = new Date(); setDateRange({ from: t, to: t });
+                      }}>Hoje</Button>
+                      <Button size="sm" variant="ghost" className="rounded-full text-xs h-7" onClick={() => {
+                        const t = new Date(); const f = new Date(); f.setDate(f.getDate() - 6);
+                        setDateRange({ from: f, to: t });
+                      }}>Últimos 7 dias</Button>
+                      <Button size="sm" variant="ghost" className="rounded-full text-xs h-7" onClick={() => {
+                        const t = new Date(); const f = new Date(t.getFullYear(), t.getMonth(), 1);
+                        setDateRange({ from: f, to: t });
+                      }}>Mês atual</Button>
+                      <Button size="sm" variant="ghost" className="rounded-full text-xs h-7" onClick={() => setDateRange(undefined)}>Limpar</Button>
+                    </div>
+                    <Calendar
+                      mode="range"
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={2}
+                      locale={ptBR}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
                 <Select value={unitFilter} onValueChange={setUnitFilter}>
                   <SelectTrigger className="w-full xl:w-[210px]"><SelectValue placeholder="Unidade" /></SelectTrigger>
                   <SelectContent>
