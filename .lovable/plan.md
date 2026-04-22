@@ -1,80 +1,57 @@
 
 
-## Painel de Compras — Inteligência Operacional + Conformidade com Controle de Rubricas
+## Imagens dos itens do catálogo nos convites
 
-Vamos transformar a aba **Painel** (hoje só 4 KPIs soltos) em um painel executivo completo, **totalmente alinhado ao card "Controle de Rubricas"** — usando exatamente a mesma fonte de verdade (orçamento contratado × execução real) para que os dois nunca divirjam.
+Vamos adicionar uma foto opcional a cada item do catálogo de produtos. Essa imagem aparecerá no cadastro do item, na tela de requisição (ao escolher o item) e também na página pública que o fornecedor recebe pelo link de convite — assim ele clica, vê a imagem e cota com mais segurança.
 
-### Princípio de conformidade com Controle de Rubricas
+---
 
-O card **Controle de Rubricas** já consolida, por contrato/unidade:
-- **Orçamento da rubrica** = `contracts.value × (rubrica.percent / 100)`
-- **Executado** = soma de `rubrica_entries.value_executed` (lançamentos reais) **+** OCs em `autorizada/enviada/recebida` por `contract_id + rubrica_id`
-- **% consumido** e faixa de cor (verde <60% / amarelo 60–80% / vermelho >80%)
+### O que muda para o usuário
 
-O Painel de Compras vai **reaproveitar exatamente esses cálculos** (mesma função utilitária, mesmas faixas de cor, mesmos rótulos) para que o gestor veja o mesmo número nos dois lugares.
+**1. Cadastro do item (Catálogo de Produtos)**
+- Novo campo "Imagem do produto" no modal de cadastro/edição.
+- Botão para enviar foto (JPG/PNG/WEBP, até 5 MB). Pré-visualização logo abaixo.
+- Botão "Remover imagem" se já houver uma.
+- Imagem é opcional — itens antigos continuam funcionando normalmente.
 
-### O que será construído
+**2. Requisição de compra**
+- Na lista de itens, ao lado da descrição, aparece uma miniatura clicável (quando o item do catálogo tem foto).
+- Clicar abre a imagem ampliada.
 
-**1. KPIs operacionais (8 cards, 2 linhas)**
-- Requisições abertas (rascunho + aguardando + em cotação) — variação vs mês anterior.
-- Cotações em andamento — nº + tempo médio aberto (dias).
-- OCs aguardando aprovação — destaque vermelho se alguma >3 dias.
-- OCs autorizadas no mês.
-- Convites enviados (mês) + taxa de resposta (`respondidos/enviados`).
-- Ticket médio de OC.
-- Total **autorizado** no mês (R$).
-- Total **recebido** no mês (R$, status `recebida`).
+**3. Página pública do convite (o que o fornecedor vê)**
+- Nova coluna "Foto" antes da Descrição na tabela "Itens para cotar".
+- Miniatura clicável; ao clicar, abre a imagem em tamanho maior numa janela.
+- Itens sem foto mostram um espaço neutro "—".
 
-**2. Funil de Compras (visual horizontal)**
-`Requisições → Convites → Cotações → OCs Aguardando → Autorizadas → Recebidas`, com quantidade absoluta e taxa de conversão entre etapas.
+---
 
-**3. Gasto autorizado por mês (12 meses)**
-Gráfico de barras/linha com `purchase_orders.valor_total` por mês.
+### Detalhes técnicos
 
-**4. Bloco "Atenção Imediata" (lista priorizada e clicável)**
-- Requisições em rascunho >5 dias.
-- Cotações abertas >7 dias sem campeão.
-- OCs aguardando aprovação >3 dias.
-- Convites a expirar (<48h) sem resposta.
-- **Rubricas com >80% do orçamento consumido** (cálculo idêntico ao Controle de Rubricas).
+**Banco de dados**
+- Nova coluna `image_url text` (nullable) na tabela `product_catalog`.
+- Atualizar a função `get_invite_by_token` para incluir `image_url` em cada item retornado, fazendo `LEFT JOIN` por descrição+unidade ou — preferencialmente — adicionando uma coluna `product_id uuid` em `purchase_requisition_items` referenciando `product_catalog(id)` (para vínculo confiável). Itens existentes ficam com `product_id NULL` e seguem sem imagem.
 
-**5. Top 10 Fornecedores do período**
-Nome · CNPJ · nº OCs · valor total autorizado · ticket médio · última OC · badge "Cadastrado" (se em `suppliers`).
+**Storage**
+- Novo bucket público `product-images` para armazenar as fotos.
+- Políticas RLS:
+  - SELECT público (qualquer um pode ver — necessário para fornecedor anônimo no convite).
+  - INSERT/UPDATE/DELETE apenas para usuários autenticados.
 
-**6. Top 10 Itens mais comprados**
-Descrição · quantidade total · valor acumulado · preço médio · variação % vs período anterior (a partir de `purchase_order_items` cruzado com `price_history`).
+**Frontend**
+- `ProductCatalogModal.tsx`: input de arquivo + upload para o bucket + salvar `image_url` no registro.
+- `PurchaseRequisitionModal.tsx`: ao selecionar item do catálogo, gravar `product_id` no item; mostrar miniatura na tabela.
+- `PublicQuotationPage.tsx`: nova coluna "Foto" + Dialog para ampliar a imagem ao clicar.
+- A função RPC `get_invite_by_token` será ajustada para incluir `image_url` resolvido via `product_id` → `product_catalog`.
 
-**7. Conformidade Orçamentária — espelho do Controle de Rubricas (núcleo do painel)**
-Para cada **contrato ativo**, lista de rubricas com:
-- Rubrica · Orçamento (R$) · **Lançado** (`rubrica_entries`) · **Comprometido em OCs** (autorizada/enviada/recebida) · **Total executado** · **% consumido** · **Saldo disponível**.
-- Barra de progresso com **as mesmas faixas de cor** do Controle de Rubricas (verde/amarelo/vermelho).
-- Linha de alerta automático para itens >80% e estouro (>100%).
-- Botão "Ver no Controle de Rubricas" → leva direto ao card correspondente, garantindo navegação cruzada.
-- Totais por **contrato** e por **unidade** (somatório de orçamento × executado), reproduzindo a mesma agregação usada no card.
+**Compatibilidade**
+- Tudo é opcional. Itens, requisições e convites antigos continuam funcionando — apenas não exibem foto.
 
-**8. Distribuição por Unidade e Status**
-Barras horizontais: gasto autorizado por unidade · mini-distribuição: nº de OCs por status.
+---
 
-### Filtros do painel
-- **Período**: Mês atual / 30 / 90 / 180 dias / Ano / Personalizado.
-- **Unidade**: Todas / específica.
-- Os mesmos filtros são aplicados ao bloco de Conformidade Orçamentária para que o resultado bata 1:1 com o que aparece em **Lançamentos → Controle de Rubricas** sob os mesmos filtros.
+### Arquivos afetados
 
-### Alterações técnicas
-
-- **Novo**: `src/components/purchases/PurchasesDashboardPanel.tsx`.
-- **Novo utilitário compartilhado**: `src/lib/rubricaBudget.ts` — função `computeRubricaConsumption({ contracts, rubricaEntries, purchaseOrders, period, unit })` reutilizada **tanto pelo Controle de Rubricas quanto pelo novo painel** (refator leve no card de Rubricas para passar a importar daqui — sem mudar comportamento).
-- **`src/pages/ComprasPage.tsx`**: substituir o `<TabsContent value="painel">` atual por `<PurchasesDashboardPanel />`, passando `requisitions`, `quotations`, `orders`, `contracts`, `invitesByReq` por props (sem refetch).
-- **Queries adicionais (React Query)**:
-  - `purchase_order_items` (top itens).
-  - `quotation_invites` completo (taxa de resposta + expiração).
-  - `rubrica_entries` filtrado por período/unidade (para o bloco de conformidade).
-  - `suppliers` (badge "Cadastrado").
-- **Sem migrações novas**. Tudo a partir de tabelas existentes.
-- Gráficos via `recharts` (já presente em `src/components/ui/chart.tsx`).
-
-### Resultado para o gestor
-
-- Abre **Compras → Painel** e enxerga, em uma tela: operação (gargalos, tempos, aprovações pendentes), gasto (mês a mês, por fornecedor, por item) e **conformidade orçamentária por rubrica idêntica ao Controle de Rubricas** — mesmos números, mesmas cores, mesmos limites de alerta.
-- Clica em qualquer rubrica em alerta no painel → vai direto ao Controle de Rubricas para detalhar/lançar.
+- `supabase/migrations/` — nova migração: coluna `image_url`, coluna `product_id` em `purchase_requisition_items`, bucket `product-images` com policies, atualização da função `get_invite_by_token`.
+- `src/components/purchases/ProductCatalogModal.tsx` — upload e exibição da imagem.
+- `src/components/purchases/PurchaseRequisitionModal.tsx` — gravar `product_id` e mostrar miniatura.
+- `src/pages/PublicQuotationPage.tsx` — coluna Foto + visualizador ampliado.
 
