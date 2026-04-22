@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ImagePlus, X, Loader2 } from "lucide-react";
 
 const TIPOS = [
   { v: "ALI", l: "ALI — Alimentos e Gêneros Alimentícios" },
@@ -103,6 +104,8 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
   const [facilityUnit, setFacilityUnit] = useState<string>("Hospital Geral");
   const [setor, setSetor] = useState<string>("");
   const [sectorOptions, setSectorOptions] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -121,6 +124,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
       setDescricao("");
       setPreviewCode("");
       setSetor("");
+      setImageUrl("");
       return;
     }
     if (editing) {
@@ -131,8 +135,10 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
       setPreviewCode(editing.codigo || "");
       setFacilityUnit(editing.facility_unit || "Hospital Geral");
       setSetor(editing.setor || "");
+      setImageUrl(editing.image_url || "");
       return;
     }
+    setImageUrl("");
     const loadPreview = async () => {
       const prefix = `${tipo}-${classificacao.slice(0, 4).toUpperCase()}`;
       const { data } = await supabase
@@ -166,6 +172,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
             unidade_medida: unidade,
             facility_unit: facilityUnit,
             setor: setor || null,
+            image_url: imageUrl || null,
           } as any)
           .eq("id", editing.id);
         if (error) throw error;
@@ -179,6 +186,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
           unidade_medida: unidade,
           facility_unit: facilityUnit,
           setor: setor || null,
+          image_url: imageUrl || null,
         } as any);
         if (error) throw error;
         toast.success(`Item cadastrado (${previewCode})`);
@@ -189,6 +197,34 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
       toast.error(e.message || "Erro ao salvar item");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx. 5 MB)");
+      return;
+    }
+    if (!/^image\/(jpeg|png|webp|jpg)$/i.test(file.type)) {
+      toast.error("Formato inválido. Use JPG, PNG ou WEBP.");
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${editing?.id || "novo"}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
+      setImageUrl(pub.publicUrl);
+      toast.success("Imagem enviada");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao enviar imagem");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -222,6 +258,46 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
           <div>
             <Label>Descrição técnica</Label>
             <Input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Seringa 10 ml" />
+          </div>
+          <div>
+            <Label>Imagem do produto (opcional)</Label>
+            <div className="mt-1 flex items-start gap-3">
+              <label className="flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center rounded-md border border-dashed border-input bg-muted/30 hover:bg-muted overflow-hidden">
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Pré-visualização" className="h-full w-full object-cover" />
+                ) : uploadingImage ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                ) : (
+                  <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                )}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/jpg"
+                  className="hidden"
+                  disabled={uploadingImage}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleImageUpload(f);
+                    e.currentTarget.value = "";
+                  }}
+                />
+              </label>
+              <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                <span>JPG, PNG ou WEBP — até 5 MB.</span>
+                <span>Esta imagem será exibida no convite enviado ao fornecedor.</span>
+                {imageUrl && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 self-start px-2 text-xs"
+                    onClick={() => setImageUrl("")}
+                  >
+                    <X className="h-3 w-3 mr-1" /> Remover imagem
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

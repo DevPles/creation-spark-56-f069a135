@@ -61,6 +61,8 @@ interface Item {
   id?: string;
   item_num: number;
   codigo?: string;
+  product_id?: string | null;
+  image_url?: string | null;
   descricao: string;
   quantidade: number;
   unidade_medida: string;
@@ -126,10 +128,13 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           const codMatch = raw.match(/^\[COD:([^\]]+)\]\s?/);
           const codigo = codMatch ? codMatch[1] : undefined;
           const observacao = codMatch ? raw.replace(codMatch[0], "").trim() : raw;
+          const prod = codigo ? catalog.find(c => c.codigo === codigo) : null;
           return {
             id: i.id,
             item_num: i.item_num,
             codigo,
+            product_id: i.product_id || prod?.id || null,
+            image_url: prod?.image_url || null,
             descricao: i.descricao,
             quantidade: Number(i.quantidade),
             unidade_medida: i.unidade_medida,
@@ -167,6 +172,8 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
     setItems(prev => prev.map((it, i) => i === idx ? {
       ...it,
       codigo: prod.codigo,
+      product_id: prod.id,
+      image_url: prod.image_url || null,
       descricao: prod.descricao,
       unidade_medida: prod.unidade_medida || "UN",
     } : it));
@@ -189,6 +196,8 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
     setItems(prev => prev.map((it, i) => i === idx ? {
       ...it,
       codigo: prod.codigo,
+      product_id: prod.id,
+      image_url: prod.image_url || null,
       descricao: prod.descricao,
       unidade_medida: prod.unidade_medida || it.unidade_medida || "UN",
     } : it));
@@ -239,6 +248,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       const validItems = items.filter(i => i.descricao.trim()).map((i, idx) => ({
         requisition_id: reqId,
         item_num: idx + 1,
+        product_id: i.product_id || null,
         descricao: i.descricao,
         quantidade: Number(i.quantidade) || 0,
         unidade_medida: i.unidade_medida || "UN",
@@ -389,6 +399,23 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                       </Select>
                     </TableCell>
                     <TableCell className="max-w-[260px]">
+                      <div className="flex items-start gap-2">
+                        {it.image_url && (
+                          <a
+                            href={it.image_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0"
+                            title="Abrir imagem"
+                          >
+                            <img
+                              src={it.image_url}
+                              alt="Foto do produto"
+                              className="h-10 w-10 rounded border border-input object-cover hover:opacity-80"
+                            />
+                          </a>
+                        )}
+                        <div className="flex-1 min-w-0">
                       <Popover
                         open={descFocusIdx === idx && getSuggestions(it.descricao).length > 0}
                         onOpenChange={(o) => { if (!o) setDescFocusIdx(null); }}
@@ -428,14 +455,23 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                                 onMouseDown={(e) => { e.preventDefault(); applySuggestion(idx, prod); }}
                                 className="w-full text-left px-3 py-2 hover:bg-accent text-sm border-b last:border-b-0"
                               >
+                                <div className="flex items-center gap-2">
+                                  {prod.image_url && (
+                                    <img src={prod.image_url} alt="" className="h-8 w-8 rounded object-cover shrink-0" />
+                                  )}
+                                  <div className="min-w-0 flex-1">
                                 <div className="font-mono text-xs text-primary">{prod.codigo}</div>
                                 <div className="text-foreground">{prod.descricao}</div>
                                 <div className="text-xs text-muted-foreground">{prod.unidade_medida}</div>
+                                  </div>
+                                </div>
                               </button>
                             ))}
                           </div>
                         </PopoverContent>
                       </Popover>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell><Input type="number" value={it.quantidade} onChange={e => updateItem(idx, "quantidade", e.target.value)} /></TableCell>
                     <TableCell><Input value={it.unidade_medida} onChange={e => updateItem(idx, "unidade_medida", e.target.value)} /></TableCell>
