@@ -365,7 +365,7 @@ export default function ComprasPage() {
                             <Button size="sm" className="rounded-full" onClick={() => openCreateQuote(r.id)}>Cotar</Button>
                             <Button
                               size="sm"
-                              variant="ghost"
+                              variant="outline"
                               className="rounded-full"
                               onClick={async () => {
                                 try {
