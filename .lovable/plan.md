@@ -1,108 +1,76 @@
 
 
-# Módulo de Pedido de Compras
+## Portal de Cotação por Link Público
 
-Criação de um módulo completo de Compras com 4 etapas (Requisição → Cotação → Banco de Preços → Ordem de Compra), integrado às rubricas dos contratos de gestão e com rastreabilidade total.
+Permitir que, ao criar uma requisição, você envie um **link único** para cada fornecedor. O fornecedor abre o link (sem precisar de login), preenche valores unitários e disponibilidade dos itens, e envia. As respostas aparecem automaticamente no **Mapa de Cotação** da requisição correspondente.
 
-## Fluxo de negócio
+### Fluxo proposto
 
 ```text
-[Qualquer usuário]              [Compras / Gestor]                    [Gestor / Diretoria]
-  REQUISIÇÃO  ─────────►  COTAÇÃO (3 fornecedores)  ─────────►  ORDEM DE COMPRA
-  (itens, setor,            + Banco de Preços                   (consome rubrica
-   classificação,           + Busca Google (IA)                   do contrato vinculado)
-   justificativa)           ──► aponta MENOR PREÇO
-                            ──► aponta CAMPEÃO
+Requisição criada
+   │
+   ├─► Botão "Enviar para fornecedores"
+   │     │
+   │     ├─ Cadastra fornecedor (Nome, CNPJ, e-mail/WhatsApp)
+   │     ├─ Sistema gera link único: /cotacao-publica/{token}
+   │     └─ Copia link / envia por e-mail
+   │
+Fornecedor abre link
+   │
+   ├─► Vê dados da requisição (unidade, itens, qtd, unidade de medida)
+   ├─► Preenche por item:
+   │     - Valor unitário
+   │     - Disponibilidade (sim/não)
+   │     - Prazo entrega / Condição pagamento (geral)
+   ├─► Confirma envio (uma vez só, depois link bloqueia)
+   │
+Comprador
+   │
+   └─► Mapa de Cotação mostra automaticamente as 3 propostas recebidas
+        - Campeão calculado por menor total
+        - Pode ainda editar/complementar manualmente
 ```
 
-## Banco de dados (novas tabelas)
+### Componentes a criar
 
-**`purchase_requisitions`** — requisição inicial
-- `id`, `numero` (auto: 010/NNN/AAAA), `facility_unit`, `setor`, `municipio`
-- `classificacao` (text[]: `medico`, `medicamento`, `dieta`, `higiene`, `escritorio`, `descartavel`, `limpeza`, `outros`)
-- `justificativa_tipo` (`mensal`/`especifica`/`emergencial`/`outros`), `observacoes`
-- `status` (`rascunho`/`aguardando_cotacao`/`em_cotacao`/`cotacao_concluida`/`em_oc`/`finalizada`/`cancelada`)
-- `solicitante_id`, `solicitante_nome`, `aprovador_imediato_nome`, `aprovador_diretoria_nome`, `data_requisicao`, `created_by`
+**Backend (Lovable Cloud)**
+- Nova tabela `quotation_invites`: `id`, `token` (uuid único, indexado), `requisition_id`, `fornecedor_nome`, `fornecedor_cnpj`, `fornecedor_email`, `status` (pendente / enviado / respondido / expirado), `prazo_entrega`, `condicao_pagamento`, `submitted_at`, `expires_at`, `created_by`, `created_at`
+- Nova tabela `quotation_invite_responses`: `id`, `invite_id`, `requisition_item_id`, `valor_unitario`, `disponivel` (bool), `observacao`
+- RLS:
+  - `quotation_invites`: SELECT/INSERT/UPDATE para usuários autenticados (criadores/admin); **acesso público (anon)** somente via função RPC `get_invite_by_token(token)` que retorna dados não-sensíveis
+  - `quotation_invite_responses`: INSERT público via RPC `submit_invite_response(token, responses[])` (SECURITY DEFINER, valida token ativo e não respondido)
+- Após submissão, gatilho/RPC popula automaticamente `purchase_quotations` + `purchase_quotation_suppliers` + `purchase_quotation_prices` para a requisição
 
-**`purchase_requisition_items`** — itens da requisição
-- `id`, `requisition_id`, `item_num`, `descricao`, `quantidade`, `unidade_medida`, `observacao`
+**Frontend autenticado (área comprador)**
+- Em `PurchaseRequisitionModal` (ou na lista de requisições): novo botão **"Convidar fornecedores"**
+- Novo modal `SupplierInviteModal.tsx`:
+  - Lista convites já criados (status, link, data)
+  - Botão **"Adicionar fornecedor"** → cadastra nome/CNPJ/e-mail e gera link
+  - Botão **"Copiar link"** por convite
+  - Botão **"Reenviar"** (regera token se necessário)
 
-**`purchase_quotations`** — mapa de cotação (1:1 com requisição)
-- `id`, `requisition_id`, `numero`, `created_by`, `setor_comprador`, `data_cotacao`, `status`
-- `winner_supplier` (campeão por menor preço total), `total_winner` (numérico)
+**Frontend público (fornecedor)**
+- Nova rota `/cotacao-publica/:token` (sem `ProtectedRoute`)
+- Nova página `PublicQuotationPage.tsx`:
+  - Cabeçalho: nome do hospital/unidade, número da requisição, prazo
+  - Tabela de itens (descrição, quantidade, unidade) + coluna "Valor unitário (R$)" editável + checkbox "Disponível"
+  - Campos gerais: Prazo de entrega, Condição de pagamento, Observações
+  - Botão **"Enviar proposta"** (valida obrigatórios, bloqueia reenvio)
+  - Tela de confirmação após envio
 
-**`purchase_quotation_suppliers`** — até 3 fornecedores + extras (busca global)
-- `id`, `quotation_id`, `slot` (`1`/`2`/`3`/`google`), `fornecedor_nome`, `fornecedor_cnpj`, `prazo_entrega`, `condicao_pagamento`, `fonte` (`manual`/`google_search`)
+**Mapa de Cotação (`PurchaseQuotationModal`)**
+- Ao abrir uma requisição que possui convites respondidos: pré-preencher os 3 slots de fornecedores e os preços automaticamente
+- Badge **"Recebido via link"** quando o slot vier de um convite
+- Comprador ainda pode adicionar/editar fornecedores manualmente
 
-**`purchase_quotation_prices`** — preço por (item × fornecedor)
-- `id`, `quotation_id`, `requisition_item_id`, `supplier_id`, `valor_unitario`, `valor_total` (calculado), `is_winner` (boolean — menor preço por item)
+### Detalhes técnicos
 
-**`price_history`** — banco de preços (consultável)
-- `id`, `descricao_produto`, `categoria`, `unidade_medida`, `valor_unitario`, `fornecedor_nome`, `fornecedor_cnpj`, `data_referencia`, `fonte` (`cotacao`/`oc`/`google`), `quotation_id`, `created_at`
-- Trigger que insere automaticamente toda vez que uma cotação é salva ou OC emitida
+- Token: `gen_random_uuid()` (indexado, único)
+- Expiração padrão: 7 dias (configurável)
+- Após `submitted_at` preenchido, RPC bloqueia novas submissões com o mesmo token
+- Acesso público sem autenticação usa apenas as RPCs `get_invite_by_token` e `submit_invite_response` (SECURITY DEFINER) — nenhuma tabela exposta diretamente ao role `anon`
+- Auditoria: cada criação de convite e cada resposta gera entrada em `purchase_audit_log`
+- Envio do link: nesta primeira fase apenas **copiar link** (fornecedor recebe por WhatsApp/e-mail manualmente). Se quiser disparo automático de e-mail depois, configuramos Lovable Emails em etapa separada.
 
-**`purchase_orders`** — ordem de compra
-- `id`, `numero`, `quotation_id`, `requisition_id`, `facility_unit`, `contract_id` (FK para contratos), `rubrica_id` (id da rubrica dentro do JSON do contrato — ex: `insumos`)
-- `fornecedor_nome`, `fornecedor_cnpj`, `endereco_entrega`, `cnpj_emissao_nf`, `texto_obrigatorio_nf`, `prazo_entrega`
-- `valor_total`, `status` (`aguardando_aprovacao`/`autorizada`/`negada`/`enviada`/`recebida`)
-- `responsavel_emissao_nome`, `cargo`, `data_envio_fornecedor`, `data_envio_setor`
-- `aprovado_por`, `aprovado_em`, `motivo_negacao`
-
-**`purchase_order_items`** — congela itens autorizados (descrição, qtd, valor unt, total)
-
-**`purchase_audit_log`** — trilha de auditoria (ação, usuário, timestamp, antes/depois) cobrindo as 4 entidades
-
-### RLS
-- SELECT: todos autenticados
-- INSERT: `auth.uid() = created_by`
-- UPDATE/Aprovação OC: `admin` ou `gestor`
-- DELETE: `admin`
-
-### Storage
-- Novo bucket privado **`purchase-attachments`** para anexos de itens (especificações técnicas) e evidências de envio ao fornecedor (URLs assinadas, igual padrão OPME).
-
-## Frontend
-
-### Novo card "Compras" no Dashboard
-Adicionado em `ALL_NAV_CARDS` (posição alfabética), rota `/compras`. Acesso amplo (qualquer usuário cria requisição); etapas restritas controlam ações.
-
-### Nova página `/compras` — `ComprasPage.tsx`
-Layout em **abas** (sem ícones, padrão MetricOss):
-
-1. **Requisições** — Tabela (Nº, Data, Setor, Solicitante, Classificação, Status, Itens, Ações). Filtros: Unidade, Status, Período, Setor. Botão "Nova requisição" na mesma linha do título "Compras".
-2. **Cotações** — Tabela das cotações com menor preço total e fornecedor campeão. Filtros idênticos.
-3. **Banco de Preços** — Histórico pesquisável (descrição/fornecedor/categoria), com gráfico de evolução de preço por produto e botão "Buscar preços no Google" (edge function).
-4. **Ordens de Compra** — Tabela (Nº, Fornecedor, Contrato, Rubrica, Valor, Status). Mostra **rubrica consumida vs. disponível** por OC.
-5. **Painel** — KPIs: requisições abertas, cotações pendentes, OCs aguardando aprovação, gasto do mês por rubrica vs. orçamento.
-
-### Modais (sem ícones)
-- **`PurchaseRequisitionModal`** — capa (unidade auto, setor, classificação multi-checkbox, justificativa) + tabela de itens (adicionar/remover linhas) + assinaturas (solicitante/imediato/diretoria) + anexos.
-- **`PurchaseQuotationModal`** — copia itens da requisição automaticamente; 3 colunas de fornecedor + 1 coluna opcional "Busca Google"; cada célula é o valor unitário; sistema marca **menor preço por item** (verde) e calcula **fornecedor campeão** (menor total geral).
-- **`PriceSearchPanel`** (na aba Banco de Preços) — input de busca + edge function `price-search` (Lovable AI Gateway com `google/gemini-2.5-flash` + grounding) que retorna `[{fornecedor, preço, fonte_url}]` e salva em `price_history` com `fonte='google'`.
-- **`PurchaseOrderModal`** — pré-preenche pelo fornecedor campeão da cotação. Seletor de **Contrato** (lista contratos da unidade) → seletor de **Rubrica** (popula do JSON `rubricas` do contrato) → exibe banner "Rubrica Insumos: R$ X gasto / R$ Y orçado (Z%)" calculado em tempo real (soma das OCs já autorizadas dessa rubrica vs. `valor * percent / 100` do contrato). Aprovação exige motivo (auditoria).
-
-### Rastreabilidade
-- Cada listagem mostra usuário/data/setor de origem.
-- Aba "Histórico" em cada modal lê `purchase_audit_log` filtrado pela entidade.
-
-## Edge Functions
-
-- **`price-search`** — recebe `{ descricao }`, chama Lovable AI Gateway (`google/gemini-2.5-flash` com Google Search grounding) pedindo "preços brasileiros de [produto] com fornecedor e link". Retorna lista normalizada e persiste em `price_history`.
-- **`purchase-order-authorize`** — valida saldo de rubrica, transiciona status, registra auditoria, dispara e-mail de notificação opcional.
-
-## Integração com módulos existentes
-
-- **Contratos** (`contracts.rubricas` + `rubrica_entries`): OCs autorizadas são contabilizadas como execução de rubrica (insert em `rubrica_entries` com `value_executed` = total da OC e `rubrica_name` = nome da rubrica selecionada). Assim a página Controle de Rubrica e os relatórios já existentes refletem automaticamente os gastos das OCs.
-- **Logo Instituto Univida**: copiado para `src/assets/logo-univida.png` e adicionado ao cabeçalho da exportação PDF de Requisição, Mapa de Cotação e Ordem de Compra (mantendo o padrão Moss nas telas internas).
-
-## Validações críticas
-
-- Requisição não pode ir para cotação sem ao menos 1 item.
-- Cotação não fecha sem ao menos 1 fornecedor com preços em todos os itens.
-- OC não é autorizada se ultrapassar saldo da rubrica selecionada (alerta + bloqueio para não-admin).
-- Toda mudança de status grava em `purchase_audit_log` com `motivo` obrigatório nas negações.
-
-## Dados iniciais (seed)
-
-Inserção de **2 requisições reais** completas no banco — equivalentes às planilhas enviadas (Material Médico Assistencial - 35 itens, e uma Compra Mensal de Medicamentos) — já com cotações simuladas em 3 fornecedores e 1 OC autorizada, para que a tabela inicial não fique vazia.
+### O que o usuário precisa decidir
 
