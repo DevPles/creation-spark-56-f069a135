@@ -129,7 +129,10 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     invites.forEach((iv) => {
       timeline.push([fmtDateTime(iv.created_at), `Convite enviado para ${iv.fornecedor_nome} (${iv.fornecedor_cnpj || "sem CNPJ"}) — Email: ${iv.fornecedor_email || "—"} | Tel: ${iv.fornecedor_telefone || "—"}`]);
       if (iv.submitted_at) {
-        timeline.push([fmtDateTime(iv.submitted_at), `Resposta recebida via link público de ${iv.fornecedor_nome} — IP: ${iv.submission_ip || "não capturado"}`]);
+        const resp = iv.responder_name
+          ? ` — Respondido por ${iv.responder_name} <${iv.responder_email || "?"}> tel ${iv.responder_phone || "?"}${iv.responder_cpf ? ` CPF ${iv.responder_cpf}` : ""}`
+          : "";
+        timeline.push([fmtDateTime(iv.submitted_at), `Resposta recebida via link público de ${iv.fornecedor_nome}${resp} — IP: ${iv.submission_ip || "não capturado"}`]);
       }
     });
     if (quotation) {
