@@ -58,25 +58,37 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
         const { data: qd } = await supabase.from("purchase_quotations").select("*").eq("id", quotationId).single();
         q = qd;
         reqId = qd?.requisition_id;
-        setQuotation(qd);
-      } else {
-        setQuotation(null);
+      } else if (reqId) {
+        // Auto-detect: se já existe uma cotação para esta requisição (gerada por convite, etc.), abre ela
+        const { data: existing } = await supabase
+          .from("purchase_quotations")
+          .select("*")
+          .eq("requisition_id", reqId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (existing) q = existing;
       }
+      setQuotation(q);
       if (!reqId) return;
       const { data: r } = await supabase.from("purchase_requisitions").select("*").eq("id", reqId).single();
       setRequisition(r);
-      // Setor comprador é herdado do setor da requisição
       setSetorComprador(q?.setor_comprador || r?.setor || "");
       const { data: itemsData } = await supabase.from("purchase_requisition_items").select("*").eq("requisition_id", reqId).order("item_num");
       setItems(itemsData || []);
 
       if (q) {
-        const { data: sups } = await supabase.from("purchase_quotation_suppliers").select("*").eq("quotation_id", q.id).order("slot");
+        const { data: sups } = await supabase
+          .from("purchase_quotation_suppliers")
+          .select("*")
+          .eq("quotation_id", q.id)
+          .order("created_at", { ascending: true });
         const supList: Supplier[] = (sups || []).map((s: any) => ({
           id: s.id, slot: s.slot, fornecedor_nome: s.fornecedor_nome,
           fornecedor_cnpj: s.fornecedor_cnpj, prazo_entrega: s.prazo_entrega,
           condicao_pagamento: s.condicao_pagamento, fonte: s.fonte
         }));
+        // Garante mínimo de 3 slots para preenchimento manual
         while (supList.length < 3) supList.push({ slot: String(supList.length + 1), fornecedor_nome: "", fonte: "manual" });
         setSuppliers(supList);
         const { data: pr } = await supabase.from("purchase_quotation_prices").select("*").eq("quotation_id", q.id);
