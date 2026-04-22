@@ -480,7 +480,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       legalRows.push(["Pesquisa de preço simplificada", legal?.pesquisa_preco || "—"]);
       legalRows.push(["Justificativa da escolha do fornecedor", legal?.escolha_fornecedor || "—"]);
       const reg = Array.isArray(legal?.regularizacao) ? legal.regularizacao : [];
-      legalRows.push(["Regularização documental", reg.length ? reg.map((r: string) => `[X] ${r}`).join("\n") : "—"]);
+      legalRows.push(["Regularização documental", reg.length ? reg.map((r: string) => `- ${r}`).join("\n") : "—"]);
       const reinc = [
         ...(Array.isArray(legal?.reincidencia) ? legal.reincidencia : []),
         ...(legal?.reincidencia_outro ? [`Outro: ${legal.reincidencia_outro}`] : []),
@@ -503,6 +503,55 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         pageBreak: "auto",
         rowPageBreak: "avoid",
       });
+
+      // ===== Evidências anexadas (Inexigibilidade ou Dispensa) com links clicáveis =====
+      const anexos: Array<{ name: string; path: string }> | null =
+        req.justificativa_tipo === "inexigibilidade" && Array.isArray(legal?.fornecedor_unico_anexos) && legal.fornecedor_unico_anexos.length > 0
+          ? legal.fornecedor_unico_anexos
+          : req.justificativa_tipo === "dispensa" && Array.isArray(legal?.dispensa_anexos) && legal.dispensa_anexos.length > 0
+          ? legal.dispensa_anexos
+          : null;
+      if (anexos && (dossier as any)._signed_legal_attachments) {
+        const signed: Array<{ name: string; url: string | null }> = (dossier as any)._signed_legal_attachments;
+        const titleY = subTitle(
+          req.justificativa_tipo === "dispensa"
+            ? "Evidências da fundamentação técnica e pesquisa de preços"
+            : "Evidências de exclusividade do fornecedor",
+          14,
+        );
+        let yA = titleY;
+        doc.setFontSize(8.5);
+        doc.setTextColor(90, 90, 90);
+        doc.text(
+          "Clique no nome do arquivo para baixar/visualizar. Links válidos por 7 dias.",
+          margin, yA,
+        );
+        yA += 14;
+        doc.setFontSize(9.5);
+        for (let i = 0; i < signed.length; i++) {
+          yA = ensureSpace(16, yA);
+          const item = signed[i];
+          const prefix = `${i + 1}. `;
+          doc.setTextColor(20, 32, 56);
+          doc.text(prefix, margin, yA);
+          const prefixW = doc.getTextWidth(prefix);
+          if (item.url) {
+            doc.setTextColor(13, 79, 79);
+            (doc as any).textWithLink(item.name, margin + prefixW, yA, { url: item.url });
+            const tw = doc.getTextWidth(item.name);
+            doc.setDrawColor(13, 79, 79);
+            doc.setLineWidth(0.4);
+            doc.line(margin + prefixW, yA + 1.5, margin + prefixW + tw, yA + 1.5);
+          } else {
+            doc.setTextColor(120, 120, 120);
+            doc.text(`${item.name} (link indisponível)`, margin + prefixW, yA);
+          }
+          yA += 14;
+        }
+        doc.setTextColor(0, 0, 0);
+        // sincroniza ponteiro do autoTable seguinte
+        (doc as any).lastAutoTable = { finalY: yA + 4 };
+      }
     }
 
     // ===== SECTION 6: QUALIFICAÇÃO DO FORNECEDOR VENCEDOR (Art. 9º) =====
