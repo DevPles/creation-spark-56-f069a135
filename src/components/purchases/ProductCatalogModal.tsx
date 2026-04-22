@@ -84,6 +84,8 @@ const UNIDADES = [
   "PAR", "PC", "PCT", "RL", "SC", "SV", "TB", "UN",
 ];
 
+const FACILITY_UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -98,11 +100,27 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
   const [descricao, setDescricao] = useState("");
   const [unidade, setUnidade] = useState("UN");
   const [previewCode, setPreviewCode] = useState<string>("");
+  const [facilityUnit, setFacilityUnit] = useState<string>("Hospital Geral");
+  const [setor, setSetor] = useState<string>("");
+  const [sectorOptions, setSectorOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase
+        .from("sectors")
+        .select("name")
+        .eq("facility_unit", facilityUnit)
+        .order("name");
+      setSectorOptions((data || []).map((s: any) => s.name));
+    })();
+  }, [open, facilityUnit]);
 
   useEffect(() => {
     if (!open) {
       setDescricao("");
       setPreviewCode("");
+      setSetor("");
       return;
     }
     if (editing) {
@@ -111,6 +129,8 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
       setDescricao(editing.descricao || "");
       setUnidade(editing.unidade_medida || "UN");
       setPreviewCode(editing.codigo || "");
+      setFacilityUnit(editing.facility_unit || "Hospital Geral");
+      setSetor(editing.setor || "");
       return;
     }
     const loadPreview = async () => {
