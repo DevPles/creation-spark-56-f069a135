@@ -665,6 +665,37 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     );
     setGenerating(true);
     try {
+      // Pré-busca URLs assinadas das evidências legais (Inexigibilidade/Dispensa)
+      try {
+        const reqObj = dossier.requisition;
+        if (reqObj && ["inexigibilidade", "dispensa"].includes(reqObj.justificativa_tipo || "")) {
+          const m = (reqObj.observacoes || "").match(/\[JUST_LEGAL\]([\s\S]*?)\[\/JUST_LEGAL\]/);
+          if (m) {
+            const legal = JSON.parse(m[1]);
+            const arr: Array<{ name: string; path: string }> | null =
+              reqObj.justificativa_tipo === "inexigibilidade" && Array.isArray(legal?.fornecedor_unico_anexos)
+                ? legal.fornecedor_unico_anexos
+                : reqObj.justificativa_tipo === "dispensa" && Array.isArray(legal?.dispensa_anexos)
+                ? legal.dispensa_anexos
+                : null;
+            if (arr && arr.length) {
+              const signed: Array<{ name: string; url: string | null }> = [];
+              for (const a of arr) {
+                try {
+                  const { data } = await supabase.storage
+                    .from("purchase-attachments")
+                    .createSignedUrl(a.path, 60 * 60 * 24 * 7);
+                  signed.push({ name: a.name || a.path, url: data?.signedUrl || null });
+                } catch {
+                  signed.push({ name: a.name || a.path, url: null });
+                }
+              }
+              (dossier as any)._signed_legal_attachments = signed;
+            }
+          }
+        }
+      } catch (e) { /* segue sem evidências */ }
+
       // 1. Gera os 4 PDFs em paralelo (cada um retorna um Blob independente)
       const [reqBlob, quotBlob, orderBlob, dossieBlob] = await Promise.all([
         reqId ? (generateRequisitionPdf(reqId, { returnBlob: true }) as Promise<Blob>) : Promise.resolve(null),
