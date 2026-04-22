@@ -194,6 +194,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
         setJustPlanoResponsavel("");
         setJustPlanoPrazo("");
         setJustFornecedorAnexos([]);
+        setJustDispensaAnexos([]);
       }
       setSolicitante(requisition.solicitante_nome || "");
       setAprovadorImediato(requisition.aprovador_imediato_nome || "");
