@@ -162,8 +162,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     });
 
     // ===== SECTION 1: TIMELINE =====
-    doc.addPage();
-    sectionTitle(doc, "Seção 1 — Histórico do processo (linha do tempo)", margin);
+    startSection("Seção 1 — Histórico do processo (linha do tempo)", 200, true);
     const timeline: Array<[string, string]> = [];
     if (req) {
       timeline.push([fmtDateTime(req.created_at), `Requisição ${req.numero} criada — Solicitante: ${req.solicitante_nome || "—"} | Setor: ${req.setor || "—"}`]);
@@ -196,20 +195,16 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       head: [["Data/Hora", "Evento"]],
       body: timeline,
       theme: "striped",
-      headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 9 },
-      styles: { fontSize: 8, cellPadding: 4 },
+      headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 8 },
+      styles: { fontSize: 7.5, cellPadding: 2.5, minCellHeight: 10, valign: "top" },
       columnStyles: { 0: { cellWidth: 100 } },
-      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
-      didDrawPage: (data) => {
-        if (data.pageNumber > 1) sectionTitle(doc, "Seção 1 — Histórico do processo (cont.)", margin);
-      },
     });
 
     // ===== SECTION 2: PRICE GRID =====
-    doc.addPage();
-    sectionTitle(doc, "Seção 2 — Grade comparativa de preços", margin);
+    startSection("Seção 2 — Grade comparativa de preços", 220);
 
     // Monta lista unificada de "colunas-fornecedor" combinando suppliers da cotação e convites respondidos
     type SupplierCol = {
