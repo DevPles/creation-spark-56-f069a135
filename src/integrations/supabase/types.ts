@@ -770,6 +770,45 @@ export type Database = {
           },
         ]
       }
+      product_catalog: {
+        Row: {
+          ativo: boolean
+          classificacao: string
+          codigo: string
+          created_at: string
+          created_by: string | null
+          descricao: string
+          id: string
+          tipo: string
+          unidade_medida: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          classificacao?: string
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          id?: string
+          tipo?: string
+          unidade_medida?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          classificacao?: string
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          tipo?: string
+          unidade_medida?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           allowed_cards: string[] | null
