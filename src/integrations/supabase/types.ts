@@ -1997,6 +1997,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit_order: { Args: { _o_id: string }; Returns: boolean }
+      can_edit_quotation: { Args: { _q_id: string }; Returns: boolean }
+      can_edit_requisition: { Args: { _req_id: string }; Returns: boolean }
       get_invite_by_token: { Args: { _token: string }; Returns: Json }
       get_order_for_approval: { Args: { _token: string }; Returns: Json }
       has_role: {
