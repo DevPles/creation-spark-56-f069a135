@@ -41,7 +41,7 @@ export async function generateOrderPdf(orderId: string) {
     .maybeSingle();
   if (oErr || !order) throw new Error("Ordem de compra não encontrada");
 
-  const [itemsRes, reqRes, quotRes, contractRes, approvalsRes] = await Promise.all([
+  const [itemsRes, reqRes, quotRes, contractRes, approvalsRes, reqItemsRes, quotSuppliersRes] = await Promise.all([
     (supabase as any)
       .from("purchase_order_items")
       .select("*")
@@ -61,6 +61,18 @@ export async function generateOrderPdf(orderId: string) {
       .select("*")
       .eq("purchase_order_id", orderId)
       .order("created_at", { ascending: false }),
+    order.requisition_id
+      ? (supabase as any)
+          .from("purchase_requisition_items")
+          .select("*")
+          .eq("requisition_id", order.requisition_id)
+      : Promise.resolve({ data: [] } as any),
+    order.quotation_id
+      ? (supabase as any)
+          .from("purchase_quotation_suppliers")
+          .select("*")
+          .eq("quotation_id", order.quotation_id)
+      : Promise.resolve({ data: [] } as any),
   ]);
 
   const items = (itemsRes as any).data || [];
@@ -69,6 +81,8 @@ export async function generateOrderPdf(orderId: string) {
   const contract = (contractRes as any).data || null;
   const approvals = (approvalsRes as any).data || [];
   const lastApproval = approvals[0] || null;
+  const reqItems = (reqItemsRes as any).data || [];
+  const quotSuppliers = (quotSuppliersRes as any).data || [];
 
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
   (doc as any).setCharSpace(0);
