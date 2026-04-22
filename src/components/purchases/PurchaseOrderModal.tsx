@@ -274,9 +274,12 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     doc.setFillColor(...brandAccent);
     doc.rect(0, 32, pageW, 1.5, "F");
 
-    // Logo
+    // Logo (preserve aspect ratio 122x54 ≈ 2.26:1)
     try {
-      doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", 12, 7, 22, 18);
+      const logoH = 14;
+      const logoW = logoH * (122 / 54); // ≈ 31.6mm
+      const logoY = (32 - logoH) / 2;   // vertically center in 32mm band
+      doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", 12, logoY, logoW, logoH);
     } catch { /* ignore if logo invalid */ }
 
     // Title
