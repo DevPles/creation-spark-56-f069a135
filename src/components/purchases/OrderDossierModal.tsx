@@ -433,8 +433,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         : req.justificativa_tipo === "inexigibilidade" ? "Inexigibilidade"
         : "Compra emergencial";
 
-      doc.addPage();
-      sectionTitle(doc, `Seção 5 — Justificativa legal (${tipoLabel})`, margin);
+      startSection(`Seção 5 — Justificativa legal (${tipoLabel})`, 200);
       const legalRows: any[] = [
         ["Modalidade", tipoLabel],
         ["Base legal (Lei 14.133/2021)", legal?.base_legal || "—"],
@@ -475,14 +474,11 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         head: [],
         body: legalRows,
         theme: "plain",
-        styles: { fontSize: 9, cellPadding: 4, valign: "top" },
+        styles: { fontSize: 8.5, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
         columnStyles: { 0: { fontStyle: "bold", cellWidth: 200, fillColor: [240, 246, 246] } },
-        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
         pageBreak: "auto",
         rowPageBreak: "avoid",
-        didDrawPage: (data) => {
-          if (data.pageNumber > 1) sectionTitle(doc, `Seção 5 — Justificativa legal (cont.)`, margin);
-        },
       });
     }
 
