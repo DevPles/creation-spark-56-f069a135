@@ -45,14 +45,21 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     if (!open) return;
     const load = async () => {
       const { data: cs } = await supabase.from("contracts").select("*");
-      setContracts(cs || []);
+      const contractsList = cs || [];
+      setContracts(contractsList);
       const { data: allOrders } = await supabase.from("purchase_orders").select("*").in("status", ["autorizada", "enviada", "recebida"]);
       setOrders(allOrders || []);
 
       if (orderId) {
         const { data: o } = await supabase.from("purchase_orders").select("*").eq("id", orderId).single();
         setOrder(o);
-        setContractId(o?.contract_id || "");
+        let cid = o?.contract_id || "";
+        if (!cid && o?.facility_unit) {
+          const auto = contractsList.find((c: any) => c.unit === o.facility_unit && c.status === "Vigente")
+            || contractsList.find((c: any) => c.unit === o.facility_unit);
+          cid = auto?.id || "";
+        }
+        setContractId(cid);
         setRubricaId(o?.rubrica_id || "");
         setFornecedor(o?.fornecedor_nome || "");
         setFornecedorCnpj(o?.fornecedor_cnpj || "");
@@ -70,6 +77,9 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         setFacilityUnit(q.facility_unit);
         setReqId(q.requisition_id);
         setFornecedor(q.winner_supplier || "");
+        const auto = contractsList.find((c: any) => c.unit === q.facility_unit && c.status === "Vigente")
+          || contractsList.find((c: any) => c.unit === q.facility_unit);
+        if (auto) setContractId(auto.id);
         const { data: sups } = await supabase.from("purchase_quotation_suppliers").select("*").eq("quotation_id", quotationId);
         const winner = (sups || []).find((s: any) => s.fornecedor_nome === q.winner_supplier);
         if (winner) {
@@ -233,27 +243,16 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         <div className="space-y-4 py-2">
           {order && <Badge variant="outline">Status: {order.status}</Badge>}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <Label>Contrato</Label>
-              <Select value={contractId} onValueChange={(v) => { setContractId(v); setRubricaId(""); }}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {contracts.filter(c => !facilityUnit || c.unit === facilityUnit).map(c =>
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Rubrica</Label>
-              <Select value={rubricaId} onValueChange={setRubricaId} disabled={!contractId}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {rubricas.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name} ({r.percent}%)</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label>Rubrica {contract ? `— ${contract.name}` : ""}</Label>
+            <Select value={rubricaId} onValueChange={setRubricaId} disabled={!contractId}>
+              <SelectTrigger><SelectValue placeholder={contractId ? "Selecione a rubrica" : "Nenhum contrato vigente para esta unidade"} /></SelectTrigger>
+              <SelectContent>
+                {[...rubricas].sort((a: any, b: any) => a.name.localeCompare(b.name)).map((r: any) =>
+                  <SelectItem key={r.id} value={r.id}>{r.name} ({r.percent}%)</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
           {selectedRubrica && (
