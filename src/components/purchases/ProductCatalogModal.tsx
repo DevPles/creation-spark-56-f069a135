@@ -259,6 +259,46 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
             <Label>Descrição técnica</Label>
             <Input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Seringa 10 ml" />
           </div>
+          <div>
+            <Label>Imagem do produto (opcional)</Label>
+            <div className="mt-1 flex items-start gap-3">
+              <label className="flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center rounded-md border border-dashed border-input bg-muted/30 hover:bg-muted overflow-hidden">
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Pré-visualização" className="h-full w-full object-cover" />
+                ) : uploadingImage ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                ) : (
+                  <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                )}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/jpg"
+                  className="hidden"
+                  disabled={uploadingImage}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleImageUpload(f);
+                    e.currentTarget.value = "";
+                  }}
+                />
+              </label>
+              <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                <span>JPG, PNG ou WEBP — até 5 MB.</span>
+                <span>Esta imagem será exibida no convite enviado ao fornecedor.</span>
+                {imageUrl && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 self-start px-2 text-xs"
+                    onClick={() => setImageUrl("")}
+                  >
+                    <X className="h-3 w-3 mr-1" /> Remover imagem
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Unidade hospitalar</Label>
