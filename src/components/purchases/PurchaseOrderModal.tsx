@@ -491,12 +491,23 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     const aprovadoEm = order?.aprovado_em ? new Date(order.aprovado_em) : null;
     const aprovadoData = aprovadoEm ? `${aprovadoEm.toLocaleDateString("pt-BR")} ${aprovadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : "";
     const isAuthorized = order?.status === "autorizada" || order?.status === "enviada" || order?.status === "recebida";
+    // If signed via public link, prefer that data
+    const signedAt = signedApproval?.signed_at ? new Date(signedApproval.signed_at) : null;
+    const signedData = signedAt
+      ? `${signedAt.toLocaleDateString("pt-BR")} ${signedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+      : "";
+    const approverName = signedApproval?.approver_name || (isAuthorized ? (order?.aprovado_por_nome || "") : "");
+    const approverCargo = signedApproval?.approver_cargo || "Gestor / Diretoria";
+    const approverIp = signedApproval?.approver_ip ? ` • IP ${signedApproval.approver_ip}` : "";
+    const dateLine = signedData
+      ? `Assinado em ${signedData}${approverIp}`
+      : (aprovadoData ? `Data: ${aprovadoData}` : "Data: ___/___/______");
     drawSignature(
       12 + sigW + 12,
-      isAuthorized ? "Autorizado por" : "Autorização (a preencher)",
-      isAuthorized ? (order?.aprovado_por_nome || "") : "",
-      "Gestor / Diretoria",
-      aprovadoData ? `Data: ${aprovadoData}` : "Data: ___/___/______",
+      signedApproval ? "Assinado digitalmente" : (isAuthorized ? "Autorizado por" : "Autorização (a preencher)"),
+      approverName,
+      approverCargo,
+      dateLine,
     );
 
     // ===== Footer =====
