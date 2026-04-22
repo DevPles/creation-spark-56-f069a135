@@ -116,6 +116,28 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
     setSuppliers(prev => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s));
   };
 
+  const addSupplier = () => {
+    setSuppliers(prev => [...prev, { slot: String(prev.length + 1), fornecedor_nome: "", fonte: "manual" }]);
+  };
+
+  const removeSupplier = (idx: number) => {
+    setSuppliers(prev => prev.filter((_, i) => i !== idx));
+    setPrices(prev => {
+      const next: Record<string, Record<number, number>> = {};
+      Object.keys(prev).forEach(itemId => {
+        const row = prev[itemId];
+        const newRow: Record<number, number> = {};
+        Object.keys(row).forEach(k => {
+          const i = Number(k);
+          if (i === idx) return;
+          newRow[i > idx ? i - 1 : i] = row[i];
+        });
+        next[itemId] = newRow;
+      });
+      return next;
+    });
+  };
+
   const setPrice = (itemId: string, supIdx: number, value: number) => {
     setPrices(prev => ({ ...prev, [itemId]: { ...(prev[itemId] || {}), [supIdx]: value } }));
   };
