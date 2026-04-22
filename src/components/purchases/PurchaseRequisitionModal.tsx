@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import ProductCatalogModal from "./ProductCatalogModal";
 
 const CLASSIFICACOES = ["medico", "medicamento", "dieta", "higiene", "escritorio", "descartavel", "limpeza", "outros"];
 const CLASSIF_LABEL: Record<string, string> = {
@@ -27,6 +28,7 @@ const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
 interface Item {
   id?: string;
   item_num: number;
+  codigo?: string;
   descricao: string;
   quantidade: number;
   unidade_medida: string;
@@ -45,6 +47,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
   const [saving, setSaving] = useState(false);
   const [facilityUnit, setFacilityUnit] = useState(profile?.facility_unit || "Hospital Geral");
   const [setor, setSetor] = useState("");
+  const [sectorOptions, setSectorOptions] = useState<string[]>([]);
   const [municipio, setMunicipio] = useState("");
   const [classificacao, setClassificacao] = useState<string[]>([]);
   const [justificativa, setJustificativa] = useState("mensal");
@@ -53,6 +56,25 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
   const [aprovadorImediato, setAprovadorImediato] = useState("");
   const [aprovadorDiretoria, setAprovadorDiretoria] = useState("");
   const [items, setItems] = useState<Item[]>([{ item_num: 1, descricao: "", quantidade: 1, unidade_medida: "UN" }]);
+  const [catalog, setCatalog] = useState<any[]>([]);
+  const [catalogOpen, setCatalogOpen] = useState(false);
+
+  const loadCatalog = async () => {
+    const { data } = await supabase.from("product_catalog").select("*").eq("ativo", true).order("descricao");
+    setCatalog(data || []);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    loadCatalog();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !facilityUnit) return;
+    supabase.from("sectors").select("name").eq("facility_unit", facilityUnit).order("name").then(({ data }) => {
+      setSectorOptions((data || []).map((s: any) => s.name));
+    });
+  }, [open, facilityUnit]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,7 +90,8 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setAprovadorDiretoria(requisition.aprovador_diretoria_nome || "");
       supabase.from("purchase_requisition_items").select("*").eq("requisition_id", requisition.id).order("item_num").then(({ data }) => {
         setItems((data || []).map((i: any) => ({
-          id: i.id, item_num: i.item_num, descricao: i.descricao, quantidade: Number(i.quantidade),
+          id: i.id, item_num: i.item_num, codigo: i.observacao?.startsWith("[COD:") ? i.observacao.match(/\[COD:([^\]]+)\]/)?.[1] : undefined,
+          descricao: i.descricao, quantidade: Number(i.quantidade),
           unidade_medida: i.unidade_medida, observacao: i.observacao
         })));
       });
@@ -94,6 +117,17 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
   const removeItem = (idx: number) => setItems(prev => prev.filter((_, i) => i !== idx).map((x, i) => ({ ...x, item_num: i + 1 })));
   const updateItem = (idx: number, field: keyof Item, value: any) => {
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it));
+  };
+
+  const pickCatalog = (idx: number, codigo: string) => {
+    const prod = catalog.find(c => c.codigo === codigo);
+    if (!prod) return;
+    setItems(prev => prev.map((it, i) => i === idx ? {
+      ...it,
+      codigo: prod.codigo,
+      descricao: prod.descricao,
+      unidade_medida: prod.unidade_medida || "UN",
+    } : it));
   };
 
   const generateNumero = () => {
@@ -176,7 +210,17 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                 <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>Setor</Label><Input value={setor} onChange={e => setSetor(e.target.value)} /></div>
+            <div>
+              <Label>Setor</Label>
+              {sectorOptions.length > 0 ? (
+                <Select value={setor} onValueChange={setSetor}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{sectorOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              ) : (
+                <Input value={setor} onChange={e => setSetor(e.target.value)} placeholder="Cadastre setores na unidade" />
+              )}
+            </div>
             <div><Label>Município</Label><Input value={municipio} onChange={e => setMunicipio(e.target.value)} /></div>
           </div>
 
@@ -213,12 +257,16 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Itens</Label>
-              <Button type="button" size="sm" variant="outline" className="rounded-full" onClick={addItem}>Adicionar item</Button>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant="outline" className="rounded-full" onClick={() => setCatalogOpen(true)}>Cadastrar item no catálogo</Button>
+                <Button type="button" size="sm" variant="outline" className="rounded-full" onClick={addItem}>Adicionar linha</Button>
+              </div>
             </div>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
+                  <TableHead className="w-40">Código</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead className="w-24">Qtd</TableHead>
                   <TableHead className="w-24">Un</TableHead>
@@ -230,6 +278,19 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                 {items.map((it, idx) => (
                   <TableRow key={idx}>
                     <TableCell>{idx + 1}</TableCell>
+                    <TableCell>
+                      <Select value={it.codigo || ""} onValueChange={(v) => pickCatalog(idx, v)}>
+                        <SelectTrigger className="font-mono text-xs"><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                        <SelectContent className="max-h-72">
+                          {catalog.map(c => (
+                            <SelectItem key={c.id} value={c.codigo}>
+                              <span className="font-mono mr-2">{c.codigo}</span>
+                              <span className="text-xs text-muted-foreground">{c.descricao.slice(0, 50)}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
                     <TableCell><Input value={it.descricao} onChange={e => updateItem(idx, "descricao", e.target.value)} /></TableCell>
                     <TableCell><Input type="number" value={it.quantidade} onChange={e => updateItem(idx, "quantidade", e.target.value)} /></TableCell>
                     <TableCell><Input value={it.unidade_medida} onChange={e => updateItem(idx, "unidade_medida", e.target.value)} /></TableCell>
@@ -246,6 +307,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           <Button className="rounded-full" disabled={saving} onClick={handleSave}>{saving ? "Salvando..." : "Salvar"}</Button>
         </DialogFooter>
       </DialogContent>
+      <ProductCatalogModal open={catalogOpen} onOpenChange={setCatalogOpen} onSaved={loadCatalog} />
     </Dialog>
   );
 }
