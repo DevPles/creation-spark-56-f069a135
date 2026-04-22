@@ -315,6 +315,18 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           risco_descricao: justRiscoDescricao,
           urgencia_prazo: justUrgenciaPrazo,
           processo_numero: justProcessoNumero,
+          impacto_nao_compra: justImpactoNaoCompra,
+          riscos_classif: justRiscosClassif,
+          risco_outro: justRiscoOutro,
+          fato_gerador: justFatoGerador,
+          pesquisa_preco: justPesquisaPreco,
+          escolha_fornecedor: justEscolhaFornecedor,
+          regularizacao: justRegularizacao,
+          reincidencia: justReincidencia,
+          reincidencia_outro: justReincidenciaOutro,
+          plano_acao: justPlanoAcao,
+          plano_responsavel: justPlanoResponsavel,
+          plano_prazo: justPlanoPrazo,
         };
         observacoesFinal = `${observacoesFinal}\n\n[JUST_LEGAL]${JSON.stringify(legalBlock)}[/JUST_LEGAL]`.trim();
       }
