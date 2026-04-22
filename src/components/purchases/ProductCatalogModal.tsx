@@ -164,7 +164,9 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
             classificacao,
             descricao: descricao.trim(),
             unidade_medida: unidade,
-          })
+            facility_unit: facilityUnit,
+            setor: setor || null,
+          } as any)
           .eq("id", editing.id);
         if (error) throw error;
         toast.success("Item atualizado");
@@ -175,6 +177,8 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
           classificacao,
           descricao: descricao.trim(),
           unidade_medida: unidade,
+          facility_unit: facilityUnit,
+          setor: setor || null,
         } as any);
         if (error) throw error;
         toast.success(`Item cadastrado (${previewCode})`);
