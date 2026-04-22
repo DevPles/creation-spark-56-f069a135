@@ -88,15 +88,9 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       doc.setTextColor(0, 0, 0);
       return y + gapBefore + 4;
     };
-    // Inicia uma seção: nova página apenas se não houver espaço útil; pinta faixa compacta
-    const startSection = (title: string, minNeeded = 140, forceNewPage = false) => {
-      const y = lastY();
-      const needsNewPage = forceNewPage || y === contentStartY ? false : (y + minNeeded > pageH - footerReserve);
-      // Se ainda não desenhou nada na página corrente além da capa, addPage se for a 1ª seção (cover)
-      if (forceNewPage || needsNewPage) {
-        doc.addPage();
-      }
-      // Pinta a faixa teal compacta
+    // Inicia uma seção em nova página com faixa teal compacta
+    const startSection = (title: string) => {
+      doc.addPage();
       doc.setFillColor(13, 79, 79);
       doc.rect(0, 0, pageW, sectionHeaderH, "F");
       doc.setTextColor(255, 255, 255);
