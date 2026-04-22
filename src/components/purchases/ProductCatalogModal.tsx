@@ -202,8 +202,8 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
 
   const handleImageUpload = async (file: File) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Imagem muito grande (máx. 5 MB)");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx. 10 MB)");
       return;
     }
     if (!/^image\/(jpeg|png|webp|jpg)$/i.test(file.type)) {
@@ -283,7 +283,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
                 />
               </label>
               <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                <span>JPG, PNG ou WEBP — até 5 MB.</span>
+                <span>JPG, PNG ou WEBP — até 10 MB.</span>
                 <span>Esta imagem será exibida no convite enviado ao fornecedor.</span>
                 {imageUrl && (
                   <Button
