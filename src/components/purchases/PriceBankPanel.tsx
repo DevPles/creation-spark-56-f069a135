@@ -14,20 +14,25 @@ import ProductCatalogModal from "./ProductCatalogModal";
 const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 const fmtDate = (d: string | Date | null) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
 
-export default function PriceBankPanel() {
+interface PriceBankPanelProps {
+  externalSearch?: string;
+  externalUnit?: string;
+}
+
+export default function PriceBankPanel({ externalSearch = "", externalUnit = "all" }: PriceBankPanelProps) {
   const { profile } = useAuth();
   const [history, setHistory] = useState<any[]>([]);
   const [catalog, setCatalog] = useState<any[]>([]);
-  const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogModalOpen, setCatalogModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
-  const [search, setSearch] = useState("");
   const [searchAI, setSearchAI] = useState("");
   const [loadingAI, setLoadingAI] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState<Set<string>>(new Set());
   const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
-  const [purchaseSearch, setPurchaseSearch] = useState("");
-  const [purchaseUnit, setPurchaseUnit] = useState<string>("all");
+
+  // Filtros vêm da página de Compras (acima das abas)
+  const search = externalSearch;
+  const unitFilter = externalUnit;
 
   const load = async () => {
     const { data } = await supabase.from("price_history").select("*").order("data_referencia", { ascending: false }).limit(500);
