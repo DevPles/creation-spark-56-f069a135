@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { UNIVIDA_LOGO_BASE64 } from "@/assets/univida-logo-base64";
 
 const fmtDate = (d?: string | null) => {
   if (!d) return "—";
@@ -87,6 +88,17 @@ export async function generateRequisitionPdf(requisitionId: string) {
     doc.setFillColor(...BLUE);
     doc.rect(0, full ? 88 : 60, pageW, 4, "F");
 
+    // Logo Univida (canto direito da faixa)
+    try {
+      const logoH = full ? 56 : 40;
+      const logoW = logoH * 1.6;
+      const logoX = pageW - margin - logoW;
+      const logoY = full ? (88 - logoH) / 2 : (60 - logoH) / 2;
+      doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", logoX, logoY, logoW, logoH, undefined, "FAST");
+    } catch {
+      // ignore image errors
+    }
+
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(full ? 16 : 12);
@@ -98,9 +110,11 @@ export async function generateRequisitionPdf(requisitionId: string) {
     if (full) {
       doc.text(req.facility_unit || "—", margin, 74);
     }
-    doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageW - margin, full ? 56 : 44, { align: "right" });
+    // Texto à direita posicionado abaixo do logo
+    const rightTextY = full ? 78 : 52;
+    doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageW - margin, rightTextY, { align: "right" });
     if (full) {
-      doc.text(`Status: ${REQ_STATUS_LABEL[req.status] || req.status || "—"}`, pageW - margin, 74, { align: "right" });
+      doc.text(`Status: ${REQ_STATUS_LABEL[req.status] || req.status || "—"}`, pageW - margin, rightTextY + 12, { align: "right" });
     }
     doc.setTextColor(...TEXT_DARK);
   };
