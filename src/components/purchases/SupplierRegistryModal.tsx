@@ -74,19 +74,32 @@ export default function SupplierRegistryModal({ open, onOpenChange, onSaved }: P
         contato_responsavel: editing.contato_responsavel || null,
         observacoes: editing.observacoes || null,
         ativo: editing.ativo,
+        fornece_medicamentos: !!editing.fornece_medicamentos,
+        inidoneo: !!editing.inidoneo,
       };
       if (editing.id) {
         const { error } = await supabase.from("suppliers").update(payload).eq("id", editing.id);
         if (error) throw error;
         toast.success("Fornecedor atualizado");
+        // mantém edição aberta para permitir upload de docs
+        const { data: refreshed } = await supabase.from("suppliers").select("*").eq("id", editing.id).single();
+        if (refreshed) setEditing(refreshed as Supplier);
+        load();
+        onSaved?.();
+        return;
       } else {
-        const { error } = await supabase.from("suppliers").insert({ ...payload, created_by: profile.id });
+        const { data, error } = await supabase
+          .from("suppliers")
+          .insert({ ...payload, created_by: profile.id })
+          .select("*")
+          .single();
         if (error) throw error;
-        toast.success("Fornecedor cadastrado");
+        toast.success("Fornecedor cadastrado — agora envie a documentação na aba Qualificação");
+        if (data) setEditing(data as Supplier);
+        load();
+        onSaved?.();
+        return;
       }
-      setEditing(null);
-      load();
-      onSaved?.();
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar fornecedor");
     } finally { setSaving(false); }
