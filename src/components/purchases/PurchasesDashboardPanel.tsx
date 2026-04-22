@@ -468,19 +468,16 @@ export default function PurchasesDashboardPanel({
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Atenção imediata */}
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-600" /> Atenção imediata
-          </CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Atenção imediata</CardTitle></CardHeader>
           <CardContent>
             {attention.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">Nada pendente. Tudo em dia.</p>
             ) : (
               <ul className="space-y-2 max-h-[360px] overflow-auto pr-2">
                 {attention.map(a => (
-                  <li key={a.id} className={`flex items-start gap-3 p-3 rounded-md border ${
+                  <li key={a.id} className={`p-3 rounded-md border ${
                     a.severity === "high" ? "border-destructive/30 bg-destructive/5" : "border-amber-200/50 bg-amber-50/50 dark:border-amber-500/20 dark:bg-amber-500/5"
                   }`}>
-                    <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${a.severity === "high" ? "text-destructive" : "text-amber-600"}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{a.title}</p>
                       <p className="text-xs text-muted-foreground">{a.subtitle}</p>
