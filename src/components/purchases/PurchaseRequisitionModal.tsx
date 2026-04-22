@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCatalogModal from "./ProductCatalogModal";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const CLASSIF_LABEL: Record<string, string> = {
   alimenticio: "Alimentício",
@@ -159,6 +160,29 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       descricao: prod.descricao,
       unidade_medida: prod.unidade_medida || "UN",
     } : it));
+  };
+
+  const [descFocusIdx, setDescFocusIdx] = useState<number | null>(null);
+
+  const getSuggestions = (query: string) => {
+    const q = query.trim().toLowerCase();
+    if (!q || q.length < 2) return [];
+    return catalog
+      .filter(c =>
+        (c.descricao || "").toLowerCase().includes(q) ||
+        (c.codigo || "").toLowerCase().includes(q)
+      )
+      .slice(0, 8);
+  };
+
+  const applySuggestion = (idx: number, prod: any) => {
+    setItems(prev => prev.map((it, i) => i === idx ? {
+      ...it,
+      codigo: prod.codigo,
+      descricao: prod.descricao,
+      unidade_medida: prod.unidade_medida || it.unidade_medida || "UN",
+    } : it));
+    setDescFocusIdx(null);
   };
 
   const generateNumero = () => {
