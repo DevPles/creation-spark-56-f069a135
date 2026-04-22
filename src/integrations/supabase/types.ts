@@ -714,6 +714,62 @@ export type Database = {
         }
         Relationships: []
       }
+      price_history: {
+        Row: {
+          categoria: string | null
+          created_at: string
+          created_by: string | null
+          data_referencia: string
+          descricao_produto: string
+          fonte: string
+          fonte_url: string | null
+          fornecedor_cnpj: string | null
+          fornecedor_nome: string | null
+          id: string
+          quotation_id: string | null
+          unidade_medida: string | null
+          valor_unitario: number
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_referencia?: string
+          descricao_produto: string
+          fonte?: string
+          fonte_url?: string | null
+          fornecedor_cnpj?: string | null
+          fornecedor_nome?: string | null
+          id?: string
+          quotation_id?: string | null
+          unidade_medida?: string | null
+          valor_unitario: number
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_referencia?: string
+          descricao_produto?: string
+          fonte?: string
+          fonte_url?: string | null
+          fornecedor_cnpj?: string | null
+          fornecedor_nome?: string | null
+          id?: string
+          quotation_id?: string | null
+          unidade_medida?: string | null
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_history_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           allowed_cards: string[] | null
@@ -757,6 +813,463 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      purchase_audit_log: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string
+          changed_by_name: string | null
+          entity_id: string
+          entity_type: string
+          field_changed: string | null
+          id: string
+          motivo: string | null
+          new_value: string | null
+          old_value: string | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by: string
+          changed_by_name?: string | null
+          entity_id: string
+          entity_type: string
+          field_changed?: string | null
+          id?: string
+          motivo?: string | null
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string
+          changed_by_name?: string | null
+          entity_id?: string
+          entity_type?: string
+          field_changed?: string | null
+          id?: string
+          motivo?: string | null
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: []
+      }
+      purchase_order_items: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          item_num: number
+          purchase_order_id: string
+          quantidade: number
+          unidade_medida: string
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          item_num?: number
+          purchase_order_id: string
+          quantidade?: number
+          unidade_medida?: string
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          item_num?: number
+          purchase_order_id?: string
+          quantidade?: number
+          unidade_medida?: string
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          cargo: string | null
+          cnpj_emissao_nf: string | null
+          contract_id: string | null
+          created_at: string
+          created_by: string
+          data_envio_fornecedor: string | null
+          data_envio_setor: string | null
+          endereco_entrega: string | null
+          facility_unit: string
+          fornecedor_cnpj: string | null
+          fornecedor_nome: string
+          id: string
+          motivo_negacao: string | null
+          numero: string
+          observacoes: string | null
+          prazo_entrega: string | null
+          quotation_id: string | null
+          requisition_id: string | null
+          responsavel_emissao_nome: string | null
+          rubrica_id: string | null
+          rubrica_name: string | null
+          status: Database["public"]["Enums"]["purchase_order_status"]
+          texto_obrigatorio_nf: string | null
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          cargo?: string | null
+          cnpj_emissao_nf?: string | null
+          contract_id?: string | null
+          created_at?: string
+          created_by: string
+          data_envio_fornecedor?: string | null
+          data_envio_setor?: string | null
+          endereco_entrega?: string | null
+          facility_unit: string
+          fornecedor_cnpj?: string | null
+          fornecedor_nome: string
+          id?: string
+          motivo_negacao?: string | null
+          numero: string
+          observacoes?: string | null
+          prazo_entrega?: string | null
+          quotation_id?: string | null
+          requisition_id?: string | null
+          responsavel_emissao_nome?: string | null
+          rubrica_id?: string | null
+          rubrica_name?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          texto_obrigatorio_nf?: string | null
+          updated_at?: string
+          valor_total?: number
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          cargo?: string | null
+          cnpj_emissao_nf?: string | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string
+          data_envio_fornecedor?: string | null
+          data_envio_setor?: string | null
+          endereco_entrega?: string | null
+          facility_unit?: string
+          fornecedor_cnpj?: string | null
+          fornecedor_nome?: string
+          id?: string
+          motivo_negacao?: string | null
+          numero?: string
+          observacoes?: string | null
+          prazo_entrega?: string | null
+          quotation_id?: string | null
+          requisition_id?: string | null
+          responsavel_emissao_nome?: string | null
+          rubrica_id?: string | null
+          rubrica_name?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          texto_obrigatorio_nf?: string | null
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_quotation_prices: {
+        Row: {
+          created_at: string
+          id: string
+          is_winner: boolean
+          quotation_id: string
+          requisition_item_id: string
+          supplier_id: string
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_winner?: boolean
+          quotation_id: string
+          requisition_item_id: string
+          supplier_id: string
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_winner?: boolean
+          quotation_id?: string
+          requisition_item_id?: string
+          supplier_id?: string
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_quotation_prices_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_quotation_prices_requisition_item_id_fkey"
+            columns: ["requisition_item_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisition_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_quotation_prices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_quotation_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_quotation_suppliers: {
+        Row: {
+          condicao_pagamento: string | null
+          created_at: string
+          fonte: string
+          fornecedor_cnpj: string | null
+          fornecedor_nome: string
+          id: string
+          prazo_entrega: string | null
+          quotation_id: string
+          slot: string
+          total: number | null
+        }
+        Insert: {
+          condicao_pagamento?: string | null
+          created_at?: string
+          fonte?: string
+          fornecedor_cnpj?: string | null
+          fornecedor_nome: string
+          id?: string
+          prazo_entrega?: string | null
+          quotation_id: string
+          slot?: string
+          total?: number | null
+        }
+        Update: {
+          condicao_pagamento?: string | null
+          created_at?: string
+          fonte?: string
+          fornecedor_cnpj?: string | null
+          fornecedor_nome?: string
+          id?: string
+          prazo_entrega?: string | null
+          quotation_id?: string
+          slot?: string
+          total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_quotation_suppliers_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_quotations: {
+        Row: {
+          created_at: string
+          created_by: string
+          data_cotacao: string
+          facility_unit: string
+          id: string
+          numero: string
+          observacoes: string | null
+          requisition_id: string
+          setor_comprador: string | null
+          status: Database["public"]["Enums"]["purchase_quotation_status"]
+          total_winner: number | null
+          updated_at: string
+          winner_supplier: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          data_cotacao?: string
+          facility_unit: string
+          id?: string
+          numero: string
+          observacoes?: string | null
+          requisition_id: string
+          setor_comprador?: string | null
+          status?: Database["public"]["Enums"]["purchase_quotation_status"]
+          total_winner?: number | null
+          updated_at?: string
+          winner_supplier?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data_cotacao?: string
+          facility_unit?: string
+          id?: string
+          numero?: string
+          observacoes?: string | null
+          requisition_id?: string
+          setor_comprador?: string | null
+          status?: Database["public"]["Enums"]["purchase_quotation_status"]
+          total_winner?: number | null
+          updated_at?: string
+          winner_supplier?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_quotations_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requisition_items: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          item_num: number
+          observacao: string | null
+          quantidade: number
+          requisition_id: string
+          unidade_medida: string
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          item_num?: number
+          observacao?: string | null
+          quantidade?: number
+          requisition_id: string
+          unidade_medida?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          item_num?: number
+          observacao?: string | null
+          quantidade?: number
+          requisition_id?: string
+          unidade_medida?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_requisition_items_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requisitions: {
+        Row: {
+          aprovador_diretoria_nome: string | null
+          aprovador_imediato_nome: string | null
+          classificacao: string[]
+          created_at: string
+          created_by: string
+          data_requisicao: string
+          facility_unit: string
+          id: string
+          justificativa_tipo: string
+          municipio: string | null
+          numero: string
+          observacoes: string | null
+          setor: string | null
+          solicitante_id: string | null
+          solicitante_nome: string | null
+          status: Database["public"]["Enums"]["purchase_requisition_status"]
+          updated_at: string
+        }
+        Insert: {
+          aprovador_diretoria_nome?: string | null
+          aprovador_imediato_nome?: string | null
+          classificacao?: string[]
+          created_at?: string
+          created_by: string
+          data_requisicao?: string
+          facility_unit: string
+          id?: string
+          justificativa_tipo?: string
+          municipio?: string | null
+          numero: string
+          observacoes?: string | null
+          setor?: string | null
+          solicitante_id?: string | null
+          solicitante_nome?: string | null
+          status?: Database["public"]["Enums"]["purchase_requisition_status"]
+          updated_at?: string
+        }
+        Update: {
+          aprovador_diretoria_nome?: string | null
+          aprovador_imediato_nome?: string | null
+          classificacao?: string[]
+          created_at?: string
+          created_by?: string
+          data_requisicao?: string
+          facility_unit?: string
+          id?: string
+          justificativa_tipo?: string
+          municipio?: string | null
+          numero?: string
+          observacoes?: string | null
+          setor?: string | null
+          solicitante_id?: string | null
+          solicitante_nome?: string | null
+          status?: Database["public"]["Enums"]["purchase_requisition_status"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       report_attachments: {
         Row: {
@@ -1245,6 +1758,26 @@ export type Database = {
         | "insumo"
         | "infraestrutura"
         | "outro"
+      purchase_order_status:
+        | "aguardando_aprovacao"
+        | "autorizada"
+        | "negada"
+        | "enviada"
+        | "recebida"
+        | "cancelada"
+      purchase_quotation_status:
+        | "rascunho"
+        | "em_andamento"
+        | "concluida"
+        | "cancelada"
+      purchase_requisition_status:
+        | "rascunho"
+        | "aguardando_cotacao"
+        | "em_cotacao"
+        | "cotacao_concluida"
+        | "em_oc"
+        | "finalizada"
+        | "cancelada"
       report_status: "rascunho" | "em_revisao" | "fechado" | "exportado"
       sau_status: "aberto" | "em_andamento" | "resolvido" | "cancelado"
       sau_tipo: "elogio" | "reclamacao" | "sugestao" | "ouvidoria"
@@ -1397,6 +1930,29 @@ export const Constants = {
         "insumo",
         "infraestrutura",
         "outro",
+      ],
+      purchase_order_status: [
+        "aguardando_aprovacao",
+        "autorizada",
+        "negada",
+        "enviada",
+        "recebida",
+        "cancelada",
+      ],
+      purchase_quotation_status: [
+        "rascunho",
+        "em_andamento",
+        "concluida",
+        "cancelada",
+      ],
+      purchase_requisition_status: [
+        "rascunho",
+        "aguardando_cotacao",
+        "em_cotacao",
+        "cotacao_concluida",
+        "em_oc",
+        "finalizada",
+        "cancelada",
       ],
       report_status: ["rascunho", "em_revisao", "fechado", "exportado"],
       sau_status: ["aberto", "em_andamento", "resolvido", "cancelado"],
