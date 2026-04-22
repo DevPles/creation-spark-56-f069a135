@@ -901,6 +901,65 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_order_approvals: {
+        Row: {
+          approver_cargo: string | null
+          approver_email: string | null
+          approver_ip: string | null
+          approver_name: string | null
+          ciencia_lgpd: boolean
+          created_at: string
+          created_by: string
+          decision: string | null
+          expires_at: string
+          id: string
+          motivo_recusa: string | null
+          purchase_order_id: string
+          signed_at: string | null
+          token: string
+        }
+        Insert: {
+          approver_cargo?: string | null
+          approver_email?: string | null
+          approver_ip?: string | null
+          approver_name?: string | null
+          ciencia_lgpd?: boolean
+          created_at?: string
+          created_by: string
+          decision?: string | null
+          expires_at?: string
+          id?: string
+          motivo_recusa?: string | null
+          purchase_order_id: string
+          signed_at?: string | null
+          token?: string
+        }
+        Update: {
+          approver_cargo?: string | null
+          approver_email?: string | null
+          approver_ip?: string | null
+          approver_name?: string | null
+          ciencia_lgpd?: boolean
+          created_at?: string
+          created_by?: string
+          decision?: string | null
+          expires_at?: string
+          id?: string
+          motivo_recusa?: string | null
+          purchase_order_id?: string
+          signed_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_approvals_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_order_items: {
         Row: {
           created_at: string
@@ -1884,6 +1943,7 @@ export type Database = {
     }
     Functions: {
       get_invite_by_token: { Args: { _token: string }; Returns: Json }
+      get_order_for_approval: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1897,6 +1957,19 @@ export type Database = {
           _observacoes: string
           _prazo_entrega: string
           _responses: Json
+          _token: string
+        }
+        Returns: Json
+      }
+      submit_order_approval: {
+        Args: {
+          _approver_cargo: string
+          _approver_email: string
+          _approver_name: string
+          _ciencia: boolean
+          _decision: string
+          _ip: string
+          _motivo_recusa: string
           _token: string
         }
         Returns: Json
