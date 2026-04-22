@@ -212,6 +212,37 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     }));
   };
 
+  const generateApprovalLink = async () => {
+    if (!profile) return;
+    if (!order?.id) {
+      toast.error("Salve a OC antes de gerar o link de aprovação");
+      return;
+    }
+    setGeneratingLink(true);
+    try {
+      const { data, error } = await supabase
+        .from("purchase_order_approvals" as any)
+        .insert({ purchase_order_id: order.id, created_by: profile.id })
+        .select()
+        .single();
+      if (error) throw error;
+      const url = `${window.location.origin}/aprovar-oc/${(data as any).token}`;
+      setApprovalLink(url);
+      try { await navigator.clipboard.writeText(url); toast.success("Link de aprovação copiado!"); }
+      catch { toast.success("Link gerado — copie manualmente"); }
+    } catch (e: any) {
+      toast.error("Erro ao gerar link: " + (e?.message || "desconhecido"));
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
+  const copyApprovalLink = async () => {
+    if (!approvalLink) return;
+    try { await navigator.clipboard.writeText(approvalLink); toast.success("Link copiado!"); }
+    catch { toast.error("Não foi possível copiar"); }
+  };
+
   const saveDraft = async () => {
     if (!profile) return;
     if (!fornecedor.trim()) { toast.error("Informe o fornecedor"); return; }
