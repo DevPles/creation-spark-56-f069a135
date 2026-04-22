@@ -68,18 +68,22 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
 
     // ===== COVER =====
     doc.setFillColor(13, 79, 79); // teal
-    doc.rect(0, 0, pageW, 110, "F");
+    doc.rect(0, 0, pageW, 130, "F");
+    try {
+      // Logo Instituto Univida no canto superior direito
+      doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", pageW - margin - 110, 20, 110, 90);
+    } catch (_) {}
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
-    doc.text("DOSSIÊ DE AUDITORIA", margin, 50);
+    doc.text("DOSSIÊ DE AUDITORIA", margin, 55);
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.text("Ordem de Compra — Pronto para Tribunal de Contas", margin, 72);
-    doc.text("Sistema MetricOss (Moss)", margin, 90);
+    doc.text("Ordem de Compra — Pronto para Tribunal de Contas", margin, 78);
+    doc.text("Instituto Univida — Sistema MetricOss (Moss)", margin, 96);
 
     doc.setTextColor(0, 0, 0);
-    let y = 150;
+    let y = 170;
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.text(`OC ${order.numero || "—"}`, margin, y);
