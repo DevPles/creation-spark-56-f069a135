@@ -103,28 +103,31 @@ export async function generateRequisitionPdf(
     if (currentY + needed > pageH - 60) {
       doc.addPage();
       drawHeaderBand(false);
-      return 110;
+      return 96;
     }
     return currentY;
   };
 
   const drawHeaderBand = (full: boolean) => {
+    // Banda mais alta para acomodar textos sem encostar no logo
+    const bandH = full ? 110 : 70;
     doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pageW, full ? 88 : 60, "F");
-    // Faixa de acento
+    doc.rect(0, 0, pageW, bandH, "F");
     doc.setFillColor(...BLUE);
-    doc.rect(0, full ? 88 : 60, pageW, 4, "F");
+    doc.rect(0, bandH, pageW, 4, "F");
 
-    // Logo Univida (canto direito da faixa)
+    // Logo Univida — calcula zona segura à esquerda dele
+    const logoH = full ? 56 : 40;
+    const logoW = logoH * 1.6;
+    const logoMargin = 16; // respiração entre texto e logo
+    const logoX = pageW - margin - logoW;
+    const logoY = (bandH - logoH) / 2;
     try {
-      const logoH = full ? 56 : 40;
-      const logoW = logoH * 1.6;
-      const logoX = pageW - margin - logoW;
-      const logoY = full ? (88 - logoH) / 2 : (60 - logoH) / 2;
       doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", logoX, logoY, logoW, logoH, undefined, "FAST");
     } catch {
       // ignore image errors
     }
+    const rightTextLimit = logoX - logoMargin;
 
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
@@ -137,17 +140,33 @@ export async function generateRequisitionPdf(
     if (full) {
       doc.text(req.facility_unit || "—", margin, 74);
     }
-    // Texto à direita posicionado abaixo do logo
-    const rightTextY = full ? 78 : 52;
-    doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageW - margin, rightTextY, { align: "right" });
+    // Coluna direita alinhada ao limite seguro (não invade o logo)
     if (full) {
-      doc.text(`Status: ${REQ_STATUS_LABEL[req.status] || req.status || "—"}`, pageW - margin, rightTextY + 12, { align: "right" });
+      doc.text(
+        `Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
+        rightTextLimit,
+        56,
+        { align: "right" }
+      );
+      doc.text(
+        `Status: ${REQ_STATUS_LABEL[req.status] || req.status || "—"}`,
+        rightTextLimit,
+        74,
+        { align: "right" }
+      );
+    } else {
+      doc.text(
+        `Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
+        rightTextLimit,
+        44,
+        { align: "right" }
+      );
     }
     doc.setTextColor(...TEXT_DARK);
   };
 
   drawHeaderBand(true);
-  let y = 110;
+  let y = 138;
 
   const sectionTitle = (title: string) => {
     y = ensureSpace(28, y);

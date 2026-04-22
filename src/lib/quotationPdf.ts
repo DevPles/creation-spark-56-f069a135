@@ -108,25 +108,28 @@ export async function generateQuotationPdf(
     if (currentY + needed > pageH - 60) {
       doc.addPage();
       drawHeaderBand(false);
-      return 84;
+      return 96;
     }
     return currentY;
   };
 
   const drawHeaderBand = (full: boolean) => {
-    const bandH = full ? 96 : 64;
+    // Banda mais alta para acomodar textos sem encostar no logo
+    const bandH = full ? 110 : 70;
     doc.setFillColor(...NAVY);
     doc.rect(0, 0, pageW, bandH, "F");
     doc.setFillColor(...BLUE);
     doc.rect(0, bandH, pageW, 4, "F");
 
+    const logoH = full ? 60 : 44;
+    const logoW = logoH * 1.6;
+    const logoMargin = 16;
+    const logoX = pageW - margin - logoW;
+    const logoY = (bandH - logoH) / 2;
     try {
-      const logoH = full ? 60 : 44;
-      const logoW = logoH * 1.6;
-      const logoX = pageW - margin - logoW;
-      const logoY = (bandH - logoH) / 2;
       doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", logoX, logoY, logoW, logoH, undefined, "FAST");
     } catch {/* ignore */}
+    const rightTextLimit = logoX - logoMargin;
 
     doc.setTextColor(255, 255, 255);
     (doc as any).setCharSpace(0);
@@ -141,16 +144,16 @@ export async function generateQuotationPdf(
       doc.text(quot.facility_unit || "-", margin, 70);
     }
     if (full) {
-      doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageW - margin, 52, { align: "right" });
-      doc.text(`Status: ${QUOT_STATUS_LABEL[quot.status] || quot.status || "-"}`, pageW - margin, 70, { align: "right" });
+      doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, rightTextLimit, 52, { align: "right" });
+      doc.text(`Status: ${QUOT_STATUS_LABEL[quot.status] || quot.status || "-"}`, rightTextLimit, 70, { align: "right" });
     } else {
-      doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageW - margin, 42, { align: "right" });
+      doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, rightTextLimit, 42, { align: "right" });
     }
     doc.setTextColor(...TEXT_DARK);
   };
 
   drawHeaderBand(true);
-  let y = 120;
+  let y = 138;
 
   const sectionTitle = (title: string) => {
     y = ensureSpace(28, y);
