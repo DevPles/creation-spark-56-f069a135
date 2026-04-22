@@ -174,7 +174,7 @@ export async function generateQuotationPdf(
       startY: y,
       theme: "grid",
       styles: { ...baseTableStyles, fontSize: 8.5, cellPadding: 4 },
-      headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold" },
+      headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
       alternateRowStyles: { fillColor: ALT_ROW },
       head: [["Slot", "Fornecedor", "CNPJ", "Pagamento", "Prazo entrega", "Origem", "Total"]],
       body: suppliers.map((s: any) => [
@@ -255,7 +255,7 @@ export async function generateQuotationPdf(
       startY: y,
       theme: "grid",
       styles: { ...baseTableStyles, fontSize: 8.5, cellPadding: 4 },
-      headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold", halign: "center" },
+      headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold", halign: "center" },
       alternateRowStyles: { fillColor: ALT_ROW },
       head: [head],
       body,
@@ -289,7 +289,7 @@ export async function generateQuotationPdf(
       startY: y,
       theme: "grid",
       styles: { ...baseTableStyles, fontSize: 8.5, cellPadding: 4 },
-      headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold" },
+      headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
       alternateRowStyles: { fillColor: ALT_ROW },
       head: [["Fornecedor", "CNPJ", "E-mail", "Status", "Enviado", "Respondido"]],
       body: invites.map((i: any) => [

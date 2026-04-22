@@ -247,7 +247,7 @@ export async function generateOrderPdf(
     startY: y,
     theme: "grid",
     styles: { ...baseTableStyles, fontSize: 8.5, cellPadding: 4 },
-    headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold", halign: "center" },
+    headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold", halign: "center" },
     alternateRowStyles: { fillColor: ALT_ROW },
     head: [["#", "Descrição", "Qtd", "Un.", "Valor unit.", "Valor total"]],
     body: items.map((it: any) => [
