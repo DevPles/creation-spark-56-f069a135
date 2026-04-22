@@ -174,14 +174,19 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     timeline.sort((a, b) => a[0].localeCompare(b[0]));
 
     autoTable(doc, {
-      startY: 90,
+      startY: contentStartY,
       head: [["Data/Hora", "Evento"]],
       body: timeline,
       theme: "striped",
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 9 },
       styles: { fontSize: 8, cellPadding: 4 },
       columnStyles: { 0: { cellWidth: 100 } },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      pageBreak: "auto",
+      rowPageBreak: "avoid",
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) sectionTitle(doc, "Seção 1 — Histórico do processo (cont.)", margin);
+      },
     });
 
     // ===== SECTION 2: PRICE GRID =====
