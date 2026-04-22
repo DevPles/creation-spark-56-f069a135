@@ -40,7 +40,7 @@ const fmtBRL = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
 export default function ComprasPage() {
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const [tab, setTab] = useState("requisicoes");
 
   const [requisitions, setRequisitions] = useState<any[]>([]);
@@ -156,6 +156,36 @@ export default function ComprasPage() {
   const openCreateOrder = (quotationId: string) => { setOrderContext({ quotationId }); setOrderModalOpen(true); };
   const openEditOrder = (orderId: string) => { setOrderContext({ orderId }); setOrderModalOpen(true); };
   const openInvite = (r: any) => { setInviteContext({ requisitionId: r.id, numero: r.numero }); setInviteModalOpen(true); };
+
+  const handleDeleteRequisition = async (r: any) => {
+    if (!confirm(`Excluir requisição ${r.numero}? Esta ação não pode ser desfeita.`)) return;
+    // Apaga itens primeiro (sem FK cascade declarada)
+    await (supabase as any).from("purchase_requisition_items").delete().eq("requisition_id", r.id);
+    const { error } = await supabase.from("purchase_requisitions").delete().eq("id", r.id);
+    if (error) { toast.error("Sem permissão para excluir requisição"); return; }
+    toast.success("Requisição excluída");
+    loadAll();
+  };
+
+  const handleDeleteQuotation = async (q: any) => {
+    if (!confirm(`Excluir cotação ${q.numero}? Esta ação não pode ser desfeita.`)) return;
+    await (supabase as any).from("purchase_quotation_prices").delete().eq("quotation_id", q.id);
+    await (supabase as any).from("purchase_quotation_suppliers").delete().eq("quotation_id", q.id);
+    const { error } = await supabase.from("purchase_quotations").delete().eq("id", q.id);
+    if (error) { toast.error("Sem permissão para excluir cotação"); return; }
+    toast.success("Cotação excluída");
+    loadAll();
+  };
+
+  const handleDeleteOrder = async (o: any) => {
+    if (!confirm(`Excluir ordem de compra ${o.numero}? Esta ação não pode ser desfeita.`)) return;
+    await (supabase as any).from("purchase_order_items").delete().eq("purchase_order_id", o.id);
+    await (supabase as any).from("purchase_order_approvals").delete().eq("purchase_order_id", o.id);
+    const { error } = await supabase.from("purchase_orders").delete().eq("id", o.id);
+    if (error) { toast.error("Sem permissão para excluir ordem de compra"); return; }
+    toast.success("Ordem de compra excluída");
+    loadAll();
+  };
 
   return (
     <div className="min-h-screen bg-background">
