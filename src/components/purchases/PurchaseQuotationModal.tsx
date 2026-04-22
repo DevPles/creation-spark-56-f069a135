@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -39,6 +40,14 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
   const [prices, setPrices] = useState<Record<string, Record<number, number>>>({});
   const [setorComprador, setSetorComprador] = useState("");
   const [quotation, setQuotation] = useState<any>(null);
+  const [sectorOptions, setSectorOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!open || !requisition?.facility_unit) return;
+    supabase.from("sectors").select("name").eq("facility_unit", requisition.facility_unit).order("name").then(({ data }) => {
+      setSectorOptions((data || []).map((s: any) => s.name));
+    });
+  }, [open, requisition?.facility_unit]);
 
   useEffect(() => {
     if (!open) return;
@@ -226,7 +235,17 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
         <DialogHeader><DialogTitle>Mapa de cotação{requisition ? ` — Req. ${requisition.numero}` : ""}</DialogTitle></DialogHeader>
         <div className="space-y-4 py-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><Label>Setor comprador</Label><Input value={setorComprador} onChange={e => setSetorComprador(e.target.value)} /></div>
+            <div>
+              <Label>Setor comprador</Label>
+              {sectorOptions.length > 0 ? (
+                <Select value={setorComprador} onValueChange={setSetorComprador}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{sectorOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              ) : (
+                <Input value={setorComprador} onChange={e => setSetorComprador(e.target.value)} placeholder="Cadastre setores na unidade" />
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
