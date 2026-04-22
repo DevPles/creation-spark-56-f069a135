@@ -190,6 +190,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
         setJustPlanoAcao("");
         setJustPlanoResponsavel("");
         setJustPlanoPrazo("");
+        setJustFornecedorAnexos([]);
       }
       setSolicitante(requisition.solicitante_nome || "");
       setAprovadorImediato(requisition.aprovador_imediato_nome || "");
@@ -239,6 +240,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setJustPlanoAcao("");
       setJustPlanoResponsavel("");
       setJustPlanoPrazo("");
+      setJustFornecedorAnexos([]);
       setSolicitante(profile?.name || "");
       setAprovadorImediato("");
       setAprovadorDiretoria("");
