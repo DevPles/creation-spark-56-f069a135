@@ -20,6 +20,7 @@ export default function PriceBankPanel() {
   const [catalog, setCatalog] = useState<any[]>([]);
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogModalOpen, setCatalogModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [search, setSearch] = useState("");
   const [searchAI, setSearchAI] = useState("");
   const [loadingAI, setLoadingAI] = useState(false);
@@ -214,7 +215,7 @@ export default function PriceBankPanel() {
           <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Catálogo de itens</CardTitle>
-          <Button size="sm" className="rounded-full" onClick={() => setCatalogModalOpen(true)}>Cadastrar item</Button>
+          <Button size="sm" className="rounded-full" onClick={() => { setEditingProduct(null); setCatalogModalOpen(true); }}>Cadastrar item</Button>
         </CardHeader>
         <CardContent>
           <Input placeholder="Filtrar por código, descrição, tipo ou classificação" value={catalogSearch} onChange={e => setCatalogSearch(e.target.value)} className="mb-3 max-w-md" />
@@ -226,6 +227,7 @@ export default function PriceBankPanel() {
                 <TableHead className="w-32">Classificação</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead className="w-16">Un</TableHead>
+                <TableHead className="w-32 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -236,10 +238,20 @@ export default function PriceBankPanel() {
                   <TableCell className="capitalize">{c.classificacao}</TableCell>
                   <TableCell className="text-xs">{c.descricao}</TableCell>
                   <TableCell>{c.unidade_medida}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditingProduct(c); setCatalogModalOpen(true); }}>Editar</Button>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive" onClick={async () => {
+                      if (!confirm(`Excluir item "${c.descricao}"?`)) return;
+                      const { error } = await supabase.from("product_catalog").update({ ativo: false }).eq("id", c.id);
+                      if (error) { toast.error(error.message); return; }
+                      toast.success("Item removido");
+                      load();
+                    }}>Excluir</Button>
+                  </TableCell>
                 </TableRow>
               ))}
               {filteredCatalog.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum item no catálogo</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum item no catálogo</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -426,7 +438,12 @@ export default function PriceBankPanel() {
         </TabsContent>
       </Tabs>
 
-      <ProductCatalogModal open={catalogModalOpen} onOpenChange={setCatalogModalOpen} onSaved={load} />
+      <ProductCatalogModal
+        open={catalogModalOpen}
+        onOpenChange={(o) => { setCatalogModalOpen(o); if (!o) setEditingProduct(null); }}
+        onSaved={load}
+        editing={editingProduct}
+      />
     </div>
   );
 }

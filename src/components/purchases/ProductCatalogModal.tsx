@@ -88,9 +88,10 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSaved?: () => void;
+  editing?: any | null;
 }
 
-export default function ProductCatalogModal({ open, onOpenChange, onSaved }: Props) {
+export default function ProductCatalogModal({ open, onOpenChange, onSaved, editing }: Props) {
   const [saving, setSaving] = useState(false);
   const [tipo, setTipo] = useState("MMH");
   const [classificacao, setClassificacao] = useState("medico");
@@ -102,6 +103,14 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved }: Pro
     if (!open) {
       setDescricao("");
       setPreviewCode("");
+      return;
+    }
+    if (editing) {
+      setTipo(editing.tipo || "MMH");
+      setClassificacao(editing.classificacao || "medico");
+      setDescricao(editing.descricao || "");
+      setUnidade(editing.unidade_medida || "UN");
+      setPreviewCode(editing.codigo || "");
       return;
     }
     const loadPreview = async () => {
@@ -118,7 +127,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved }: Pro
       setPreviewCode(`${prefix}-${String(max + 1).padStart(4, "0")}`);
     };
     loadPreview();
-  }, [open, tipo, classificacao]);
+  }, [open, tipo, classificacao, editing]);
 
   const handleSave = async () => {
     if (!descricao.trim()) {
@@ -127,19 +136,33 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved }: Pro
     }
     setSaving(true);
     try {
-      const { error } = await supabase.from("product_catalog").insert({
-        codigo: "",
-        tipo,
-        classificacao,
-        descricao: descricao.trim(),
-        unidade_medida: unidade,
-      } as any);
-      if (error) throw error;
-      toast.success(`Item cadastrado (${previewCode})`);
+      if (editing?.id) {
+        const { error } = await supabase
+          .from("product_catalog")
+          .update({
+            tipo,
+            classificacao,
+            descricao: descricao.trim(),
+            unidade_medida: unidade,
+          })
+          .eq("id", editing.id);
+        if (error) throw error;
+        toast.success("Item atualizado");
+      } else {
+        const { error } = await supabase.from("product_catalog").insert({
+          codigo: "",
+          tipo,
+          classificacao,
+          descricao: descricao.trim(),
+          unidade_medida: unidade,
+        } as any);
+        if (error) throw error;
+        toast.success(`Item cadastrado (${previewCode})`);
+      }
       onSaved?.();
       onOpenChange(false);
     } catch (e: any) {
-      toast.error(e.message || "Erro ao cadastrar item");
+      toast.error(e.message || "Erro ao salvar item");
     } finally {
       setSaving(false);
     }
@@ -149,7 +172,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved }: Pro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Cadastrar item no catálogo</DialogTitle>
+          <DialogTitle>{editing ? "Editar item do catálogo" : "Cadastrar item no catálogo"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 py-2">
           <div className="grid grid-cols-2 gap-3">
@@ -194,7 +217,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved }: Pro
         </div>
         <DialogFooter>
           <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="rounded-full" disabled={saving} onClick={handleSave}>{saving ? "Salvando..." : "Cadastrar"}</Button>
+          <Button className="rounded-full" disabled={saving} onClick={handleSave}>{saving ? "Salvando..." : (editing ? "Salvar" : "Cadastrar")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
