@@ -310,6 +310,55 @@ export default function PublicQuotationPage() {
           </CardContent>
         </Card>
 
+        <Card className="border-primary/30">
+          <CardHeader>
+            <CardTitle>Identificação do respondente</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Os dados abaixo serão registrados para rastreabilidade e auditoria (Tribunal de Contas).
+              Ao enviar, você confirma a veracidade das informações.
+            </p>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Nome completo do respondente *</Label>
+              <Input
+                value={responderName}
+                onChange={e => setResponderName(e.target.value)}
+                placeholder="Ex.: João da Silva"
+                maxLength={120}
+              />
+            </div>
+            <div>
+              <Label>E-mail corporativo *</Label>
+              <Input
+                type="email"
+                value={responderEmail}
+                onChange={e => setResponderEmail(e.target.value)}
+                placeholder="nome@empresa.com.br"
+                maxLength={150}
+              />
+            </div>
+            <div>
+              <Label>Celular corporativo *</Label>
+              <Input
+                value={responderPhone}
+                onChange={e => setResponderPhone(e.target.value)}
+                placeholder="(00) 00000-0000"
+                maxLength={20}
+              />
+            </div>
+            <div>
+              <Label>CPF (opcional)</Label>
+              <Input
+                value={responderCpf}
+                onChange={e => setResponderCpf(e.target.value)}
+                placeholder="000.000.000-00"
+                maxLength={14}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="flex justify-end gap-2">
           <Button className="rounded-full" disabled={submitting} onClick={handleSubmit}>
             {submitting ? "Enviando..." : "Enviar proposta"}
