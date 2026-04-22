@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
+import { PDFDocument } from "pdf-lib";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { UNIVIDA_LOGO_BASE64 } from "@/assets/univida-logo-base64";
+import { generateRequisitionPdf } from "@/lib/requisitionPdf";
+import { generateQuotationPdf } from "@/lib/quotationPdf";
+import { generateOrderPdf } from "@/lib/orderPdf";
 
 type Props = {
   open: boolean;
