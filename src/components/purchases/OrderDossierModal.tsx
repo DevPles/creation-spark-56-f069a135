@@ -422,8 +422,11 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       head: [],
       body: apprRows,
       theme: "plain",
-      styles: { fontSize: 9, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
-      columnStyles: { 0: { fontStyle: "bold", cellWidth: 170 } },
+      styles: { fontSize: 9, cellPadding: 3, minCellHeight: 14, valign: "top", overflow: "linebreak" },
+      columnStyles: {
+        0: { fontStyle: "bold", cellWidth: 160, fillColor: [240, 246, 246] },
+        1: { cellWidth: pageW - margin * 2 - 160 },
+      },
       margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
