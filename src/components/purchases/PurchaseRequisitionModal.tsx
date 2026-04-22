@@ -172,6 +172,8 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
     setItems(prev => prev.map((it, i) => i === idx ? {
       ...it,
       codigo: prod.codigo,
+      product_id: prod.id,
+      image_url: prod.image_url || null,
       descricao: prod.descricao,
       unidade_medida: prod.unidade_medida || "UN",
     } : it));
@@ -194,6 +196,8 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
     setItems(prev => prev.map((it, i) => i === idx ? {
       ...it,
       codigo: prod.codigo,
+      product_id: prod.id,
+      image_url: prod.image_url || null,
       descricao: prod.descricao,
       unidade_medida: prod.unidade_medida || it.unidade_medida || "UN",
     } : it));
