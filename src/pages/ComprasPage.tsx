@@ -28,6 +28,7 @@ import { PERIOD_LABEL, type PeriodKey } from "@/components/purchases/PurchasesDa
 import OrderDossierModal from "@/components/purchases/OrderDossierModal";
 import { generateRequisitionPdf } from "@/lib/requisitionPdf";
 import { generateQuotationPdf } from "@/lib/quotationPdf";
+import { generateOrderPdf } from "@/lib/orderPdf";
 
 const REQ_STATUS_LABEL: Record<string, string> = {
   rascunho: "Rascunho",
@@ -543,6 +544,21 @@ export default function ComprasPage() {
                           <TableCell><Badge variant="outline">{OC_STATUS_LABEL[o.status] || o.status}</Badge></TableCell>
                           <TableCell className="text-right">
                             <div className="flex gap-1 justify-end">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="rounded-full"
+                                onClick={async () => {
+                                  try {
+                                    await generateOrderPdf(o.id);
+                                    toast.success("PDF da ordem de compra gerado");
+                                  } catch (e: any) {
+                                    toast.error(e?.message || "Falha ao gerar PDF");
+                                  }
+                                }}
+                              >
+                                PDF
+                              </Button>
                               <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditOrder(o.id)}>Abrir</Button>
                               <Button size="sm" variant="secondary" className="rounded-full" onClick={() => { setDossierOrderId(o.id); setDossierOpen(true); }}>Dossiê</Button>
                               {isAdmin && (
