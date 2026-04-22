@@ -22,11 +22,16 @@ interface Props {
   orders: any[];
   contracts: any[];
   invitesByReq: Record<string, { total: number; respondidos: number; firstToken?: string }>;
+  period?: PeriodKey;
+  onPeriodChange?: (p: PeriodKey) => void;
+  unit?: string;
+  onUnitChange?: (u: string) => void;
+  hideFilters?: boolean;
 }
 
-type PeriodKey = "month" | "30d" | "90d" | "180d" | "year";
+export type PeriodKey = "month" | "30d" | "90d" | "180d" | "year";
 
-const PERIOD_LABEL: Record<PeriodKey, string> = {
+export const PERIOD_LABEL: Record<PeriodKey, string> = {
   month: "Mês atual",
   "30d": "Últimos 30 dias",
   "90d": "Últimos 90 dias",
@@ -52,10 +57,15 @@ function diffDays(a: Date, b: Date) { return Math.floor((b.getTime() - a.getTime
 
 export default function PurchasesDashboardPanel({
   requisitions, quotations, orders, contracts, invitesByReq,
+  period: periodProp, onPeriodChange, unit: unitProp, onUnitChange, hideFilters,
 }: Props) {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState<PeriodKey>("month");
-  const [unit, setUnit] = useState<string>("all");
+  const [periodInner, setPeriodInner] = useState<PeriodKey>("month");
+  const [unitInner, setUnitInner] = useState<string>("all");
+  const period = periodProp ?? periodInner;
+  const unit = unitProp ?? unitInner;
+  const setPeriod = (p: PeriodKey) => { onPeriodChange ? onPeriodChange(p) : setPeriodInner(p); };
+  const setUnit = (u: string) => { onUnitChange ? onUnitChange(u) : setUnitInner(u); };
 
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [invites, setInvites] = useState<any[]>([]);
@@ -337,29 +347,37 @@ export default function PurchasesDashboardPanel({
   // ---------- Render ----------
   return (
     <div className="space-y-6">
-      {/* Filtros */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
-            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {(Object.keys(PERIOD_LABEL) as PeriodKey[]).map(k =>
-                <SelectItem key={k} value={k}>{PERIOD_LABEL[k]}</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-          <Select value={unit} onValueChange={setUnit}>
-            <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as unidades</SelectItem>
-              {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-            </SelectContent>
-          </Select>
+      {!hideFilters && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(PERIOD_LABEL) as PeriodKey[]).map(k =>
+                  <SelectItem key={k} value={k}>{PERIOD_LABEL[k]}</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            <Select value={unit} onValueChange={setUnit}>
+              <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as unidades</SelectItem>
+                {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate("/controle-rubrica")}>
+            Ver Controle de Rubricas
+          </Button>
         </div>
-        <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate("/controle-rubrica")}>
-          Ver Controle de Rubricas
-        </Button>
-      </div>
+      )}
+      {hideFilters && (
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate("/controle-rubrica")}>
+            Ver Controle de Rubricas
+          </Button>
+        </div>
+      )}
 
       {/* KPIs operacionais */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
