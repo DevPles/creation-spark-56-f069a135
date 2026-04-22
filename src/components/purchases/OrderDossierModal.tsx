@@ -476,6 +476,87 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       });
     }
 
+    // ===== SECTION 6: QUALIFICAÇÃO DO FORNECEDOR VENCEDOR (Art. 9º) =====
+    const winner = dossier.winner_supplier;
+    if (winner) {
+      startSection("Seção 6 — Qualificação do fornecedor vencedor (Art. 9º)");
+      const statusTxt =
+        winner.inidoneo ? "INIDÔNEO — vedada a contratação (§2º)"
+        : winner.qualificacao_status === "habilitado" ? "HABILITADO — toda documentação conforme"
+        : winner.qualificacao_status === "liberado_admin" ? "LIBERADO POR DECISÃO ADMINISTRATIVA (excepcional)"
+        : "PENDENTE — documentação incompleta";
+      const headerRows: any[] = [
+        ["Fornecedor", winner.nome],
+        ["CNPJ", winner.cnpj],
+        ["Status de qualificação", statusTxt],
+        ["Fornece medicamentos/insumos", winner.fornece_medicamentos ? "Sim (§1º aplicável)" : "Não"],
+      ];
+      if (winner.qualificacao_status === "liberado_admin") {
+        headerRows.push(["Liberação administrativa em", fmtDateTime(winner.liberado_em)]);
+        headerRows.push(["Justificativa da liberação", winner.liberado_motivo || "—"]);
+      }
+      autoTable(doc, {
+        startY: contentStartY,
+        head: [],
+        body: headerRows,
+        theme: "plain",
+        styles: { fontSize: 9, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
+        columnStyles: { 0: { fontStyle: "bold", cellWidth: 180, fillColor: [240, 246, 246] } },
+        margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
+      });
+
+      // Lista de docs com link clicável
+      const docs: any[] = winner.documents || [];
+      const docMap = new Map(docs.map((d: any) => [d.doc_key, d]));
+      const all = [
+        { key: "cnpj", label: "I — CNPJ" },
+        { key: "inscricao_estadual", label: "II — Inscrição Estadual" },
+        { key: "regularidade_fiscal", label: "III — Regularidade fiscal" },
+        { key: "contrato_social", label: "IV — Contrato Social/Estatuto" },
+        { key: "autorizacao_funcionamento", label: "V — Autorização de Funcionamento" },
+        { key: "fgts", label: "VI — Regularidade FGTS" },
+        { key: "cndt", label: "VII — Certidão Débitos Trabalhistas" },
+        { key: "cadin", label: "VIII — Certidão CADIN" },
+        ...(winner.fornece_medicamentos ? [
+          { key: "med_autorizacao_fabricante", label: "§1º I — Autorização do fabricante" },
+          { key: "med_responsabilidade_tecnica", label: "§1º II — Responsabilidade Técnica" },
+        ] : []),
+      ];
+      const docBody = all.map(d => {
+        const found: any = docMap.get(d.key);
+        return [d.label, found ? "✓ Anexado" : "✗ Pendente", found?.file_name || "—", found ? "Abrir" : "—"];
+      });
+      autoTable(doc, {
+        startY: ((doc as any).lastAutoTable?.finalY ?? contentStartY) + 10,
+        head: [["Documento (Art. 9º)", "Status", "Arquivo", "Link"]],
+        body: docBody,
+        theme: "grid",
+        headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 8 },
+        styles: { fontSize: 8, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
+        columnStyles: { 0: { cellWidth: 220 }, 1: { cellWidth: 60 }, 3: { cellWidth: 50, textColor: [13, 79, 79], fontStyle: "bold" } },
+        margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
+        didDrawCell: (data) => {
+          if (data.section === "body" && data.column.index === 3) {
+            const found: any = docMap.get(all[data.row.index].key);
+            if (found?.file_url) {
+              doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: found.file_url });
+            }
+          }
+        },
+      });
+
+      // Nota de auditoria
+      const yNote = ((doc as any).lastAutoTable?.finalY ?? contentStartY) + 14;
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.text(
+        "Os links acima permitem auditoria direta da documentação enviada pelo fornecedor. "
+        + "Conforme Art. 9º §2º, é vedada a contratação de fornecedor declarado inidôneo.",
+        margin, yNote, { maxWidth: pageW - margin * 2 }
+      );
+      doc.setTextColor(0, 0, 0);
+    }
+
     // ===== FOOTER on every page =====
     const total = doc.getNumberOfPages();
     for (let i = 1; i <= total; i++) {
