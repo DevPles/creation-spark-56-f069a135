@@ -195,7 +195,7 @@ export async function generateOrderPdf(
     doc.setTextColor(...BLUE);
     doc.text(title.toUpperCase(), margin + 10, y);
     doc.setTextColor(...TEXT_DARK);
-    y += 8;
+    y += 14;
   };
 
   // Hook para garantir charSpace=0 em TODAS as células (corrige glitch "C am po")
