@@ -790,6 +790,7 @@ export type Database = {
           descricao: string
           facility_unit: string | null
           id: string
+          image_url: string | null
           setor: string | null
           tipo: string
           unidade_medida: string
@@ -804,6 +805,7 @@ export type Database = {
           descricao: string
           facility_unit?: string | null
           id?: string
+          image_url?: string | null
           setor?: string | null
           tipo?: string
           unidade_medida?: string
@@ -818,6 +820,7 @@ export type Database = {
           descricao?: string
           facility_unit?: string | null
           id?: string
+          image_url?: string | null
           setor?: string | null
           tipo?: string
           unidade_medida?: string
@@ -1291,6 +1294,7 @@ export type Database = {
           id: string
           item_num: number
           observacao: string | null
+          product_id: string | null
           quantidade: number
           requisition_id: string
           unidade_medida: string
@@ -1301,6 +1305,7 @@ export type Database = {
           id?: string
           item_num?: number
           observacao?: string | null
+          product_id?: string | null
           quantidade?: number
           requisition_id: string
           unidade_medida?: string
@@ -1311,11 +1316,19 @@ export type Database = {
           id?: string
           item_num?: number
           observacao?: string | null
+          product_id?: string | null
           quantidade?: number
           requisition_id?: string
           unidade_medida?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "purchase_requisition_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchase_requisition_items_requisition_id_fkey"
             columns: ["requisition_id"]
