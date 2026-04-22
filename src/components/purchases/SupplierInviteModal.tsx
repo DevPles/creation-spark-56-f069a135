@@ -55,6 +55,7 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
   const [showNewSupplier, setShowNewSupplier] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
+  const [expiresInDays, setExpiresInDays] = useState<number>(7);
   const [form, setForm] = useState({ fornecedor_nome: "", fornecedor_cnpj: "", fornecedor_email: "", fornecedor_telefone: "" });
   const [newSupplierForm, setNewSupplierForm] = useState({ nome: "", cnpj: "", email: "", telefone: "" });
 
@@ -63,6 +64,20 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
     suppliers.forEach(s => { if (s.cnpj) map.set(onlyDigits(s.cnpj), s); });
     return map;
   }, [suppliers]);
+
+  const defaultMessageTemplate = useMemo(() => {
+    const expiraDate = new Date(Date.now() + expiresInDays * 86400000).toLocaleDateString("pt-BR");
+    return `Prezado(a) Fornecedor(a),
+
+A ${facilityUnit || "nossa instituição"} cumprimenta-o(a) cordialmente e vem, por meio deste, convidá-lo(a) a participar do processo de cotação ${requisitionNumero ? `nº ${requisitionNumero}` : ""}.
+
+Sua participação é muito importante para garantirmos as melhores condições comerciais. Pedimos a gentileza de acessar o link abaixo e enviar sua proposta até ${expiraDate}.
+
+Em caso de dúvidas, estamos à disposição.
+
+Atenciosamente,
+Setor de Compras`;
+  }, [facilityUnit, requisitionNumero, expiresInDays]);
 
   const load = async () => {
     if (!requisitionId) return;
@@ -84,6 +99,8 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
       setShowNewSupplier(false);
       setForm({ fornecedor_nome: "", fornecedor_cnpj: "", fornecedor_email: "", fornecedor_telefone: "" });
       setNewSupplierForm({ nome: "", cnpj: "", email: "", telefone: "" });
+      setExpiresInDays(7);
+      setCustomMessage("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, requisitionId]);
