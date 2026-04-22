@@ -303,6 +303,25 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
             </Button>
           </div>
 
+          {(() => {
+            const winnerTotal = winnerIdx >= 0 ? totals[winnerIdx] : 0;
+            if (winnerTotal > 1000) {
+              return (
+                <div className="text-xs px-3 py-2 rounded-md border border-destructive/30 bg-destructive/5 text-destructive">
+                  Compra acima de R$ 1.000,00 — exige <strong>mínimo de 3 orçamentos</strong> (Art. 10).
+                </div>
+              );
+            }
+            if (winnerTotal > 0 && winnerTotal <= 1000) {
+              return (
+                <div className="text-xs px-3 py-2 rounded-md border border-primary/30 bg-primary/5 text-primary">
+                  Compra de até R$ 1.000,00 — <strong>dispensada da exigência de 3 orçamentos</strong> (Art. 10), mantida a obrigatoriedade de nota fiscal.
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           <div className="overflow-x-auto pb-1">
             <div className="flex gap-3" style={{ minWidth: `${suppliers.length * 240}px` }}>
               {suppliers.map((s, i) => {
