@@ -14,20 +14,25 @@ import ProductCatalogModal from "./ProductCatalogModal";
 const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 const fmtDate = (d: string | Date | null) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
 
-export default function PriceBankPanel() {
+interface PriceBankPanelProps {
+  externalSearch?: string;
+  externalUnit?: string;
+}
+
+export default function PriceBankPanel({ externalSearch = "", externalUnit = "all" }: PriceBankPanelProps) {
   const { profile } = useAuth();
   const [history, setHistory] = useState<any[]>([]);
   const [catalog, setCatalog] = useState<any[]>([]);
-  const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogModalOpen, setCatalogModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
-  const [search, setSearch] = useState("");
   const [searchAI, setSearchAI] = useState("");
   const [loadingAI, setLoadingAI] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState<Set<string>>(new Set());
   const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
-  const [purchaseSearch, setPurchaseSearch] = useState("");
-  const [purchaseUnit, setPurchaseUnit] = useState<string>("all");
+
+  // Filtros vêm da página de Compras (acima das abas)
+  const search = externalSearch;
+  const unitFilter = externalUnit;
 
   const load = async () => {
     const { data } = await supabase.from("price_history").select("*").order("data_referencia", { ascending: false }).limit(500);
@@ -71,24 +76,31 @@ export default function PriceBankPanel() {
   useEffect(() => { load(); }, []);
 
   const filtered = history.filter(h => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return [h.descricao_produto, h.fornecedor_nome, h.categoria].filter(Boolean).join(" ").toLowerCase().includes(q);
+    if (search) {
+      const q = search.toLowerCase();
+      const hay = [h.descricao_produto, h.fornecedor_nome, h.categoria].filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
   });
 
   const filteredCatalog = catalog.filter(c => {
-    if (!catalogSearch) return true;
-    const q = catalogSearch.toLowerCase();
-    return [c.codigo, c.descricao, c.tipo, c.classificacao, c.facility_unit, c.setor].filter(Boolean).join(" ").toLowerCase().includes(q);
+    if (unitFilter !== "all" && c.facility_unit && c.facility_unit !== unitFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const hay = [c.codigo, c.descricao, c.tipo, c.classificacao, c.facility_unit, c.setor].filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
   });
 
   // Agrupa histórico por unidade + descrição para calcular curva de consumo
   const consumoCurva = (() => {
     const groups = new Map<string, any[]>();
     purchaseHistory.forEach(p => {
-      if (purchaseUnit !== "all" && p.facility_unit !== purchaseUnit) return;
-      if (purchaseSearch) {
-        const q = purchaseSearch.toLowerCase();
+      if (unitFilter !== "all" && p.facility_unit !== unitFilter) return;
+      if (search) {
+        const q = search.toLowerCase();
         const hay = [p.descricao, p.fornecedor_nome, p.oc_numero].filter(Boolean).join(" ").toLowerCase();
         if (!hay.includes(q)) return;
       }
@@ -218,7 +230,6 @@ export default function PriceBankPanel() {
           <Button size="sm" className="rounded-full" onClick={() => { setEditingProduct(null); setCatalogModalOpen(true); }}>Cadastrar item</Button>
         </CardHeader>
         <CardContent>
-          <Input placeholder="Filtrar por código, descrição, tipo ou classificação" value={catalogSearch} onChange={e => setCatalogSearch(e.target.value)} className="mb-3 max-w-md" />
           <Table>
             <TableHeader>
               <TableRow>
@@ -289,7 +300,6 @@ export default function PriceBankPanel() {
           </div>
         </CardHeader>
         <CardContent>
-          <Input placeholder="Filtrar por descrição, fornecedor ou categoria" value={search} onChange={e => setSearch(e.target.value)} className="mb-3 max-w-md" />
           <Table>
             <TableHeader>
               <TableRow>
@@ -336,15 +346,8 @@ export default function PriceBankPanel() {
 
         <TabsContent value="compras" className="mt-4 space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
+            <CardHeader>
               <CardTitle className="text-base">Histórico de compras &amp; curva de consumo</CardTitle>
-              <div className="flex gap-2 flex-wrap">
-                <Input placeholder="Filtrar por item, fornecedor ou OC" value={purchaseSearch} onChange={e => setPurchaseSearch(e.target.value)} className="max-w-xs" />
-                <select className="h-9 rounded-md border bg-background px-3 text-sm" value={purchaseUnit} onChange={e => setPurchaseUnit(e.target.value)}>
-                  <option value="all">Todas as unidades</option>
-                  {purchaseUnits.map(u => <option key={u} value={u}>{u}</option>)}
-                </select>
-              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
@@ -412,10 +415,10 @@ export default function PriceBankPanel() {
                   </TableHeader>
                   <TableBody>
                     {purchaseHistory
-                      .filter(p => purchaseUnit === "all" || p.facility_unit === purchaseUnit)
+                      .filter(p => unitFilter === "all" || p.facility_unit === unitFilter)
                       .filter(p => {
-                        if (!purchaseSearch) return true;
-                        const q = purchaseSearch.toLowerCase();
+                        if (!search) return true;
+                        const q = search.toLowerCase();
                         return [p.descricao, p.fornecedor_nome, p.oc_numero].filter(Boolean).join(" ").toLowerCase().includes(q);
                       })
                       .sort((a, b) => new Date(b.data_compra || 0).getTime() - new Date(a.data_compra || 0).getTime())

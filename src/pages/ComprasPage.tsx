@@ -276,7 +276,7 @@ export default function ComprasPage() {
           </TabsContent>
 
           <TabsContent value="banco" className="mt-4">
-            <PriceBankPanel />
+            <PriceBankPanel externalSearch={search} externalUnit={unitFilter} />
           </TabsContent>
 
           <TabsContent value="ordens" className="mt-4">
