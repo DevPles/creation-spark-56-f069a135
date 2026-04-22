@@ -509,6 +509,7 @@ export default function ComprasPage() {
                           <TableCell className="text-right">
                             <div className="flex gap-1 justify-end">
                               <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditOrder(o.id)}>Abrir</Button>
+                              <Button size="sm" variant="secondary" className="rounded-full" onClick={() => { setDossierOrderId(o.id); setDossierOpen(true); }}>Dossiê</Button>
                               {isAdmin && (
                                 <Button size="sm" variant="destructive" className="rounded-full" onClick={() => handleDeleteOrder(o)}>Excluir</Button>
                               )}
