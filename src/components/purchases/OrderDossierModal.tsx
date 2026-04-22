@@ -53,8 +53,9 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     const margin = 40;
-    const footerReserve = 50; // espaço reservado para rodapé (evita sobreposição)
-    const contentStartY = 80; // após o cabeçalho da seção (60pt) + respiro
+    const footerReserve = 40; // rodapé fica em pageH-20, então 40pt é seguro
+    const sectionHeaderH = 44; // altura da faixa teal de seção (mais compacta)
+    const contentStartY = sectionHeaderH + 18; // respiro pequeno após faixa
     const order = dossier.order || {};
     const req = dossier.requisition;
     const quotation = dossier.quotation;
@@ -78,44 +79,62 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       }
       return y;
     };
-    const subTitle = (text: string, gapBefore = 22) => {
-      const y = ensureSpace(gapBefore + 14);
+    const subTitle = (text: string, gapBefore = 14) => {
+      const y = ensureSpace(gapBefore + 16);
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(13, 79, 79);
       doc.text(text, margin, y + gapBefore);
       doc.setTextColor(0, 0, 0);
-      return y + gapBefore + 6;
+      return y + gapBefore + 4;
+    };
+    // Inicia uma seção: nova página apenas se não houver espaço útil; pinta faixa compacta
+    const startSection = (title: string, minNeeded = 140, forceNewPage = false) => {
+      const y = lastY();
+      const needsNewPage = forceNewPage || y === contentStartY ? false : (y + minNeeded > pageH - footerReserve);
+      // Se ainda não desenhou nada na página corrente além da capa, addPage se for a 1ª seção (cover)
+      if (forceNewPage || needsNewPage) {
+        doc.addPage();
+      }
+      // Pinta a faixa teal compacta
+      doc.setFillColor(13, 79, 79);
+      doc.rect(0, 0, pageW, sectionHeaderH, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text(title, margin, 28);
+      doc.setTextColor(0, 0, 0);
+      return contentStartY;
     };
 
     // ===== COVER =====
     doc.setFillColor(13, 79, 79); // teal
-    doc.rect(0, 0, pageW, 130, "F");
+    doc.rect(0, 0, pageW, 110, "F");
     try {
       // Logo Instituto Univida — proporção nativa 300x164 (~1.829:1)
-      const logoH = 70;
+      const logoH = 60;
       const logoW = logoH * (300 / 164); // mantém proporção real
       const logoX = pageW - margin - logoW;
-      const logoY = (130 - logoH) / 2;
+      const logoY = (110 - logoH) / 2;
       doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", logoX, logoY, logoW, logoH, undefined, "FAST");
     } catch (_) {}
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
+    doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("DOSSIÊ DE AUDITORIA", margin, 55);
-    doc.setFontSize(11);
+    doc.text("DOSSIÊ DE AUDITORIA", margin, 46);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text("Ordem de Compra — Pronto para Tribunal de Contas", margin, 78);
-    doc.text("Instituto Univida — Sistema MetricOss (Moss)", margin, 96);
+    doc.text("Ordem de Compra — Pronto para Tribunal de Contas", margin, 66);
+    doc.text("Instituto Univida — Sistema MetricOss (Moss)", margin, 82);
 
     doc.setTextColor(0, 0, 0);
-    let y = 170;
-    doc.setFontSize(13);
+    let y = 138;
+    doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text(`OC ${order.numero || "—"}`, margin, y);
-    y += 24;
+    y += 18;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+    doc.setFontSize(9);
 
     const coverRows = [
       ["Unidade hospitalar", order.facility_unit || "—"],
@@ -136,11 +155,10 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       head: [],
       body: coverRows,
       theme: "plain",
-      styles: { fontSize: 10, cellPadding: 4 },
+      styles: { fontSize: 9, cellPadding: 2.5, minCellHeight: 12 },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 160 } },
       margin: { left: margin, right: margin },
       pageBreak: "auto",
-      bodyStyles: { minCellHeight: 14 },
     });
 
     // ===== SECTION 1: TIMELINE =====
