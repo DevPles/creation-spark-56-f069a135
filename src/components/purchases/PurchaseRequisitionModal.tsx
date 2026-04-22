@@ -299,8 +299,16 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                   </span>
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="p-0 w-[360px]" align="start">
-                <div className="max-h-72 overflow-y-auto py-1">
+              <PopoverContent
+                className="p-0 w-[360px]"
+                align="start"
+                onWheel={(e) => e.stopPropagation()}
+              >
+                <div
+                  className="max-h-72 overflow-y-auto overscroll-contain py-1"
+                  onWheel={(e) => e.stopPropagation()}
+                  style={{ pointerEvents: "auto" }}
+                >
                   {CLASSIFICACOES.map(c => (
                     <label
                       key={c}
@@ -388,8 +396,13 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                           className="p-0 w-[360px]"
                           align="start"
                           onOpenAutoFocus={(e) => e.preventDefault()}
+                          onWheel={(e) => e.stopPropagation()}
                         >
-                          <div className="max-h-64 overflow-y-auto">
+                          <div
+                            className="max-h-64 overflow-y-auto overscroll-contain"
+                            onWheel={(e) => e.stopPropagation()}
+                            style={{ pointerEvents: "auto" }}
+                          >
                             {getSuggestions(it.descricao).map(prod => (
                               <button
                                 type="button"
