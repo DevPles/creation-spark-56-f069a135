@@ -598,7 +598,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Dossiê de Auditoria — OC {order?.numero || "..."}</DialogTitle>
+          <DialogTitle>Dossiê de Auditoria — OC nº {order?.numero || "..."}{req?.numero ? ` • Requisição nº ${req.numero}` : ""}</DialogTitle>
           <DialogDescription>
             Documento completo do processo, pronto para envio ao Tribunal de Contas.
           </DialogDescription>
