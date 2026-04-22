@@ -348,7 +348,7 @@ export default function PublicQuotationPage() {
               />
             </div>
             <div>
-              <Label>CPF (opcional)</Label>
+              <Label>CPF</Label>
               <Input
                 value={responderCpf}
                 onChange={e => setResponderCpf(e.target.value)}
