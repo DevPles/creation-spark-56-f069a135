@@ -53,6 +53,8 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     const margin = 40;
+    const footerReserve = 50; // espaço reservado para rodapé (evita sobreposição)
+    const contentStartY = 80; // após o cabeçalho da seção (60pt) + respiro
     const order = dossier.order || {};
     const req = dossier.requisition;
     const quotation = dossier.quotation;
@@ -65,6 +67,26 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     const approvals: any[] = dossier.approvals || [];
     const audit: any[] = dossier.audit_log || [];
     const generatedAt = dossier.generated_at ? new Date(dossier.generated_at) : new Date();
+
+    // Helpers de layout
+    const lastY = () => (doc as any).lastAutoTable?.finalY ?? contentStartY;
+    const ensureSpace = (needed: number, currentY?: number): number => {
+      const y = currentY ?? lastY();
+      if (y + needed > pageH - footerReserve) {
+        doc.addPage();
+        return contentStartY;
+      }
+      return y;
+    };
+    const subTitle = (text: string, gapBefore = 22) => {
+      const y = ensureSpace(gapBefore + 14);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(13, 79, 79);
+      doc.text(text, margin, y + gapBefore);
+      doc.setTextColor(0, 0, 0);
+      return y + gapBefore + 6;
+    };
 
     // ===== COVER =====
     doc.setFillColor(13, 79, 79); // teal
@@ -117,6 +139,8 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       styles: { fontSize: 10, cellPadding: 4 },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 160 } },
       margin: { left: margin, right: margin },
+      pageBreak: "auto",
+      bodyStyles: { minCellHeight: 14 },
     });
 
     // ===== SECTION 1: TIMELINE =====
@@ -150,14 +174,19 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     timeline.sort((a, b) => a[0].localeCompare(b[0]));
 
     autoTable(doc, {
-      startY: 90,
+      startY: contentStartY,
       head: [["Data/Hora", "Evento"]],
       body: timeline,
       theme: "striped",
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 9 },
       styles: { fontSize: 8, cellPadding: 4 },
       columnStyles: { 0: { cellWidth: 100 } },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      pageBreak: "auto",
+      rowPageBreak: "avoid",
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) sectionTitle(doc, "Seção 1 — Histórico do processo (cont.)", margin);
+      },
     });
 
     // ===== SECTION 2: PRICE GRID =====
@@ -221,7 +250,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     if (supplierCols.length === 0) {
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
-      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, 100);
+      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, contentStartY + 20);
       doc.setTextColor(0, 0, 0);
     } else {
       const head = ["#", "Item", "Qtd"];
@@ -241,22 +270,23 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       body.push(totalsRow);
 
       autoTable(doc, {
-        startY: 90,
+        startY: contentStartY,
         head: [head],
         body,
         theme: "grid",
         headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
         styles: { fontSize: 7, cellPadding: 3, valign: "middle" },
         columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 50 } },
-        margin: { left: margin, right: margin },
+        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        pageBreak: "auto",
+        rowPageBreak: "avoid",
+        didDrawPage: (data) => {
+          if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Grade comparativa de preços (cont.)", margin);
+        },
       });
     }
 
-    let y2 = (doc as any).lastAutoTable.finalY + 20;
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text("Log de preenchimento dos fornecedores", margin, y2);
-    y2 += 8;
+    const y2 = subTitle("Log de preenchimento dos fornecedores", 24);
     autoTable(doc, {
       startY: y2,
       head: [["Fornecedor", "CNPJ", "Origem", "Data/Hora envio", "IP", "Respondente (nome / e-mail / cel / CPF)", "Link público enviado"]],
@@ -282,16 +312,17 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
       styles: { fontSize: 7, cellPadding: 3, valign: "middle", overflow: "linebreak" },
       columnStyles: { 5: { cellWidth: 95 }, 6: { cellWidth: 110, textColor: [13, 79, 79] } },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      pageBreak: "auto",
+      rowPageBreak: "avoid",
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Log de preenchimento (cont.)", margin);
+      },
     });
 
     // Tabela complementar: TODOS os convites enviados (mesmo sem resposta)
     if (invites.length > 0) {
-      let y3 = (doc as any).lastAutoTable.finalY + 14;
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.text("Convites enviados aos fornecedores (rastreabilidade completa)", margin, y3);
-      y3 += 8;
+      const y3 = subTitle("Convites enviados aos fornecedores (rastreabilidade completa)", 22);
       autoTable(doc, {
         startY: y3,
         head: [["Fornecedor", "CNPJ", "Contato fornecedor", "Enviado em", "Status", "Respondido em", "Respondente (nome / e-mail / cel / CPF)", "IP", "Link público"]],
@@ -315,7 +346,12 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 6.5, halign: "center" },
         styles: { fontSize: 6.5, cellPadding: 2, valign: "middle", overflow: "linebreak" },
         columnStyles: { 6: { cellWidth: 95 }, 8: { cellWidth: 95, textColor: [13, 79, 79] } },
-        margin: { left: margin, right: margin },
+        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        pageBreak: "auto",
+        rowPageBreak: "avoid",
+        didDrawPage: (data) => {
+          if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Convites enviados (cont.)", margin);
+        },
       });
     }
 
@@ -335,14 +371,19 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       ];
     });
     autoTable(doc, {
-      startY: 90,
+      startY: contentStartY,
       head: [["#", "Código", "Descrição", "Qtd", "V. unit.", "Total", "Setor"]],
       body: itemsBody,
       theme: "grid",
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 8 },
       styles: { fontSize: 8, cellPadding: 4 },
       columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 70 } },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      pageBreak: "auto",
+      rowPageBreak: "avoid",
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) sectionTitle(doc, "Seção 3 — Itens comprados (cont.)", margin);
+      },
     });
 
     // ===== SECTION 4: APPROVAL =====
@@ -369,13 +410,18 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       apprRows.push(["Saldo após esta OC", fmtBRL(Number(contract.rubrica_remaining_after || 0))]);
     }
     autoTable(doc, {
-      startY: 90,
+      startY: contentStartY,
       head: [],
       body: apprRows,
       theme: "plain",
       styles: { fontSize: 9, cellPadding: 3 },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 170 } },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      pageBreak: "auto",
+      rowPageBreak: "avoid",
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) sectionTitle(doc, "Seção 4 — Aprovação (cont.)", margin);
+      },
     });
 
     // ===== SECTION 5: JUSTIFICATIVA LEGAL (Dispensa / Inexigibilidade / Emergencial) =====
@@ -429,13 +475,18 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       legalRows.push(["Responsável pela implementação", legal?.plano_responsavel || "—"]);
       legalRows.push(["Prazo do plano de ação", legal?.plano_prazo || "—"]);
       autoTable(doc, {
-        startY: 90,
+        startY: contentStartY,
         head: [],
         body: legalRows,
         theme: "plain",
         styles: { fontSize: 9, cellPadding: 4, valign: "top" },
         columnStyles: { 0: { fontStyle: "bold", cellWidth: 200, fillColor: [240, 246, 246] } },
-        margin: { left: margin, right: margin },
+        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        pageBreak: "auto",
+        rowPageBreak: "avoid",
+        didDrawPage: (data) => {
+          if (data.pageNumber > 1) sectionTitle(doc, `Seção 5 — Justificativa legal (cont.)`, margin);
+        },
       });
     }
 
