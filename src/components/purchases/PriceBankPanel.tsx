@@ -6,13 +6,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCatalogModal from "./ProductCatalogModal";
+import SupplierRegistryModal from "./SupplierRegistryModal";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 const fmtDate = (d: string | Date | null) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
+const fmtCnpj = (v: string | null | undefined) => {
+  const s = (v || "").replace(/\D/g, "");
+  if (s.length !== 14) return v || "—";
+  return `${s.slice(0, 2)}.${s.slice(2, 5)}.${s.slice(5, 8)}/${s.slice(8, 12)}-${s.slice(12)}`;
+};
 
 interface PriceBankPanelProps {
   externalSearch?: string;
@@ -29,6 +37,11 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
   const [loadingAI, setLoadingAI] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState<Set<string>>(new Set());
   const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [supplierFilter, setSupplierFilter] = useState<string>("all");
+  const [periodFilter, setPeriodFilter] = useState<string>("all");
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
 
   // Filtros vêm da página de Compras (acima das abas)
   const search = externalSearch;
@@ -39,6 +52,8 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
     setHistory(data || []);
     const { data: cat } = await supabase.from("product_catalog").select("*").eq("ativo", true).order("descricao");
     setCatalog(cat || []);
+    const { data: sups } = await supabase.from("suppliers").select("*").order("nome");
+    setSuppliers(sups || []);
     await loadPurchaseHistory();
   };
 
@@ -75,14 +90,67 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
 
   useEffect(() => { load(); }, []);
 
+  // Filtro de período → data mínima
+  const minDate: Date | null = (() => {
+    const days = periodFilter === "30" ? 30 : periodFilter === "90" ? 90 : periodFilter === "180" ? 180 : null;
+    if (!days) return null;
+    return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  })();
+
   const filtered = history.filter(h => {
     if (search) {
       const q = search.toLowerCase();
       const hay = [h.descricao_produto, h.fornecedor_nome, h.categoria].filter(Boolean).join(" ").toLowerCase();
       if (!hay.includes(q)) return false;
     }
+    if (supplierFilter !== "all") {
+      if (h.supplier_id !== supplierFilter) return false;
+    }
+    if (minDate && h.data_referencia && new Date(h.data_referencia) < minDate) return false;
     return true;
   });
+
+  const selectedSupplier = supplierFilter !== "all" ? suppliers.find(s => s.id === supplierFilter) : null;
+
+  // Agrupa preços do fornecedor selecionado por descrição (para visão dedicada)
+  const supplierProductHistory = (() => {
+    if (!selectedSupplier) return [] as any[];
+    const groups = new Map<string, any[]>();
+    filtered.forEach(h => {
+      const key = (h.descricao_produto || "").trim().toLowerCase();
+      if (!key) return;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(h);
+    });
+    const out: any[] = [];
+    groups.forEach((arr, key) => {
+      const sorted = [...arr].sort((a, b) => new Date(b.data_referencia).getTime() - new Date(a.data_referencia).getTime());
+      const atual = sorted[0];
+      const anterior = sorted[1];
+      const variacao = anterior && anterior.valor_unitario > 0
+        ? ((Number(atual.valor_unitario) - Number(anterior.valor_unitario)) / Number(anterior.valor_unitario)) * 100
+        : null;
+      out.push({
+        key,
+        descricao: atual.descricao_produto,
+        unidade_medida: atual.unidade_medida || "UN",
+        ultimaData: atual.data_referencia,
+        precoAtual: Number(atual.valor_unitario),
+        variacao,
+        cotacoes: sorted.length,
+        timeline: sorted,
+      });
+    });
+    return out.sort((a, b) => new Date(b.ultimaData).getTime() - new Date(a.ultimaData).getTime());
+  })();
+
+  const supplierStats = (() => {
+    if (!selectedSupplier) return null;
+    const total = filtered.length;
+    const ultimoPreco = filtered[0];
+    const itensUnicos = new Set(filtered.map(h => (h.descricao_produto || "").trim().toLowerCase())).size;
+    return { total, ultimoPreco, itensUnicos };
+  })();
 
   const filteredCatalog = catalog.filter(c => {
     if (unitFilter !== "all" && c.facility_unit && c.facility_unit !== unitFilter) return false;
