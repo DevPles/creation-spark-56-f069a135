@@ -198,7 +198,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 8 },
       styles: { fontSize: 7.5, cellPadding: 2.5, minCellHeight: 10, valign: "top" },
       columnStyles: { 0: { cellWidth: 100 } },
-      margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
     });
@@ -290,7 +290,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
         styles: { fontSize: 7, cellPadding: 2, valign: "middle", minCellHeight: 10 },
         columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 50 } },
-        margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
+        margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
         pageBreak: "auto",
         rowPageBreak: "avoid",
       });
@@ -322,7 +322,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
       styles: { fontSize: 6.5, cellPadding: 2, valign: "top", overflow: "linebreak", minCellHeight: 10 },
       columnStyles: { 5: { cellWidth: 95 }, 6: { cellWidth: 110, textColor: [13, 79, 79] } },
-      margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
     });
@@ -353,7 +353,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 6, halign: "center" },
         styles: { fontSize: 6, cellPadding: 1.5, valign: "top", overflow: "linebreak", minCellHeight: 9 },
         columnStyles: { 6: { cellWidth: 95 }, 8: { cellWidth: 95, textColor: [13, 79, 79] } },
-        margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
+        margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
         pageBreak: "auto",
         rowPageBreak: "avoid",
       });
@@ -381,7 +381,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 8 },
       styles: { fontSize: 8, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
       columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 70 } },
-      margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
     });
@@ -415,7 +415,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       theme: "plain",
       styles: { fontSize: 9, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 170 } },
-      margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
     });
@@ -476,7 +476,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         theme: "plain",
         styles: { fontSize: 8.5, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
         columnStyles: { 0: { fontStyle: "bold", cellWidth: 200, fillColor: [240, 246, 246] } },
-        margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
+        margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
         pageBreak: "auto",
         rowPageBreak: "avoid",
       });
