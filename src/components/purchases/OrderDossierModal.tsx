@@ -433,8 +433,8 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         try { legal = JSON.parse(blockMatch[1]); } catch { /* ignore */ }
       }
       const tipoLabel =
-        req.justificativa_tipo === "dispensa" ? "Dispensa de licitação"
-        : req.justificativa_tipo === "inexigibilidade" ? "Inexigibilidade de licitação"
+        req.justificativa_tipo === "dispensa" ? "Dispensa"
+        : req.justificativa_tipo === "inexigibilidade" ? "Inexigibilidade"
         : "Compra emergencial";
 
       doc.addPage();
@@ -610,8 +610,8 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
                 <div>
                   <h3 className="font-semibold mb-2">
                     Justificativa legal —{" "}
-                    {legalPreview.tipo === "dispensa" && "Dispensa de licitação"}
-                    {legalPreview.tipo === "inexigibilidade" && "Inexigibilidade de licitação"}
+                    {legalPreview.tipo === "dispensa" && "Dispensa"}
+                    {legalPreview.tipo === "inexigibilidade" && "Inexigibilidade"}
                     {legalPreview.tipo === "emergencial" && "Compra emergencial"}
                   </h3>
                   <div className="border rounded-md p-3 text-xs space-y-2 bg-primary/5">

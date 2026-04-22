@@ -53,8 +53,8 @@ const JUSTIFICATIVAS = [
   { v: "mensal", l: "Compra mensal" },
   { v: "especifica", l: "Compra específica" },
   { v: "emergencial", l: "Emergencial" },
-  { v: "dispensa", l: "Dispensa de licitação" },
-  { v: "inexigibilidade", l: "Inexigibilidade de licitação" },
+  { v: "dispensa", l: "Dispensa" },
+  { v: "inexigibilidade", l: "Inexigibilidade" },
   { v: "outros", l: "Outros" },
 ];
 const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
@@ -472,8 +472,8 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
               <div className="flex items-center justify-between">
                 <Label className="text-primary font-semibold text-sm">
                   Justificativa legal —{" "}
-                  {justificativa === "dispensa" && "Dispensa de licitação"}
-                  {justificativa === "inexigibilidade" && "Inexigibilidade de licitação"}
+                  {justificativa === "dispensa" && "Dispensa"}
+                  {justificativa === "inexigibilidade" && "Inexigibilidade"}
                   {justificativa === "emergencial" && "Compra emergencial"}
                 </Label>
                 <span className="text-xs text-muted-foreground">Obrigatório para auditoria (Tribunal de Contas)</span>
@@ -508,7 +508,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                   value={justFundamentacao}
                   onChange={e => setJustFundamentacao(e.target.value)}
                   rows={3}
-                  placeholder="Descreva motivos técnicos, finalidade e por que esta modalidade foi escolhida em detrimento da licitação."
+                  placeholder="Descreva motivos técnicos, finalidade e por que esta modalidade foi escolhida."
                 />
               </div>
 
