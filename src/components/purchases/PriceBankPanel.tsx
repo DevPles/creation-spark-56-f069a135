@@ -262,6 +262,113 @@ export default function PriceBankPanel() {
         </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="compras" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
+              <CardTitle className="text-base">Histórico de compras &amp; curva de consumo</CardTitle>
+              <div className="flex gap-2 flex-wrap">
+                <Input placeholder="Filtrar por item, fornecedor ou OC" value={purchaseSearch} onChange={e => setPurchaseSearch(e.target.value)} className="max-w-xs" />
+                <select className="h-9 rounded-md border bg-background px-3 text-sm" value={purchaseUnit} onChange={e => setPurchaseUnit(e.target.value)}>
+                  <option value="all">Todas as unidades</option>
+                  {purchaseUnits.map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-2">Curva de consumo por item</div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Unidade</TableHead>
+                      <TableHead className="text-right">Compras</TableHead>
+                      <TableHead className="text-right">Qtd total</TableHead>
+                      <TableHead className="text-right">Consumo/mês</TableHead>
+                      <TableHead>Última compra</TableHead>
+                      <TableHead className="text-right">Intervalo médio</TableHead>
+                      <TableHead className="text-right">Dias desde última</TableHead>
+                      <TableHead>Próxima sugerida</TableHead>
+                      <TableHead className="text-right">Último preço</TableHead>
+                      <TableHead className="text-right">Total gasto</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {consumoCurva.map(c => {
+                      const atrasada = c.proximaCompraSugerida && new Date() > c.proximaCompraSugerida;
+                      return (
+                        <TableRow key={c.key}>
+                          <TableCell className="text-xs max-w-[280px]">{c.descricao}</TableCell>
+                          <TableCell className="text-xs">{c.facility_unit}</TableCell>
+                          <TableCell className="text-right">{c.compras}</TableCell>
+                          <TableCell className="text-right">{c.totalQtd} {c.unidade_medida}</TableCell>
+                          <TableCell className="text-right">{c.consumoMensal != null ? `${c.consumoMensal.toFixed(1)} ${c.unidade_medida}` : "—"}</TableCell>
+                          <TableCell className="text-xs">{fmtDate(c.ultimaData)}</TableCell>
+                          <TableCell className="text-right">{c.intervaloMedioDias != null ? `${c.intervaloMedioDias.toFixed(0)} d` : "—"}</TableCell>
+                          <TableCell className="text-right">{c.diasDesdeUltima != null ? `${c.diasDesdeUltima} d` : "—"}</TableCell>
+                          <TableCell className="text-xs">
+                            {c.proximaCompraSugerida ? (
+                              <Badge variant={atrasada ? "destructive" : "outline"}>{fmtDate(c.proximaCompraSugerida)}</Badge>
+                            ) : "—"}
+                          </TableCell>
+                          <TableCell className="text-right">{fmtBRL(c.ultimoPreco)}</TableCell>
+                          <TableCell className="text-right">{fmtBRL(c.totalValor)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {consumoCurva.length === 0 && (
+                      <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Nenhuma compra registrada</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-2">Compras detalhadas (por OC)</div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>OC</TableHead>
+                      <TableHead>Unidade</TableHead>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Fornecedor</TableHead>
+                      <TableHead className="text-right">Qtd</TableHead>
+                      <TableHead className="text-right">Vlr unit.</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {purchaseHistory
+                      .filter(p => purchaseUnit === "all" || p.facility_unit === purchaseUnit)
+                      .filter(p => {
+                        if (!purchaseSearch) return true;
+                        const q = purchaseSearch.toLowerCase();
+                        return [p.descricao, p.fornecedor_nome, p.oc_numero].filter(Boolean).join(" ").toLowerCase().includes(q);
+                      })
+                      .sort((a, b) => new Date(b.data_compra || 0).getTime() - new Date(a.data_compra || 0).getTime())
+                      .map(p => (
+                        <TableRow key={p.id}>
+                          <TableCell className="text-xs">{fmtDate(p.data_compra)}</TableCell>
+                          <TableCell className="font-mono text-xs">{p.oc_numero}</TableCell>
+                          <TableCell className="text-xs">{p.facility_unit}</TableCell>
+                          <TableCell className="text-xs max-w-[280px]">{p.descricao}</TableCell>
+                          <TableCell className="text-xs">{p.fornecedor_nome}</TableCell>
+                          <TableCell className="text-right">{p.quantidade} {p.unidade_medida}</TableCell>
+                          <TableCell className="text-right">{fmtBRL(p.valor_unitario)}</TableCell>
+                          <TableCell className="text-right">{fmtBRL(p.valor_total)}</TableCell>
+                        </TableRow>
+                      ))}
+                    {purchaseHistory.length === 0 && (
+                      <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhuma compra autorizada encontrada</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <ProductCatalogModal open={catalogModalOpen} onOpenChange={setCatalogModalOpen} onSaved={load} />
