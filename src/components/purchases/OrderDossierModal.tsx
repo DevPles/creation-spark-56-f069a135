@@ -434,7 +434,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         : req.justificativa_tipo === "inexigibilidade" ? "Inexigibilidade"
         : "Compra emergencial";
 
-      startSection(`Seção 5 — Justificativa legal (${tipoLabel})`);
+      const section5Y = startSection(`Seção 5 — Justificativa legal (${tipoLabel})`, 160);
       const legalRows: any[] = [
         ["Modalidade", tipoLabel],
         ["Base legal (Lei 14.133/2021)", legal?.base_legal || "—"],
@@ -471,7 +471,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       legalRows.push(["Responsável pela implementação", legal?.plano_responsavel || "—"]);
       legalRows.push(["Prazo do plano de ação", legal?.plano_prazo || "—"]);
       autoTable(doc, {
-        startY: contentStartY,
+        startY: section5Y,
         head: [],
         body: legalRows,
         theme: "plain",
@@ -486,7 +486,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     // ===== SECTION 6: QUALIFICAÇÃO DO FORNECEDOR VENCEDOR (Art. 9º) =====
     const winner = dossier.winner_supplier;
     if (winner) {
-      startSection("Seção 6 — Qualificação do fornecedor vencedor (Art. 9º)");
+      const section6Y = startSection("Seção 6 — Qualificação do fornecedor vencedor (Art. 9º)", 150);
       const statusTxt =
         winner.inidoneo ? "INIDÔNEO — vedada a contratação (§2º)"
         : winner.qualificacao_status === "habilitado" ? "HABILITADO — toda documentação conforme"
@@ -503,7 +503,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         headerRows.push(["Justificativa da liberação", winner.liberado_motivo || "—"]);
       }
       autoTable(doc, {
-        startY: contentStartY,
+        startY: section6Y,
         head: [],
         body: headerRows,
         theme: "plain",
@@ -534,7 +534,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         return [d.label, found ? "✓ Anexado" : "✗ Pendente", found?.file_name || "—", found ? "Abrir" : "—"];
       });
       autoTable(doc, {
-        startY: ((doc as any).lastAutoTable?.finalY ?? contentStartY) + 10,
+        startY: ((doc as any).lastAutoTable?.finalY ?? section6Y) + 10,
         head: [["Documento (Art. 9º)", "Status", "Arquivo", "Link"]],
         body: docBody,
         theme: "grid",
@@ -553,7 +553,8 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       });
 
       // Nota de auditoria
-      const yNote = ((doc as any).lastAutoTable?.finalY ?? contentStartY) + 14;
+      const yNoteBase = ((doc as any).lastAutoTable?.finalY ?? section6Y) + 14;
+      const yNote = ensureSpace(34, yNoteBase);
       doc.setFontSize(8);
       doc.setTextColor(80, 80, 80);
       doc.text(
