@@ -372,7 +372,44 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
             <div className={`p-3 rounded-md text-sm ${wouldExceed ? "bg-red-50 dark:bg-red-950/40" : "bg-muted"}`}>
               Rubrica <strong>{selectedRubrica.name}</strong>: {fmtBRL(rubricaSpent)} já gasto + {fmtBRL(valorTotal)} desta OC
               {" / "} <strong>{fmtBRL(rubricaBudget)}</strong> orçado ({rubricaPct.toFixed(1)}%)
-              {wouldExceed && <div className="text-red-600 mt-1 font-medium">Atenção: ultrapassa o saldo da rubrica</div>}
+              {wouldExceed && <div className="text-destructive mt-1 font-medium">Atenção: ultrapassa o saldo da rubrica</div>}
+            </div>
+          )}
+
+          {suppliers.length > 0 && (
+            <div className="border rounded-md p-3 space-y-3 bg-muted/40">
+              <div className="flex items-center justify-between">
+                <Label className="text-base">Fornecedor da cotação</Label>
+                {winnerSupplierId && (
+                  <Badge variant="secondary" className="text-xs">
+                    Campeão: {suppliers.find(s => s.id === winnerSupplierId)?.fornecedor_nome || "-"}
+                  </Badge>
+                )}
+              </div>
+              <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                <SelectTrigger><SelectValue placeholder="Selecione o fornecedor" /></SelectTrigger>
+                <SelectContent>
+                  {[...suppliers]
+                    .sort((a, b) => (supplierTotals[a.id] || 0) - (supplierTotals[b.id] || 0))
+                    .map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.fornecedor_nome} — {fmtBRL(supplierTotals[s.id] || 0)}
+                        {s.id === winnerSupplierId ? " (campeão)" : ""}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {isOverridingWinner && (
+                <div className="space-y-2">
+                  <Label className="text-destructive">Justificativa para escolher fornecedor diferente do campeão *</Label>
+                  <Textarea
+                    value={justificativaTroca}
+                    onChange={e => setJustificativaTroca(e.target.value)}
+                    placeholder="Ex: prazo de entrega mais curto, qualidade do produto, restrição técnica..."
+                    rows={3}
+                  />
+                </div>
+              )}
             </div>
           )}
 
