@@ -286,10 +286,10 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text("ORDEM DE COMPRA", 38, 15);
+    doc.text("ORDEM DE COMPRA", 50, 15);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text("Instituto Univida — Gestão Hospitalar", 38, 21);
+    doc.text("Instituto Univida — Gestão Hospitalar", 50, 21);
 
     // Right-side meta box
     const metaX = pageW - 78;
