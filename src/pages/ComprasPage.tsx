@@ -17,6 +17,7 @@ import PurchaseOrderModal from "@/components/purchases/PurchaseOrderModal";
 import PriceBankPanel from "@/components/purchases/PriceBankPanel";
 import SupplierInviteModal from "@/components/purchases/SupplierInviteModal";
 import PurchasesDashboardPanel from "@/components/purchases/PurchasesDashboardPanel";
+import { PERIOD_LABEL, type PeriodKey } from "@/components/purchases/PurchasesDashboardPanel";
 
 const REQ_STATUS_LABEL: Record<string, string> = {
   rascunho: "Rascunho",
@@ -54,6 +55,8 @@ export default function ComprasPage() {
   const [unitFilter, setUnitFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [panelPeriod, setPanelPeriod] = useState<PeriodKey>("month");
+  const [panelUnit, setPanelUnit] = useState<string>("all");
 
   const [reqModalOpen, setReqModalOpen] = useState(false);
   const [editingReq, setEditingReq] = useState<any>(null);
@@ -227,6 +230,25 @@ export default function ComprasPage() {
                     </SelectContent>
                   </Select>
                 )}
+              </div>
+            )}
+            {tab === "painel" && (
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end">
+                <Select value={panelPeriod} onValueChange={(v) => setPanelPeriod(v as PeriodKey)}>
+                  <SelectTrigger className="w-full xl:w-[200px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(PERIOD_LABEL) as PeriodKey[]).map(k =>
+                      <SelectItem key={k} value={k}>{PERIOD_LABEL[k]}</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                <Select value={panelUnit} onValueChange={setPanelUnit}>
+                  <SelectTrigger className="w-full xl:w-[220px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as unidades</SelectItem>
+                    {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>
@@ -436,6 +458,11 @@ export default function ComprasPage() {
               orders={orders}
               contracts={contracts}
               invitesByReq={invitesByReq}
+              period={panelPeriod}
+              onPeriodChange={setPanelPeriod}
+              unit={panelUnit}
+              onUnitChange={setPanelUnit}
+              hideFilters
             />
           </TabsContent>
         </Tabs>
