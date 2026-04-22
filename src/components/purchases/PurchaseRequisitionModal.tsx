@@ -95,6 +95,19 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
   const [justRiscoDescricao, setJustRiscoDescricao] = useState("");
   const [justUrgenciaPrazo, setJustUrgenciaPrazo] = useState("");
   const [justProcessoNumero, setJustProcessoNumero] = useState("");
+  // Campos avançados (Tribunal de Contas) — impacto da não-aquisição, riscos, plano de ação
+  const [justImpactoNaoCompra, setJustImpactoNaoCompra] = useState("");
+  const [justRiscosClassif, setJustRiscosClassif] = useState<string[]>([]);
+  const [justRiscoOutro, setJustRiscoOutro] = useState("");
+  const [justFatoGerador, setJustFatoGerador] = useState("");
+  const [justPesquisaPreco, setJustPesquisaPreco] = useState("");
+  const [justEscolhaFornecedor, setJustEscolhaFornecedor] = useState("");
+  const [justRegularizacao, setJustRegularizacao] = useState<string[]>([]);
+  const [justReincidencia, setJustReincidencia] = useState<string[]>([]);
+  const [justReincidenciaOutro, setJustReincidenciaOutro] = useState("");
+  const [justPlanoAcao, setJustPlanoAcao] = useState("");
+  const [justPlanoResponsavel, setJustPlanoResponsavel] = useState("");
+  const [justPlanoPrazo, setJustPlanoPrazo] = useState("");
   const [solicitante, setSolicitante] = useState(profile?.name || "");
   const [aprovadorImediato, setAprovadorImediato] = useState("");
   const [aprovadorDiretoria, setAprovadorDiretoria] = useState("");
