@@ -378,6 +378,67 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       margin: { left: margin, right: margin },
     });
 
+    // ===== SECTION 5: JUSTIFICATIVA LEGAL (Dispensa / Inexigibilidade / Emergencial) =====
+    if (req && ["dispensa", "inexigibilidade", "emergencial"].includes(req.justificativa_tipo || "")) {
+      const rawObs: string = req.observacoes || "";
+      const blockMatch = rawObs.match(/\[JUST_LEGAL\]([\s\S]*?)\[\/JUST_LEGAL\]/);
+      let legal: any = null;
+      if (blockMatch) {
+        try { legal = JSON.parse(blockMatch[1]); } catch { /* ignore */ }
+      }
+      const tipoLabel =
+        req.justificativa_tipo === "dispensa" ? "Dispensa de licitação"
+        : req.justificativa_tipo === "inexigibilidade" ? "Inexigibilidade de licitação"
+        : "Compra emergencial";
+
+      doc.addPage();
+      sectionTitle(doc, `Seção 5 — Justificativa legal (${tipoLabel})`, margin);
+      const legalRows: any[] = [
+        ["Modalidade", tipoLabel],
+        ["Base legal (Lei 14.133/2021)", legal?.base_legal || "—"],
+        ["Nº processo administrativo", legal?.processo_numero || "—"],
+        ["Fundamentação técnica", legal?.fundamentacao || "—"],
+      ];
+      if (req.justificativa_tipo === "inexigibilidade") {
+        legalRows.push(["Comprovação de exclusividade", legal?.fornecedor_unico || "—"]);
+      }
+      if (req.justificativa_tipo === "dispensa") {
+        legalRows.push(["Comparativo / pesquisa de preços", legal?.fornecedor_unico || "—"]);
+      }
+      if (req.justificativa_tipo === "emergencial") {
+        legalRows.push(["Descrição do risco / dano potencial", legal?.risco_descricao || "—"]);
+        legalRows.push(["Prazo máximo (urgência)", legal?.urgencia_prazo || "—"]);
+        legalRows.push(["Justificativa técnica (fato gerador)", legal?.fato_gerador || "—"]);
+      }
+      legalRows.push(["Impacto se NÃO comprar", legal?.impacto_nao_compra || "—"]);
+      const riscos = [
+        ...(Array.isArray(legal?.riscos_classif) ? legal.riscos_classif : []),
+        ...(legal?.risco_outro ? [`Outro: ${legal.risco_outro}`] : []),
+      ];
+      legalRows.push(["Classificação do risco", riscos.length ? riscos.map((r: string) => `• ${r}`).join("\n") : "—"]);
+      legalRows.push(["Pesquisa de preço simplificada", legal?.pesquisa_preco || "—"]);
+      legalRows.push(["Justificativa da escolha do fornecedor", legal?.escolha_fornecedor || "—"]);
+      const reg = Array.isArray(legal?.regularizacao) ? legal.regularizacao : [];
+      legalRows.push(["Regularização documental", reg.length ? reg.map((r: string) => `☑ ${r}`).join("\n") : "—"]);
+      const reinc = [
+        ...(Array.isArray(legal?.reincidencia) ? legal.reincidencia : []),
+        ...(legal?.reincidencia_outro ? [`Outro: ${legal.reincidencia_outro}`] : []),
+      ];
+      legalRows.push(["Análise de reincidência", reinc.length ? reinc.map((r: string) => `• ${r}`).join("\n") : "—"]);
+      legalRows.push(["Plano de ação (medidas corretivas)", legal?.plano_acao || "—"]);
+      legalRows.push(["Responsável pela implementação", legal?.plano_responsavel || "—"]);
+      legalRows.push(["Prazo do plano de ação", legal?.plano_prazo || "—"]);
+      autoTable(doc, {
+        startY: 90,
+        head: [],
+        body: legalRows,
+        theme: "plain",
+        styles: { fontSize: 9, cellPadding: 4, valign: "top" },
+        columnStyles: { 0: { fontStyle: "bold", cellWidth: 200, fillColor: [240, 246, 246] } },
+        margin: { left: margin, right: margin },
+      });
+    }
+
     // ===== FOOTER on every page =====
     const total = doc.getNumberOfPages();
     for (let i = 1; i <= total; i++) {
@@ -396,6 +457,13 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
   const invites = dossier?.invites || [];
   const suppliers = dossier?.quote_suppliers || [];
   const approvals = dossier?.approvals || [];
+  const req = dossier?.requisition;
+  const legalPreview: any = (() => {
+    if (!req || !["dispensa", "inexigibilidade", "emergencial"].includes(req.justificativa_tipo || "")) return null;
+    const m = (req.observacoes || "").match(/\[JUST_LEGAL\]([\s\S]*?)\[\/JUST_LEGAL\]/);
+    if (!m) return { tipo: req.justificativa_tipo };
+    try { return { tipo: req.justificativa_tipo, ...JSON.parse(m[1]) }; } catch { return { tipo: req.justificativa_tipo }; }
+  })();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -486,6 +554,45 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
                   {approvals.length === 0 && <div className="text-muted-foreground">Sem aprovações registradas.</div>}
                 </div>
               </div>
+
+              {legalPreview && (
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    Justificativa legal —{" "}
+                    {legalPreview.tipo === "dispensa" && "Dispensa de licitação"}
+                    {legalPreview.tipo === "inexigibilidade" && "Inexigibilidade de licitação"}
+                    {legalPreview.tipo === "emergencial" && "Compra emergencial"}
+                  </h3>
+                  <div className="border rounded-md p-3 text-xs space-y-2 bg-primary/5">
+                    <div><span className="text-muted-foreground">Base legal: </span><span className="font-medium">{legalPreview.base_legal || "—"}</span></div>
+                    <div><span className="text-muted-foreground">Processo administrativo: </span><span className="font-medium">{legalPreview.processo_numero || "—"}</span></div>
+                    {legalPreview.fundamentacao && (
+                      <div><div className="text-muted-foreground">Fundamentação técnica:</div><div>{legalPreview.fundamentacao}</div></div>
+                    )}
+                    {legalPreview.impacto_nao_compra && (
+                      <div><div className="text-muted-foreground">Impacto se NÃO comprar:</div><div>{legalPreview.impacto_nao_compra}</div></div>
+                    )}
+                    {Array.isArray(legalPreview.riscos_classif) && legalPreview.riscos_classif.length > 0 && (
+                      <div>
+                        <div className="text-muted-foreground">Classificação do risco:</div>
+                        <ul className="list-disc list-inside">
+                          {legalPreview.riscos_classif.map((r: string) => <li key={r}>{r}</li>)}
+                          {legalPreview.risco_outro && <li>Outro: {legalPreview.risco_outro}</li>}
+                        </ul>
+                      </div>
+                    )}
+                    {legalPreview.plano_acao && (
+                      <div>
+                        <div className="text-muted-foreground">Plano de ação para evitar recorrência:</div>
+                        <div>{legalPreview.plano_acao}</div>
+                        <div className="text-muted-foreground mt-1">
+                          Responsável: <span className="text-foreground">{legalPreview.plano_responsavel || "—"}</span> • Prazo: <span className="text-foreground">{legalPreview.plano_prazo || "—"}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </ScrollArea>
         )}

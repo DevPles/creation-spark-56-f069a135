@@ -95,6 +95,19 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
   const [justRiscoDescricao, setJustRiscoDescricao] = useState("");
   const [justUrgenciaPrazo, setJustUrgenciaPrazo] = useState("");
   const [justProcessoNumero, setJustProcessoNumero] = useState("");
+  // Campos avançados (Tribunal de Contas) — impacto da não-aquisição, riscos, plano de ação
+  const [justImpactoNaoCompra, setJustImpactoNaoCompra] = useState("");
+  const [justRiscosClassif, setJustRiscosClassif] = useState<string[]>([]);
+  const [justRiscoOutro, setJustRiscoOutro] = useState("");
+  const [justFatoGerador, setJustFatoGerador] = useState("");
+  const [justPesquisaPreco, setJustPesquisaPreco] = useState("");
+  const [justEscolhaFornecedor, setJustEscolhaFornecedor] = useState("");
+  const [justRegularizacao, setJustRegularizacao] = useState<string[]>([]);
+  const [justReincidencia, setJustReincidencia] = useState<string[]>([]);
+  const [justReincidenciaOutro, setJustReincidenciaOutro] = useState("");
+  const [justPlanoAcao, setJustPlanoAcao] = useState("");
+  const [justPlanoResponsavel, setJustPlanoResponsavel] = useState("");
+  const [justPlanoPrazo, setJustPlanoPrazo] = useState("");
   const [solicitante, setSolicitante] = useState(profile?.name || "");
   const [aprovadorImediato, setAprovadorImediato] = useState("");
   const [aprovadorDiretoria, setAprovadorDiretoria] = useState("");
@@ -139,6 +152,18 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           setJustRiscoDescricao(data.risco_descricao || "");
           setJustUrgenciaPrazo(data.urgencia_prazo || "");
           setJustProcessoNumero(data.processo_numero || "");
+          setJustImpactoNaoCompra(data.impacto_nao_compra || "");
+          setJustRiscosClassif(Array.isArray(data.riscos_classif) ? data.riscos_classif : []);
+          setJustRiscoOutro(data.risco_outro || "");
+          setJustFatoGerador(data.fato_gerador || "");
+          setJustPesquisaPreco(data.pesquisa_preco || "");
+          setJustEscolhaFornecedor(data.escolha_fornecedor || "");
+          setJustRegularizacao(Array.isArray(data.regularizacao) ? data.regularizacao : []);
+          setJustReincidencia(Array.isArray(data.reincidencia) ? data.reincidencia : []);
+          setJustReincidenciaOutro(data.reincidencia_outro || "");
+          setJustPlanoAcao(data.plano_acao || "");
+          setJustPlanoResponsavel(data.plano_responsavel || "");
+          setJustPlanoPrazo(data.plano_prazo || "");
         } catch { /* ignora */ }
         setObservacoes(rawObs.replace(blockMatch[0], "").trim());
       } else {
@@ -149,6 +174,18 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
         setJustRiscoDescricao("");
         setJustUrgenciaPrazo("");
         setJustProcessoNumero("");
+        setJustImpactoNaoCompra("");
+        setJustRiscosClassif([]);
+        setJustRiscoOutro("");
+        setJustFatoGerador("");
+        setJustPesquisaPreco("");
+        setJustEscolhaFornecedor("");
+        setJustRegularizacao([]);
+        setJustReincidencia([]);
+        setJustReincidenciaOutro("");
+        setJustPlanoAcao("");
+        setJustPlanoResponsavel("");
+        setJustPlanoPrazo("");
       }
       setSolicitante(requisition.solicitante_nome || "");
       setAprovadorImediato(requisition.aprovador_imediato_nome || "");
@@ -186,6 +223,18 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setJustRiscoDescricao("");
       setJustUrgenciaPrazo("");
       setJustProcessoNumero("");
+      setJustImpactoNaoCompra("");
+      setJustRiscosClassif([]);
+      setJustRiscoOutro("");
+      setJustFatoGerador("");
+      setJustPesquisaPreco("");
+      setJustEscolhaFornecedor("");
+      setJustRegularizacao([]);
+      setJustReincidencia([]);
+      setJustReincidenciaOutro("");
+      setJustPlanoAcao("");
+      setJustPlanoResponsavel("");
+      setJustPlanoPrazo("");
       setSolicitante(profile?.name || "");
       setAprovadorImediato("");
       setAprovadorDiretoria("");
@@ -266,6 +315,18 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           risco_descricao: justRiscoDescricao,
           urgencia_prazo: justUrgenciaPrazo,
           processo_numero: justProcessoNumero,
+          impacto_nao_compra: justImpactoNaoCompra,
+          riscos_classif: justRiscosClassif,
+          risco_outro: justRiscoOutro,
+          fato_gerador: justFatoGerador,
+          pesquisa_preco: justPesquisaPreco,
+          escolha_fornecedor: justEscolhaFornecedor,
+          regularizacao: justRegularizacao,
+          reincidencia: justReincidencia,
+          reincidencia_outro: justReincidenciaOutro,
+          plano_acao: justPlanoAcao,
+          plano_responsavel: justPlanoResponsavel,
+          plano_prazo: justPlanoPrazo,
         };
         observacoesFinal = `${observacoesFinal}\n\n[JUST_LEGAL]${JSON.stringify(legalBlock)}[/JUST_LEGAL]`.trim();
       }
@@ -482,6 +543,15 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                       placeholder="Ex: 48 horas / até 7 dias"
                     />
                   </div>
+                  <div>
+                    <Label className="text-xs">Justificativa técnica da emergência (fato gerador)</Label>
+                    <Textarea
+                      value={justFatoGerador}
+                      onChange={e => setJustFatoGerador(e.target.value)}
+                      rows={3}
+                      placeholder={"• O fato gerador da emergência;\n• O risco concreto e imediato;\n• A impossibilidade de aguardar o trâmite regular;\n• O impacto assistencial, operacional ou patrimonial."}
+                    />
+                  </div>
                 </>
               )}
 
@@ -496,6 +566,135 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                   />
                 </div>
               )}
+
+              {/* === Bloco comum a todas as modalidades de exceção === */}
+              <div className="border-t border-primary/20 pt-3 mt-2 space-y-3">
+                <div>
+                  <Label className="text-xs">Impacto caso a aquisição NÃO seja realizada</Label>
+                  <Textarea
+                    value={justImpactoNaoCompra}
+                    onChange={e => setJustImpactoNaoCompra(e.target.value)}
+                    rows={3}
+                    placeholder="Descrever consequências assistenciais, operacionais e patrimoniais caso a compra não ocorra (interrupção de atendimento, risco a pacientes, multas, perda de credenciamento etc.)."
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs">Classificação do risco envolvido</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mt-1">
+                    {[
+                      "Risco à continuidade de serviço essencial",
+                      "Risco assistencial ao paciente",
+                      "Risco sanitário",
+                      "Risco de dano ao patrimônio público",
+                      "Risco jurídico/regulatório",
+                    ].map(r => (
+                      <label key={r} className="flex items-center gap-2 text-xs">
+                        <Checkbox
+                          checked={justRiscosClassif.includes(r)}
+                          onCheckedChange={() => setJustRiscosClassif(p => p.includes(r) ? p.filter(x => x !== r) : [...p, r])}
+                        />
+                        {r}
+                      </label>
+                    ))}
+                  </div>
+                  <Input
+                    className="mt-2"
+                    value={justRiscoOutro}
+                    onChange={e => setJustRiscoOutro(e.target.value)}
+                    placeholder="Outro risco (especificar)"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Pesquisa de preço simplificada</Label>
+                    <Textarea
+                      value={justPesquisaPreco}
+                      onChange={e => setJustPesquisaPreco(e.target.value)}
+                      rows={2}
+                      placeholder="Fornecedores consultados, valores cotados e forma da cotação."
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Justificativa da escolha do fornecedor</Label>
+                    <Textarea
+                      value={justEscolhaFornecedor}
+                      onChange={e => setJustEscolhaFornecedor(e.target.value)}
+                      rows={2}
+                      placeholder="Por que este fornecedor foi escolhido (menor preço, exclusividade, prazo, qualificação técnica etc.)."
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs">Regularização documental</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mt-1">
+                    {[
+                      "Nota Fiscal com identificação do Contrato de Gestão",
+                      "Registro no sistema realizado",
+                      "Ordem de Compra formalizada",
+                      "Processo arquivado fisicamente/digitalmente",
+                    ].map(r => (
+                      <label key={r} className="flex items-center gap-2 text-xs">
+                        <Checkbox
+                          checked={justRegularizacao.includes(r)}
+                          onCheckedChange={() => setJustRegularizacao(p => p.includes(r) ? p.filter(x => x !== r) : [...p, r])}
+                        />
+                        {r}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs">Análise de reincidência — esta aquisição decorre de:</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mt-1">
+                    {[
+                      "Evento imprevisível",
+                      "Falha de planejamento",
+                      "Aumento inesperado de demanda",
+                      "Falha contratual de fornecedor",
+                    ].map(r => (
+                      <label key={r} className="flex items-center gap-2 text-xs">
+                        <Checkbox
+                          checked={justReincidencia.includes(r)}
+                          onCheckedChange={() => setJustReincidencia(p => p.includes(r) ? p.filter(x => x !== r) : [...p, r])}
+                        />
+                        {r}
+                      </label>
+                    ))}
+                  </div>
+                  <Input
+                    className="mt-2"
+                    value={justReincidenciaOutro}
+                    onChange={e => setJustReincidenciaOutro(e.target.value)}
+                    placeholder="Outro motivo (especificar)"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs">Plano de ação para evitar recorrência</Label>
+                  <Textarea
+                    value={justPlanoAcao}
+                    onChange={e => setJustPlanoAcao(e.target.value)}
+                    rows={2}
+                    placeholder="Descrever medidas corretivas e preventivas."
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                    <Input
+                      value={justPlanoResponsavel}
+                      onChange={e => setJustPlanoResponsavel(e.target.value)}
+                      placeholder="Responsável pela implementação"
+                    />
+                    <Input
+                      value={justPlanoPrazo}
+                      onChange={e => setJustPlanoPrazo(e.target.value)}
+                      placeholder="Prazo (ex: 30/06/2026)"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
