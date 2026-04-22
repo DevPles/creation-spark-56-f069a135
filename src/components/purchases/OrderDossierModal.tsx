@@ -53,6 +53,8 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     const margin = 40;
+    const footerReserve = 50; // espaço reservado para rodapé (evita sobreposição)
+    const contentStartY = 80; // após o cabeçalho da seção (60pt) + respiro
     const order = dossier.order || {};
     const req = dossier.requisition;
     const quotation = dossier.quotation;
@@ -65,6 +67,26 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     const approvals: any[] = dossier.approvals || [];
     const audit: any[] = dossier.audit_log || [];
     const generatedAt = dossier.generated_at ? new Date(dossier.generated_at) : new Date();
+
+    // Helpers de layout
+    const lastY = () => (doc as any).lastAutoTable?.finalY ?? contentStartY;
+    const ensureSpace = (needed: number, currentY?: number): number => {
+      const y = currentY ?? lastY();
+      if (y + needed > pageH - footerReserve) {
+        doc.addPage();
+        return contentStartY;
+      }
+      return y;
+    };
+    const subTitle = (text: string, gapBefore = 22) => {
+      const y = ensureSpace(gapBefore + 14);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(13, 79, 79);
+      doc.text(text, margin, y + gapBefore);
+      doc.setTextColor(0, 0, 0);
+      return y + gapBefore + 6;
+    };
 
     // ===== COVER =====
     doc.setFillColor(13, 79, 79); // teal
@@ -117,6 +139,8 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       styles: { fontSize: 10, cellPadding: 4 },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 160 } },
       margin: { left: margin, right: margin },
+      pageBreak: "auto",
+      bodyStyles: { minCellHeight: 14 },
     });
 
     // ===== SECTION 1: TIMELINE =====
