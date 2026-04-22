@@ -76,24 +76,31 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
   useEffect(() => { load(); }, []);
 
   const filtered = history.filter(h => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return [h.descricao_produto, h.fornecedor_nome, h.categoria].filter(Boolean).join(" ").toLowerCase().includes(q);
+    if (search) {
+      const q = search.toLowerCase();
+      const hay = [h.descricao_produto, h.fornecedor_nome, h.categoria].filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
   });
 
   const filteredCatalog = catalog.filter(c => {
-    if (!catalogSearch) return true;
-    const q = catalogSearch.toLowerCase();
-    return [c.codigo, c.descricao, c.tipo, c.classificacao, c.facility_unit, c.setor].filter(Boolean).join(" ").toLowerCase().includes(q);
+    if (unitFilter !== "all" && c.facility_unit && c.facility_unit !== unitFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const hay = [c.codigo, c.descricao, c.tipo, c.classificacao, c.facility_unit, c.setor].filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
   });
 
   // Agrupa histórico por unidade + descrição para calcular curva de consumo
   const consumoCurva = (() => {
     const groups = new Map<string, any[]>();
     purchaseHistory.forEach(p => {
-      if (purchaseUnit !== "all" && p.facility_unit !== purchaseUnit) return;
-      if (purchaseSearch) {
-        const q = purchaseSearch.toLowerCase();
+      if (unitFilter !== "all" && p.facility_unit !== unitFilter) return;
+      if (search) {
+        const q = search.toLowerCase();
         const hay = [p.descricao, p.fornecedor_nome, p.oc_numero].filter(Boolean).join(" ").toLowerCase();
         if (!hay.includes(q)) return;
       }
