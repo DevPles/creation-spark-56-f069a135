@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import type { Styles } from "jspdf-autotable";
 import { format } from "date-fns";
 import { UNIVIDA_LOGO_BASE64 } from "@/assets/univida-logo-base64";
 
