@@ -646,6 +646,12 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
         onSaved={load}
         editing={editingProduct}
       />
+
+      <SupplierRegistryModal
+        open={supplierModalOpen}
+        onOpenChange={setSupplierModalOpen}
+        onSaved={load}
+      />
     </div>
   );
 }
