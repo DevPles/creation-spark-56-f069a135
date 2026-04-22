@@ -43,6 +43,10 @@ export default function PublicQuotationPage() {
   const [obs, setObs] = useState("");
   const [submittedOk, setSubmittedOk] = useState(false);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [responderName, setResponderName] = useState("");
+  const [responderEmail, setResponderEmail] = useState("");
+  const [responderPhone, setResponderPhone] = useState("");
+  const [responderCpf, setResponderCpf] = useState("");
 
   const load = async () => {
     if (!token) return;
