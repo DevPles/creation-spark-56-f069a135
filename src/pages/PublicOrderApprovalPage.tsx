@@ -104,6 +104,26 @@ export default function PublicOrderApprovalPage() {
               <div><Label className="text-xs">Prazo</Label><div>{data?.order?.prazo_entrega || "—"}</div></div>
               <div className="md:col-span-3"><Label className="text-xs">Endereço de entrega</Label><div>{data?.order?.endereco_entrega || "—"}</div></div>
             </div>
+            {Number(data?.order?.rubrica_budget || 0) > 0 && (() => {
+              const budget = Number(data.order.rubrica_budget);
+              const spent = Number(data.order.rubrica_spent || 0);
+              const thisOc = Number(data.order.valor_total || 0);
+              const after = spent + thisOc;
+              const pct = budget > 0 ? (after / budget) * 100 : 0;
+              const exceeds = after > budget;
+              return (
+                <div className={`rounded-md p-3 text-sm border ${exceeds ? "bg-destructive/10 border-destructive/30" : "bg-muted/50"}`}>
+                  <div className="font-medium mb-1">Impacto na rubrica — {data.order.rubrica_name || "—"}</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <div><Label className="text-xs">Orçamento</Label><div className="font-semibold">{fmtBRL(budget)}</div></div>
+                    <div><Label className="text-xs">Já gasto</Label><div>{fmtBRL(spent)}</div></div>
+                    <div><Label className="text-xs">Esta OC</Label><div>{fmtBRL(thisOc)}</div></div>
+                    <div><Label className="text-xs">Saldo após</Label><div className={exceeds ? "text-destructive font-semibold" : "font-semibold"}>{fmtBRL(budget - after)}</div></div>
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">Utilização total: {pct.toFixed(1)}%{exceeds ? " — ultrapassa o saldo da rubrica" : ""}</div>
+                </div>
+              );
+            })()}
             {data?.order?.observacoes && (
               <div><Label className="text-xs">Observações</Label><div className="whitespace-pre-wrap">{data.order.observacoes}</div></div>
             )}
