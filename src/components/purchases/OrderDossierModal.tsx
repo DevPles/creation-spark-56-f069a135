@@ -371,14 +371,19 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       ];
     });
     autoTable(doc, {
-      startY: 90,
+      startY: contentStartY,
       head: [["#", "Código", "Descrição", "Qtd", "V. unit.", "Total", "Setor"]],
       body: itemsBody,
       theme: "grid",
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 8 },
       styles: { fontSize: 8, cellPadding: 4 },
       columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 70 } },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      pageBreak: "auto",
+      rowPageBreak: "avoid",
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) sectionTitle(doc, "Seção 3 — Itens comprados (cont.)", margin);
+      },
     });
 
     // ===== SECTION 4: APPROVAL =====
@@ -405,13 +410,18 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       apprRows.push(["Saldo após esta OC", fmtBRL(Number(contract.rubrica_remaining_after || 0))]);
     }
     autoTable(doc, {
-      startY: 90,
+      startY: contentStartY,
       head: [],
       body: apprRows,
       theme: "plain",
       styles: { fontSize: 9, cellPadding: 3 },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 170 } },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      pageBreak: "auto",
+      rowPageBreak: "avoid",
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) sectionTitle(doc, "Seção 4 — Aprovação (cont.)", margin);
+      },
     });
 
     // ===== SECTION 5: JUSTIFICATIVA LEGAL (Dispensa / Inexigibilidade / Emergencial) =====
