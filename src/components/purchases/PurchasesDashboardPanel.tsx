@@ -554,9 +554,7 @@ export default function PurchasesDashboardPanel({
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Top fornecedores */}
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" /> Top fornecedores ({PERIOD_LABEL[period]})
-          </CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Top fornecedores ({PERIOD_LABEL[period]})</CardTitle></CardHeader>
           <CardContent>
             {topSuppliers.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">Sem OCs no período.</p>
@@ -581,9 +579,7 @@ export default function PurchasesDashboardPanel({
 
         {/* Top itens */}
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2">
-            <Package className="h-4 w-4" /> Top itens comprados ({PERIOD_LABEL[period]})
-          </CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Top itens comprados ({PERIOD_LABEL[period]})</CardTitle></CardHeader>
           <CardContent>
             {topItems.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">Sem itens no período.</p>
@@ -597,8 +593,7 @@ export default function PurchasesDashboardPanel({
                         Qtd: {it.qty.toLocaleString("pt-BR")} · Médio: {formatBRL(it.avg)}
                         {it.variation !== null && (
                           <span className={`ml-2 inline-flex items-center gap-0.5 ${it.variation > 0 ? "text-destructive" : "text-emerald-600"}`}>
-                            {it.variation > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                            {Math.abs(it.variation).toFixed(0)}%
+                            {it.variation > 0 ? "▲" : "▼"} {Math.abs(it.variation).toFixed(0)}%
                           </span>
                         )}
                       </div>
