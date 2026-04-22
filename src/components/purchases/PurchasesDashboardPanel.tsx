@@ -22,11 +22,16 @@ interface Props {
   orders: any[];
   contracts: any[];
   invitesByReq: Record<string, { total: number; respondidos: number; firstToken?: string }>;
+  period?: PeriodKey;
+  onPeriodChange?: (p: PeriodKey) => void;
+  unit?: string;
+  onUnitChange?: (u: string) => void;
+  hideFilters?: boolean;
 }
 
-type PeriodKey = "month" | "30d" | "90d" | "180d" | "year";
+export type PeriodKey = "month" | "30d" | "90d" | "180d" | "year";
 
-const PERIOD_LABEL: Record<PeriodKey, string> = {
+export const PERIOD_LABEL: Record<PeriodKey, string> = {
   month: "Mês atual",
   "30d": "Últimos 30 dias",
   "90d": "Últimos 90 dias",
@@ -52,10 +57,15 @@ function diffDays(a: Date, b: Date) { return Math.floor((b.getTime() - a.getTime
 
 export default function PurchasesDashboardPanel({
   requisitions, quotations, orders, contracts, invitesByReq,
+  period: periodProp, onPeriodChange, unit: unitProp, onUnitChange, hideFilters,
 }: Props) {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState<PeriodKey>("month");
-  const [unit, setUnit] = useState<string>("all");
+  const [periodInner, setPeriodInner] = useState<PeriodKey>("month");
+  const [unitInner, setUnitInner] = useState<string>("all");
+  const period = periodProp ?? periodInner;
+  const unit = unitProp ?? unitInner;
+  const setPeriod = (p: PeriodKey) => { onPeriodChange ? onPeriodChange(p) : setPeriodInner(p); };
+  const setUnit = (u: string) => { onUnitChange ? onUnitChange(u) : setUnitInner(u); };
 
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [invites, setInvites] = useState<any[]>([]);
