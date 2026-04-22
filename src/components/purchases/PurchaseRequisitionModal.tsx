@@ -223,6 +223,18 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setJustRiscoDescricao("");
       setJustUrgenciaPrazo("");
       setJustProcessoNumero("");
+      setJustImpactoNaoCompra("");
+      setJustRiscosClassif([]);
+      setJustRiscoOutro("");
+      setJustFatoGerador("");
+      setJustPesquisaPreco("");
+      setJustEscolhaFornecedor("");
+      setJustRegularizacao([]);
+      setJustReincidencia([]);
+      setJustReincidenciaOutro("");
+      setJustPlanoAcao("");
+      setJustPlanoResponsavel("");
+      setJustPlanoPrazo("");
       setSolicitante(profile?.name || "");
       setAprovadorImediato("");
       setAprovadorDiretoria("");
