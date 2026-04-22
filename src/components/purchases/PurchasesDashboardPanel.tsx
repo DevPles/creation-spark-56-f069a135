@@ -7,10 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import {
-  AlertTriangle, ArrowDownRight, ArrowUpRight, CheckCircle2, Clock,
-  FileText, Mail, Package, ShoppingCart, TrendingUp, Truck, Users,
-} from "lucide-react";
-import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis, Cell,
 } from "recharts";
 import {
@@ -178,12 +174,12 @@ export default function PurchasesDashboardPanel({
     const oRec = fOrders.filter(o => o.status === "recebida").length;
     const max = Math.max(r, i, q, oa, oAuth, oRec, 1);
     const stages = [
-      { label: "Requisições", value: r, icon: FileText },
-      { label: "Convites", value: i, icon: Mail },
-      { label: "Cotações", value: q, icon: ShoppingCart },
-      { label: "OCs aguardando", value: oa, icon: Clock },
-      { label: "Autorizadas", value: oAuth, icon: CheckCircle2 },
-      { label: "Recebidas", value: oRec, icon: Truck },
+      { label: "Requisições", value: r },
+      { label: "Convites", value: i },
+      { label: "Cotações", value: q },
+      { label: "OCs aguardando", value: oa },
+      { label: "Autorizadas", value: oAuth },
+      { label: "Recebidas", value: oRec },
     ];
     return stages.map((s, idx) => ({
       ...s,
@@ -367,19 +363,19 @@ export default function PurchasesDashboardPanel({
 
       {/* KPIs operacionais */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiBox label="Requisições abertas" value={kpis.reqsAbertas} icon={FileText}
+        <KpiBox label="Requisições abertas" value={kpis.reqsAbertas}
           delta={kpis.reqsAbertas - kpis.reqsAbertasPrev} hint="vs período anterior" />
-        <KpiBox label="Cotações em andamento" value={kpis.cotAndamento} icon={ShoppingCart}
+        <KpiBox label="Cotações em andamento" value={kpis.cotAndamento}
           subtitle={`${kpis.tempoMedioCot} dias em média`} />
-        <KpiBox label="OCs aguardando aprovação" value={kpis.ocAguard} icon={Clock}
+        <KpiBox label="OCs aguardando aprovação" value={kpis.ocAguard}
           subtitle={kpis.ocAguardAtrasadas > 0 ? `${kpis.ocAguardAtrasadas} atrasada${kpis.ocAguardAtrasadas > 1 ? "s" : ""} >3 dias` : "no prazo"}
           danger={kpis.ocAguardAtrasadas > 0} />
-        <KpiBox label="OCs autorizadas no período" value={kpis.ocAutorizadasPeriod} icon={CheckCircle2} />
-        <KpiBox label="Convites enviados" value={kpis.invitesEnviados} icon={Mail}
+        <KpiBox label="OCs autorizadas no período" value={kpis.ocAutorizadasPeriod} />
+        <KpiBox label="Convites enviados" value={kpis.invitesEnviados}
           subtitle={`${kpis.taxaResposta}% de resposta`} />
-        <KpiBox label="Ticket médio de OC" value={formatBRL(kpis.ticketMedio)} valueSize="text-xl" icon={Package} />
-        <KpiBox label="Total autorizado" value={formatBRL(kpis.totalAutorizadoPeriod)} valueSize="text-xl" icon={TrendingUp} />
-        <KpiBox label="Total recebido" value={formatBRL(kpis.totalRecebidoPeriod)} valueSize="text-xl" icon={Truck} />
+        <KpiBox label="Ticket médio de OC" value={formatBRL(kpis.ticketMedio)} valueSize="text-xl" />
+        <KpiBox label="Total autorizado" value={formatBRL(kpis.totalAutorizadoPeriod)} valueSize="text-xl" />
+        <KpiBox label="Total recebido" value={formatBRL(kpis.totalRecebidoPeriod)} valueSize="text-xl" />
       </div>
 
       {/* Funil */}
@@ -388,13 +384,9 @@ export default function PurchasesDashboardPanel({
         <CardContent>
           <div className="space-y-3">
             {funnel.map((s) => {
-              const Icon = s.icon;
               return (
                 <div key={s.label} className="grid grid-cols-[120px_1fr_auto] items-center gap-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <span>{s.label}</span>
-                  </div>
+                  <div className="text-sm">{s.label}</div>
                   <div className="relative h-7 rounded-md bg-muted overflow-hidden">
                     <div className="absolute inset-y-0 left-0 bg-primary/80 rounded-md transition-all"
                          style={{ width: `${Math.max(s.pct, 2)}%` }} />
@@ -423,7 +415,6 @@ export default function PurchasesDashboardPanel({
           </div>
           {rubricasAlerta.length > 0 && (
             <Badge variant="outline" className="border-destructive/30 text-destructive">
-              <AlertTriangle className="h-3 w-3 mr-1" />
               {rubricasAlerta.length} em alerta
             </Badge>
           )}
@@ -477,19 +468,16 @@ export default function PurchasesDashboardPanel({
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Atenção imediata */}
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-600" /> Atenção imediata
-          </CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Atenção imediata</CardTitle></CardHeader>
           <CardContent>
             {attention.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">Nada pendente. Tudo em dia.</p>
             ) : (
               <ul className="space-y-2 max-h-[360px] overflow-auto pr-2">
                 {attention.map(a => (
-                  <li key={a.id} className={`flex items-start gap-3 p-3 rounded-md border ${
+                  <li key={a.id} className={`p-3 rounded-md border ${
                     a.severity === "high" ? "border-destructive/30 bg-destructive/5" : "border-amber-200/50 bg-amber-50/50 dark:border-amber-500/20 dark:bg-amber-500/5"
                   }`}>
-                    <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${a.severity === "high" ? "text-destructive" : "text-amber-600"}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{a.title}</p>
                       <p className="text-xs text-muted-foreground">{a.subtitle}</p>
@@ -566,9 +554,7 @@ export default function PurchasesDashboardPanel({
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Top fornecedores */}
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" /> Top fornecedores ({PERIOD_LABEL[period]})
-          </CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Top fornecedores ({PERIOD_LABEL[period]})</CardTitle></CardHeader>
           <CardContent>
             {topSuppliers.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">Sem OCs no período.</p>
@@ -593,9 +579,7 @@ export default function PurchasesDashboardPanel({
 
         {/* Top itens */}
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2">
-            <Package className="h-4 w-4" /> Top itens comprados ({PERIOD_LABEL[period]})
-          </CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Top itens comprados ({PERIOD_LABEL[period]})</CardTitle></CardHeader>
           <CardContent>
             {topItems.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">Sem itens no período.</p>
@@ -609,8 +593,7 @@ export default function PurchasesDashboardPanel({
                         Qtd: {it.qty.toLocaleString("pt-BR")} · Médio: {formatBRL(it.avg)}
                         {it.variation !== null && (
                           <span className={`ml-2 inline-flex items-center gap-0.5 ${it.variation > 0 ? "text-destructive" : "text-emerald-600"}`}>
-                            {it.variation > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                            {Math.abs(it.variation).toFixed(0)}%
+                            {it.variation > 0 ? "▲" : "▼"} {Math.abs(it.variation).toFixed(0)}%
                           </span>
                         )}
                       </div>
@@ -628,27 +611,22 @@ export default function PurchasesDashboardPanel({
 }
 
 function KpiBox({
-  label, value, subtitle, icon: Icon, delta, hint, danger, valueSize = "text-2xl",
+  label, value, subtitle, delta, hint, danger, valueSize = "text-2xl",
 }: {
   label: string; value: string | number; subtitle?: string;
-  icon: React.ComponentType<{ className?: string }>;
   delta?: number; hint?: string; danger?: boolean; valueSize?: string;
 }) {
   const showDelta = typeof delta === "number" && delta !== 0;
   return (
     <Card className={danger ? "border-destructive/40" : ""}>
       <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <p className="text-xs font-medium text-muted-foreground leading-tight">{label}</p>
-          <Icon className={`h-4 w-4 ${danger ? "text-destructive" : "text-muted-foreground"}`} />
-        </div>
+        <p className="text-xs font-medium text-muted-foreground leading-tight">{label}</p>
         <p className={`mt-2 font-semibold ${valueSize} ${danger ? "text-destructive" : "text-foreground"}`}>{value}</p>
         {(subtitle || showDelta) && (
           <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
             {showDelta && (
-              <span className={`inline-flex items-center gap-0.5 ${delta! > 0 ? "text-emerald-600" : "text-destructive"}`}>
-                {delta! > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                {Math.abs(delta!)}
+              <span className={`${delta! > 0 ? "text-emerald-600" : "text-destructive"}`}>
+                {delta! > 0 ? "+" : "−"}{Math.abs(delta!)}
               </span>
             )}
             {hint && showDelta && <span>{hint}</span>}
