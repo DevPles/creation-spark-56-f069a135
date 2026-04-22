@@ -415,7 +415,6 @@ export default function PurchasesDashboardPanel({
           </div>
           {rubricasAlerta.length > 0 && (
             <Badge variant="outline" className="border-destructive/30 text-destructive">
-              <AlertTriangle className="h-3 w-3 mr-1" />
               {rubricasAlerta.length} em alerta
             </Badge>
           )}
