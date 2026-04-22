@@ -108,6 +108,9 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
   const [justPlanoAcao, setJustPlanoAcao] = useState("");
   const [justPlanoResponsavel, setJustPlanoResponsavel] = useState("");
   const [justPlanoPrazo, setJustPlanoPrazo] = useState("");
+  // Anexos de comprovação de exclusividade (Inexigibilidade)
+  const [justFornecedorAnexos, setJustFornecedorAnexos] = useState<Array<{ name: string; path: string }>>([]);
+  const [uploadingAnexo, setUploadingAnexo] = useState(false);
   const [solicitante, setSolicitante] = useState(profile?.name || "");
   const [aprovadorImediato, setAprovadorImediato] = useState("");
   const [aprovadorDiretoria, setAprovadorDiretoria] = useState("");
