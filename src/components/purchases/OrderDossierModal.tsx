@@ -54,8 +54,8 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     const pageH = doc.internal.pageSize.getHeight();
     const margin = 40;
     const footerReserve = 40; // rodapé fica em pageH-20, então 40pt é seguro
-    const sectionHeaderH = 44; // altura da faixa teal de seção (mais compacta)
-    const contentStartY = sectionHeaderH + 18; // respiro pequeno após faixa
+    const sectionHeaderH = 34; // cabeçalho mais compacto
+    const defaultSectionGap = 12;
     const order = dossier.order || {};
     const req = dossier.requisition;
     const quotation = dossier.quotation;
@@ -70,12 +70,12 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     const generatedAt = dossier.generated_at ? new Date(dossier.generated_at) : new Date();
 
     // Helpers de layout
-    const lastY = () => (doc as any).lastAutoTable?.finalY ?? contentStartY;
+    const lastY = () => (doc as any).lastAutoTable?.finalY ?? 138;
     const ensureSpace = (needed: number, currentY?: number): number => {
       const y = currentY ?? lastY();
       if (y + needed > pageH - footerReserve) {
         doc.addPage();
-        return contentStartY;
+        return 54;
       }
       return y;
     };
@@ -85,20 +85,27 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       doc.setFont("helvetica", "bold");
       doc.setTextColor(13, 79, 79);
       doc.text(text, margin, y + gapBefore);
+      doc.setDrawColor(13, 79, 79);
+      doc.setLineWidth(0.6);
+      doc.line(margin, y + gapBefore + 5, pageW - margin, y + gapBefore + 5);
       doc.setTextColor(0, 0, 0);
-      return y + gapBefore + 4;
+      return y + gapBefore + 12;
     };
-    // Inicia uma seção em nova página com faixa teal compacta
-    const startSection = (title: string) => {
-      doc.addPage();
+    const startSection = (title: string, minContentHeight = 120, forceNewPage = false) => {
+      let headerY = lastY() + defaultSectionGap;
+      const requiredSpace = sectionHeaderH + 14 + minContentHeight;
+      if (forceNewPage || headerY + requiredSpace > pageH - footerReserve) {
+        doc.addPage();
+        headerY = 0;
+      }
       doc.setFillColor(13, 79, 79);
-      doc.rect(0, 0, pageW, sectionHeaderH, "F");
+      doc.roundedRect(margin, headerY, pageW - margin * 2, sectionHeaderH, 6, 6, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.text(title, margin, 28);
+      doc.setFontSize(11);
+      doc.text(title, margin + 12, headerY + 22);
       doc.setTextColor(0, 0, 0);
-      return contentStartY;
+      return headerY + sectionHeaderH + 12;
     };
 
     // ===== COVER =====
@@ -156,7 +163,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     });
 
     // ===== SECTION 1: TIMELINE =====
-    startSection("Seção 1 — Histórico do processo (linha do tempo)");
+    const section1Y = startSection("Seção 1 — Histórico do processo (linha do tempo)", 120);
     const timeline: Array<[string, string]> = [];
     if (req) {
       timeline.push([fmtDateTime(req.created_at), `Requisição ${req.numero} criada — Solicitante: ${req.solicitante_nome || "—"} | Setor: ${req.setor || "—"}`]);
@@ -185,7 +192,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     timeline.sort((a, b) => a[0].localeCompare(b[0]));
 
     autoTable(doc, {
-      startY: contentStartY,
+      startY: section1Y,
       head: [["Data/Hora", "Evento"]],
       body: timeline,
       theme: "striped",
@@ -198,7 +205,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     });
 
     // ===== SECTION 2: PRICE GRID =====
-    startSection("Seção 2 — Grade comparativa de preços");
+    const section2Y = startSection("Seção 2 — Grade comparativa de preços", 180);
 
     // Monta lista unificada de "colunas-fornecedor" combinando suppliers da cotação e convites respondidos
     type SupplierCol = {
@@ -257,7 +264,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     if (supplierCols.length === 0) {
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
-      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, contentStartY + 12);
+      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, section2Y + 12);
       doc.setTextColor(0, 0, 0);
     } else {
       const head = ["#", "Item", "Qtd"];
@@ -277,7 +284,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       body.push(totalsRow);
 
       autoTable(doc, {
-        startY: contentStartY,
+        startY: section2Y,
         head: [head],
         body,
         theme: "grid",
@@ -354,7 +361,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     }
 
     // ===== SECTION 3: ITEMS =====
-    startSection("Seção 3 — Itens comprados");
+    const section3Y = startSection("Seção 3 — Itens comprados", 110);
     const itemsBody = reqItems.map((it, idx) => {
       const oi = orderItems.find((o) => o.descricao === it.descricao) || orderItems[idx];
       return [
@@ -368,7 +375,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       ];
     });
     autoTable(doc, {
-      startY: contentStartY,
+      startY: section3Y,
       head: [["#", "Código", "Descrição", "Qtd", "V. unit.", "Total", "Setor"]],
       body: itemsBody,
       theme: "grid",
@@ -381,7 +388,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     });
 
     // ===== SECTION 4: APPROVAL =====
-    startSection("Seção 4 — Aprovação e rastreabilidade legal");
+    const section4Y = startSection("Seção 4 — Aprovação e rastreabilidade legal", 120);
     const apprRows: any[] = [];
     approvals.forEach((a) => {
       apprRows.push(["Aprovador", a.approver_name || "—"]);
@@ -403,7 +410,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       apprRows.push(["Saldo após esta OC", fmtBRL(Number(contract.rubrica_remaining_after || 0))]);
     }
     autoTable(doc, {
-      startY: contentStartY,
+      startY: section4Y,
       head: [],
       body: apprRows,
       theme: "plain",
