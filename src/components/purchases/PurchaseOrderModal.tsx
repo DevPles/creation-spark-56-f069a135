@@ -55,6 +55,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
   const [approvalLink, setApprovalLink] = useState<string>("");
   const [signedApproval, setSignedApproval] = useState<any>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [previewNumero, setPreviewNumero] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
@@ -201,6 +202,13 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
 
   const generateNumero = () => `OC/${Math.floor(Math.random() * 999).toString().padStart(3, "0")}/${new Date().getFullYear()}`;
 
+  // Pre-generate a number when opening a brand-new OC so the PDF reflects the same number that will be persisted on save
+  useEffect(() => {
+    if (!open) { setPreviewNumero(""); return; }
+    if (orderId) return; // existing OC already has a number
+    setPreviewNumero(prev => prev || generateNumero());
+  }, [open, orderId]);
+
   const updateItem = (idx: number, field: string, value: any) => {
     setItems(prev => prev.map((it, i) => {
       if (i !== idx) return it;
@@ -276,7 +284,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         await supabase.from("purchase_order_items").delete().eq("purchase_order_id", oid);
       } else {
         const { data, error } = await supabase.from("purchase_orders").insert({
-          ...payload, numero: generateNumero(), status: "aguardando_aprovacao", created_by: profile.id,
+          ...payload, numero: previewNumero || generateNumero(), status: "aguardando_aprovacao", created_by: profile.id,
         }).select().single();
         if (error) throw error;
         oid = data.id;
@@ -305,7 +313,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const numero = order?.numero || "Sem número";
+    const numero = order?.numero || previewNumero || "Sem número";
     const now = new Date();
     const dataEmissao = now.toLocaleDateString("pt-BR");
     const horaEmissao = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
