@@ -202,6 +202,13 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
 
   const generateNumero = () => `OC/${Math.floor(Math.random() * 999).toString().padStart(3, "0")}/${new Date().getFullYear()}`;
 
+  // Pre-generate a number when opening a brand-new OC so the PDF reflects the same number that will be persisted on save
+  useEffect(() => {
+    if (!open) { setPreviewNumero(""); return; }
+    if (orderId) return; // existing OC already has a number
+    setPreviewNumero(prev => prev || generateNumero());
+  }, [open, orderId]);
+
   const updateItem = (idx: number, field: string, value: any) => {
     setItems(prev => prev.map((it, i) => {
       if (i !== idx) return it;
