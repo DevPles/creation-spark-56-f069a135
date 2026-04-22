@@ -348,7 +348,42 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell><Input value={it.descricao} onChange={e => updateItem(idx, "descricao", e.target.value)} /></TableCell>
+                    <TableCell>
+                      <Popover
+                        open={descFocusIdx === idx && getSuggestions(it.descricao).length > 0}
+                        onOpenChange={(o) => { if (!o) setDescFocusIdx(null); }}
+                      >
+                        <PopoverTrigger asChild>
+                          <Input
+                            value={it.descricao}
+                            onChange={e => { updateItem(idx, "descricao", e.target.value); setDescFocusIdx(idx); }}
+                            onFocus={() => setDescFocusIdx(idx)}
+                            onBlur={() => setTimeout(() => setDescFocusIdx(c => c === idx ? null : c), 150)}
+                            placeholder="Digite para buscar no catálogo..."
+                          />
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="p-0 w-[360px]"
+                          align="start"
+                          onOpenAutoFocus={(e) => e.preventDefault()}
+                        >
+                          <div className="max-h-64 overflow-y-auto">
+                            {getSuggestions(it.descricao).map(prod => (
+                              <button
+                                type="button"
+                                key={prod.id}
+                                onMouseDown={(e) => { e.preventDefault(); applySuggestion(idx, prod); }}
+                                className="w-full text-left px-3 py-2 hover:bg-accent text-sm border-b last:border-b-0"
+                              >
+                                <div className="font-mono text-xs text-primary">{prod.codigo}</div>
+                                <div className="text-foreground">{prod.descricao}</div>
+                                <div className="text-xs text-muted-foreground">{prod.unidade_medida}</div>
+                              </button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </TableCell>
                     <TableCell><Input type="number" value={it.quantidade} onChange={e => updateItem(idx, "quantidade", e.target.value)} /></TableCell>
                     <TableCell><Input value={it.unidade_medida} onChange={e => updateItem(idx, "unidade_medida", e.target.value)} /></TableCell>
                     <TableCell><Input value={it.observacao || ""} onChange={e => updateItem(idx, "observacao", e.target.value)} /></TableCell>
