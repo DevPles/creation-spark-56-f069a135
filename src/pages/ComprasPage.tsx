@@ -571,6 +571,11 @@ export default function ComprasPage() {
         requisitionNumero={inviteContext?.numero}
         facilityUnit={inviteContext?.facilityUnit}
       />
+      <OrderDossierModal
+        open={dossierOpen}
+        onOpenChange={setDossierOpen}
+        orderId={dossierOrderId}
+      />
     </div>
   );
 }
