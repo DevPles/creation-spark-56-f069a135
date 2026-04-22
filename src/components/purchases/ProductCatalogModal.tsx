@@ -225,6 +225,27 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
+              <Label>Unidade hospitalar</Label>
+              <Select value={facilityUnit} onValueChange={(v) => { setFacilityUnit(v); setSetor(""); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FACILITY_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Setor</Label>
+              <Select value={setor || "__none__"} onValueChange={(v) => setSetor(v === "__none__" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— sem setor —</SelectItem>
+                  {sectorOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
               <Label>Unidade</Label>
               <Select value={unidade} onValueChange={setUnidade}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
