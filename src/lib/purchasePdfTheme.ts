@@ -248,12 +248,12 @@ export function drawSoftTextBox(
  * Estilos base reutilizáveis para `jspdf-autotable`. Combine com
  * `headStyles` específicos por seção.
  */
-export const baseTableStyles = {
+export const baseTableStyles: Partial<Styles> = {
   font: "helvetica",
   fontSize: 9,
   cellPadding: 5,
-  lineColor: BORDER_BLUE as unknown as number[],
-  textColor: TEXT_DARK as unknown as number[],
+  lineColor: BORDER_BLUE,
+  textColor: TEXT_DARK,
   overflow: "linebreak" as const,
 };
 
