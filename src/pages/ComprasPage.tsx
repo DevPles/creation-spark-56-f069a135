@@ -358,6 +358,9 @@ export default function ComprasPage() {
                             <div className="flex gap-1 justify-end">
                               <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditQuote(q.id)}>Abrir</Button>
                               <Button size="sm" className="rounded-full" onClick={() => openCreateOrder(q.id)}>Gerar OC</Button>
+                              {isAdmin && (
+                                <Button size="sm" variant="destructive" className="rounded-full" onClick={() => handleDeleteQuotation(q)}>Excluir</Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
