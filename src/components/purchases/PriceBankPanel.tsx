@@ -20,6 +20,7 @@ export default function PriceBankPanel() {
   const [catalog, setCatalog] = useState<any[]>([]);
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogModalOpen, setCatalogModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [search, setSearch] = useState("");
   const [searchAI, setSearchAI] = useState("");
   const [loadingAI, setLoadingAI] = useState(false);
