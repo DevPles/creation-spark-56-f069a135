@@ -75,11 +75,12 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved }: Pro
     setSaving(true);
     try {
       const { error } = await supabase.from("product_catalog").insert({
+        codigo: "",
         tipo,
         classificacao,
         descricao: descricao.trim(),
         unidade_medida: unidade,
-      });
+      } as any);
       if (error) throw error;
       toast.success(`Item cadastrado (${previewCode})`);
       onSaved?.();
