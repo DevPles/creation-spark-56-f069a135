@@ -87,6 +87,10 @@ export async function generateRequisitionPdf(requisitionId: string) {
   const totalItens = (items || []).reduce((s: number, it: any) => s + Number(it.quantidade || 0), 0);
   const linhasItens = (items || []).length;
 
+  const { legal, clean: cleanObs } = parseLegalBlock(req.observacoes);
+  const justTipo = (req.justificativa_tipo || "").toLowerCase();
+  const isLegalSpecial = ["dispensa", "inexigibilidade", "emergencial"].includes(justTipo);
+
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
