@@ -94,35 +94,81 @@ export async function generateOrderPdf(
   const margin = 36;
 
   const drawHeaderBand = (full: boolean) => {
-    const bandH = full ? 96 : 64;
+    // Banner mais alto para acomodar duas colunas sem encostar no logo
+    const bandH = full ? 110 : 70;
     doc.setFillColor(...NAVY);
     doc.rect(0, 0, pageW, bandH, "F");
     doc.setFillColor(...BLUE);
     doc.rect(0, bandH, pageW, 4, "F");
 
+    // Logo com área reservada — calcula a "zona segura" à esquerda dele
+    const logoH = full ? 56 : 38;
+    const logoW = logoH * 1.6;
+    const logoMargin = 14; // respiração entre texto e logo
+    const logoX = pageW - margin - logoW;
+    const logoY = (bandH - logoH) / 2;
     try {
-      const logoH = full ? 60 : 44;
-      const logoW = logoH * 1.6;
-      const logoX = pageW - margin - logoW;
-      const logoY = (bandH - logoH) / 2;
       doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", logoX, logoY, logoW, logoH, undefined, "FAST");
     } catch {/* ignore */}
 
+    // Limite máximo onde os textos da direita podem chegar (não invadem o logo)
+    const rightTextLimit = logoX - logoMargin;
+
     doc.setTextColor(255, 255, 255);
     (doc as any).setCharSpace(0);
+
+    // ----- Coluna esquerda -----
     doc.setFont("helvetica", "bold");
     doc.setFontSize(full ? 18 : 13);
-    doc.text("ORDEM DE COMPRA", margin, full ? 32 : 24);
+    doc.text("ORDEM DE COMPRA", margin, full ? 30 : 24);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(full ? 10 : 9);
-    doc.text(`No. ${order.numero || "-"}`, margin, full ? 52 : 42);
+    const ocLine = `No. ${order.numero || "-"}`;
+    const reqLine = req?.numero ? `Requisição: ${req.numero}` : null;
+    doc.text(ocLine, margin, full ? 50 : 42);
+
     if (full) {
-      doc.text(order.facility_unit || "-", margin, 70);
-      doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageW - margin, 52, { align: "right" });
-      doc.text(`Status: ${OC_STATUS_LABEL[order.status] || order.status || "-"}`, pageW - margin, 70, { align: "right" });
+      // Linha 3 esquerda: requisição (se houver) + unidade
+      if (reqLine) {
+        doc.text(reqLine, margin, 68);
+        doc.text(order.facility_unit || "-", margin, 86);
+      } else {
+        doc.text(order.facility_unit || "-", margin, 68);
+      }
+
+      // ----- Coluna direita (alinhada ao limite seguro do logo) -----
+      doc.text(
+        `Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
+        rightTextLimit,
+        50,
+        { align: "right" }
+      );
+      doc.text(
+        `Status: ${OC_STATUS_LABEL[order.status] || order.status || "-"}`,
+        rightTextLimit,
+        68,
+        { align: "right" }
+      );
+      if (order.aprovado_em) {
+        doc.text(
+          `Aprovada em ${fmtDateTime(order.aprovado_em)}`,
+          rightTextLimit,
+          86,
+          { align: "right" }
+        );
+      }
     } else {
-      doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageW - margin, 42, { align: "right" });
+      // Header reduzido nas páginas seguintes
+      if (reqLine) {
+        doc.text(reqLine, margin, 60);
+      }
+      doc.text(
+        `Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
+        rightTextLimit,
+        42,
+        { align: "right" }
+      );
     }
     doc.setTextColor(...TEXT_DARK);
   };
