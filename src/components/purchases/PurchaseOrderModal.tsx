@@ -243,27 +243,16 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         <div className="space-y-4 py-2">
           {order && <Badge variant="outline">Status: {order.status}</Badge>}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <Label>Contrato</Label>
-              <Select value={contractId} onValueChange={(v) => { setContractId(v); setRubricaId(""); }}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {contracts.filter(c => !facilityUnit || c.unit === facilityUnit).map(c =>
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Rubrica</Label>
-              <Select value={rubricaId} onValueChange={setRubricaId} disabled={!contractId}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {rubricas.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name} ({r.percent}%)</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label>Rubrica {contract ? `— ${contract.name}` : ""}</Label>
+            <Select value={rubricaId} onValueChange={setRubricaId} disabled={!contractId}>
+              <SelectTrigger><SelectValue placeholder={contractId ? "Selecione a rubrica" : "Nenhum contrato vigente para esta unidade"} /></SelectTrigger>
+              <SelectContent>
+                {[...rubricas].sort((a: any, b: any) => a.name.localeCompare(b.name)).map((r: any) =>
+                  <SelectItem key={r.id} value={r.id}>{r.name} ({r.percent}%)</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
           {selectedRubrica && (
