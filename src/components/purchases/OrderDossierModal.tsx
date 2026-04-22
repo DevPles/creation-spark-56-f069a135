@@ -475,13 +475,18 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       legalRows.push(["Responsável pela implementação", legal?.plano_responsavel || "—"]);
       legalRows.push(["Prazo do plano de ação", legal?.plano_prazo || "—"]);
       autoTable(doc, {
-        startY: 90,
+        startY: contentStartY,
         head: [],
         body: legalRows,
         theme: "plain",
         styles: { fontSize: 9, cellPadding: 4, valign: "top" },
         columnStyles: { 0: { fontStyle: "bold", cellWidth: 200, fillColor: [240, 246, 246] } },
-        margin: { left: margin, right: margin },
+        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        pageBreak: "auto",
+        rowPageBreak: "avoid",
+        didDrawPage: (data) => {
+          if (data.pageNumber > 1) sectionTitle(doc, `Seção 5 — Justificativa legal (cont.)`, margin);
+        },
       });
     }
 
