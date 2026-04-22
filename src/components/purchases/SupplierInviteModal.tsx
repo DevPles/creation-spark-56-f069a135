@@ -354,14 +354,45 @@ Setor de Compras`;
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <Label>Validade do convite (dias)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={90}
+                  value={expiresInDays}
+                  onChange={e => setExpiresInDays(Math.max(1, Number(e.target.value) || 1))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Expira em {new Date(Date.now() + expiresInDays * 86400000).toLocaleDateString("pt-BR")}
+                </p>
+              </div>
+            </div>
+
             <div>
-              <Label>Mensagem padrão (opcional)</Label>
+              <div className="flex items-center justify-between">
+                <Label>Mensagem do convite (editável)</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setCustomMessage(defaultMessageTemplate)}
+                >
+                  Usar texto padrão
+                </Button>
+              </div>
               <Textarea
-                placeholder="Personalize a mensagem que será enviada por e-mail e WhatsApp. Se vazio, usa um texto padrão."
-                value={customMessage}
+                placeholder="Personalize a mensagem que será enviada por e-mail e WhatsApp."
+                value={customMessage || defaultMessageTemplate}
                 onChange={e => setCustomMessage(e.target.value)}
-                className="mt-1 min-h-[80px]"
+                className="mt-1 min-h-[180px] font-mono text-xs"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                O link da cotação e a data de validade serão anexados automaticamente ao final.
+              </p>
             </div>
 
             <div className="flex justify-end">
