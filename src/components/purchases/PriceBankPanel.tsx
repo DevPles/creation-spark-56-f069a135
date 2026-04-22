@@ -7,12 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import ProductCatalogModal from "./ProductCatalogModal";
 
 const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
 export default function PriceBankPanel() {
   const { profile } = useAuth();
   const [history, setHistory] = useState<any[]>([]);
+  const [catalog, setCatalog] = useState<any[]>([]);
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogModalOpen, setCatalogModalOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [searchGoogle, setSearchGoogle] = useState("");
   const [loadingGoogle, setLoadingGoogle] = useState(false);
@@ -20,6 +24,8 @@ export default function PriceBankPanel() {
   const load = async () => {
     const { data } = await supabase.from("price_history").select("*").order("data_referencia", { ascending: false }).limit(500);
     setHistory(data || []);
+    const { data: cat } = await supabase.from("product_catalog").select("*").eq("ativo", true).order("descricao");
+    setCatalog(cat || []);
   };
 
   useEffect(() => { load(); }, []);
@@ -28,6 +34,12 @@ export default function PriceBankPanel() {
     if (!search) return true;
     const q = search.toLowerCase();
     return [h.descricao_produto, h.fornecedor_nome, h.categoria].filter(Boolean).join(" ").toLowerCase().includes(q);
+  });
+
+  const filteredCatalog = catalog.filter(c => {
+    if (!catalogSearch) return true;
+    const q = catalogSearch.toLowerCase();
+    return [c.codigo, c.descricao, c.tipo, c.classificacao].filter(Boolean).join(" ").toLowerCase().includes(q);
   });
 
   const runGoogleSearch = async () => {
@@ -56,6 +68,41 @@ export default function PriceBankPanel() {
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Catálogo de itens</CardTitle>
+          <Button size="sm" className="rounded-full" onClick={() => setCatalogModalOpen(true)}>Cadastrar item</Button>
+        </CardHeader>
+        <CardContent>
+          <Input placeholder="Filtrar por código, descrição, tipo ou classificação" value={catalogSearch} onChange={e => setCatalogSearch(e.target.value)} className="mb-3 max-w-md" />
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-32">Código</TableHead>
+                <TableHead className="w-20">Tipo</TableHead>
+                <TableHead className="w-32">Classificação</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead className="w-16">Un</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCatalog.map(c => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-mono text-xs">{c.codigo}</TableCell>
+                  <TableCell>{c.tipo}</TableCell>
+                  <TableCell className="capitalize">{c.classificacao}</TableCell>
+                  <TableCell className="text-xs">{c.descricao}</TableCell>
+                  <TableCell>{c.unidade_medida}</TableCell>
+                </TableRow>
+              ))}
+              {filteredCatalog.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum item no catálogo</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader><CardTitle className="text-base">Buscar preços de mercado</CardTitle></CardHeader>
         <CardContent>
@@ -104,6 +151,8 @@ export default function PriceBankPanel() {
           </Table>
         </CardContent>
       </Card>
+
+      <ProductCatalogModal open={catalogModalOpen} onOpenChange={setCatalogModalOpen} onSaved={load} />
     </div>
   );
 }
