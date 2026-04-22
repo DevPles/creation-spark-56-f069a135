@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { UNIVIDA_LOGO_BASE64 } from "@/assets/univida-logo-base64";
 
 const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
@@ -42,6 +43,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
   const [motivoNegacao, setMotivoNegacao] = useState("");
   const [facilityUnit, setFacilityUnit] = useState("");
   const [reqId, setReqId] = useState<string | null>(null);
+  const [reqNumero, setReqNumero] = useState<string>("");
   // Quotation supplier selection
   const [quotation, setQuotation] = useState<any>(null);
   const [suppliers, setSuppliers] = useState<any[]>([]);
