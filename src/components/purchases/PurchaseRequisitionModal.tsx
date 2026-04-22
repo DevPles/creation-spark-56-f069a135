@@ -152,6 +152,18 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           setJustRiscoDescricao(data.risco_descricao || "");
           setJustUrgenciaPrazo(data.urgencia_prazo || "");
           setJustProcessoNumero(data.processo_numero || "");
+          setJustImpactoNaoCompra(data.impacto_nao_compra || "");
+          setJustRiscosClassif(Array.isArray(data.riscos_classif) ? data.riscos_classif : []);
+          setJustRiscoOutro(data.risco_outro || "");
+          setJustFatoGerador(data.fato_gerador || "");
+          setJustPesquisaPreco(data.pesquisa_preco || "");
+          setJustEscolhaFornecedor(data.escolha_fornecedor || "");
+          setJustRegularizacao(Array.isArray(data.regularizacao) ? data.regularizacao : []);
+          setJustReincidencia(Array.isArray(data.reincidencia) ? data.reincidencia : []);
+          setJustReincidenciaOutro(data.reincidencia_outro || "");
+          setJustPlanoAcao(data.plano_acao || "");
+          setJustPlanoResponsavel(data.plano_responsavel || "");
+          setJustPlanoPrazo(data.plano_prazo || "");
         } catch { /* ignora */ }
         setObservacoes(rawObs.replace(blockMatch[0], "").trim());
       } else {
@@ -162,6 +174,18 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
         setJustRiscoDescricao("");
         setJustUrgenciaPrazo("");
         setJustProcessoNumero("");
+        setJustImpactoNaoCompra("");
+        setJustRiscosClassif([]);
+        setJustRiscoOutro("");
+        setJustFatoGerador("");
+        setJustPesquisaPreco("");
+        setJustEscolhaFornecedor("");
+        setJustRegularizacao([]);
+        setJustReincidencia([]);
+        setJustReincidenciaOutro("");
+        setJustPlanoAcao("");
+        setJustPlanoResponsavel("");
+        setJustPlanoPrazo("");
       }
       setSolicitante(requisition.solicitante_nome || "");
       setAprovadorImediato(requisition.aprovador_imediato_nome || "");
