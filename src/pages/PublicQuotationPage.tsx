@@ -113,6 +113,15 @@ export default function PublicQuotationPage() {
       toast.error("Preencha prazo de entrega e condição de pagamento");
       return;
     }
+    if (!responderName.trim() || !responderEmail.trim() || !responderPhone.trim()) {
+      toast.error("Preencha seus dados de contato (nome, e-mail e celular corporativos)");
+      return;
+    }
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(responderEmail.trim());
+    if (!emailOk) {
+      toast.error("Informe um e-mail corporativo válido");
+      return;
+    }
     setSubmitting(true);
     const responses = rows.map(r => ({
       requisition_item_id: r.requisition_item_id,
@@ -135,6 +144,10 @@ export default function PublicQuotationPage() {
       _observacoes: obs,
       _responses: responses,
       _ip: clientIp,
+      _responder_name: responderName.trim(),
+      _responder_email: responderEmail.trim(),
+      _responder_phone: responderPhone.trim(),
+      _responder_cpf: responderCpf.trim() || null,
     });
     setSubmitting(false);
     if (rpcErr || !res?.success) {
