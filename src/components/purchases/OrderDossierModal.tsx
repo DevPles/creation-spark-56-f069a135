@@ -256,22 +256,55 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     y2 += 8;
     autoTable(doc, {
       startY: y2,
-      head: [["Fornecedor", "CNPJ", "Origem", "Data/Hora envio", "IP da máquina"]],
+      head: [["Fornecedor", "CNPJ", "Origem", "Data/Hora envio", "IP da máquina", "Link público enviado"]],
       body: suppliers.map((s) => {
         const inv = invites.find((i) => i.fornecedor_cnpj === s.fornecedor_cnpj || i.fornecedor_nome === s.fornecedor_nome);
+        const link = inv?.id
+          ? `${window.location.origin}/cotacao-publica/${inv.id}`
+          : "—";
         return [
           s.fornecedor_nome,
           s.fornecedor_cnpj || "—",
           s.fonte === "invite_link" ? "Link público" : "Manual",
           fmtDateTime(inv?.submitted_at || s.created_at),
           s.submission_ip || inv?.submission_ip || "não capturado",
+          link,
         ];
       }),
       theme: "striped",
-      headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 8 },
-      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
+      styles: { fontSize: 7, cellPadding: 3, valign: "middle", overflow: "linebreak" },
+      columnStyles: { 5: { cellWidth: 130, textColor: [13, 79, 79] } },
       margin: { left: margin, right: margin },
     });
+
+    // Tabela complementar: TODOS os convites enviados (mesmo sem resposta)
+    if (invites.length > 0) {
+      let y3 = (doc as any).lastAutoTable.finalY + 14;
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text("Convites enviados aos fornecedores (rastreabilidade completa)", margin, y3);
+      y3 += 8;
+      autoTable(doc, {
+        startY: y3,
+        head: [["Fornecedor", "CNPJ", "E-mail / Telefone", "Enviado em", "Status", "Respondido em", "IP", "Link público"]],
+        body: invites.map((iv: any) => [
+          iv.fornecedor_nome,
+          iv.fornecedor_cnpj || "—",
+          [iv.fornecedor_email, iv.fornecedor_telefone].filter(Boolean).join(" / ") || "—",
+          fmtDateTime(iv.created_at),
+          iv.submitted_at ? "Respondido" : "Pendente",
+          iv.submitted_at ? fmtDateTime(iv.submitted_at) : "—",
+          iv.submission_ip || "—",
+          `${window.location.origin}/cotacao-publica/${iv.id}`,
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 6.5, halign: "center" },
+        styles: { fontSize: 6.5, cellPadding: 2, valign: "middle", overflow: "linebreak" },
+        columnStyles: { 7: { cellWidth: 110, textColor: [13, 79, 79] } },
+        margin: { left: margin, right: margin },
+      });
+    }
 
     // ===== SECTION 3: ITEMS =====
     doc.addPage();
