@@ -1460,6 +1460,10 @@ export type Database = {
           observacoes: string | null
           prazo_entrega: string | null
           requisition_id: string
+          responder_cpf: string | null
+          responder_email: string | null
+          responder_name: string | null
+          responder_phone: string | null
           status: string
           submission_ip: string | null
           submitted_at: string | null
@@ -1479,6 +1483,10 @@ export type Database = {
           observacoes?: string | null
           prazo_entrega?: string | null
           requisition_id: string
+          responder_cpf?: string | null
+          responder_email?: string | null
+          responder_name?: string | null
+          responder_phone?: string | null
           status?: string
           submission_ip?: string | null
           submitted_at?: string | null
@@ -1498,6 +1506,10 @@ export type Database = {
           observacoes?: string | null
           prazo_entrega?: string | null
           requisition_id?: string
+          responder_cpf?: string | null
+          responder_email?: string | null
+          responder_name?: string | null
+          responder_phone?: string | null
           status?: string
           submission_ip?: string | null
           submitted_at?: string | null
@@ -2046,6 +2058,21 @@ export type Database = {
               _ip?: string
               _observacoes: string
               _prazo_entrega: string
+              _responses: Json
+              _token: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _condicao_pagamento: string
+              _ip?: string
+              _observacoes: string
+              _prazo_entrega: string
+              _responder_cpf?: string
+              _responder_email?: string
+              _responder_name?: string
+              _responder_phone?: string
               _responses: Json
               _token: string
             }

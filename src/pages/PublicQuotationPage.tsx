@@ -43,6 +43,10 @@ export default function PublicQuotationPage() {
   const [obs, setObs] = useState("");
   const [submittedOk, setSubmittedOk] = useState(false);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [responderName, setResponderName] = useState("");
+  const [responderEmail, setResponderEmail] = useState("");
+  const [responderPhone, setResponderPhone] = useState("");
+  const [responderCpf, setResponderCpf] = useState("");
 
   const load = async () => {
     if (!token) return;
@@ -109,6 +113,15 @@ export default function PublicQuotationPage() {
       toast.error("Preencha prazo de entrega e condição de pagamento");
       return;
     }
+    if (!responderName.trim() || !responderEmail.trim() || !responderPhone.trim()) {
+      toast.error("Preencha seus dados de contato (nome, e-mail e celular corporativos)");
+      return;
+    }
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(responderEmail.trim());
+    if (!emailOk) {
+      toast.error("Informe um e-mail corporativo válido");
+      return;
+    }
     setSubmitting(true);
     const responses = rows.map(r => ({
       requisition_item_id: r.requisition_item_id,
@@ -131,6 +144,10 @@ export default function PublicQuotationPage() {
       _observacoes: obs,
       _responses: responses,
       _ip: clientIp,
+      _responder_name: responderName.trim(),
+      _responder_email: responderEmail.trim(),
+      _responder_phone: responderPhone.trim(),
+      _responder_cpf: responderCpf.trim() || null,
     });
     setSubmitting(false);
     if (rpcErr || !res?.success) {
@@ -289,6 +306,55 @@ export default function PublicQuotationPage() {
             <div className="md:col-span-2">
               <Label>Observações</Label>
               <Textarea value={obs} onChange={e => setObs(e.target.value)} rows={3} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-primary/30">
+          <CardHeader>
+            <CardTitle>Identificação do respondente</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Os dados abaixo serão registrados para rastreabilidade e auditoria (Tribunal de Contas).
+              Ao enviar, você confirma a veracidade das informações.
+            </p>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Nome completo do respondente *</Label>
+              <Input
+                value={responderName}
+                onChange={e => setResponderName(e.target.value)}
+                placeholder="Ex.: João da Silva"
+                maxLength={120}
+              />
+            </div>
+            <div>
+              <Label>E-mail corporativo *</Label>
+              <Input
+                type="email"
+                value={responderEmail}
+                onChange={e => setResponderEmail(e.target.value)}
+                placeholder="nome@empresa.com.br"
+                maxLength={150}
+              />
+            </div>
+            <div>
+              <Label>Celular corporativo *</Label>
+              <Input
+                value={responderPhone}
+                onChange={e => setResponderPhone(e.target.value)}
+                placeholder="(00) 00000-0000"
+                maxLength={20}
+              />
+            </div>
+            <div>
+              <Label>CPF (opcional)</Label>
+              <Input
+                value={responderCpf}
+                onChange={e => setResponderCpf(e.target.value)}
+                placeholder="000.000.000-00"
+                maxLength={14}
+              />
             </div>
           </CardContent>
         </Card>

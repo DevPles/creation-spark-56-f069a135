@@ -129,7 +129,10 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     invites.forEach((iv) => {
       timeline.push([fmtDateTime(iv.created_at), `Convite enviado para ${iv.fornecedor_nome} (${iv.fornecedor_cnpj || "sem CNPJ"}) — Email: ${iv.fornecedor_email || "—"} | Tel: ${iv.fornecedor_telefone || "—"}`]);
       if (iv.submitted_at) {
-        timeline.push([fmtDateTime(iv.submitted_at), `Resposta recebida via link público de ${iv.fornecedor_nome} — IP: ${iv.submission_ip || "não capturado"}`]);
+        const resp = iv.responder_name
+          ? ` — Respondido por ${iv.responder_name} <${iv.responder_email || "?"}> tel ${iv.responder_phone || "?"}${iv.responder_cpf ? ` CPF ${iv.responder_cpf}` : ""}`
+          : "";
+        timeline.push([fmtDateTime(iv.submitted_at), `Resposta recebida via link público de ${iv.fornecedor_nome}${resp} — IP: ${iv.submission_ip || "não capturado"}`]);
       }
     });
     if (quotation) {
@@ -287,21 +290,27 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       y3 += 8;
       autoTable(doc, {
         startY: y3,
-        head: [["Fornecedor", "CNPJ", "E-mail / Telefone", "Enviado em", "Status", "Respondido em", "IP", "Link público"]],
-        body: invites.map((iv: any) => [
-          iv.fornecedor_nome,
-          iv.fornecedor_cnpj || "—",
-          [iv.fornecedor_email, iv.fornecedor_telefone].filter(Boolean).join(" / ") || "—",
-          fmtDateTime(iv.created_at),
-          iv.submitted_at ? "Respondido" : "Pendente",
-          iv.submitted_at ? fmtDateTime(iv.submitted_at) : "—",
-          iv.submission_ip || "—",
-          `${window.location.origin}/cotacao-publica/${iv.id}`,
-        ]),
+        head: [["Fornecedor", "CNPJ", "Contato fornecedor", "Enviado em", "Status", "Respondido em", "Respondente (nome / e-mail / cel / CPF)", "IP", "Link público"]],
+        body: invites.map((iv: any) => {
+          const respondente = iv.responder_name
+            ? `${iv.responder_name}\n${iv.responder_email || "—"}\nTel: ${iv.responder_phone || "—"}${iv.responder_cpf ? `\nCPF: ${iv.responder_cpf}` : ""}`
+            : "—";
+          return [
+            iv.fornecedor_nome,
+            iv.fornecedor_cnpj || "—",
+            [iv.fornecedor_email, iv.fornecedor_telefone].filter(Boolean).join(" / ") || "—",
+            fmtDateTime(iv.created_at),
+            iv.submitted_at ? "Respondido" : "Pendente",
+            iv.submitted_at ? fmtDateTime(iv.submitted_at) : "—",
+            respondente,
+            iv.submission_ip || "—",
+            `${window.location.origin}/cotacao-publica/${iv.id}`,
+          ];
+        }),
         theme: "grid",
         headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 6.5, halign: "center" },
         styles: { fontSize: 6.5, cellPadding: 2, valign: "middle", overflow: "linebreak" },
-        columnStyles: { 7: { cellWidth: 110, textColor: [13, 79, 79] } },
+        columnStyles: { 6: { cellWidth: 95 }, 8: { cellWidth: 95, textColor: [13, 79, 79] } },
         margin: { left: margin, right: margin },
       });
     }
@@ -419,6 +428,14 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
                       <div className="text-muted-foreground">
                         Enviado: {fmtDateTime(iv.created_at)} • Respondido: {fmtDateTime(iv.submitted_at)} • IP: {iv.submission_ip || "não capturado"}
                       </div>
+                      {iv.responder_name && (
+                        <div className="text-muted-foreground">
+                          Respondente: <span className="font-medium text-foreground">{iv.responder_name}</span>
+                          {" • "}{iv.responder_email || "—"}
+                          {" • Tel "}{iv.responder_phone || "—"}
+                          {iv.responder_cpf ? <> • CPF {iv.responder_cpf}</> : null}
+                        </div>
+                      )}
                       <div className="mt-1 break-all">
                         <span className="text-muted-foreground">Link público: </span>
                         <a
