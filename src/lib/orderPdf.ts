@@ -197,38 +197,46 @@ export async function generateOrderPdf(orderId: string) {
 
   // ===== Dados gerais =====
   sectionTitle("Dados gerais");
+  const reqItemsCount = reqItems.length;
+  const reqItemsQty = reqItems.reduce((acc: number, it: any) => acc + Number(it.quantidade || 0), 0);
   const leftRows: [string, string][] = [
     ["Nº da OC", order.numero || "—"],
     ["Unidade", order.facility_unit || "—"],
-    ["Requisição vinculada", req?.numero || "—"],
-    ["Cotação vinculada", quot?.numero || "—"],
+    ["Município", req?.municipio || "—"],
     ["Setor solicitante", req?.setor || "—"],
+    ["Solicitante", req?.solicitante_nome || "—"],
+    ["Aprovador imediato", req?.aprovador_imediato_nome || "—"],
+    ["Aprovador diretoria", req?.aprovador_diretoria_nome || "—"],
   ];
   const rightRows: [string, string][] = [
     ["Contrato", contract?.name || "—"],
     ["Rubrica", order.rubrica_name || "—"],
+    ["Data de emissão da OC", fmtDate(order.created_at)],
     ["Data envio ao setor", fmtDate(order.data_envio_setor)],
     ["Data envio ao fornecedor", fmtDate(order.data_envio_fornecedor)],
-    ["Prazo de entrega", order.prazo_entrega || "—"],
+    ["Prazo de entrega", order.prazo_entrega ? `${order.prazo_entrega}` : "—"],
+    ["Status atual", OC_STATUS_LABEL[order.status] || order.status || "—"],
   ];
   const colWidth = (pageW - margin * 2 - 12) / 2;
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { fontSize: 9, cellPadding: 5, lineColor: BORDER_BLUE, textColor: TEXT_DARK },
+    styles: baseTableStyles,
     headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
     alternateRowStyles: { fillColor: ALT_ROW },
     head: [["Campo", "Valor"]],
     body: leftRows,
     margin: { left: margin, right: margin + colWidth + 12 },
     tableWidth: colWidth,
-    columnStyles: { 0: { cellWidth: 130, fontStyle: "bold", textColor: NAVY } },
+    columnStyles: { 0: { cellWidth: 140, fontStyle: "bold", textColor: NAVY } },
+    rowPageBreak: "avoid",
+    ...fixCharSpace,
   });
   const leftEnd = (doc as any).lastAutoTable.finalY;
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { fontSize: 9, cellPadding: 5, lineColor: BORDER_BLUE, textColor: TEXT_DARK },
+    styles: baseTableStyles,
     headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
     alternateRowStyles: { fillColor: ALT_ROW },
     head: [["Campo", "Valor"]],
@@ -236,16 +244,64 @@ export async function generateOrderPdf(orderId: string) {
     margin: { left: margin + colWidth + 12, right: margin },
     tableWidth: colWidth,
     columnStyles: { 0: { cellWidth: 150, fontStyle: "bold", textColor: NAVY } },
+    rowPageBreak: "avoid",
+    ...fixCharSpace,
   });
   const rightEnd = (doc as any).lastAutoTable.finalY;
   y = Math.max(leftEnd, rightEnd) + 16;
+
+  // ===== Vínculos (Requisição / Cotação / Contrato) =====
+  sectionTitle("Vínculos");
+  autoTable(doc, {
+    startY: y,
+    theme: "grid",
+    styles: baseTableStyles,
+    headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
+    alternateRowStyles: { fillColor: ALT_ROW },
+    head: [["Origem", "Identificação", "Detalhes"]],
+    body: [
+      [
+        "Requisição de compra",
+        req?.numero || "—",
+        req
+          ? `Data: ${fmtDate(req.data_requisicao)} • Itens: ${reqItemsCount} • Qtd total: ${reqItemsQty}` +
+            (req.justificativa_tipo ? ` • Justificativa: ${req.justificativa_tipo}` : "")
+          : "—",
+      ],
+      [
+        "Cotação (mapa)",
+        quot?.numero || "—",
+        quot
+          ? `Data: ${fmtDate(quot.data_cotacao)} • Fornecedores: ${quotSuppliers.length}` +
+            (quot.winner_supplier ? ` • Vencedor: ${quot.winner_supplier}` : "") +
+            (quot.total_winner ? ` • Total: ${fmtBRL(Number(quot.total_winner))}` : "")
+          : "—",
+      ],
+      [
+        "Contrato de gestão",
+        contract?.name || "—",
+        contract
+          ? `Período: ${contract.period || "—"} • Valor global: ${fmtBRL(Number(contract.value || 0))}`
+          : "—",
+      ],
+    ],
+    margin: { left: margin, right: margin },
+    columnStyles: {
+      0: { cellWidth: 130, fontStyle: "bold", textColor: NAVY },
+      1: { cellWidth: 130 },
+      2: { cellWidth: "auto" as any },
+    },
+    rowPageBreak: "avoid",
+    ...fixCharSpace,
+  });
+  y = (doc as any).lastAutoTable.finalY + 16;
 
   // ===== Fornecedor =====
   sectionTitle("Fornecedor");
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { fontSize: 9, cellPadding: 5, lineColor: BORDER_BLUE, textColor: TEXT_DARK },
+    styles: baseTableStyles,
     headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
     alternateRowStyles: { fillColor: ALT_ROW },
     head: [["Campo", "Valor"]],
@@ -254,9 +310,12 @@ export async function generateOrderPdf(orderId: string) {
       ["CNPJ", order.fornecedor_cnpj || "—"],
       ["Endereço de entrega", order.endereco_entrega || "—"],
       ["CNPJ para emissão da NF", order.cnpj_emissao_nf || "—"],
+      ["Prazo de entrega", order.prazo_entrega || "—"],
     ],
     margin: { left: margin, right: margin },
     columnStyles: { 0: { cellWidth: 180, fontStyle: "bold", textColor: NAVY } },
+    rowPageBreak: "avoid",
+    ...fixCharSpace,
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
@@ -265,7 +324,7 @@ export async function generateOrderPdf(orderId: string) {
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { fontSize: 8.5, cellPadding: 4, lineColor: BORDER_BLUE, textColor: TEXT_DARK, overflow: "linebreak" },
+    styles: { ...baseTableStyles, fontSize: 8.5, cellPadding: 4 },
     headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold", halign: "center" },
     alternateRowStyles: { fillColor: ALT_ROW },
     head: [["#", "Descrição", "Qtd", "Un.", "Valor unit.", "Valor total"]],
@@ -278,7 +337,7 @@ export async function generateOrderPdf(orderId: string) {
       fmtBRL(Number(it.valor_total || 0)),
     ]),
     foot: [[
-      "", "", "", "", "TOTAL", fmtBRL(Number(order.valor_total || 0))
+      "", "", String(totalItens), "", "TOTAL", fmtBRL(Number(order.valor_total || 0))
     ]],
     footStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold", halign: "right" },
     margin: { left: margin, right: margin },
@@ -290,6 +349,8 @@ export async function generateOrderPdf(orderId: string) {
       4: { cellWidth: 80, halign: "right" },
       5: { cellWidth: 90, halign: "right", fontStyle: "bold" },
     },
+    rowPageBreak: "auto",
+    ...fixCharSpace,
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
@@ -298,6 +359,7 @@ export async function generateOrderPdf(orderId: string) {
     sectionTitle("Texto obrigatório na NF");
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
+    (doc as any).setCharSpace(0);
     const lines = doc.splitTextToSize(String(order.texto_obrigatorio_nf), pageW - margin * 2 - 16);
     y = ensureSpace(lines.length * 12 + 14, y);
     doc.setFillColor(...ALT_ROW);
@@ -319,18 +381,50 @@ export async function generateOrderPdf(orderId: string) {
     ["Decisão", lastApproval?.decision === "aprovado" ? "Aprovado" : lastApproval?.decision === "negado" ? "Negado" : (lastApproval?.decision || "—")],
     ["Assinado em", lastApproval?.signed_at ? fmtDateTime(lastApproval.signed_at) : "—"],
     ["IP do aprovador", lastApproval?.approver_ip || "—"],
+    ["Ciência LGPD", lastApproval?.ciencia_lgpd ? "Sim" : "—"],
+    ["Token da assinatura", lastApproval?.token ? String(lastApproval.token).slice(0, 12) + "…" : "—"],
+    ["Validade do link", lastApproval?.expires_at ? fmtDateTime(lastApproval.expires_at) : "—"],
   ];
   if (order.motivo_negacao) approvalRows.push(["Motivo da negação", order.motivo_negacao]);
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { fontSize: 9, cellPadding: 5, lineColor: BORDER_BLUE, textColor: TEXT_DARK },
+    styles: baseTableStyles,
     headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
     alternateRowStyles: { fillColor: ALT_ROW },
     head: [["Campo", "Conteúdo"]],
     body: approvalRows,
     margin: { left: margin, right: margin },
     columnStyles: { 0: { cellWidth: 200, fontStyle: "bold", textColor: NAVY } },
+    rowPageBreak: "avoid",
+    ...fixCharSpace,
+  });
+  y = (doc as any).lastAutoTable.finalY + 16;
+
+  // ===== Linha do tempo =====
+  sectionTitle("Linha do tempo");
+  const timelineRows: [string, string, string][] = [];
+  timelineRows.push(["Criação da OC", fmtDateTime(order.created_at), "Sistema"]);
+  if (order.data_envio_setor) timelineRows.push(["Envio ao setor", fmtDate(order.data_envio_setor), order.responsavel_emissao_nome || "—"]);
+  if (order.aprovado_em) timelineRows.push(["Aprovação", fmtDateTime(order.aprovado_em), lastApproval?.approver_name || order.aprovado_por || "—"]);
+  if (order.data_envio_fornecedor) timelineRows.push(["Envio ao fornecedor", fmtDate(order.data_envio_fornecedor), order.fornecedor_nome || "—"]);
+  if (order.updated_at) timelineRows.push(["Última atualização", fmtDateTime(order.updated_at), "—"]);
+  autoTable(doc, {
+    startY: y,
+    theme: "grid",
+    styles: baseTableStyles,
+    headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
+    alternateRowStyles: { fillColor: ALT_ROW },
+    head: [["Evento", "Data / Hora", "Responsável"]],
+    body: timelineRows,
+    margin: { left: margin, right: margin },
+    columnStyles: {
+      0: { cellWidth: 180, fontStyle: "bold", textColor: NAVY },
+      1: { cellWidth: 140 },
+      2: { cellWidth: "auto" as any },
+    },
+    rowPageBreak: "avoid",
+    ...fixCharSpace,
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
@@ -339,6 +433,7 @@ export async function generateOrderPdf(orderId: string) {
     sectionTitle("Observações");
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
+    (doc as any).setCharSpace(0);
     const lines = doc.splitTextToSize(String(order.observacoes), pageW - margin * 2 - 16);
     y = ensureSpace(lines.length * 12 + 14, y);
     doc.setFillColor(...ALT_ROW);
