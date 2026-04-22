@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { UNIVIDA_LOGO_BASE64 } from "@/assets/univida-logo-base64";
 
 const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
@@ -42,6 +43,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
   const [motivoNegacao, setMotivoNegacao] = useState("");
   const [facilityUnit, setFacilityUnit] = useState("");
   const [reqId, setReqId] = useState<string | null>(null);
+  const [reqNumero, setReqNumero] = useState<string>("");
   // Quotation supplier selection
   const [quotation, setQuotation] = useState<any>(null);
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -78,6 +80,10 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         setObservacoes(o?.observacoes || "");
         setFacilityUnit(o?.facility_unit || "");
         setReqId(o?.requisition_id || null);
+        if (o?.requisition_id) {
+          const { data: rq } = await supabase.from("purchase_requisitions").select("numero").eq("id", o.requisition_id).maybeSingle();
+          setReqNumero(rq?.numero || "");
+        }
         const { data: itemsData } = await supabase.from("purchase_order_items").select("*").eq("purchase_order_id", orderId).order("item_num");
         setItems(itemsData || []);
         // Also load quotation context if present (for re-selecting supplier)
@@ -103,6 +109,10 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         setQuotation(q);
         setFacilityUnit(q.facility_unit);
         setReqId(q.requisition_id);
+        if (q.requisition_id) {
+          const { data: rq } = await supabase.from("purchase_requisitions").select("numero").eq("id", q.requisition_id).maybeSingle();
+          setReqNumero(rq?.numero || "");
+        }
         const auto = contractsList.find((c: any) => c.unit === q.facility_unit && c.status === "Vigente")
           || contractsList.find((c: any) => c.unit === q.facility_unit);
         if (auto) setContractId(auto.id);
@@ -243,55 +253,208 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
   };
 
   const generatePdf = () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
     const numero = order?.numero || "OC (rascunho)";
-    doc.setFontSize(16);
-    doc.text(`Ordem de Compra ${numero}`, 14, 18);
-    doc.setFontSize(10);
-    doc.text(`Unidade: ${facilityUnit || "-"}`, 14, 28);
-    doc.text(`Fornecedor: ${fornecedor || "-"}`, 14, 34);
-    doc.text(`CNPJ: ${fornecedorCnpj || "-"}`, 14, 40);
-    doc.text(`Endereço de entrega: ${endereco || "-"}`, 14, 46);
-    doc.text(`Prazo de entrega: ${prazo || "-"}`, 14, 52);
-    doc.text(`Rubrica: ${selectedRubrica?.name || "-"}`, 14, 58);
-    doc.text(`Contrato: ${contract?.name || "-"}`, 14, 64);
+    const now = new Date();
+    const dataEmissao = now.toLocaleDateString("pt-BR");
+    const horaEmissao = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
+    // Brand palette
+    const brandTeal: [number, number, number] = [22, 78, 99];
+    const brandAccent: [number, number, number] = [13, 148, 136];
+    const ink: [number, number, number] = [30, 41, 59];
+    const muted: [number, number, number] = [100, 116, 139];
+    const lineColor: [number, number, number] = [226, 232, 240];
+
+    // ===== Header band =====
+    doc.setFillColor(...brandTeal);
+    doc.rect(0, 0, pageW, 32, "F");
+    doc.setFillColor(...brandAccent);
+    doc.rect(0, 32, pageW, 1.5, "F");
+
+    // Logo
+    try {
+      doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", 12, 7, 22, 18);
+    } catch { /* ignore if logo invalid */ }
+
+    // Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("ORDEM DE COMPRA", 38, 15);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text("Instituto Univida — Gestão Hospitalar", 38, 21);
+
+    // Right-side meta box
+    const metaX = pageW - 78;
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(metaX, 6, 70, 22, 2, 2, "S");
+    doc.setFontSize(8);
+    doc.text("Nº OC", metaX + 3, 11);
+    doc.text("Nº Requisição", metaX + 3, 17);
+    doc.text("Emitido em", metaX + 3, 23);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(numero, metaX + 28, 11);
+    doc.text(reqNumero || "—", metaX + 28, 17);
+    doc.text(`${dataEmissao} • ${horaEmissao}`, metaX + 28, 23);
+    doc.setFont("helvetica", "normal");
+
+    // ===== Body — Info cards =====
+    let y = 42;
+    doc.setTextColor(...ink);
+
+    const infoBox = (x: number, w: number, label: string, value: string) => {
+      doc.setDrawColor(...lineColor);
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(x, y, w, 16, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...muted);
+      doc.text(label.toUpperCase(), x + 3, y + 5);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...ink);
+      const lines = doc.splitTextToSize(value || "—", w - 6);
+      doc.text(lines.slice(0, 1), x + 3, y + 12);
+    };
+
+    const colW = (pageW - 24 - 8) / 3;
+    infoBox(12, colW, "Unidade", facilityUnit || "—");
+    infoBox(12 + colW + 4, colW, "Contrato", contract?.name || "—");
+    infoBox(12 + (colW + 4) * 2, colW, "Rubrica", selectedRubrica?.name || "—");
+    y += 20;
+
+    infoBox(12, colW, "Fornecedor", fornecedor || "—");
+    infoBox(12 + colW + 4, colW, "CNPJ", fornecedorCnpj || "—");
+    infoBox(12 + (colW + 4) * 2, colW, "Prazo de entrega", prazo || "—");
+    y += 20;
+
+    // Endereço (full width)
+    doc.setDrawColor(...lineColor);
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(12, y, pageW - 24, 16, 1.5, 1.5, "FD");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...muted);
+    doc.text("ENDEREÇO DE ENTREGA", 15, y + 5);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...ink);
+    doc.text(doc.splitTextToSize(endereco || "—", pageW - 30).slice(0, 1), 15, y + 12);
+    y += 22;
+
+    // ===== Items table =====
     autoTable(doc, {
-      startY: 72,
-      head: [["#", "Descrição", "Qtd", "Un", "Valor unit.", "Total"]],
+      startY: y,
+      margin: { left: 12, right: 12 },
+      head: [["#", "Descrição", "Qtd", "Un.", "Valor unit.", "Total"]],
       body: items.map((it, idx) => [
-        idx + 1,
+        String(idx + 1),
         it.descricao,
-        it.quantidade,
+        String(it.quantidade),
         it.unidade_medida,
         fmtBRL(Number(it.valor_unitario)),
         fmtBRL(Number(it.valor_total)),
       ]),
-      foot: [["", "", "", "", "Total geral", fmtBRL(valorTotal)]],
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [30, 64, 92] },
+      foot: [[
+        { content: "TOTAL GERAL", colSpan: 5, styles: { halign: "right", fontStyle: "bold", fillColor: [241, 245, 249], textColor: ink } },
+        { content: fmtBRL(valorTotal), styles: { halign: "right", fontStyle: "bold", fillColor: [241, 245, 249], textColor: brandTeal } },
+      ]],
+      styles: { fontSize: 9, cellPadding: 2.5, lineColor, lineWidth: 0.1, textColor: ink },
+      headStyles: { fillColor: brandTeal, textColor: [255, 255, 255], fontStyle: "bold", halign: "left" },
+      columnStyles: {
+        0: { halign: "center", cellWidth: 10 },
+        2: { halign: "right", cellWidth: 16 },
+        3: { halign: "center", cellWidth: 14 },
+        4: { halign: "right", cellWidth: 28 },
+        5: { halign: "right", cellWidth: 30 },
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
     });
 
-    let y = (doc as any).lastAutoTable.finalY + 10;
-    if (observacoes) {
-      doc.text("Observações:", 14, y);
-      const lines = doc.splitTextToSize(observacoes, 180);
-      doc.text(lines, 14, y + 6);
-      y += 6 + lines.length * 5;
-    }
-    if (isOverridingWinner && justificativaTroca) {
-      y += 4;
-      doc.text("Justificativa de troca de fornecedor:", 14, y);
-      const lines = doc.splitTextToSize(justificativaTroca, 180);
-      doc.text(lines, 14, y + 6);
-      y += 6 + lines.length * 5;
-    }
-    y += 10;
-    doc.text(`Emitido por: ${profile?.name || "-"}${profile?.cargo ? " — " + profile.cargo : ""}`, 14, y);
-    doc.text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, 14, y + 6);
-    if (order?.aprovado_em) {
-      doc.text(`Status: ${order.status}`, 14, y + 12);
-    }
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    // Observações / Justificativa
+    const noteBox = (label: string, text: string) => {
+      const lines = doc.splitTextToSize(text, pageW - 30);
+      const h = 8 + lines.length * 4.5;
+      if (y + h > pageH - 70) { doc.addPage(); y = 20; }
+      doc.setDrawColor(...lineColor);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(12, y, pageW - 24, h, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...brandTeal);
+      doc.text(label.toUpperCase(), 15, y + 5);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...ink);
+      doc.text(lines, 15, y + 10);
+      y += h + 4;
+    };
+    if (observacoes) noteBox("Observações", observacoes);
+    if (isOverridingWinner && justificativaTroca) noteBox("Justificativa — fornecedor diferente do campeão", justificativaTroca);
+
+    // ===== Signature blocks =====
+    if (y > pageH - 70) { doc.addPage(); y = 20; }
+    y = Math.max(y, pageH - 70);
+
+    const sigW = (pageW - 24 - 12) / 2;
+    const drawSignature = (x: number, label: string, name: string, sub: string, dateText: string) => {
+      doc.setDrawColor(...lineColor);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(x, y, sigW, 50, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...brandTeal);
+      doc.text(label.toUpperCase(), x + 4, y + 6);
+      // Signature line
+      doc.setDrawColor(...muted);
+      doc.setLineWidth(0.3);
+      doc.line(x + 6, y + 30, x + sigW - 6, y + 30);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...ink);
+      doc.text(name || "—", x + sigW / 2, y + 36, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...muted);
+      if (sub) doc.text(sub, x + sigW / 2, y + 41, { align: "center" });
+      if (dateText) doc.text(dateText, x + sigW / 2, y + 46, { align: "center" });
+    };
+
+    drawSignature(
+      12,
+      "Emitido por",
+      profile?.name || "—",
+      profile?.cargo || "Responsável pela emissão",
+      `Data: ${dataEmissao} ${horaEmissao}`,
+    );
+
+    const aprovadoEm = order?.aprovado_em ? new Date(order.aprovado_em) : null;
+    const aprovadoData = aprovadoEm ? `${aprovadoEm.toLocaleDateString("pt-BR")} ${aprovadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : "";
+    const isAuthorized = order?.status === "autorizada" || order?.status === "enviada" || order?.status === "recebida";
+    drawSignature(
+      12 + sigW + 12,
+      isAuthorized ? "Autorizado por" : "Autorização (a preencher)",
+      isAuthorized ? (order?.aprovado_por_nome || "") : "",
+      "Gestor / Diretoria",
+      aprovadoData ? `Data: ${aprovadoData}` : "Data: ___/___/______",
+    );
+
+    // ===== Footer =====
+    doc.setDrawColor(...lineColor);
+    doc.line(12, pageH - 14, pageW - 12, pageH - 14);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...muted);
+    doc.text(`Documento gerado eletronicamente • ${dataEmissao} ${horaEmissao}`, 12, pageH - 9);
+    doc.text(`OC ${numero}${reqNumero ? "  •  Req. " + reqNumero : ""}`, pageW - 12, pageH - 9, { align: "right" });
 
     doc.save(`${numero.replace(/[\/\s]/g, "_")}.pdf`);
   };
