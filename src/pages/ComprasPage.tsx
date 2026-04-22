@@ -152,33 +152,36 @@ export default function ComprasPage() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="inline-flex w-auto h-auto flex-wrap">
-            <TabsTrigger value="requisicoes">Requisições</TabsTrigger>
-            <TabsTrigger value="cotacoes">Cotações</TabsTrigger>
-            <TabsTrigger value="banco">Banco de Preços</TabsTrigger>
-            <TabsTrigger value="ordens">Ordens de Compra</TabsTrigger>
-            <TabsTrigger value="painel">Painel</TabsTrigger>
-          </TabsList>
-
-          <div className="flex flex-wrap gap-3 mt-4">
-            <Input placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
-            <Select value={unitFilter} onValueChange={setUnitFilter}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Unidade" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as unidades</SelectItem>
-                {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            {(tab === "requisicoes" || tab === "ordens") && (
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[220px]"><SelectValue placeholder="Status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  {tab === "requisicoes"
-                    ? Object.entries(REQ_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)
-                    : Object.entries(OC_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          <div className="flex flex-wrap items-center gap-3">
+            <TabsList className="inline-flex w-auto h-auto flex-wrap">
+              <TabsTrigger value="requisicoes">Requisições</TabsTrigger>
+              <TabsTrigger value="cotacoes">Cotações</TabsTrigger>
+              <TabsTrigger value="banco">Banco de Preços</TabsTrigger>
+              <TabsTrigger value="ordens">Ordens de Compra</TabsTrigger>
+              <TabsTrigger value="painel">Painel</TabsTrigger>
+            </TabsList>
+            {tab !== "banco" && tab !== "painel" && (
+              <>
+                <Input placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+                <Select value={unitFilter} onValueChange={setUnitFilter}>
+                  <SelectTrigger className="w-[200px]"><SelectValue placeholder="Unidade" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as unidades</SelectItem>
+                    {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {(tab === "requisicoes" || tab === "ordens") && (
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[220px]"><SelectValue placeholder="Status" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os status</SelectItem>
+                      {tab === "requisicoes"
+                        ? Object.entries(REQ_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)
+                        : Object.entries(OC_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+              </>
             )}
           </div>
 
