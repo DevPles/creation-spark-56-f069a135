@@ -290,6 +290,18 @@ export default function PublicQuotationPage() {
           </Button>
         </div>
       </div>
+
+      <Dialog open={!!zoomImage} onOpenChange={(o) => { if (!o) setZoomImage(null); }}>
+        <DialogContent className="max-w-3xl p-2">
+          {zoomImage && (
+            <img
+              src={zoomImage}
+              alt="Foto do produto ampliada"
+              className="w-full h-auto max-h-[80vh] object-contain rounded"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
