@@ -197,6 +197,7 @@ export default function PublicQuotationPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
+                  <TableHead className="w-20">Foto</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead className="text-right">Qtd</TableHead>
                   <TableHead>Un.</TableHead>
@@ -213,6 +214,24 @@ export default function PublicQuotationPage() {
                   return (
                     <TableRow key={it.id}>
                       <TableCell>{it.item_num}</TableCell>
+                      <TableCell>
+                        {it.image_url ? (
+                          <button
+                            type="button"
+                            onClick={() => setZoomImage(it.image_url!)}
+                            className="block"
+                            title="Ampliar imagem"
+                          >
+                            <img
+                              src={it.image_url}
+                              alt={`Foto de ${it.descricao}`}
+                              className="h-12 w-12 rounded border border-input object-cover hover:opacity-80"
+                            />
+                          </button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>{it.descricao}</TableCell>
                       <TableCell className="text-right">{it.quantidade}</TableCell>
                       <TableCell>{it.unidade_medida}</TableCell>
