@@ -59,14 +59,14 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
         q = qd;
         reqId = qd?.requisition_id;
         setQuotation(qd);
-        setSetorComprador(qd?.setor_comprador || "");
       } else {
         setQuotation(null);
-        setSetorComprador("");
       }
       if (!reqId) return;
       const { data: r } = await supabase.from("purchase_requisitions").select("*").eq("id", reqId).single();
       setRequisition(r);
+      // Setor comprador é herdado do setor da requisição
+      setSetorComprador(q?.setor_comprador || r?.setor || "");
       const { data: itemsData } = await supabase.from("purchase_requisition_items").select("*").eq("requisition_id", reqId).order("item_num");
       setItems(itemsData || []);
 
