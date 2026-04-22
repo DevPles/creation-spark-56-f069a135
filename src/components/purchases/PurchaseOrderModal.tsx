@@ -80,6 +80,10 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         setObservacoes(o?.observacoes || "");
         setFacilityUnit(o?.facility_unit || "");
         setReqId(o?.requisition_id || null);
+        if (o?.requisition_id) {
+          const { data: rq } = await supabase.from("purchase_requisitions").select("numero").eq("id", o.requisition_id).maybeSingle();
+          setReqNumero(rq?.numero || "");
+        }
         const { data: itemsData } = await supabase.from("purchase_order_items").select("*").eq("purchase_order_id", orderId).order("item_num");
         setItems(itemsData || []);
         // Also load quotation context if present (for re-selecting supplier)
@@ -105,6 +109,10 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         setQuotation(q);
         setFacilityUnit(q.facility_unit);
         setReqId(q.requisition_id);
+        if (q.requisition_id) {
+          const { data: rq } = await supabase.from("purchase_requisitions").select("numero").eq("id", q.requisition_id).maybeSingle();
+          setReqNumero(rq?.numero || "");
+        }
         const auto = contractsList.find((c: any) => c.unit === q.facility_unit && c.status === "Vigente")
           || contractsList.find((c: any) => c.unit === q.facility_unit);
         if (auto) setContractId(auto.id);
