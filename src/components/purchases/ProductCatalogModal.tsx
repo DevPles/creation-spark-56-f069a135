@@ -283,7 +283,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
                 />
               </label>
               <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                <span>JPG, PNG ou WEBP — até 5 MB.</span>
+                <span>JPG, PNG ou WEBP — até 10 MB.</span>
                 <span>Esta imagem será exibida no convite enviado ao fornecedor.</span>
                 {imageUrl && (
                   <Button
