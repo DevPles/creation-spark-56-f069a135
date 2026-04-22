@@ -409,13 +409,16 @@ export async function generateOrderPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     (doc as any).setCharSpace(0);
+    y += 6; // respiração entre título e caixa
     const lines = doc.splitTextToSize(String(order.texto_obrigatorio_nf), pageW - margin * 2 - 16);
-    y = ensureSpace(lines.length * 12 + 14, y);
+    const boxH = lines.length * 12 + 16;
+    y = ensureSpace(boxH + 8, y);
     doc.setFillColor(...ALT_ROW);
     doc.setDrawColor(...BORDER_BLUE);
-    doc.roundedRect(margin, y - 4, pageW - margin * 2, lines.length * 12 + 14, 3, 3, "FD");
-    doc.text(lines, margin + 8, y + 8);
-    y += lines.length * 12 + 18;
+    doc.roundedRect(margin, y, pageW - margin * 2, boxH, 3, 3, "FD");
+    doc.setTextColor(...TEXT_DARK);
+    doc.text(lines, margin + 8, y + 14);
+    y += boxH + 20;
   }
 
   // ===== Aprovação / autorização =====
