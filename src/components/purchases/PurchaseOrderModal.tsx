@@ -313,7 +313,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const numero = order?.numero || "Sem número";
+    const numero = order?.numero || previewNumero || "Sem número";
     const now = new Date();
     const dataEmissao = now.toLocaleDateString("pt-BR");
     const horaEmissao = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
