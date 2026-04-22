@@ -406,6 +406,99 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
             <div><Label>Aprovador diretoria</Label><Input value={aprovadorDiretoria} onChange={e => setAprovadorDiretoria(e.target.value)} /></div>
           </div>
 
+          {["dispensa", "inexigibilidade", "emergencial"].includes(justificativa) && (
+            <div className="border border-primary/30 bg-primary/5 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-primary font-semibold text-sm">
+                  Justificativa legal —{" "}
+                  {justificativa === "dispensa" && "Dispensa de licitação"}
+                  {justificativa === "inexigibilidade" && "Inexigibilidade de licitação"}
+                  {justificativa === "emergencial" && "Compra emergencial"}
+                </Label>
+                <span className="text-xs text-muted-foreground">Obrigatório para auditoria (Tribunal de Contas)</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Base legal (artigo / inciso da Lei nº 14.133/2021)</Label>
+                  <Input
+                    value={justBaseLegal}
+                    onChange={e => setJustBaseLegal(e.target.value)}
+                    placeholder={
+                      justificativa === "dispensa" ? "Ex: Art. 75, II — valor abaixo do limite" :
+                      justificativa === "inexigibilidade" ? "Ex: Art. 74, I — fornecedor exclusivo" :
+                      "Ex: Art. 75, VIII — emergência ou calamidade"
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Número do processo administrativo</Label>
+                  <Input
+                    value={justProcessoNumero}
+                    onChange={e => setJustProcessoNumero(e.target.value)}
+                    placeholder="Ex: PA-2026/0123"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs">Fundamentação técnica e justificativa detalhada</Label>
+                <Textarea
+                  value={justFundamentacao}
+                  onChange={e => setJustFundamentacao(e.target.value)}
+                  rows={3}
+                  placeholder="Descreva motivos técnicos, finalidade e por que esta modalidade foi escolhida em detrimento da licitação."
+                />
+              </div>
+
+              {justificativa === "inexigibilidade" && (
+                <div>
+                  <Label className="text-xs">Comprovação de exclusividade do fornecedor</Label>
+                  <Textarea
+                    value={justFornecedorUnico}
+                    onChange={e => setJustFornecedorUnico(e.target.value)}
+                    rows={2}
+                    placeholder="Atestado de exclusividade, registro em cartório, marca/patente única etc."
+                  />
+                </div>
+              )}
+
+              {justificativa === "emergencial" && (
+                <>
+                  <div>
+                    <Label className="text-xs">Descrição do risco / dano potencial</Label>
+                    <Textarea
+                      value={justRiscoDescricao}
+                      onChange={e => setJustRiscoDescricao(e.target.value)}
+                      rows={2}
+                      placeholder="Risco à vida, à saúde, à segurança ou de prejuízo grave caso a compra não ocorra imediatamente."
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Prazo máximo para atendimento (urgência)</Label>
+                    <Input
+                      value={justUrgenciaPrazo}
+                      onChange={e => setJustUrgenciaPrazo(e.target.value)}
+                      placeholder="Ex: 48 horas / até 7 dias"
+                    />
+                  </div>
+                </>
+              )}
+
+              {justificativa === "dispensa" && (
+                <div>
+                  <Label className="text-xs">Comparativo / pesquisa de preços de mercado</Label>
+                  <Textarea
+                    value={justFornecedorUnico}
+                    onChange={e => setJustFornecedorUnico(e.target.value)}
+                    rows={2}
+                    placeholder="Indique fornecedores consultados, fontes de preço (Banco de Preços, painel SUS, etc.) e comprovação da vantajosidade."
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <Label>Observações</Label>
             <Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} />
