@@ -384,13 +384,9 @@ export default function PurchasesDashboardPanel({
         <CardContent>
           <div className="space-y-3">
             {funnel.map((s) => {
-              const Icon = s.icon;
               return (
                 <div key={s.label} className="grid grid-cols-[120px_1fr_auto] items-center gap-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <span>{s.label}</span>
-                  </div>
+                  <div className="text-sm">{s.label}</div>
                   <div className="relative h-7 rounded-md bg-muted overflow-hidden">
                     <div className="absolute inset-y-0 left-0 bg-primary/80 rounded-md transition-all"
                          style={{ width: `${Math.max(s.pct, 2)}%` }} />
