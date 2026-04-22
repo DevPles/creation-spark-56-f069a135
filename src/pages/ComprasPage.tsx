@@ -501,6 +501,7 @@ export default function ComprasPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nº</TableHead>
+                      <TableHead>Requisição</TableHead>
                       <TableHead>Unidade</TableHead>
                       <TableHead>Fornecedor</TableHead>
                       <TableHead>Contrato</TableHead>
@@ -513,9 +514,11 @@ export default function ComprasPage() {
                   <TableBody>
                     {filteredOrders.map(o => {
                       const contract = contracts.find(c => c.id === o.contract_id);
+                      const req = requisitions.find(r => r.id === o.requisition_id);
                       return (
                         <TableRow key={o.id}>
                           <TableCell className="font-mono text-xs">{o.numero}</TableCell>
+                          <TableCell className="font-mono text-xs">{req?.numero || "—"}</TableCell>
                           <TableCell>{o.facility_unit}</TableCell>
                           <TableCell>{o.fornecedor_nome}</TableCell>
                           <TableCell className="text-xs">{contract?.name || "—"}</TableCell>
@@ -535,7 +538,7 @@ export default function ComprasPage() {
                       );
                     })}
                     {filteredOrders.length === 0 && (
-                      <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhuma ordem encontrada</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhuma ordem encontrada</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
