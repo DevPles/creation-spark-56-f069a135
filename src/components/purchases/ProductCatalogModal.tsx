@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ImagePlus, X, Loader2 } from "lucide-react";
 
 const TIPOS = [
   { v: "ALI", l: "ALI — Alimentos e Gêneros Alimentícios" },
@@ -103,6 +104,8 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
   const [facilityUnit, setFacilityUnit] = useState<string>("Hospital Geral");
   const [setor, setSetor] = useState<string>("");
   const [sectorOptions, setSectorOptions] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -121,6 +124,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
       setDescricao("");
       setPreviewCode("");
       setSetor("");
+      setImageUrl("");
       return;
     }
     if (editing) {
@@ -131,8 +135,10 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
       setPreviewCode(editing.codigo || "");
       setFacilityUnit(editing.facility_unit || "Hospital Geral");
       setSetor(editing.setor || "");
+      setImageUrl(editing.image_url || "");
       return;
     }
+    setImageUrl("");
     const loadPreview = async () => {
       const prefix = `${tipo}-${classificacao.slice(0, 4).toUpperCase()}`;
       const { data } = await supabase
