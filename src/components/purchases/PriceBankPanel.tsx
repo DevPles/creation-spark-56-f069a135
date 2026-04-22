@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ProductCatalogModal from "./ProductCatalogModal";
 
 const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
+const fmtDate = (d: string | Date | null) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
 
 export default function PriceBankPanel() {
   const { profile } = useAuth();
@@ -21,12 +22,47 @@ export default function PriceBankPanel() {
   const [search, setSearch] = useState("");
   const [searchGoogle, setSearchGoogle] = useState("");
   const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
+  const [purchaseSearch, setPurchaseSearch] = useState("");
+  const [purchaseUnit, setPurchaseUnit] = useState<string>("all");
 
   const load = async () => {
     const { data } = await supabase.from("price_history").select("*").order("data_referencia", { ascending: false }).limit(500);
     setHistory(data || []);
     const { data: cat } = await supabase.from("product_catalog").select("*").eq("ativo", true).order("descricao");
     setCatalog(cat || []);
+    await loadPurchaseHistory();
+  };
+
+  const loadPurchaseHistory = async () => {
+    // Pega itens das OCs com OC autorizada/enviada/recebida (compras efetivas)
+    const { data: ords } = await supabase
+      .from("purchase_orders")
+      .select("id, numero, facility_unit, fornecedor_nome, status, data_envio_fornecedor, aprovado_em, created_at")
+      .in("status", ["autorizada", "enviada", "recebida"]);
+    if (!ords || ords.length === 0) { setPurchaseHistory([]); return; }
+    const { data: items } = await supabase
+      .from("purchase_order_items")
+      .select("*")
+      .in("purchase_order_id", ords.map(o => o.id));
+    const ordById = new Map(ords.map(o => [o.id, o]));
+    const rows = (items || []).map((it: any) => {
+      const o = ordById.get(it.purchase_order_id);
+      const dataCompra = o?.data_envio_fornecedor || o?.aprovado_em || o?.created_at;
+      return {
+        id: it.id,
+        descricao: it.descricao,
+        quantidade: Number(it.quantidade) || 0,
+        unidade_medida: it.unidade_medida,
+        valor_unitario: Number(it.valor_unitario) || 0,
+        valor_total: Number(it.valor_total) || 0,
+        facility_unit: o?.facility_unit || "—",
+        fornecedor_nome: o?.fornecedor_nome || "—",
+        oc_numero: o?.numero || "—",
+        data_compra: dataCompra,
+      };
+    });
+    setPurchaseHistory(rows);
   };
 
   useEffect(() => { load(); }, []);
@@ -42,6 +78,69 @@ export default function PriceBankPanel() {
     const q = catalogSearch.toLowerCase();
     return [c.codigo, c.descricao, c.tipo, c.classificacao].filter(Boolean).join(" ").toLowerCase().includes(q);
   });
+
+  // Agrupa histórico por unidade + descrição para calcular curva de consumo
+  const consumoCurva = (() => {
+    const groups = new Map<string, any[]>();
+    purchaseHistory.forEach(p => {
+      if (purchaseUnit !== "all" && p.facility_unit !== purchaseUnit) return;
+      if (purchaseSearch) {
+        const q = purchaseSearch.toLowerCase();
+        const hay = [p.descricao, p.fornecedor_nome, p.oc_numero].filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(q)) return;
+      }
+      const key = `${p.facility_unit}||${(p.descricao || "").trim().toLowerCase()}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(p);
+    });
+    const today = new Date();
+    const out: any[] = [];
+    groups.forEach((arr, key) => {
+      const sorted = arr
+        .filter(x => x.data_compra)
+        .sort((a, b) => new Date(a.data_compra).getTime() - new Date(b.data_compra).getTime());
+      const totalQtd = arr.reduce((s, x) => s + x.quantidade, 0);
+      const totalValor = arr.reduce((s, x) => s + x.valor_total, 0);
+      const ultima = sorted[sorted.length - 1];
+      const primeira = sorted[0];
+      let intervaloMedioDias: number | null = null;
+      if (sorted.length >= 2) {
+        const intervals: number[] = [];
+        for (let i = 1; i < sorted.length; i++) {
+          const diff = (new Date(sorted[i].data_compra).getTime() - new Date(sorted[i - 1].data_compra).getTime()) / (1000 * 60 * 60 * 24);
+          intervals.push(diff);
+        }
+        intervaloMedioDias = intervals.reduce((s, n) => s + n, 0) / intervals.length;
+      }
+      const diasDesdeUltima = ultima?.data_compra ? Math.floor((today.getTime() - new Date(ultima.data_compra).getTime()) / (1000 * 60 * 60 * 24)) : null;
+      const proximaCompraSugerida = ultima?.data_compra && intervaloMedioDias
+        ? new Date(new Date(ultima.data_compra).getTime() + intervaloMedioDias * 24 * 60 * 60 * 1000)
+        : null;
+      const consumoMensal = intervaloMedioDias && intervaloMedioDias > 0
+        ? (totalQtd / sorted.length) * (30 / intervaloMedioDias)
+        : null;
+      out.push({
+        key,
+        descricao: arr[0].descricao,
+        facility_unit: arr[0].facility_unit,
+        unidade_medida: arr[0].unidade_medida,
+        compras: sorted.length,
+        totalQtd,
+        totalValor,
+        ultimoFornecedor: ultima?.fornecedor_nome,
+        ultimaData: ultima?.data_compra,
+        primeiraData: primeira?.data_compra,
+        intervaloMedioDias,
+        diasDesdeUltima,
+        proximaCompraSugerida,
+        consumoMensal,
+        ultimoPreco: ultima?.valor_unitario,
+      });
+    });
+    return out.sort((a, b) => (b.totalValor || 0) - (a.totalValor || 0));
+  })();
+
+  const purchaseUnits = Array.from(new Set(purchaseHistory.map(p => p.facility_unit).filter(Boolean))).sort();
 
   const runGoogleSearch = async () => {
     if (!searchGoogle.trim() || !profile) return;
@@ -73,6 +172,7 @@ export default function PriceBankPanel() {
         <TabsList className="inline-flex w-auto h-auto">
           <TabsTrigger value="catalogo">Cadastro de itens</TabsTrigger>
           <TabsTrigger value="historico">Histórico de preços</TabsTrigger>
+          <TabsTrigger value="compras">Histórico de compras</TabsTrigger>
         </TabsList>
 
         <TabsContent value="catalogo" className="mt-4">
