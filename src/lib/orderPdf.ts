@@ -177,13 +177,13 @@ export async function generateOrderPdf(
     if (currentY + needed > pageH - 60) {
       doc.addPage();
       drawHeaderBand(false);
-      return 84;
+      return 96; // banda reduzida = 70 + 4 + ~22 de respiração
     }
     return currentY;
   };
 
   drawHeaderBand(true);
-  let y = 120;
+  let y = 138; // banda completa = 110 + 4 + ~24 de respiração
 
   const sectionTitle = (title: string) => {
     y = ensureSpace(28, y);
