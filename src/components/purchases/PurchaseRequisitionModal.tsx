@@ -256,13 +256,26 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
     setSaving(true);
     try {
       let reqId = requisition?.id;
+      const requiresLegal = ["dispensa", "inexigibilidade", "emergencial"].includes(justificativa);
+      let observacoesFinal = observacoes || "";
+      if (requiresLegal) {
+        const legalBlock = {
+          base_legal: justBaseLegal,
+          fundamentacao: justFundamentacao,
+          fornecedor_unico: justFornecedorUnico,
+          risco_descricao: justRiscoDescricao,
+          urgencia_prazo: justUrgenciaPrazo,
+          processo_numero: justProcessoNumero,
+        };
+        observacoesFinal = `${observacoesFinal}\n\n[JUST_LEGAL]${JSON.stringify(legalBlock)}[/JUST_LEGAL]`.trim();
+      }
       const payload = {
         facility_unit: facilityUnit,
         setor: setor || null,
         municipio: municipio || null,
         classificacao,
         justificativa_tipo: justificativa,
-        observacoes: observacoes || null,
+        observacoes: observacoesFinal || null,
         solicitante_id: profile.id,
         solicitante_nome: solicitante,
         aprovador_imediato_nome: aprovadorImediato || null,
