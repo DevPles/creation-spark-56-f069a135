@@ -257,18 +257,17 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
           </div>
           <div>
             <Label>Descrição técnica</Label>
-            <Input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Seringa 10 ml" />
-          </div>
-          <div>
-            <Label>Imagem do produto (opcional)</Label>
-            <div className="mt-1 flex items-start gap-3">
-              <label className="flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center rounded-md border border-dashed border-input bg-muted/30 hover:bg-muted overflow-hidden">
+            <div className="flex items-center gap-2">
+              <label
+                title={imageUrl ? "Trocar imagem do produto" : "Adicionar imagem do produto"}
+                className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-input bg-muted/40 hover:bg-muted overflow-hidden transition-colors"
+              >
                 {imageUrl ? (
-                  <img src={imageUrl} alt="Pré-visualização" className="h-full w-full object-cover" />
+                  <img src={imageUrl} alt="Produto" className="h-full w-full object-cover" />
                 ) : uploadingImage ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 ) : (
-                  <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                  <ImagePlus className="h-4 w-4 text-muted-foreground" />
                 )}
                 <input
                   type="file"
@@ -282,22 +281,28 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
                   }}
                 />
               </label>
-              <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                <span>JPG, PNG ou WEBP — até 10 MB.</span>
-                <span>Esta imagem será exibida no convite enviado ao fornecedor.</span>
-                {imageUrl && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 self-start px-2 text-xs"
-                    onClick={() => setImageUrl("")}
-                  >
-                    <X className="h-3 w-3 mr-1" /> Remover imagem
-                  </Button>
-                )}
-              </div>
+              <Input
+                value={descricao}
+                onChange={e => setDescricao(e.target.value)}
+                placeholder="Ex: Seringa 10 ml"
+                className="flex-1"
+              />
+              {imageUrl && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                  title="Remover imagem"
+                  onClick={() => setImageUrl("")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Imagem opcional (JPG/PNG/WEBP, até 10 MB) — exibida no convite ao fornecedor.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
