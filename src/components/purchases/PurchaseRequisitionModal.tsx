@@ -53,6 +53,8 @@ const JUSTIFICATIVAS = [
   { v: "mensal", l: "Compra mensal" },
   { v: "especifica", l: "Compra específica" },
   { v: "emergencial", l: "Emergencial" },
+  { v: "dispensa", l: "Dispensa de licitação" },
+  { v: "inexigibilidade", l: "Inexigibilidade de licitação" },
   { v: "outros", l: "Outros" },
 ];
 const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
@@ -86,6 +88,13 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
   const [classificacao, setClassificacao] = useState<string[]>([]);
   const [justificativa, setJustificativa] = useState("mensal");
   const [observacoes, setObservacoes] = useState("");
+  // Campos extras para justificativas legais (dispensa/inexigibilidade/emergencial)
+  const [justBaseLegal, setJustBaseLegal] = useState("");
+  const [justFundamentacao, setJustFundamentacao] = useState("");
+  const [justFornecedorUnico, setJustFornecedorUnico] = useState("");
+  const [justRiscoDescricao, setJustRiscoDescricao] = useState("");
+  const [justUrgenciaPrazo, setJustUrgenciaPrazo] = useState("");
+  const [justProcessoNumero, setJustProcessoNumero] = useState("");
   const [solicitante, setSolicitante] = useState(profile?.name || "");
   const [aprovadorImediato, setAprovadorImediato] = useState("");
   const [aprovadorDiretoria, setAprovadorDiretoria] = useState("");
@@ -118,7 +127,29 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setMunicipio(requisition.municipio || "");
       setClassificacao(requisition.classificacao || []);
       setJustificativa(requisition.justificativa_tipo || "mensal");
-      setObservacoes(requisition.observacoes || "");
+      // Tenta extrair bloco JSON [JUST_LEGAL]{...}[/JUST_LEGAL] das observações
+      const rawObs: string = requisition.observacoes || "";
+      const blockMatch = rawObs.match(/\[JUST_LEGAL\]([\s\S]*?)\[\/JUST_LEGAL\]/);
+      if (blockMatch) {
+        try {
+          const data = JSON.parse(blockMatch[1]);
+          setJustBaseLegal(data.base_legal || "");
+          setJustFundamentacao(data.fundamentacao || "");
+          setJustFornecedorUnico(data.fornecedor_unico || "");
+          setJustRiscoDescricao(data.risco_descricao || "");
+          setJustUrgenciaPrazo(data.urgencia_prazo || "");
+          setJustProcessoNumero(data.processo_numero || "");
+        } catch { /* ignora */ }
+        setObservacoes(rawObs.replace(blockMatch[0], "").trim());
+      } else {
+        setObservacoes(rawObs);
+        setJustBaseLegal("");
+        setJustFundamentacao("");
+        setJustFornecedorUnico("");
+        setJustRiscoDescricao("");
+        setJustUrgenciaPrazo("");
+        setJustProcessoNumero("");
+      }
       setSolicitante(requisition.solicitante_nome || "");
       setAprovadorImediato(requisition.aprovador_imediato_nome || "");
       setAprovadorDiretoria(requisition.aprovador_diretoria_nome || "");
@@ -149,6 +180,12 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setClassificacao([]);
       setJustificativa("mensal");
       setObservacoes("");
+      setJustBaseLegal("");
+      setJustFundamentacao("");
+      setJustFornecedorUnico("");
+      setJustRiscoDescricao("");
+      setJustUrgenciaPrazo("");
+      setJustProcessoNumero("");
       setSolicitante(profile?.name || "");
       setAprovadorImediato("");
       setAprovadorDiretoria("");
@@ -219,13 +256,26 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
     setSaving(true);
     try {
       let reqId = requisition?.id;
+      const requiresLegal = ["dispensa", "inexigibilidade", "emergencial"].includes(justificativa);
+      let observacoesFinal = observacoes || "";
+      if (requiresLegal) {
+        const legalBlock = {
+          base_legal: justBaseLegal,
+          fundamentacao: justFundamentacao,
+          fornecedor_unico: justFornecedorUnico,
+          risco_descricao: justRiscoDescricao,
+          urgencia_prazo: justUrgenciaPrazo,
+          processo_numero: justProcessoNumero,
+        };
+        observacoesFinal = `${observacoesFinal}\n\n[JUST_LEGAL]${JSON.stringify(legalBlock)}[/JUST_LEGAL]`.trim();
+      }
       const payload = {
         facility_unit: facilityUnit,
         setor: setor || null,
         municipio: municipio || null,
         classificacao,
         justificativa_tipo: justificativa,
-        observacoes: observacoes || null,
+        observacoes: observacoesFinal || null,
         solicitante_id: profile.id,
         solicitante_nome: solicitante,
         aprovador_imediato_nome: aprovadorImediato || null,
@@ -355,6 +405,99 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
             <div><Label>Aprovador imediato</Label><Input value={aprovadorImediato} onChange={e => setAprovadorImediato(e.target.value)} /></div>
             <div><Label>Aprovador diretoria</Label><Input value={aprovadorDiretoria} onChange={e => setAprovadorDiretoria(e.target.value)} /></div>
           </div>
+
+          {["dispensa", "inexigibilidade", "emergencial"].includes(justificativa) && (
+            <div className="border border-primary/30 bg-primary/5 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-primary font-semibold text-sm">
+                  Justificativa legal —{" "}
+                  {justificativa === "dispensa" && "Dispensa de licitação"}
+                  {justificativa === "inexigibilidade" && "Inexigibilidade de licitação"}
+                  {justificativa === "emergencial" && "Compra emergencial"}
+                </Label>
+                <span className="text-xs text-muted-foreground">Obrigatório para auditoria (Tribunal de Contas)</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Base legal (artigo / inciso da Lei nº 14.133/2021)</Label>
+                  <Input
+                    value={justBaseLegal}
+                    onChange={e => setJustBaseLegal(e.target.value)}
+                    placeholder={
+                      justificativa === "dispensa" ? "Ex: Art. 75, II — valor abaixo do limite" :
+                      justificativa === "inexigibilidade" ? "Ex: Art. 74, I — fornecedor exclusivo" :
+                      "Ex: Art. 75, VIII — emergência ou calamidade"
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Número do processo administrativo</Label>
+                  <Input
+                    value={justProcessoNumero}
+                    onChange={e => setJustProcessoNumero(e.target.value)}
+                    placeholder="Ex: PA-2026/0123"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs">Fundamentação técnica e justificativa detalhada</Label>
+                <Textarea
+                  value={justFundamentacao}
+                  onChange={e => setJustFundamentacao(e.target.value)}
+                  rows={3}
+                  placeholder="Descreva motivos técnicos, finalidade e por que esta modalidade foi escolhida em detrimento da licitação."
+                />
+              </div>
+
+              {justificativa === "inexigibilidade" && (
+                <div>
+                  <Label className="text-xs">Comprovação de exclusividade do fornecedor</Label>
+                  <Textarea
+                    value={justFornecedorUnico}
+                    onChange={e => setJustFornecedorUnico(e.target.value)}
+                    rows={2}
+                    placeholder="Atestado de exclusividade, registro em cartório, marca/patente única etc."
+                  />
+                </div>
+              )}
+
+              {justificativa === "emergencial" && (
+                <>
+                  <div>
+                    <Label className="text-xs">Descrição do risco / dano potencial</Label>
+                    <Textarea
+                      value={justRiscoDescricao}
+                      onChange={e => setJustRiscoDescricao(e.target.value)}
+                      rows={2}
+                      placeholder="Risco à vida, à saúde, à segurança ou de prejuízo grave caso a compra não ocorra imediatamente."
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Prazo máximo para atendimento (urgência)</Label>
+                    <Input
+                      value={justUrgenciaPrazo}
+                      onChange={e => setJustUrgenciaPrazo(e.target.value)}
+                      placeholder="Ex: 48 horas / até 7 dias"
+                    />
+                  </div>
+                </>
+              )}
+
+              {justificativa === "dispensa" && (
+                <div>
+                  <Label className="text-xs">Comparativo / pesquisa de preços de mercado</Label>
+                  <Textarea
+                    value={justFornecedorUnico}
+                    onChange={e => setJustFornecedorUnico(e.target.value)}
+                    rows={2}
+                    placeholder="Indique fornecedores consultados, fontes de preço (Banco de Preços, painel SUS, etc.) e comprovação da vantajosidade."
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <Label>Observações</Label>
