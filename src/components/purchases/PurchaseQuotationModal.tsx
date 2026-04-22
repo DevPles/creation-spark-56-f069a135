@@ -234,20 +234,6 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Mapa de cotação{requisition ? ` — Req. ${requisition.numero}` : ""}</DialogTitle></DialogHeader>
         <div className="space-y-4 py-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <Label>Setor comprador</Label>
-              {sectorOptions.length > 0 ? (
-                <Select value={setorComprador} onValueChange={setSetorComprador}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>{sectorOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                </Select>
-              ) : (
-                <Input value={setorComprador} onChange={e => setSetorComprador(e.target.value)} placeholder="Cadastre setores na unidade" />
-              )}
-            </div>
-          </div>
-
           <div className="grid grid-cols-3 gap-3">
             {suppliers.slice(0, 3).map((s, i) => (
               <div key={i} className="border rounded-md p-3 space-y-2">
