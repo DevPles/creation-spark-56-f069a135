@@ -199,7 +199,7 @@ export async function generateRequisitionPdf(requisitionId: string) {
     ["Solicitante", req.solicitante_nome || "—"],
     ["Aprovador imediato", req.aprovador_imediato_nome || "—"],
     ["Aprovador da diretoria", req.aprovador_diretoria_nome || "—"],
-    ["Justificativa / tipo", req.justificativa_tipo || "—"],
+    ["Justificativa / tipo", JUSTIFICATIVA_LABEL[justTipo] || req.justificativa_tipo || "—"],
     ["Criada em", fmtDateTime(req.created_at)],
     ["Atualizada em", fmtDateTime(req.updated_at)],
   ];
