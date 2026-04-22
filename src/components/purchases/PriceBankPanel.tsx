@@ -230,7 +230,6 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
           <Button size="sm" className="rounded-full" onClick={() => { setEditingProduct(null); setCatalogModalOpen(true); }}>Cadastrar item</Button>
         </CardHeader>
         <CardContent>
-          <Input placeholder="Filtrar por código, descrição, tipo ou classificação" value={catalogSearch} onChange={e => setCatalogSearch(e.target.value)} className="mb-3 max-w-md" />
           <Table>
             <TableHeader>
               <TableRow>
