@@ -27,6 +27,7 @@ import PurchasesDashboardPanel from "@/components/purchases/PurchasesDashboardPa
 import { PERIOD_LABEL, type PeriodKey } from "@/components/purchases/PurchasesDashboardPanel";
 import OrderDossierModal from "@/components/purchases/OrderDossierModal";
 import { generateRequisitionPdf } from "@/lib/requisitionPdf";
+import { generateQuotationPdf } from "@/lib/quotationPdf";
 
 const REQ_STATUS_LABEL: Record<string, string> = {
   rascunho: "Rascunho",
@@ -471,6 +472,21 @@ export default function ComprasPage() {
                           <TableCell className="text-right">
                             <div className="flex gap-1 justify-end">
                               <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditQuote(q.id)}>Abrir</Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="rounded-full"
+                                onClick={async () => {
+                                  try {
+                                    await generateQuotationPdf(q.id);
+                                    toast.success("PDF da cotação gerado");
+                                  } catch (e: any) {
+                                    toast.error(e?.message || "Falha ao gerar PDF");
+                                  }
+                                }}
+                              >
+                                PDF
+                              </Button>
                               <Button size="sm" className="rounded-full" onClick={() => openCreateOrder(q.id)}>Gerar OC</Button>
                               {isAdmin && (
                                 <Button size="sm" variant="destructive" className="rounded-full" onClick={() => handleDeleteQuotation(q)}>Excluir</Button>
