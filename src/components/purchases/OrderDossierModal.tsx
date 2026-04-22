@@ -468,16 +468,16 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         ...(Array.isArray(legal?.riscos_classif) ? legal.riscos_classif : []),
         ...(legal?.risco_outro ? [`Outro: ${legal.risco_outro}`] : []),
       ];
-      legalRows.push(["Classificação do risco", riscos.length ? riscos.map((r: string) => `• ${r}`).join("\n") : "—"]);
+      legalRows.push(["Classificação do risco", riscos.length ? riscos.map((r: string) => `- ${r}`).join("\n") : "—"]);
       legalRows.push(["Pesquisa de preço simplificada", legal?.pesquisa_preco || "—"]);
       legalRows.push(["Justificativa da escolha do fornecedor", legal?.escolha_fornecedor || "—"]);
       const reg = Array.isArray(legal?.regularizacao) ? legal.regularizacao : [];
-      legalRows.push(["Regularização documental", reg.length ? reg.map((r: string) => `☑ ${r}`).join("\n") : "—"]);
+      legalRows.push(["Regularização documental", reg.length ? reg.map((r: string) => `[X] ${r}`).join("\n") : "—"]);
       const reinc = [
         ...(Array.isArray(legal?.reincidencia) ? legal.reincidencia : []),
         ...(legal?.reincidencia_outro ? [`Outro: ${legal.reincidencia_outro}`] : []),
       ];
-      legalRows.push(["Análise de reincidência", reinc.length ? reinc.map((r: string) => `• ${r}`).join("\n") : "—"]);
+      legalRows.push(["Análise de reincidência", reinc.length ? reinc.map((r: string) => `- ${r}`).join("\n") : "—"]);
       legalRows.push(["Plano de ação (medidas corretivas)", legal?.plano_acao || "—"]);
       legalRows.push(["Responsável pela implementação", legal?.plano_responsavel || "—"]);
       legalRows.push(["Prazo do plano de ação", legal?.plano_prazo || "—"]);
@@ -486,8 +486,11 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         head: [],
         body: legalRows,
         theme: "plain",
-        styles: { fontSize: 8.5, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
-        columnStyles: { 0: { fontStyle: "bold", cellWidth: 200, fillColor: [240, 246, 246] } },
+        styles: { fontSize: 8.5, cellPadding: 3, minCellHeight: 14, valign: "top", overflow: "linebreak" },
+        columnStyles: {
+          0: { fontStyle: "bold", cellWidth: 180, fillColor: [240, 246, 246] },
+          1: { cellWidth: pageW - margin * 2 - 180 },
+        },
         margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
         pageBreak: "auto",
         rowPageBreak: "avoid",
