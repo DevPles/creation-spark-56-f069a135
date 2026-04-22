@@ -621,7 +621,13 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{order ? `Ordem de compra ${order.numero}` : "Nova ordem de compra"}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>
+            {order
+              ? `Ordem de compra ${order.numero}${reqNumero ? ` — Requisição ${reqNumero}` : ""}`
+              : `Nova ordem de compra${reqNumero ? ` — Requisição ${reqNumero}` : ""}`}
+          </DialogTitle>
+        </DialogHeader>
         <div className="space-y-4 py-2">
           {order && <Badge variant="outline">Status: {order.status}</Badge>}
 
