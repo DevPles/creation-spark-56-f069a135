@@ -415,10 +415,10 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
                   </TableHeader>
                   <TableBody>
                     {purchaseHistory
-                      .filter(p => purchaseUnit === "all" || p.facility_unit === purchaseUnit)
+                      .filter(p => unitFilter === "all" || p.facility_unit === unitFilter)
                       .filter(p => {
-                        if (!purchaseSearch) return true;
-                        const q = purchaseSearch.toLowerCase();
+                        if (!search) return true;
+                        const q = search.toLowerCase();
                         return [p.descricao, p.fornecedor_nome, p.oc_numero].filter(Boolean).join(" ").toLowerCase().includes(q);
                       })
                       .sort((a, b) => new Date(b.data_compra || 0).getTime() - new Date(a.data_compra || 0).getTime())
