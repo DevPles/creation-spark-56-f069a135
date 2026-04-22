@@ -53,8 +53,9 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     const margin = 40;
-    const footerReserve = 50; // espaço reservado para rodapé (evita sobreposição)
-    const contentStartY = 80; // após o cabeçalho da seção (60pt) + respiro
+    const footerReserve = 40; // rodapé fica em pageH-20, então 40pt é seguro
+    const sectionHeaderH = 44; // altura da faixa teal de seção (mais compacta)
+    const contentStartY = sectionHeaderH + 18; // respiro pequeno após faixa
     const order = dossier.order || {};
     const req = dossier.requisition;
     const quotation = dossier.quotation;
@@ -78,44 +79,56 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       }
       return y;
     };
-    const subTitle = (text: string, gapBefore = 22) => {
-      const y = ensureSpace(gapBefore + 14);
+    const subTitle = (text: string, gapBefore = 14) => {
+      const y = ensureSpace(gapBefore + 16);
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(13, 79, 79);
       doc.text(text, margin, y + gapBefore);
       doc.setTextColor(0, 0, 0);
-      return y + gapBefore + 6;
+      return y + gapBefore + 4;
+    };
+    // Inicia uma seção em nova página com faixa teal compacta
+    const startSection = (title: string) => {
+      doc.addPage();
+      doc.setFillColor(13, 79, 79);
+      doc.rect(0, 0, pageW, sectionHeaderH, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text(title, margin, 28);
+      doc.setTextColor(0, 0, 0);
+      return contentStartY;
     };
 
     // ===== COVER =====
     doc.setFillColor(13, 79, 79); // teal
-    doc.rect(0, 0, pageW, 130, "F");
+    doc.rect(0, 0, pageW, 110, "F");
     try {
       // Logo Instituto Univida — proporção nativa 300x164 (~1.829:1)
-      const logoH = 70;
+      const logoH = 60;
       const logoW = logoH * (300 / 164); // mantém proporção real
       const logoX = pageW - margin - logoW;
-      const logoY = (130 - logoH) / 2;
+      const logoY = (110 - logoH) / 2;
       doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", logoX, logoY, logoW, logoH, undefined, "FAST");
     } catch (_) {}
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
+    doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("DOSSIÊ DE AUDITORIA", margin, 55);
-    doc.setFontSize(11);
+    doc.text("DOSSIÊ DE AUDITORIA", margin, 46);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text("Ordem de Compra — Pronto para Tribunal de Contas", margin, 78);
-    doc.text("Instituto Univida — Sistema MetricOss (Moss)", margin, 96);
+    doc.text("Ordem de Compra — Pronto para Tribunal de Contas", margin, 66);
+    doc.text("Instituto Univida — Sistema MetricOss (Moss)", margin, 82);
 
     doc.setTextColor(0, 0, 0);
-    let y = 170;
-    doc.setFontSize(13);
+    let y = 138;
+    doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text(`OC ${order.numero || "—"}`, margin, y);
-    y += 24;
+    y += 18;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+    doc.setFontSize(9);
 
     const coverRows = [
       ["Unidade hospitalar", order.facility_unit || "—"],
@@ -136,16 +149,14 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       head: [],
       body: coverRows,
       theme: "plain",
-      styles: { fontSize: 10, cellPadding: 4 },
+      styles: { fontSize: 9, cellPadding: 2.5, minCellHeight: 12 },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 160 } },
       margin: { left: margin, right: margin },
       pageBreak: "auto",
-      bodyStyles: { minCellHeight: 14 },
     });
 
     // ===== SECTION 1: TIMELINE =====
-    doc.addPage();
-    sectionTitle(doc, "Seção 1 — Histórico do processo (linha do tempo)", margin);
+    startSection("Seção 1 — Histórico do processo (linha do tempo)");
     const timeline: Array<[string, string]> = [];
     if (req) {
       timeline.push([fmtDateTime(req.created_at), `Requisição ${req.numero} criada — Solicitante: ${req.solicitante_nome || "—"} | Setor: ${req.setor || "—"}`]);
@@ -178,20 +189,16 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       head: [["Data/Hora", "Evento"]],
       body: timeline,
       theme: "striped",
-      headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 9 },
-      styles: { fontSize: 8, cellPadding: 4 },
+      headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 8 },
+      styles: { fontSize: 7.5, cellPadding: 2.5, minCellHeight: 10, valign: "top" },
       columnStyles: { 0: { cellWidth: 100 } },
-      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
-      didDrawPage: (data) => {
-        if (data.pageNumber > 1) sectionTitle(doc, "Seção 1 — Histórico do processo (cont.)", margin);
-      },
     });
 
     // ===== SECTION 2: PRICE GRID =====
-    doc.addPage();
-    sectionTitle(doc, "Seção 2 — Grade comparativa de preços", margin);
+    startSection("Seção 2 — Grade comparativa de preços");
 
     // Monta lista unificada de "colunas-fornecedor" combinando suppliers da cotação e convites respondidos
     type SupplierCol = {
@@ -248,9 +255,9 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     });
 
     if (supplierCols.length === 0) {
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
-      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, contentStartY + 20);
+      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, contentStartY + 12);
       doc.setTextColor(0, 0, 0);
     } else {
       const head = ["#", "Item", "Qtd"];
@@ -275,18 +282,15 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         body,
         theme: "grid",
         headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
-        styles: { fontSize: 7, cellPadding: 3, valign: "middle" },
+        styles: { fontSize: 7, cellPadding: 2, valign: "middle", minCellHeight: 10 },
         columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 50 } },
-        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
         pageBreak: "auto",
         rowPageBreak: "avoid",
-        didDrawPage: (data) => {
-          if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Grade comparativa de preços (cont.)", margin);
-        },
       });
     }
 
-    const y2 = subTitle("Log de preenchimento dos fornecedores", 24);
+    const y2 = subTitle("Log de preenchimento dos fornecedores", 16);
     autoTable(doc, {
       startY: y2,
       head: [["Fornecedor", "CNPJ", "Origem", "Data/Hora envio", "IP", "Respondente (nome / e-mail / cel / CPF)", "Link público enviado"]],
@@ -310,19 +314,16 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       }),
       theme: "striped",
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
-      styles: { fontSize: 7, cellPadding: 3, valign: "middle", overflow: "linebreak" },
+      styles: { fontSize: 6.5, cellPadding: 2, valign: "top", overflow: "linebreak", minCellHeight: 10 },
       columnStyles: { 5: { cellWidth: 95 }, 6: { cellWidth: 110, textColor: [13, 79, 79] } },
-      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
-      didDrawPage: (data) => {
-        if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Log de preenchimento (cont.)", margin);
-      },
     });
 
     // Tabela complementar: TODOS os convites enviados (mesmo sem resposta)
     if (invites.length > 0) {
-      const y3 = subTitle("Convites enviados aos fornecedores (rastreabilidade completa)", 22);
+      const y3 = subTitle("Convites enviados aos fornecedores (rastreabilidade completa)", 14);
       autoTable(doc, {
         startY: y3,
         head: [["Fornecedor", "CNPJ", "Contato fornecedor", "Enviado em", "Status", "Respondido em", "Respondente (nome / e-mail / cel / CPF)", "IP", "Link público"]],
@@ -343,21 +344,17 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
           ];
         }),
         theme: "grid",
-        headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 6.5, halign: "center" },
-        styles: { fontSize: 6.5, cellPadding: 2, valign: "middle", overflow: "linebreak" },
+        headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 6, halign: "center" },
+        styles: { fontSize: 6, cellPadding: 1.5, valign: "top", overflow: "linebreak", minCellHeight: 9 },
         columnStyles: { 6: { cellWidth: 95 }, 8: { cellWidth: 95, textColor: [13, 79, 79] } },
-        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
         pageBreak: "auto",
         rowPageBreak: "avoid",
-        didDrawPage: (data) => {
-          if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Convites enviados (cont.)", margin);
-        },
       });
     }
 
     // ===== SECTION 3: ITEMS =====
-    doc.addPage();
-    sectionTitle(doc, "Seção 3 — Itens comprados", margin);
+    startSection("Seção 3 — Itens comprados");
     const itemsBody = reqItems.map((it, idx) => {
       const oi = orderItems.find((o) => o.descricao === it.descricao) || orderItems[idx];
       return [
@@ -376,19 +373,15 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       body: itemsBody,
       theme: "grid",
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 8 },
-      styles: { fontSize: 8, cellPadding: 4 },
+      styles: { fontSize: 8, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
       columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 70 } },
-      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
-      didDrawPage: (data) => {
-        if (data.pageNumber > 1) sectionTitle(doc, "Seção 3 — Itens comprados (cont.)", margin);
-      },
     });
 
     // ===== SECTION 4: APPROVAL =====
-    doc.addPage();
-    sectionTitle(doc, "Seção 4 — Aprovação e rastreabilidade legal", margin);
+    startSection("Seção 4 — Aprovação e rastreabilidade legal");
     const apprRows: any[] = [];
     approvals.forEach((a) => {
       apprRows.push(["Aprovador", a.approver_name || "—"]);
@@ -414,14 +407,11 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       head: [],
       body: apprRows,
       theme: "plain",
-      styles: { fontSize: 9, cellPadding: 3 },
+      styles: { fontSize: 9, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 170 } },
-      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
-      didDrawPage: (data) => {
-        if (data.pageNumber > 1) sectionTitle(doc, "Seção 4 — Aprovação (cont.)", margin);
-      },
     });
 
     // ===== SECTION 5: JUSTIFICATIVA LEGAL (Dispensa / Inexigibilidade / Emergencial) =====
@@ -437,8 +427,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         : req.justificativa_tipo === "inexigibilidade" ? "Inexigibilidade"
         : "Compra emergencial";
 
-      doc.addPage();
-      sectionTitle(doc, `Seção 5 — Justificativa legal (${tipoLabel})`, margin);
+      startSection(`Seção 5 — Justificativa legal (${tipoLabel})`);
       const legalRows: any[] = [
         ["Modalidade", tipoLabel],
         ["Base legal (Lei 14.133/2021)", legal?.base_legal || "—"],
@@ -479,14 +468,11 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         head: [],
         body: legalRows,
         theme: "plain",
-        styles: { fontSize: 9, cellPadding: 4, valign: "top" },
+        styles: { fontSize: 8.5, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
         columnStyles: { 0: { fontStyle: "bold", cellWidth: 200, fillColor: [240, 246, 246] } },
-        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        margin: { left: margin, right: margin, top: 50, bottom: footerReserve },
         pageBreak: "auto",
         rowPageBreak: "avoid",
-        didDrawPage: (data) => {
-          if (data.pageNumber > 1) sectionTitle(doc, `Seção 5 — Justificativa legal (cont.)`, margin);
-        },
       });
     }
 
