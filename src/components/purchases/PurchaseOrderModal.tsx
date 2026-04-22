@@ -687,6 +687,46 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
               </div>
             </div>
           )}
+
+          {order?.id && (
+            <div className="border rounded-md p-3 space-y-2 bg-muted/30">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Label className="m-0">Aprovação por link (opcional)</Label>
+                {signedApproval ? (
+                  <Badge variant="default">Assinado por {signedApproval.approver_name}</Badge>
+                ) : approvalLink ? (
+                  <Badge variant="outline">Aguardando assinatura</Badge>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Gere um link único para enviar ao aprovador. Ele assina online (nome, cargo, ciência) e o sistema captura IP, data e hora. Você também pode simplesmente baixar o PDF e enviar por outro meio.
+              </p>
+              {approvalLink ? (
+                <div className="flex gap-2 flex-wrap">
+                  <Input value={approvalLink} readOnly className="text-xs" />
+                  <Button type="button" variant="outline" className="rounded-full" onClick={copyApprovalLink}>Copiar link</Button>
+                  {!signedApproval && (
+                    <Button type="button" variant="ghost" className="rounded-full" onClick={generateApprovalLink} disabled={generatingLink}>
+                      Gerar novo link
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <Button type="button" className="rounded-full" onClick={generateApprovalLink} disabled={generatingLink}>
+                  {generatingLink ? "Gerando..." : "Gerar link de aprovação"}
+                </Button>
+              )}
+              {signedApproval && (
+                <div className="text-xs text-muted-foreground space-y-0.5 pt-1">
+                  <div>Decisão: <strong>{signedApproval.decision}</strong></div>
+                  <div>Cargo: {signedApproval.approver_cargo || "—"}</div>
+                  <div>IP: {signedApproval.approver_ip || "—"}</div>
+                  <div>Data/hora: {new Date(signedApproval.signed_at).toLocaleString("pt-BR")}</div>
+                  {signedApproval.motivo_recusa && <div>Motivo: {signedApproval.motivo_recusa}</div>}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Fechar</Button>
