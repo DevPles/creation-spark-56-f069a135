@@ -554,6 +554,45 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
                   {approvals.length === 0 && <div className="text-muted-foreground">Sem aprovações registradas.</div>}
                 </div>
               </div>
+
+              {legalPreview && (
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    Justificativa legal —{" "}
+                    {legalPreview.tipo === "dispensa" && "Dispensa de licitação"}
+                    {legalPreview.tipo === "inexigibilidade" && "Inexigibilidade de licitação"}
+                    {legalPreview.tipo === "emergencial" && "Compra emergencial"}
+                  </h3>
+                  <div className="border rounded-md p-3 text-xs space-y-2 bg-primary/5">
+                    <div><span className="text-muted-foreground">Base legal: </span><span className="font-medium">{legalPreview.base_legal || "—"}</span></div>
+                    <div><span className="text-muted-foreground">Processo administrativo: </span><span className="font-medium">{legalPreview.processo_numero || "—"}</span></div>
+                    {legalPreview.fundamentacao && (
+                      <div><div className="text-muted-foreground">Fundamentação técnica:</div><div>{legalPreview.fundamentacao}</div></div>
+                    )}
+                    {legalPreview.impacto_nao_compra && (
+                      <div><div className="text-muted-foreground">Impacto se NÃO comprar:</div><div>{legalPreview.impacto_nao_compra}</div></div>
+                    )}
+                    {Array.isArray(legalPreview.riscos_classif) && legalPreview.riscos_classif.length > 0 && (
+                      <div>
+                        <div className="text-muted-foreground">Classificação do risco:</div>
+                        <ul className="list-disc list-inside">
+                          {legalPreview.riscos_classif.map((r: string) => <li key={r}>{r}</li>)}
+                          {legalPreview.risco_outro && <li>Outro: {legalPreview.risco_outro}</li>}
+                        </ul>
+                      </div>
+                    )}
+                    {legalPreview.plano_acao && (
+                      <div>
+                        <div className="text-muted-foreground">Plano de ação para evitar recorrência:</div>
+                        <div>{legalPreview.plano_acao}</div>
+                        <div className="text-muted-foreground mt-1">
+                          Responsável: <span className="text-foreground">{legalPreview.plano_responsavel || "—"}</span> • Prazo: <span className="text-foreground">{legalPreview.plano_prazo || "—"}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </ScrollArea>
         )}
