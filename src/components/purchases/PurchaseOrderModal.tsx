@@ -55,6 +55,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
   const [approvalLink, setApprovalLink] = useState<string>("");
   const [signedApproval, setSignedApproval] = useState<any>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [previewNumero, setPreviewNumero] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
