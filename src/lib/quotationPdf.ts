@@ -30,7 +30,7 @@ const ALT_ROW: [number, number, number] = [243, 247, 252];
 const BORDER_BLUE: [number, number, number] = [180, 202, 230];
 const TEXT_DARK: [number, number, number] = [20, 32, 56];
 const TEXT_MUTED: [number, number, number] = [90, 105, 130];
-const WIN_BG: [number, number, number] = [220, 245, 224]; // verde suave para vencedor
+const WIN_BG: [number, number, number] = [219, 232, 248]; // azul suave para vencedor (sem verde)
 
 export async function generateQuotationPdf(
   quotationId: string,
