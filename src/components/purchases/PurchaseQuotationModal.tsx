@@ -294,53 +294,92 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Mapa de cotação{requisition ? ` — Req. ${requisition.numero}` : ""}</DialogTitle></DialogHeader>
         <div className="space-y-4 py-2">
-          <div className="grid grid-cols-3 gap-3">
-            {suppliers.slice(0, 3).map((s, i) => (
-              <div key={i} className="border rounded-md p-3 space-y-2">
-                <Label className="text-sm">Fornecedor {i + 1}</Label>
-                <Input placeholder="Nome" value={s.fornecedor_nome} onChange={e => updateSupplier(i, "fornecedor_nome", e.target.value)} />
-                <Input placeholder="CNPJ" value={s.fornecedor_cnpj || ""} onChange={e => updateSupplier(i, "fornecedor_cnpj", e.target.value)} />
-                <Input placeholder="Prazo entrega" value={s.prazo_entrega || ""} onChange={e => updateSupplier(i, "prazo_entrega", e.target.value)} />
-                <Input placeholder="Condição pagamento" value={s.condicao_pagamento || ""} onChange={e => updateSupplier(i, "condicao_pagamento", e.target.value)} />
-                <div className="text-sm">Total: <span className="font-semibold">{fmtBRL(totals[i] || 0)}</span></div>
-                {winnerIdx === i && totals[i] > 0 && <Badge>Campeão</Badge>}
-              </div>
-            ))}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {suppliers.length} fornecedor{suppliers.length === 1 ? "" : "es"} — ranking dos 3 menores totais é destacado
+            </div>
+            <Button type="button" size="sm" variant="outline" className="rounded-full" onClick={addSupplier}>
+              + Fornecedor
+            </Button>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">#</TableHead>
-                <TableHead>Item</TableHead>
-                <TableHead className="w-20">Qtd</TableHead>
-                {suppliers.slice(0, 3).map((s, i) => <TableHead key={i} className="text-right">Forn. {i + 1} (R$)</TableHead>)}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((it, idx) => {
-                const w = itemWinner(it.id);
+          <div className="overflow-x-auto pb-1">
+            <div className="flex gap-3" style={{ minWidth: `${suppliers.length * 240}px` }}>
+              {suppliers.map((s, i) => {
+                const r = rankOf(i);
                 return (
-                  <TableRow key={it.id}>
-                    <TableCell>{idx + 1}</TableCell>
-                    <TableCell className="text-xs">{it.descricao}</TableCell>
-                    <TableCell>{it.quantidade} {it.unidade_medida}</TableCell>
-                    {suppliers.slice(0, 3).map((_, i) => (
-                      <TableCell key={i} className={`text-right ${w === i ? "bg-emerald-100 dark:bg-emerald-950" : ""}`}>
-                        <Input
-                          type="number" step="0.01"
-                          value={prices[it.id]?.[i] || ""}
-                          onChange={e => setPrice(it.id, i, Number(e.target.value))}
-                          className="text-right"
-                        />
-                      </TableCell>
-                    ))}
-                  </TableRow>
+                  <div key={i} className="border rounded-md p-3 space-y-2 w-[240px] shrink-0">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Fornecedor {i + 1}</Label>
+                      <div className="flex items-center gap-1">
+                        {r && <Badge variant={r === 1 ? "default" : "secondary"}>{r}º</Badge>}
+                        {s.fonte === "invite_link" && <Badge variant="outline">Convite</Badge>}
+                        {suppliers.length > 3 && (
+                          <button
+                            type="button"
+                            onClick={() => removeSupplier(i)}
+                            className="text-xs text-muted-foreground hover:text-destructive"
+                            aria-label="Remover fornecedor"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <Input placeholder="Nome" value={s.fornecedor_nome} onChange={e => updateSupplier(i, "fornecedor_nome", e.target.value)} />
+                    <Input placeholder="CNPJ" value={s.fornecedor_cnpj || ""} onChange={e => updateSupplier(i, "fornecedor_cnpj", e.target.value)} />
+                    <Input placeholder="Prazo entrega" value={s.prazo_entrega || ""} onChange={e => updateSupplier(i, "prazo_entrega", e.target.value)} />
+                    <Input placeholder="Condição pagamento" value={s.condicao_pagamento || ""} onChange={e => updateSupplier(i, "condicao_pagamento", e.target.value)} />
+                    <div className="text-sm">Total: <span className="font-semibold">{fmtBRL(totals[i] || 0)}</span></div>
+                  </div>
                 );
               })}
-              {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Sem itens</TableCell></TableRow>}
-            </TableBody>
-          </Table>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead className="min-w-[220px]">Item</TableHead>
+                  <TableHead className="w-24">Qtd</TableHead>
+                  {suppliers.map((s, i) => (
+                    <TableHead key={i} className="text-right min-w-[120px]">
+                      Forn. {i + 1} (R$)
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((it, idx) => {
+                  const w = itemWinner(it.id);
+                  return (
+                    <TableRow key={it.id}>
+                      <TableCell>{idx + 1}</TableCell>
+                      <TableCell className="text-xs">{it.descricao}</TableCell>
+                      <TableCell>{it.quantidade} {it.unidade_medida}</TableCell>
+                      {suppliers.map((_, i) => (
+                        <TableCell key={i} className={`text-right ${w === i ? "bg-primary/10" : ""}`}>
+                          <Input
+                            type="number" step="0.01"
+                            value={prices[it.id]?.[i] ?? ""}
+                            onChange={e => setPrice(it.id, i, Number(e.target.value))}
+                            className="text-right"
+                          />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                })}
+                {items.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3 + suppliers.length} className="text-center py-6 text-muted-foreground">Sem itens</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
           {winnerIdx >= 0 && totals[winnerIdx] > 0 && (
             <div className="p-3 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-sm">
