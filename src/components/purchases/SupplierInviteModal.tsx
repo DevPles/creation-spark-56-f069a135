@@ -140,6 +140,7 @@ Setor de Compras`;
   const handleAdd = async () => {
     if (!form.fornecedor_nome.trim()) { toast.error("Informe o nome do fornecedor"); return; }
     if (!requisitionId || !user) return;
+    const expiresAt = new Date(Date.now() + Math.max(1, expiresInDays) * 86400000).toISOString();
     const { error } = await (supabase as any).from("quotation_invites").insert({
       requisition_id: requisitionId,
       fornecedor_nome: form.fornecedor_nome.trim(),
@@ -148,6 +149,7 @@ Setor de Compras`;
       fornecedor_telefone: form.fornecedor_telefone.trim() || null,
       created_by: user.id,
       status: "pendente",
+      expires_at: expiresAt,
     });
     if (error) { toast.error("Erro ao criar convite"); return; }
     toast.success("Convite criado");
