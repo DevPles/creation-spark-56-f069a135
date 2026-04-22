@@ -125,6 +125,17 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
     items.reduce((sum, it) => sum + (Number(prices[it.id]?.[supIdx] || 0) * Number(it.quantidade)), 0)
   );
   const winnerIdx = totals.length ? totals.reduce((best, val, i) => (val > 0 && (totals[best] === 0 || val < totals[best]) ? i : best), 0) : -1;
+  // Ranking top-3 (1º, 2º, 3º) por menor total > 0
+  const rankedIdxs: number[] = suppliers
+    .map((_, i) => ({ i, total: totals[i] || 0 }))
+    .filter(x => x.total > 0)
+    .sort((a, b) => a.total - b.total)
+    .slice(0, 3)
+    .map(x => x.i);
+  const rankOf = (idx: number): 1 | 2 | 3 | null => {
+    const pos = rankedIdxs.indexOf(idx);
+    return pos === -1 ? null : ((pos + 1) as 1 | 2 | 3);
+  };
   const itemWinner = (itemId: string): number => {
     const row = prices[itemId] || {};
     let best = -1; let bestVal = Infinity;
