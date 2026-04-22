@@ -363,19 +363,19 @@ export default function PurchasesDashboardPanel({
 
       {/* KPIs operacionais */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiBox label="Requisições abertas" value={kpis.reqsAbertas} icon={FileText}
+        <KpiBox label="Requisições abertas" value={kpis.reqsAbertas}
           delta={kpis.reqsAbertas - kpis.reqsAbertasPrev} hint="vs período anterior" />
-        <KpiBox label="Cotações em andamento" value={kpis.cotAndamento} icon={ShoppingCart}
+        <KpiBox label="Cotações em andamento" value={kpis.cotAndamento}
           subtitle={`${kpis.tempoMedioCot} dias em média`} />
-        <KpiBox label="OCs aguardando aprovação" value={kpis.ocAguard} icon={Clock}
+        <KpiBox label="OCs aguardando aprovação" value={kpis.ocAguard}
           subtitle={kpis.ocAguardAtrasadas > 0 ? `${kpis.ocAguardAtrasadas} atrasada${kpis.ocAguardAtrasadas > 1 ? "s" : ""} >3 dias` : "no prazo"}
           danger={kpis.ocAguardAtrasadas > 0} />
-        <KpiBox label="OCs autorizadas no período" value={kpis.ocAutorizadasPeriod} icon={CheckCircle2} />
-        <KpiBox label="Convites enviados" value={kpis.invitesEnviados} icon={Mail}
+        <KpiBox label="OCs autorizadas no período" value={kpis.ocAutorizadasPeriod} />
+        <KpiBox label="Convites enviados" value={kpis.invitesEnviados}
           subtitle={`${kpis.taxaResposta}% de resposta`} />
-        <KpiBox label="Ticket médio de OC" value={formatBRL(kpis.ticketMedio)} valueSize="text-xl" icon={Package} />
-        <KpiBox label="Total autorizado" value={formatBRL(kpis.totalAutorizadoPeriod)} valueSize="text-xl" icon={TrendingUp} />
-        <KpiBox label="Total recebido" value={formatBRL(kpis.totalRecebidoPeriod)} valueSize="text-xl" icon={Truck} />
+        <KpiBox label="Ticket médio de OC" value={formatBRL(kpis.ticketMedio)} valueSize="text-xl" />
+        <KpiBox label="Total autorizado" value={formatBRL(kpis.totalAutorizadoPeriod)} valueSize="text-xl" />
+        <KpiBox label="Total recebido" value={formatBRL(kpis.totalRecebidoPeriod)} valueSize="text-xl" />
       </div>
 
       {/* Funil */}
