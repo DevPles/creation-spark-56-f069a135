@@ -250,7 +250,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     if (supplierCols.length === 0) {
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
-      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, 100);
+      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, contentStartY + 20);
       doc.setTextColor(0, 0, 0);
     } else {
       const head = ["#", "Item", "Qtd"];
@@ -270,22 +270,23 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       body.push(totalsRow);
 
       autoTable(doc, {
-        startY: 90,
+        startY: contentStartY,
         head: [head],
         body,
         theme: "grid",
         headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
         styles: { fontSize: 7, cellPadding: 3, valign: "middle" },
         columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 50 } },
-        margin: { left: margin, right: margin },
+        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        pageBreak: "auto",
+        rowPageBreak: "avoid",
+        didDrawPage: (data) => {
+          if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Grade comparativa de preços (cont.)", margin);
+        },
       });
     }
 
-    let y2 = (doc as any).lastAutoTable.finalY + 20;
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text("Log de preenchimento dos fornecedores", margin, y2);
-    y2 += 8;
+    const y2 = subTitle("Log de preenchimento dos fornecedores", 24);
     autoTable(doc, {
       startY: y2,
       head: [["Fornecedor", "CNPJ", "Origem", "Data/Hora envio", "IP", "Respondente (nome / e-mail / cel / CPF)", "Link público enviado"]],
@@ -311,16 +312,17 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
       styles: { fontSize: 7, cellPadding: 3, valign: "middle", overflow: "linebreak" },
       columnStyles: { 5: { cellWidth: 95 }, 6: { cellWidth: 110, textColor: [13, 79, 79] } },
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      pageBreak: "auto",
+      rowPageBreak: "avoid",
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Log de preenchimento (cont.)", margin);
+      },
     });
 
     // Tabela complementar: TODOS os convites enviados (mesmo sem resposta)
     if (invites.length > 0) {
-      let y3 = (doc as any).lastAutoTable.finalY + 14;
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.text("Convites enviados aos fornecedores (rastreabilidade completa)", margin, y3);
-      y3 += 8;
+      const y3 = subTitle("Convites enviados aos fornecedores (rastreabilidade completa)", 22);
       autoTable(doc, {
         startY: y3,
         head: [["Fornecedor", "CNPJ", "Contato fornecedor", "Enviado em", "Status", "Respondido em", "Respondente (nome / e-mail / cel / CPF)", "IP", "Link público"]],
@@ -344,7 +346,12 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 6.5, halign: "center" },
         styles: { fontSize: 6.5, cellPadding: 2, valign: "middle", overflow: "linebreak" },
         columnStyles: { 6: { cellWidth: 95 }, 8: { cellWidth: 95, textColor: [13, 79, 79] } },
-        margin: { left: margin, right: margin },
+        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        pageBreak: "auto",
+        rowPageBreak: "avoid",
+        didDrawPage: (data) => {
+          if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Convites enviados (cont.)", margin);
+        },
       });
     }
 
