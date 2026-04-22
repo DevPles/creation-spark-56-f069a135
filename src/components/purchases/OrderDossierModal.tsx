@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { UNIVIDA_LOGO_BASE64 } from "@/assets/univida-logo-base64";
 
 type Props = {
   open: boolean;
