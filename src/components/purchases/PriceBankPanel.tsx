@@ -438,7 +438,12 @@ export default function PriceBankPanel() {
         </TabsContent>
       </Tabs>
 
-      <ProductCatalogModal open={catalogModalOpen} onOpenChange={setCatalogModalOpen} onSaved={load} />
+      <ProductCatalogModal
+        open={catalogModalOpen}
+        onOpenChange={(o) => { setCatalogModalOpen(o); if (!o) setEditingProduct(null); }}
+        onSaved={load}
+        editing={editingProduct}
+      />
     </div>
   );
 }
