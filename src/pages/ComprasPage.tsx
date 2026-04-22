@@ -152,19 +152,19 @@ export default function ComprasPage() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <div className="flex flex-wrap items-center gap-3">
-            <TabsList className="inline-flex w-auto h-auto flex-wrap">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <TabsList className="inline-flex w-auto h-auto flex-wrap shrink-0">
               <TabsTrigger value="requisicoes">Requisições</TabsTrigger>
               <TabsTrigger value="cotacoes">Cotações</TabsTrigger>
               <TabsTrigger value="banco">Banco de Preços</TabsTrigger>
               <TabsTrigger value="ordens">Ordens de Compra</TabsTrigger>
               <TabsTrigger value="painel">Painel</TabsTrigger>
             </TabsList>
-            {tab !== "banco" && tab !== "painel" && (
-              <>
-                <Input placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+            {tab !== "painel" && (
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end">
+                <Input placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)} className="w-full xl:max-w-[260px]" />
                 <Select value={unitFilter} onValueChange={setUnitFilter}>
-                  <SelectTrigger className="w-[200px]"><SelectValue placeholder="Unidade" /></SelectTrigger>
+                  <SelectTrigger className="w-full xl:w-[210px]"><SelectValue placeholder="Unidade" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as unidades</SelectItem>
                     {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
@@ -172,7 +172,7 @@ export default function ComprasPage() {
                 </Select>
                 {(tab === "requisicoes" || tab === "ordens") && (
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[220px]"><SelectValue placeholder="Status" /></SelectTrigger>
+                    <SelectTrigger className="w-full xl:w-[210px]"><SelectValue placeholder="Status" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos os status</SelectItem>
                       {tab === "requisicoes"
@@ -181,7 +181,7 @@ export default function ComprasPage() {
                     </SelectContent>
                   </Select>
                 )}
-              </>
+              </div>
             )}
           </div>
 
