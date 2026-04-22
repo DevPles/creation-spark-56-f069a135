@@ -1892,6 +1892,59 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_documents: {
+        Row: {
+          created_at: string
+          doc_key: string
+          doc_label: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          observacoes: string | null
+          supplier_id: string
+          uploaded_by: string
+          uploaded_by_name: string | null
+          validade: string | null
+        }
+        Insert: {
+          created_at?: string
+          doc_key: string
+          doc_label: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          observacoes?: string | null
+          supplier_id: string
+          uploaded_by: string
+          uploaded_by_name?: string | null
+          validade?: string | null
+        }
+        Update: {
+          created_at?: string
+          doc_key?: string
+          doc_label?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          observacoes?: string | null
+          supplier_id?: string
+          uploaded_by?: string
+          uploaded_by_name?: string | null
+          validade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_documents_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           ativo: boolean
@@ -1901,9 +1954,16 @@ export type Database = {
           created_by: string | null
           email: string | null
           endereco: string | null
+          fornece_medicamentos: boolean
           id: string
+          inidoneo: boolean
+          liberado_em: string | null
+          liberado_motivo: string | null
+          liberado_por: string | null
           nome: string
           observacoes: string | null
+          qualificacao_observacoes: string | null
+          qualificacao_status: string
           telefone: string | null
           updated_at: string
         }
@@ -1915,9 +1975,16 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           endereco?: string | null
+          fornece_medicamentos?: boolean
           id?: string
+          inidoneo?: boolean
+          liberado_em?: string | null
+          liberado_motivo?: string | null
+          liberado_por?: string | null
           nome: string
           observacoes?: string | null
+          qualificacao_observacoes?: string | null
+          qualificacao_status?: string
           telefone?: string | null
           updated_at?: string
         }
@@ -1929,9 +1996,16 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           endereco?: string | null
+          fornece_medicamentos?: boolean
           id?: string
+          inidoneo?: boolean
+          liberado_em?: string | null
+          liberado_motivo?: string | null
+          liberado_por?: string | null
           nome?: string
           observacoes?: string | null
+          qualificacao_observacoes?: string | null
+          qualificacao_status?: string
           telefone?: string | null
           updated_at?: string
         }
