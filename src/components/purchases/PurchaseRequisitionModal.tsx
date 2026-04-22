@@ -61,6 +61,8 @@ interface Item {
   id?: string;
   item_num: number;
   codigo?: string;
+  product_id?: string | null;
+  image_url?: string | null;
   descricao: string;
   quantidade: number;
   unidade_medida: string;
