@@ -12,6 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const ADMIN_ONLY_CARD_IDS = ["contratos", "controle-rubrica", "admin", "relatorios", "relatorio-assistencial"];
 
 const ALL_NAV_CARDS = [
+  { id: "compras", title: "Compras", description: "Requisições, cotações e ordens de compra", route: "/compras" },
   { id: "contratos", title: "Contratos", description: "Gerir contratos, valores e glosas", route: "/contratos" },
   { id: "metas", title: "Metas e indicadores", description: "Detalhamento e projeções por meta", route: "/metas" },
   { id: "evidencias", title: "Plano de Ação", description: "Análise crítica, ações corretivas e evidências", route: "/evidencias" },
