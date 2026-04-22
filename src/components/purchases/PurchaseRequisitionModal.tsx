@@ -177,7 +177,9 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
         descricao: i.descricao,
         quantidade: Number(i.quantidade) || 0,
         unidade_medida: i.unidade_medida || "UN",
-        observacao: i.observacao || null,
+        observacao: i.codigo
+          ? `[COD:${i.codigo}]${i.observacao ? " " + i.observacao : ""}`
+          : (i.observacao || null),
       }));
       if (validItems.length) {
         const { error: e2 } = await supabase.from("purchase_requisition_items").insert(validItems);
