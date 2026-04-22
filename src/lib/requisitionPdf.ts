@@ -31,6 +31,26 @@ const REQ_STATUS_LABEL: Record<string, string> = {
   cancelada: "Cancelada",
 };
 
+const JUSTIFICATIVA_LABEL: Record<string, string> = {
+  mensal: "Reposição mensal",
+  reposicao: "Reposição de estoque",
+  emergencial: "Compra emergencial",
+  dispensa: "Dispensa de licitação",
+  inexigibilidade: "Inexigibilidade de licitação",
+  projeto: "Projeto / investimento",
+};
+
+const parseLegalBlock = (obs?: string | null): { legal: any; clean: string } => {
+  const raw = obs || "";
+  const match = raw.match(/\[JUST_LEGAL\]([\s\S]*?)\[\/JUST_LEGAL\]/);
+  let legal: any = null;
+  if (match) {
+    try { legal = JSON.parse(match[1]); } catch { legal = null; }
+  }
+  const clean = raw.replace(/\[JUST_LEGAL\][\s\S]*?\[\/JUST_LEGAL\]/, "").trim();
+  return { legal, clean };
+};
+
 // Paleta azul corporativa
 const NAVY: [number, number, number] = [11, 47, 99];     // header escuro
 const BLUE: [number, number, number] = [29, 78, 156];    // títulos / tabela header
