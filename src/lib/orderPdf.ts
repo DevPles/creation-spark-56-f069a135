@@ -33,7 +33,10 @@ const BORDER_BLUE: [number, number, number] = [180, 202, 230];
 const TEXT_DARK: [number, number, number] = [20, 32, 56];
 const TEXT_MUTED: [number, number, number] = [90, 105, 130];
 
-export async function generateOrderPdf(orderId: string) {
+export async function generateOrderPdf(
+  orderId: string,
+  options?: { returnBlob?: boolean }
+): Promise<Blob | void> {
   const { data: order, error: oErr } = await (supabase as any)
     .from("purchase_orders")
     .select("*")
@@ -458,5 +461,8 @@ export async function generateOrderPdf(orderId: string) {
     doc.text(`Página ${p} de ${totalPages}`, pageW - margin, pageH - 22, { align: "right" });
   }
 
+  if (options?.returnBlob) {
+    return doc.output("blob") as Blob;
+  }
   doc.save(`ordem-compra-${order.numero || orderId}.pdf`);
 }

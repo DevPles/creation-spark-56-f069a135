@@ -32,7 +32,10 @@ const TEXT_DARK: [number, number, number] = [20, 32, 56];
 const TEXT_MUTED: [number, number, number] = [90, 105, 130];
 const WIN_BG: [number, number, number] = [220, 245, 224]; // verde suave para vencedor
 
-export async function generateQuotationPdf(quotationId: string) {
+export async function generateQuotationPdf(
+  quotationId: string,
+  options?: { returnBlob?: boolean }
+): Promise<Blob | void> {
   const { data: quot, error: qErr } = await (supabase as any)
     .from("purchase_quotations")
     .select("*")
@@ -428,5 +431,8 @@ export async function generateQuotationPdf(quotationId: string) {
     doc.text(`Página ${p} de ${totalPages}`, pageW - margin, pageH - 22, { align: "right" });
   }
 
+  if (options?.returnBlob) {
+    return doc.output("blob") as Blob;
+  }
   doc.save(`mapa-cotacao-${quot.numero || quotationId}.pdf`);
 }

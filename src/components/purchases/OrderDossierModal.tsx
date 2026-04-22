@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
+import { PDFDocument } from "pdf-lib";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { UNIVIDA_LOGO_BASE64 } from "@/assets/univida-logo-base64";
+import { generateRequisitionPdf } from "@/lib/requisitionPdf";
+import { generateQuotationPdf } from "@/lib/quotationPdf";
+import { generateOrderPdf } from "@/lib/orderPdf";
 
 type Props = {
   open: boolean;
@@ -30,6 +34,7 @@ const fmtDate = (s?: string | null) =>
 export default function OrderDossierModal({ open, onOpenChange, orderId }: Props) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [dossier, setDossier] = useState<any>(null);
 
   useEffect(() => {
@@ -47,8 +52,8 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     })();
   }, [open, orderId]);
 
-  const generatePDF = () => {
-    if (!dossier) return;
+  const buildDossierPdf = (): Blob | null => {
+    if (!dossier) return null;
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
@@ -579,7 +584,67 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       doc.text(`Página ${i} de ${total}`, pageW - margin, pageH - 20, { align: "right" });
     }
 
-    doc.save(`Dossie_OC_${order.numero || "sem-numero"}_${format(generatedAt, "yyyyMMdd")}.pdf`);
+    return doc.output("blob") as Blob;
+  };
+
+  const generatePDF = async () => {
+    if (!dossier) return;
+    const order = dossier.order || {};
+    const reqId = dossier.requisition?.id || null;
+    const quotId = dossier.quotation?.id || null;
+    const orderIdLocal = order.id || orderId;
+    const stamp = format(
+      dossier.generated_at ? new Date(dossier.generated_at) : new Date(),
+      "yyyyMMdd"
+    );
+    setGenerating(true);
+    try {
+      // 1. Gera os 4 PDFs em paralelo (cada um retorna um Blob independente)
+      const [reqBlob, quotBlob, orderBlob, dossieBlob] = await Promise.all([
+        reqId ? (generateRequisitionPdf(reqId, { returnBlob: true }) as Promise<Blob>) : Promise.resolve(null),
+        quotId ? (generateQuotationPdf(quotId, { returnBlob: true }) as Promise<Blob>) : Promise.resolve(null),
+        orderIdLocal ? (generateOrderPdf(orderIdLocal, { returnBlob: true }) as Promise<Blob>) : Promise.resolve(null),
+        Promise.resolve(buildDossierPdf()),
+      ]);
+
+      // 2. Monta um PDF único contendo os 4 documentos como seções (com bookmarks)
+      const merged = await PDFDocument.create();
+      merged.setTitle(`Processo OC ${order.numero || ""}`);
+      merged.setAuthor(profile?.name || "Sistema MetricOss");
+      merged.setSubject("Processo documental completo — Tribunal de Contas");
+
+      const sections: Array<{ title: string; blob: Blob | null }> = [
+        { title: "1. Requisição de Compra", blob: reqBlob },
+        { title: "2. Mapa de Cotação", blob: quotBlob },
+        { title: "3. Ordem de Compra", blob: orderBlob },
+        { title: "4. Dossiê de Auditoria", blob: dossieBlob },
+      ];
+
+      for (const section of sections) {
+        if (!section.blob) continue;
+        const buf = await section.blob.arrayBuffer();
+        const src = await PDFDocument.load(buf);
+        const pages = await merged.copyPages(src, src.getPageIndices());
+        pages.forEach((p) => merged.addPage(p));
+      }
+
+      const mergedBytes = await merged.save();
+      const blob = new Blob([mergedBytes as BlobPart], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Processo_Completo_OC_${order.numero || "sem-numero"}_${stamp}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Processo documental gerado com sucesso");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao gerar o processo documental");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const order = dossier?.order;
@@ -600,7 +665,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         <DialogHeader>
           <DialogTitle>Dossiê de Auditoria — OC nº {order?.numero || "..."}{req?.numero ? ` • Requisição nº ${req.numero}` : ""}</DialogTitle>
           <DialogDescription>
-            Documento completo do processo, pronto para envio ao Tribunal de Contas.
+            Processo documental completo (Requisição + Cotação + Ordem de Compra + Dossiê) agrupado em um único PDF, pronto para envio ao Tribunal de Contas.
           </DialogDescription>
         </DialogHeader>
 
@@ -727,9 +792,9 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         )}
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Fechar</Button>
-          <Button className="rounded-full" onClick={generatePDF} disabled={!dossier || loading}>
-            Baixar PDF
+          <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)} disabled={generating}>Fechar</Button>
+          <Button className="rounded-full" onClick={generatePDF} disabled={!dossier || loading || generating}>
+            {generating ? "Gerando processo..." : "Baixar processo completo (PDF único)"}
           </Button>
         </div>
       </DialogContent>

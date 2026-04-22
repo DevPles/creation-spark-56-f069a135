@@ -60,7 +60,10 @@ const BORDER_BLUE: [number, number, number] = [180, 202, 230];
 const TEXT_DARK: [number, number, number] = [20, 32, 56];
 const TEXT_MUTED: [number, number, number] = [90, 105, 130];
 
-export async function generateRequisitionPdf(requisitionId: string) {
+export async function generateRequisitionPdf(
+  requisitionId: string,
+  options?: { returnBlob?: boolean }
+): Promise<Blob | void> {
   const { data: req, error: reqErr } = await supabase
     .from("purchase_requisitions")
     .select("*")
@@ -482,5 +485,8 @@ export async function generateRequisitionPdf(requisitionId: string) {
     doc.text(`Página ${p} de ${totalPages}`, pageW - margin, pageH - 22, { align: "right" });
   }
 
+  if (options?.returnBlob) {
+    return doc.output("blob") as Blob;
+  }
   doc.save(`requisicao-${req.numero || requisitionId}.pdf`);
 }
