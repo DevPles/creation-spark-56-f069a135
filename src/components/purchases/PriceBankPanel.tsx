@@ -6,13 +6,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCatalogModal from "./ProductCatalogModal";
+import SupplierRegistryModal from "./SupplierRegistryModal";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 const fmtDate = (d: string | Date | null) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
+const fmtCnpj = (v: string | null | undefined) => {
+  const s = (v || "").replace(/\D/g, "");
+  if (s.length !== 14) return v || "—";
+  return `${s.slice(0, 2)}.${s.slice(2, 5)}.${s.slice(5, 8)}/${s.slice(8, 12)}-${s.slice(12)}`;
+};
 
 interface PriceBankPanelProps {
   externalSearch?: string;
@@ -29,6 +37,11 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
   const [loadingAI, setLoadingAI] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState<Set<string>>(new Set());
   const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [supplierFilter, setSupplierFilter] = useState<string>("all");
+  const [periodFilter, setPeriodFilter] = useState<string>("all");
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
 
   // Filtros vêm da página de Compras (acima das abas)
   const search = externalSearch;
@@ -39,6 +52,8 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
     setHistory(data || []);
     const { data: cat } = await supabase.from("product_catalog").select("*").eq("ativo", true).order("descricao");
     setCatalog(cat || []);
+    const { data: sups } = await supabase.from("suppliers").select("*").order("nome");
+    setSuppliers(sups || []);
     await loadPurchaseHistory();
   };
 
@@ -75,14 +90,67 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
 
   useEffect(() => { load(); }, []);
 
+  // Filtro de período → data mínima
+  const minDate: Date | null = (() => {
+    const days = periodFilter === "30" ? 30 : periodFilter === "90" ? 90 : periodFilter === "180" ? 180 : null;
+    if (!days) return null;
+    return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  })();
+
   const filtered = history.filter(h => {
     if (search) {
       const q = search.toLowerCase();
       const hay = [h.descricao_produto, h.fornecedor_nome, h.categoria].filter(Boolean).join(" ").toLowerCase();
       if (!hay.includes(q)) return false;
     }
+    if (supplierFilter !== "all") {
+      if (h.supplier_id !== supplierFilter) return false;
+    }
+    if (minDate && h.data_referencia && new Date(h.data_referencia) < minDate) return false;
     return true;
   });
+
+  const selectedSupplier = supplierFilter !== "all" ? suppliers.find(s => s.id === supplierFilter) : null;
+
+  // Agrupa preços do fornecedor selecionado por descrição (para visão dedicada)
+  const supplierProductHistory = (() => {
+    if (!selectedSupplier) return [] as any[];
+    const groups = new Map<string, any[]>();
+    filtered.forEach(h => {
+      const key = (h.descricao_produto || "").trim().toLowerCase();
+      if (!key) return;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(h);
+    });
+    const out: any[] = [];
+    groups.forEach((arr, key) => {
+      const sorted = [...arr].sort((a, b) => new Date(b.data_referencia).getTime() - new Date(a.data_referencia).getTime());
+      const atual = sorted[0];
+      const anterior = sorted[1];
+      const variacao = anterior && anterior.valor_unitario > 0
+        ? ((Number(atual.valor_unitario) - Number(anterior.valor_unitario)) / Number(anterior.valor_unitario)) * 100
+        : null;
+      out.push({
+        key,
+        descricao: atual.descricao_produto,
+        unidade_medida: atual.unidade_medida || "UN",
+        ultimaData: atual.data_referencia,
+        precoAtual: Number(atual.valor_unitario),
+        variacao,
+        cotacoes: sorted.length,
+        timeline: sorted,
+      });
+    });
+    return out.sort((a, b) => new Date(b.ultimaData).getTime() - new Date(a.ultimaData).getTime());
+  })();
+
+  const supplierStats = (() => {
+    if (!selectedSupplier) return null;
+    const total = filtered.length;
+    const ultimoPreco = filtered[0];
+    const itensUnicos = new Set(filtered.map(h => (h.descricao_produto || "").trim().toLowerCase())).size;
+    return { total, ultimoPreco, itensUnicos };
+  })();
 
   const filteredCatalog = catalog.filter(c => {
     if (unitFilter !== "all" && c.facility_unit && c.facility_unit !== unitFilter) return false;
@@ -308,14 +376,124 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
         <CardHeader>
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <CardTitle className="text-base">Histórico de preços</CardTitle>
-            {selectedHistory.size > 0 && (
-              <Button size="sm" variant="destructive" className="rounded-full" onClick={deleteSelected}>
-                Apagar selecionados ({selectedHistory.size})
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={supplierFilter} onValueChange={(v) => { setSupplierFilter(v); setExpandedProduct(null); }}>
+                <SelectTrigger className="h-8 w-[240px] rounded-full text-xs"><SelectValue placeholder="Fornecedor" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os fornecedores</SelectItem>
+                  {suppliers.filter(s => s.ativo).map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.nome} — {fmtCnpj(s.cnpj)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                <SelectTrigger className="h-8 w-[140px] rounded-full text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todo período</SelectItem>
+                  <SelectItem value="30">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90">Últimos 90 dias</SelectItem>
+                  <SelectItem value="180">Últimos 180 dias</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" className="h-8 rounded-full" onClick={() => setSupplierModalOpen(true)}>
+                Gerenciar fornecedores
               </Button>
-            )}
+              {selectedHistory.size > 0 && (
+                <Button size="sm" variant="destructive" className="rounded-full" onClick={deleteSelected}>
+                  Apagar selecionados ({selectedHistory.size})
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
+          {selectedSupplier ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border p-4 bg-muted/30">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div>
+                    <div className="text-lg font-semibold">{selectedSupplier.nome}</div>
+                    <div className="text-xs text-muted-foreground font-mono">{fmtCnpj(selectedSupplier.cnpj)}</div>
+                    {(selectedSupplier.contato_responsavel || selectedSupplier.email || selectedSupplier.telefone) && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {[selectedSupplier.contato_responsavel, selectedSupplier.email, selectedSupplier.telefone].filter(Boolean).join(" · ")}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-6 text-sm">
+                    <div><div className="text-xs text-muted-foreground">Itens cotados</div><div className="font-semibold">{supplierStats?.itensUnicos || 0}</div></div>
+                    <div><div className="text-xs text-muted-foreground">Total de cotações</div><div className="font-semibold">{supplierStats?.total || 0}</div></div>
+                    <div><div className="text-xs text-muted-foreground">Última cotação</div><div className="font-semibold">{supplierStats?.ultimoPreco ? fmtDate(supplierStats.ultimoPreco.data_referencia) : "—"}</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8"></TableHead>
+                    <TableHead>Produto</TableHead>
+                    <TableHead>Última cotação</TableHead>
+                    <TableHead className="text-right">Preço atual</TableHead>
+                    <TableHead className="text-right">Variação</TableHead>
+                    <TableHead className="text-right">Nº cotações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {supplierProductHistory.map(p => {
+                    const expanded = expandedProduct === p.key;
+                    const varColor = p.variacao == null ? "" : p.variacao > 0 ? "text-destructive" : p.variacao < 0 ? "text-emerald-600" : "";
+                    return (
+                      <>
+                        <TableRow key={p.key} className="cursor-pointer" onClick={() => setExpandedProduct(expanded ? null : p.key)}>
+                          <TableCell>{expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}</TableCell>
+                          <TableCell className="text-xs">{p.descricao}</TableCell>
+                          <TableCell className="text-xs">{fmtDate(p.ultimaData)}</TableCell>
+                          <TableCell className="text-right font-medium">{fmtBRL(p.precoAtual)}</TableCell>
+                          <TableCell className={`text-right text-xs font-medium ${varColor}`}>
+                            {p.variacao == null ? "—" : `${p.variacao > 0 ? "+" : ""}${p.variacao.toFixed(1)}%`}
+                          </TableCell>
+                          <TableCell className="text-right">{p.cotacoes}</TableCell>
+                        </TableRow>
+                        {expanded && (
+                          <TableRow key={`${p.key}-tl`}>
+                            <TableCell colSpan={6} className="bg-muted/20">
+                              <div className="px-4 py-2">
+                                <div className="text-xs font-medium text-muted-foreground mb-2">Linha do tempo</div>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Data</TableHead>
+                                      <TableHead className="text-right">Preço unitário</TableHead>
+                                      <TableHead>Unidade</TableHead>
+                                      <TableHead>Fonte</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {p.timeline.map((t: any) => (
+                                      <TableRow key={t.id}>
+                                        <TableCell className="text-xs">{fmtDate(t.data_referencia)}</TableCell>
+                                        <TableCell className="text-right">{fmtBRL(Number(t.valor_unitario))}</TableCell>
+                                        <TableCell className="text-xs">{t.unidade_medida || "UN"}</TableCell>
+                                        <TableCell><Badge variant="outline" className="text-xs">{t.fonte}</Badge></TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    );
+                  })}
+                  {supplierProductHistory.length === 0 && (
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum preço deste fornecedor no período</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -356,6 +534,7 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
               )}
             </TableBody>
           </Table>
+          )}
         </CardContent>
           </Card>
         </TabsContent>
@@ -466,6 +645,12 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
         onOpenChange={(o) => { setCatalogModalOpen(o); if (!o) setEditingProduct(null); }}
         onSaved={load}
         editing={editingProduct}
+      />
+
+      <SupplierRegistryModal
+        open={supplierModalOpen}
+        onOpenChange={setSupplierModalOpen}
+        onSaved={load}
       />
     </div>
   );
