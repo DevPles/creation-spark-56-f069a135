@@ -128,13 +128,71 @@ export default function SupplierRegistryModal({ open, onOpenChange, onSaved }: P
     return [s.nome, s.cnpj, s.email, s.contato_responsavel].filter(Boolean).join(" ").toLowerCase().includes(q);
   });
 
+  const updateEditingField = (patch: Partial<Supplier>) => {
+    if (!editing) return;
+    setEditing({ ...editing, ...patch });
+  };
+
+  const persistField = async (patch: Partial<Supplier>) => {
+    if (!editing?.id) return;
+    const { error } = await supabase.from("suppliers").update(patch).eq("id", editing.id);
+    if (error) { toast.error(error.message); return; }
+    setEditing({ ...editing, ...patch });
+    load();
+  };
+
+  const adminLiberar = async (motivo: string) => {
+    if (!editing?.id || !profile) return;
+    const { error } = await supabase.from("suppliers").update({
+      qualificacao_status: "liberado_admin",
+      liberado_por: profile.id,
+      liberado_em: new Date().toISOString(),
+      liberado_motivo: motivo,
+    }).eq("id", editing.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Fornecedor liberado para participação em cotação");
+    const { data } = await supabase.from("suppliers").select("*").eq("id", editing.id).single();
+    if (data) setEditing(data as Supplier);
+    load();
+  };
+
+  const adminRevogar = async () => {
+    if (!editing?.id) return;
+    if (!confirm("Revogar a liberação administrativa? O fornecedor voltará a status pendente.")) return;
+    const { error } = await supabase.from("suppliers").update({
+      qualificacao_status: "pendente",
+      liberado_por: null,
+      liberado_em: null,
+      liberado_motivo: null,
+    }).eq("id", editing.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Liberação revogada");
+    const { data } = await supabase.from("suppliers").select("*").eq("id", editing.id).single();
+    if (data) setEditing(data as Supplier);
+    load();
+  };
+
+  const renderQualifBadge = (s: Supplier) => {
+    if (s.inidoneo) return <Badge variant="destructive" className="gap-1"><ShieldAlert className="h-3 w-3" /> Inidôneo</Badge>;
+    if (s.qualificacao_status === "habilitado") return <Badge className="gap-1 bg-emerald-600 hover:bg-emerald-700"><ShieldCheck className="h-3 w-3" /> Habilitado</Badge>;
+    if (s.qualificacao_status === "liberado_admin") return <Badge className="gap-1 bg-amber-500 hover:bg-amber-600"><Lock className="h-3 w-3" /> Liberado (admin)</Badge>;
+    return <Badge variant="outline" className="gap-1 border-destructive text-destructive"><AlertCircle className="h-3 w-3" /> Pendente</Badge>;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Fornecedores cadastrados</DialogTitle></DialogHeader>
 
         {editing ? (
-          <div className="space-y-3 py-2">
+          <Tabs defaultValue="dados" className="py-2">
+            <TabsList className="rounded-full">
+              <TabsTrigger value="dados" className="rounded-full">Dados cadastrais</TabsTrigger>
+              <TabsTrigger value="qualif" className="rounded-full" disabled={!editing.id}>
+                Qualificação (Art. 9º) {editing.id && renderQualifBadge(editing)}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="dados" className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Nome *</Label>
@@ -169,7 +227,36 @@ export default function SupplierRegistryModal({ open, onOpenChange, onSaved }: P
               <Button variant="outline" className="rounded-full" onClick={() => setEditing(null)}>Cancelar</Button>
               <Button className="rounded-full" disabled={saving} onClick={save}>{saving ? "Salvando..." : "Salvar"}</Button>
             </DialogFooter>
-          </div>
+            </TabsContent>
+            <TabsContent value="qualif">
+              {editing.id ? (
+                <SupplierQualificationPanel
+                  supplierId={editing.id}
+                  forneceMedicamentos={!!editing.fornece_medicamentos}
+                  inidoneo={!!editing.inidoneo}
+                  qualificacaoStatus={editing.qualificacao_status || "pendente"}
+                  liberadoMotivo={editing.liberado_motivo || null}
+                  onChangeForneceMedicamentos={(v) => persistField({ fornece_medicamentos: v })}
+                  onChangeInidoneo={(v) => persistField({ inidoneo: v, qualificacao_status: v ? "inidoneo" : "pendente" })}
+                  onStatusRecomputed={(status, _missing) => {
+                    // Não rebaixa liberação administrativa nem status de inidôneo automaticamente
+                    if (editing.qualificacao_status === "liberado_admin") return;
+                    if (editing.inidoneo) return;
+                    if (status !== editing.qualificacao_status) {
+                      persistField({ qualificacao_status: status });
+                    }
+                  }}
+                  onAdminLiberar={adminLiberar}
+                  onAdminRevogarLiberacao={adminRevogar}
+                />
+              ) : (
+                <div className="text-xs text-muted-foreground p-4 text-center">Salve o fornecedor primeiro para gerenciar a documentação.</div>
+              )}
+              <div className="mt-4 flex justify-end">
+                <Button variant="outline" className="rounded-full" onClick={() => setEditing(null)}>Fechar</Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         ) : (
           <div className="space-y-3 py-2">
             <div className="flex items-center justify-between gap-2">
@@ -183,7 +270,7 @@ export default function SupplierRegistryModal({ open, onOpenChange, onSaved }: P
                   <TableHead>CNPJ</TableHead>
                   <TableHead>Contato</TableHead>
                   <TableHead>E-mail</TableHead>
-                  <TableHead>Telefone</TableHead>
+                  <TableHead>Qualificação (Art. 9º)</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -195,7 +282,7 @@ export default function SupplierRegistryModal({ open, onOpenChange, onSaved }: P
                     <TableCell className="font-mono text-xs">{fmtCnpj(s.cnpj)}</TableCell>
                     <TableCell className="text-xs">{s.contato_responsavel || "—"}</TableCell>
                     <TableCell className="text-xs">{s.email || "—"}</TableCell>
-                    <TableCell className="text-xs">{s.telefone || "—"}</TableCell>
+                    <TableCell className="text-xs">{renderQualifBadge(s)}</TableCell>
                     <TableCell>
                       <Badge variant={s.ativo ? "default" : "outline"}>{s.ativo ? "Ativo" : "Inativo"}</Badge>
                     </TableCell>
