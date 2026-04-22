@@ -61,7 +61,7 @@ export default function ComprasPage() {
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [orderContext, setOrderContext] = useState<{ quotationId?: string; orderId?: string } | null>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [inviteContext, setInviteContext] = useState<{ requisitionId: string; numero: string } | null>(null);
+  const [inviteContext, setInviteContext] = useState<{ requisitionId: string; numero: string; facilityUnit?: string } | null>(null);
 
   const loadAll = async () => {
     const [reqRes, quoteRes, ordRes, contractRes, itemsRes, invitesRes] = await Promise.all([
@@ -155,7 +155,7 @@ export default function ComprasPage() {
   const openEditQuote = (quotationId: string) => { setQuoteContext({ quotationId }); setQuoteModalOpen(true); };
   const openCreateOrder = (quotationId: string) => { setOrderContext({ quotationId }); setOrderModalOpen(true); };
   const openEditOrder = (orderId: string) => { setOrderContext({ orderId }); setOrderModalOpen(true); };
-  const openInvite = (r: any) => { setInviteContext({ requisitionId: r.id, numero: r.numero }); setInviteModalOpen(true); };
+  const openInvite = (r: any) => { setInviteContext({ requisitionId: r.id, numero: r.numero, facilityUnit: r.facility_unit }); setInviteModalOpen(true); };
 
   const handleDeleteRequisition = async (r: any) => {
     if (!confirm(`Excluir requisição ${r.numero}? Esta ação não pode ser desfeita.`)) return;
@@ -464,6 +464,7 @@ export default function ComprasPage() {
         onOpenChange={setInviteModalOpen}
         requisitionId={inviteContext?.requisitionId || null}
         requisitionNumero={inviteContext?.numero}
+        facilityUnit={inviteContext?.facilityUnit}
       />
     </div>
   );
