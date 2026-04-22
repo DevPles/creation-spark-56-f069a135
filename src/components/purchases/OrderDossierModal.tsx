@@ -70,8 +70,12 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     doc.setFillColor(13, 79, 79); // teal
     doc.rect(0, 0, pageW, 130, "F");
     try {
-      // Logo Instituto Univida no canto superior direito
-      doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", pageW - margin - 110, 20, 110, 90);
+      // Logo Instituto Univida no canto superior direito (proporção preservada)
+      const logoW = 80;
+      const logoH = 80;
+      const logoX = pageW - margin - logoW;
+      const logoY = (130 - logoH) / 2; // centralizado verticalmente na faixa teal
+      doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", logoX, logoY, logoW, logoH, undefined, "FAST");
     } catch (_) {}
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
