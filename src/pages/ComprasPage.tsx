@@ -15,6 +15,7 @@ import PurchaseRequisitionModal from "@/components/purchases/PurchaseRequisition
 import PurchaseQuotationModal from "@/components/purchases/PurchaseQuotationModal";
 import PurchaseOrderModal from "@/components/purchases/PurchaseOrderModal";
 import PriceBankPanel from "@/components/purchases/PriceBankPanel";
+import SupplierInviteModal from "@/components/purchases/SupplierInviteModal";
 
 const REQ_STATUS_LABEL: Record<string, string> = {
   rascunho: "Rascunho",
@@ -58,6 +59,8 @@ export default function ComprasPage() {
   const [quoteContext, setQuoteContext] = useState<{ requisitionId?: string; quotationId?: string } | null>(null);
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [orderContext, setOrderContext] = useState<{ quotationId?: string; orderId?: string } | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteContext, setInviteContext] = useState<{ requisitionId: string; numero: string } | null>(null);
 
   const loadAll = async () => {
     const [reqRes, quoteRes, ordRes, contractRes, itemsRes] = await Promise.all([
@@ -141,6 +144,7 @@ export default function ComprasPage() {
   const openEditQuote = (quotationId: string) => { setQuoteContext({ quotationId }); setQuoteModalOpen(true); };
   const openCreateOrder = (quotationId: string) => { setOrderContext({ quotationId }); setOrderModalOpen(true); };
   const openEditOrder = (orderId: string) => { setOrderContext({ orderId }); setOrderModalOpen(true); };
+  const openInvite = (r: any) => { setInviteContext({ requisitionId: r.id, numero: r.numero }); setInviteModalOpen(true); };
 
   return (
     <div className="min-h-screen bg-background">
@@ -217,6 +221,7 @@ export default function ComprasPage() {
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
                             <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditRequisition(r)}>Abrir</Button>
+                            <Button size="sm" variant="secondary" className="rounded-full" onClick={() => openInvite(r)}>Convidar</Button>
                             <Button size="sm" className="rounded-full" onClick={() => openCreateQuote(r.id)}>Cotar</Button>
                           </div>
                         </TableCell>
