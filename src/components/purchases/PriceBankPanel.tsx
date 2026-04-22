@@ -300,7 +300,6 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
           </div>
         </CardHeader>
         <CardContent>
-          <Input placeholder="Filtrar por descrição, fornecedor ou categoria" value={search} onChange={e => setSearch(e.target.value)} className="mb-3 max-w-md" />
           <Table>
             <TableHeader>
               <TableRow>
@@ -347,15 +346,8 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
 
         <TabsContent value="compras" className="mt-4 space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
+            <CardHeader>
               <CardTitle className="text-base">Histórico de compras &amp; curva de consumo</CardTitle>
-              <div className="flex gap-2 flex-wrap">
-                <Input placeholder="Filtrar por item, fornecedor ou OC" value={purchaseSearch} onChange={e => setPurchaseSearch(e.target.value)} className="max-w-xs" />
-                <select className="h-9 rounded-md border bg-background px-3 text-sm" value={purchaseUnit} onChange={e => setPurchaseUnit(e.target.value)}>
-                  <option value="all">Todas as unidades</option>
-                  {purchaseUnits.map(u => <option key={u} value={u}>{u}</option>)}
-                </select>
-              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
