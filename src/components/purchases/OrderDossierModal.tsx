@@ -419,6 +419,17 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
                       <div className="text-muted-foreground">
                         Enviado: {fmtDateTime(iv.created_at)} • Respondido: {fmtDateTime(iv.submitted_at)} • IP: {iv.submission_ip || "não capturado"}
                       </div>
+                      <div className="mt-1 break-all">
+                        <span className="text-muted-foreground">Link público: </span>
+                        <a
+                          href={`${window.location.origin}/cotacao-publica/${iv.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary underline"
+                        >
+                          {`${window.location.origin}/cotacao-publica/${iv.id}`}
+                        </a>
+                      </div>
                     </div>
                   ))}
                   {invites.length === 0 && <div className="text-muted-foreground">Sem convites registrados.</div>}
