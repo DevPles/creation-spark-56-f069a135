@@ -261,9 +261,9 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     });
 
     if (supplierCols.length === 0) {
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
-      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, contentStartY + 20);
+      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, contentStartY + 12);
       doc.setTextColor(0, 0, 0);
     } else {
       const head = ["#", "Item", "Qtd"];
@@ -288,18 +288,15 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         body,
         theme: "grid",
         headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
-        styles: { fontSize: 7, cellPadding: 3, valign: "middle" },
+        styles: { fontSize: 7, cellPadding: 2, valign: "middle", minCellHeight: 10 },
         columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 50 } },
-        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
         pageBreak: "auto",
         rowPageBreak: "avoid",
-        didDrawPage: (data) => {
-          if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Grade comparativa de preços (cont.)", margin);
-        },
       });
     }
 
-    const y2 = subTitle("Log de preenchimento dos fornecedores", 24);
+    const y2 = subTitle("Log de preenchimento dos fornecedores", 16);
     autoTable(doc, {
       startY: y2,
       head: [["Fornecedor", "CNPJ", "Origem", "Data/Hora envio", "IP", "Respondente (nome / e-mail / cel / CPF)", "Link público enviado"]],
@@ -323,19 +320,16 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       }),
       theme: "striped",
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
-      styles: { fontSize: 7, cellPadding: 3, valign: "middle", overflow: "linebreak" },
+      styles: { fontSize: 6.5, cellPadding: 2, valign: "top", overflow: "linebreak", minCellHeight: 10 },
       columnStyles: { 5: { cellWidth: 95 }, 6: { cellWidth: 110, textColor: [13, 79, 79] } },
-      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
-      didDrawPage: (data) => {
-        if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Log de preenchimento (cont.)", margin);
-      },
     });
 
     // Tabela complementar: TODOS os convites enviados (mesmo sem resposta)
     if (invites.length > 0) {
-      const y3 = subTitle("Convites enviados aos fornecedores (rastreabilidade completa)", 22);
+      const y3 = subTitle("Convites enviados aos fornecedores (rastreabilidade completa)", 14);
       autoTable(doc, {
         startY: y3,
         head: [["Fornecedor", "CNPJ", "Contato fornecedor", "Enviado em", "Status", "Respondido em", "Respondente (nome / e-mail / cel / CPF)", "IP", "Link público"]],
@@ -356,21 +350,17 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
           ];
         }),
         theme: "grid",
-        headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 6.5, halign: "center" },
-        styles: { fontSize: 6.5, cellPadding: 2, valign: "middle", overflow: "linebreak" },
+        headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 6, halign: "center" },
+        styles: { fontSize: 6, cellPadding: 1.5, valign: "top", overflow: "linebreak", minCellHeight: 9 },
         columnStyles: { 6: { cellWidth: 95 }, 8: { cellWidth: 95, textColor: [13, 79, 79] } },
-        margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+        margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
         pageBreak: "auto",
         rowPageBreak: "avoid",
-        didDrawPage: (data) => {
-          if (data.pageNumber > 1) sectionTitle(doc, "Seção 2 — Convites enviados (cont.)", margin);
-        },
       });
     }
 
     // ===== SECTION 3: ITEMS =====
-    doc.addPage();
-    sectionTitle(doc, "Seção 3 — Itens comprados", margin);
+    startSection("Seção 3 — Itens comprados", 160);
     const itemsBody = reqItems.map((it, idx) => {
       const oi = orderItems.find((o) => o.descricao === it.descricao) || orderItems[idx];
       return [
@@ -389,19 +379,15 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       body: itemsBody,
       theme: "grid",
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 8 },
-      styles: { fontSize: 8, cellPadding: 4 },
+      styles: { fontSize: 8, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
       columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 70 } },
-      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
-      didDrawPage: (data) => {
-        if (data.pageNumber > 1) sectionTitle(doc, "Seção 3 — Itens comprados (cont.)", margin);
-      },
     });
 
     // ===== SECTION 4: APPROVAL =====
-    doc.addPage();
-    sectionTitle(doc, "Seção 4 — Aprovação e rastreabilidade legal", margin);
+    startSection("Seção 4 — Aprovação e rastreabilidade legal", 220);
     const apprRows: any[] = [];
     approvals.forEach((a) => {
       apprRows.push(["Aprovador", a.approver_name || "—"]);
@@ -427,14 +413,11 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       head: [],
       body: apprRows,
       theme: "plain",
-      styles: { fontSize: 9, cellPadding: 3 },
+      styles: { fontSize: 9, cellPadding: 2.5, minCellHeight: 12, valign: "top" },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 170 } },
-      margin: { left: margin, right: margin, top: contentStartY, bottom: footerReserve },
+      margin: { left: margin, right: margin, top: 30, bottom: footerReserve },
       pageBreak: "auto",
       rowPageBreak: "avoid",
-      didDrawPage: (data) => {
-        if (data.pageNumber > 1) sectionTitle(doc, "Seção 4 — Aprovação (cont.)", margin);
-      },
     });
 
     // ===== SECTION 5: JUSTIFICATIVA LEGAL (Dispensa / Inexigibilidade / Emergencial) =====
