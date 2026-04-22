@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,8 +21,9 @@ export default function PriceBankPanel() {
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogModalOpen, setCatalogModalOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [searchGoogle, setSearchGoogle] = useState("");
-  const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [searchAI, setSearchAI] = useState("");
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [selectedHistory, setSelectedHistory] = useState<Set<string>>(new Set());
   const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
   const [purchaseSearch, setPurchaseSearch] = useState("");
   const [purchaseUnit, setPurchaseUnit] = useState<string>("all");
@@ -142,28 +144,61 @@ export default function PriceBankPanel() {
 
   const purchaseUnits = Array.from(new Set(purchaseHistory.map(p => p.facility_unit).filter(Boolean))).sort();
 
-  const runGoogleSearch = async () => {
-    if (!searchGoogle.trim() || !profile) return;
-    setLoadingGoogle(true);
+  const runAISearch = async () => {
+    if (!searchAI.trim() || !profile) return;
+    setLoadingAI(true);
     try {
-      const { data, error } = await supabase.functions.invoke("price-search", { body: { descricao: searchGoogle } });
+      const { data, error } = await supabase.functions.invoke("price-search", { body: { descricao: searchAI } });
       if (error) throw error;
       const results = data?.results || [];
-      if (!results.length) { toast.warning("Nenhum preço encontrado"); return; }
+      if (!results.length) { toast.warning("Nenhum preço encontrado pela IA"); return; }
       const rows = results.map((r: any) => ({
-        descricao_produto: searchGoogle,
+        descricao_produto: searchAI,
         valor_unitario: Number(r.preco) || 0,
         fornecedor_nome: r.fornecedor || "Indefinido",
         fonte_url: r.fonte_url || null,
-        fonte: "google",
+        fonte: "ia",
         created_by: profile.id,
       }));
       await supabase.from("price_history").insert(rows);
-      toast.success(`${rows.length} preço(s) salvos no banco`);
+      toast.success(`${rows.length} preço(s) encontrado(s) pela IA e salvos`);
       load();
     } catch (e: any) {
       toast.error(e.message || "Erro na busca");
-    } finally { setLoadingGoogle(false); }
+    } finally { setLoadingAI(false); }
+  };
+
+  const deleteOne = async (id: string) => {
+    if (!confirm("Apagar este preço do histórico?")) return;
+    const { error } = await supabase.from("price_history").delete().eq("id", id);
+    if (error) { toast.error("Erro ao apagar"); return; }
+    setSelectedHistory(prev => { const n = new Set(prev); n.delete(id); return n; });
+    toast.success("Preço removido");
+    load();
+  };
+
+  const deleteSelected = async () => {
+    if (selectedHistory.size === 0) return;
+    if (!confirm(`Apagar ${selectedHistory.size} preço(s) selecionado(s)?`)) return;
+    const ids = Array.from(selectedHistory);
+    const { error } = await supabase.from("price_history").delete().in("id", ids);
+    if (error) { toast.error("Erro ao apagar"); return; }
+    setSelectedHistory(new Set());
+    toast.success(`${ids.length} preço(s) removido(s)`);
+    load();
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedHistory(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedHistory.size === filtered.length) setSelectedHistory(new Set());
+    else setSelectedHistory(new Set(filtered.map(h => h.id)));
   };
 
   return (
@@ -214,48 +249,68 @@ export default function PriceBankPanel() {
 
         <TabsContent value="historico" className="mt-4 space-y-4">
           <Card>
-        <CardHeader><CardTitle className="text-base">Buscar preços de mercado</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Pesquisa inteligente de preços</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">A IA pesquisa em fabricantes, distribuidores hospitalares e portais oficiais (Bionexo, BPS/MS) e traz preço, fornecedor e link da fonte.</p>
+        </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Input placeholder="Ex: Soro fisiológico 0,9% 500ml" value={searchGoogle} onChange={e => setSearchGoogle(e.target.value)} />
-            <Button className="rounded-full" disabled={loadingGoogle} onClick={runGoogleSearch}>{loadingGoogle ? "Buscando..." : "Buscar no Google"}</Button>
+            <Input placeholder="Ex: Soro fisiológico 0,9% 500ml" value={searchAI} onChange={e => setSearchAI(e.target.value)} onKeyDown={e => e.key === "Enter" && runAISearch()} />
+            <Button className="rounded-full" disabled={loadingAI} onClick={runAISearch}>{loadingAI ? "Pesquisando..." : "Pesquisar com IA"}</Button>
           </div>
         </CardContent>
           </Card>
 
           <Card>
         <CardHeader>
-          <CardTitle className="text-base">Histórico de preços</CardTitle>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-base">Histórico de preços</CardTitle>
+            {selectedHistory.size > 0 && (
+              <Button size="sm" variant="destructive" className="rounded-full" onClick={deleteSelected}>
+                Apagar selecionados ({selectedHistory.size})
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <Input placeholder="Filtrar por descrição, fornecedor ou categoria" value={search} onChange={e => setSearch(e.target.value)} className="mb-3 max-w-md" />
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox checked={filtered.length > 0 && selectedHistory.size === filtered.length} onCheckedChange={toggleSelectAll} />
+                </TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Fornecedor</TableHead>
                 <TableHead>Un</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead>Fonte</TableHead>
+                <TableHead className="w-16 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map(h => (
                 <TableRow key={h.id}>
+                  <TableCell>
+                    <Checkbox checked={selectedHistory.has(h.id)} onCheckedChange={() => toggleSelect(h.id)} />
+                  </TableCell>
                   <TableCell>{new Date(h.data_referencia).toLocaleDateString("pt-BR")}</TableCell>
                   <TableCell className="text-xs">{h.descricao_produto}</TableCell>
                   <TableCell>{h.fornecedor_nome || "—"}</TableCell>
                   <TableCell>{h.unidade_medida || "UN"}</TableCell>
                   <TableCell className="text-right">{fmtBRL(Number(h.valor_unitario))}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{h.fonte}</Badge>
-                    {h.fonte_url && <a href={h.fonte_url} target="_blank" rel="noreferrer" className="ml-2 text-xs underline">link</a>}
+                    <Badge variant="outline">{h.fonte === "google" ? "ia" : h.fonte}</Badge>
+                    {h.fonte_url && <a href={h.fonte_url} target="_blank" rel="noreferrer" className="ml-2 text-xs underline">fonte</a>}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive" onClick={() => deleteOne(h.id)}>Apagar</Button>
                   </TableCell>
                 </TableRow>
               ))}
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum preço registrado</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum preço registrado</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
