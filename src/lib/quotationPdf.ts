@@ -96,6 +96,7 @@ export async function generateQuotationPdf(quotationId: string) {
   const totalRespostas = invites.filter((i: any) => i.submitted_at).length;
 
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
+  (doc as any).setCharSpace(0);
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 36;
@@ -104,49 +105,53 @@ export async function generateQuotationPdf(quotationId: string) {
     if (currentY + needed > pageH - 60) {
       doc.addPage();
       drawHeaderBand(false);
-      return 100;
+      return 84;
     }
     return currentY;
   };
 
   const drawHeaderBand = (full: boolean) => {
+    const bandH = full ? 96 : 64;
     doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pageW, full ? 88 : 60, "F");
+    doc.rect(0, 0, pageW, bandH, "F");
     doc.setFillColor(...BLUE);
-    doc.rect(0, full ? 88 : 60, pageW, 4, "F");
+    doc.rect(0, bandH, pageW, 4, "F");
 
     try {
-      const logoH = full ? 56 : 40;
+      const logoH = full ? 60 : 44;
       const logoW = logoH * 1.6;
       const logoX = pageW - margin - logoW;
-      const logoY = full ? (88 - logoH) / 2 : (60 - logoH) / 2;
+      const logoY = (bandH - logoH) / 2;
       doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", logoX, logoY, logoW, logoH, undefined, "FAST");
     } catch {/* ignore */}
 
     doc.setTextColor(255, 255, 255);
+    (doc as any).setCharSpace(0);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(full ? 16 : 12);
-    doc.text("MAPA DE COTAÇÃO", margin, full ? 34 : 26);
+    doc.setFontSize(full ? 18 : 13);
+    doc.text("MAPA DE COTACAO", margin, full ? 32 : 24);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(full ? 10 : 9);
-    doc.text(`Nº ${quot.numero || "—"}`, margin, full ? 56 : 44);
+    doc.text(`No. ${quot.numero || "-"}`, margin, full ? 52 : 42);
     if (full) {
-      doc.text(quot.facility_unit || "—", margin, 74);
+      doc.text(quot.facility_unit || "-", margin, 70);
     }
-    const rightTextY = full ? 78 : 52;
-    doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageW - margin, rightTextY, { align: "right" });
     if (full) {
-      doc.text(`Status: ${QUOT_STATUS_LABEL[quot.status] || quot.status || "—"}`, pageW - margin, rightTextY + 12, { align: "right" });
+      doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageW - margin, 52, { align: "right" });
+      doc.text(`Status: ${QUOT_STATUS_LABEL[quot.status] || quot.status || "-"}`, pageW - margin, 70, { align: "right" });
+    } else {
+      doc.text(`Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageW - margin, 42, { align: "right" });
     }
     doc.setTextColor(...TEXT_DARK);
   };
 
   drawHeaderBand(true);
-  let y = 110;
+  let y = 120;
 
   const sectionTitle = (title: string) => {
     y = ensureSpace(28, y);
+    (doc as any).setCharSpace(0);
     doc.setFillColor(...BLUE);
     doc.rect(margin, y - 12, 4, 16, "F");
     doc.setFont("helvetica", "bold");
@@ -172,6 +177,7 @@ export async function generateQuotationPdf(quotationId: string) {
     doc.setFillColor(...SOFT_BLUE);
     doc.setDrawColor(...BORDER_BLUE);
     doc.roundedRect(x, y, kpiW, kpiH, 4, 4, "FD");
+    (doc as any).setCharSpace(0);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
     doc.setTextColor(...NAVY);
@@ -238,10 +244,9 @@ export async function generateQuotationPdf(quotationId: string) {
       alternateRowStyles: { fillColor: ALT_ROW },
       head: [["Slot", "Fornecedor", "CNPJ", "Pagamento", "Prazo entrega", "Origem", "Total"]],
       body: suppliers.map((s: any) => {
-        const isWin = s.id === winnerSupplierId;
         return [
           s.slot || "—",
-          (isWin ? "★ " : "") + (s.fornecedor_nome || "—"),
+          s.fornecedor_nome || "—",
           s.fornecedor_cnpj || "—",
           s.condicao_pagamento || "—",
           s.prazo_entrega || "—",
@@ -269,7 +274,7 @@ export async function generateQuotationPdf(quotationId: string) {
       "Descrição",
       "Qtd",
       "Un.",
-      ...suppliers.map((s: any) => `${s.fornecedor_nome || "Forn."}${s.id === winnerSupplierId ? " ★" : ""}`),
+      ...suppliers.map((s: any) => s.fornecedor_nome || "Forn."),
     ];
     const body = items.map((it: any) => {
       const cells: any[] = [
@@ -291,8 +296,7 @@ export async function generateQuotationPdf(quotationId: string) {
         } else if (Number(p.valor_unitario || 0) === 0) {
           cells.push("Não cot.");
         } else {
-          const isMin = minUnit !== null && Number(p.valor_unitario) === minUnit;
-          cells.push(`${fmtBRL(Number(p.valor_unitario))}${isMin ? " ✓" : ""}`);
+          cells.push(fmtBRL(Number(p.valor_unitario)));
         }
       });
       return cells;
