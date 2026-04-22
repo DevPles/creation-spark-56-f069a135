@@ -53,6 +53,8 @@ const JUSTIFICATIVAS = [
   { v: "mensal", l: "Compra mensal" },
   { v: "especifica", l: "Compra específica" },
   { v: "emergencial", l: "Emergencial" },
+  { v: "dispensa", l: "Dispensa de licitação" },
+  { v: "inexigibilidade", l: "Inexigibilidade de licitação" },
   { v: "outros", l: "Outros" },
 ];
 const UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
