@@ -96,6 +96,7 @@ export async function generateQuotationPdf(quotationId: string) {
   const totalRespostas = invites.filter((i: any) => i.submitted_at).length;
 
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
+  (doc as any).setCharSpace(0);
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 36;
@@ -176,6 +177,7 @@ export async function generateQuotationPdf(quotationId: string) {
     doc.setFillColor(...SOFT_BLUE);
     doc.setDrawColor(...BORDER_BLUE);
     doc.roundedRect(x, y, kpiW, kpiH, 4, 4, "FD");
+    (doc as any).setCharSpace(0);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
     doc.setTextColor(...NAVY);
