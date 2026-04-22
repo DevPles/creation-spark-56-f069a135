@@ -48,6 +48,7 @@ export default function ComprasPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
   const [reqItemsCount, setReqItemsCount] = useState<Record<string, number>>({});
+  const [invitesByReq, setInvitesByReq] = useState<Record<string, { total: number; respondidos: number; firstToken?: string }>>({});
 
   const [unitFilter, setUnitFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -63,12 +64,13 @@ export default function ComprasPage() {
   const [inviteContext, setInviteContext] = useState<{ requisitionId: string; numero: string } | null>(null);
 
   const loadAll = async () => {
-    const [reqRes, quoteRes, ordRes, contractRes, itemsRes] = await Promise.all([
+    const [reqRes, quoteRes, ordRes, contractRes, itemsRes, invitesRes] = await Promise.all([
       supabase.from("purchase_requisitions").select("*").order("created_at", { ascending: false }),
       supabase.from("purchase_quotations").select("*").order("created_at", { ascending: false }),
       supabase.from("purchase_orders").select("*").order("created_at", { ascending: false }),
       supabase.from("contracts").select("*"),
       supabase.from("purchase_requisition_items").select("requisition_id"),
+      (supabase as any).from("quotation_invites").select("requisition_id, token, status, submitted_at").order("created_at", { ascending: true }),
     ]);
     if (reqRes.error || quoteRes.error || ordRes.error) {
       toast.error("Erro ao carregar dados de compras");
@@ -83,6 +85,15 @@ export default function ComprasPage() {
       counts[i.requisition_id] = (counts[i.requisition_id] || 0) + 1;
     });
     setReqItemsCount(counts);
+    const inv: Record<string, { total: number; respondidos: number; firstToken?: string }> = {};
+    (invitesRes?.data || []).forEach((i: any) => {
+      const cur = inv[i.requisition_id] || { total: 0, respondidos: 0, firstToken: undefined };
+      cur.total += 1;
+      if (i.submitted_at || i.status === "respondido") cur.respondidos += 1;
+      if (!cur.firstToken) cur.firstToken = i.token;
+      inv[i.requisition_id] = cur;
+    });
+    setInvitesByReq(inv);
   };
 
   useEffect(() => { loadAll(); }, []);
