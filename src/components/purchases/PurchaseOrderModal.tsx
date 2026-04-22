@@ -284,7 +284,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         await supabase.from("purchase_order_items").delete().eq("purchase_order_id", oid);
       } else {
         const { data, error } = await supabase.from("purchase_orders").insert({
-          ...payload, numero: generateNumero(), status: "aguardando_aprovacao", created_by: profile.id,
+          ...payload, numero: previewNumero || generateNumero(), status: "aguardando_aprovacao", created_by: profile.id,
         }).select().single();
         if (error) throw error;
         oid = data.id;
