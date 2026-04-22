@@ -243,13 +243,17 @@ export async function generateRequisitionPdf(requisitionId: string) {
     headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold" },
     alternateRowStyles: { fillColor: ALT_ROW },
     head: [["#", "Descrição", "Qtd", "Unid.", "Observação"]],
-    body: (items || []).map((it: any) => [
-      String(it.item_num ?? ""),
-      it.descricao || "—",
-      String(it.quantidade ?? ""),
-      it.unidade_medida || "—",
-      it.observacao || "",
-    ]),
+    body: (items || []).map((it: any) => {
+      const rawObs: string = it.observacao || "";
+      const cleanObs = rawObs.replace(/^\[COD:[^\]]+\]\s?/, "").trim();
+      return [
+        String(it.item_num ?? ""),
+        it.descricao || "—",
+        String(it.quantidade ?? ""),
+        it.unidade_medida || "—",
+        cleanObs,
+      ];
+    }),
     margin: { left: margin, right: margin },
     columnStyles: {
       0: { cellWidth: 30, halign: "right" },
