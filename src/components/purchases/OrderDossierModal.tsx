@@ -157,32 +157,93 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     doc.addPage();
     sectionTitle(doc, "Seção 2 — Grade comparativa de preços", margin);
 
-    const supplierIdToIdx = new Map<string, number>();
-    suppliers.forEach((s, i) => supplierIdToIdx.set(s.id, i));
-    const head = ["#", "Item", "Qtd"];
-    suppliers.forEach((s) => head.push(`${s.fornecedor_nome}\n${s.fornecedor_cnpj || ""}`));
-    const body = reqItems.map((it) => {
-      const row: any[] = [it.item_num, it.descricao, `${it.quantidade} ${it.unidade_medida}`];
-      suppliers.forEach((s) => {
-        const p = prices.find((x) => x.supplier_id === s.id && x.requisition_item_id === it.id);
-        if (!p) row.push("—");
-        else row.push(`${fmtBRL(Number(p.valor_unitario))}\nTotal ${fmtBRL(Number(p.valor_total))}${p.is_winner ? "\n★ Vencedor" : ""}`);
-      });
-      return row;
-    });
-    const totalsRow: any[] = ["", "TOTAL", ""];
-    suppliers.forEach((s) => totalsRow.push(fmtBRL(Number(s.total || 0))));
-    body.push(totalsRow);
+    // Monta lista unificada de "colunas-fornecedor" combinando suppliers da cotação e convites respondidos
+    type SupplierCol = {
+      key: string;
+      nome: string;
+      cnpj: string;
+      isWinner: boolean;
+      total: number;
+      getPriceForItem: (itemId: string) => { valor_unitario: number; valor_total: number; disponivel: boolean } | null;
+    };
+    const supplierCols: SupplierCol[] = [];
 
-    autoTable(doc, {
-      startY: 90,
-      head: [head],
-      body,
-      theme: "grid",
-      headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7 },
-      styles: { fontSize: 7, cellPadding: 3 },
-      margin: { left: margin, right: margin },
+    suppliers.forEach((s: any) => {
+      supplierCols.push({
+        key: `s-${s.id}`,
+        nome: s.fornecedor_nome,
+        cnpj: s.fornecedor_cnpj || "",
+        isWinner: !!(quotation && quotation.winner_supplier && quotation.winner_supplier === s.fornecedor_nome),
+        total: Number(s.total || 0),
+        getPriceForItem: (itemId: string) => {
+          const p = prices.find((x: any) => x.supplier_id === s.id && x.requisition_item_id === itemId);
+          if (!p) return null;
+          return { valor_unitario: Number(p.valor_unitario), valor_total: Number(p.valor_total), disponivel: true };
+        },
+      });
     });
+
+    // Adiciona convites respondidos que não estejam já como suppliers da cotação
+    invites.forEach((iv: any) => {
+      if (!iv.submitted_at) return;
+      const already = supplierCols.find(
+        (c) => c.nome === iv.fornecedor_nome || (iv.fornecedor_cnpj && c.cnpj === iv.fornecedor_cnpj)
+      );
+      if (already) return;
+      const responses: any[] = iv.responses || [];
+      const total = responses.reduce(
+        (acc, r) => acc + (r.disponivel ? Number(r.valor_unitario || 0) * (reqItems.find((i: any) => i.id === r.requisition_item_id)?.quantidade || 0) : 0),
+        0
+      );
+      supplierCols.push({
+        key: `i-${iv.id}`,
+        nome: iv.fornecedor_nome,
+        cnpj: iv.fornecedor_cnpj || "",
+        isWinner: false,
+        total,
+        getPriceForItem: (itemId: string) => {
+          const r = responses.find((x: any) => x.requisition_item_id === itemId);
+          if (!r) return null;
+          const it = reqItems.find((i: any) => i.id === itemId);
+          const vu = Number(r.valor_unitario || 0);
+          return { valor_unitario: vu, valor_total: vu * (it?.quantidade || 0), disponivel: !!r.disponivel };
+        },
+      });
+    });
+
+    if (supplierCols.length === 0) {
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Nenhuma proposta de fornecedor registrada para esta OC.", margin, 100);
+      doc.setTextColor(0, 0, 0);
+    } else {
+      const head = ["#", "Item", "Qtd"];
+      supplierCols.forEach((s) => head.push(`${s.nome}${s.isWinner ? " ★" : ""}\n${s.cnpj}`));
+      const body = reqItems.map((it: any) => {
+        const row: any[] = [it.item_num, it.descricao, `${it.quantidade} ${it.unidade_medida}`];
+        supplierCols.forEach((s) => {
+          const p = s.getPriceForItem(it.id);
+          if (!p) row.push("—");
+          else if (!p.disponivel) row.push("Indisponível");
+          else row.push(`${fmtBRL(p.valor_unitario)}\nTotal ${fmtBRL(p.valor_total)}`);
+        });
+        return row;
+      });
+      const totalsRow: any[] = ["", "TOTAL", ""];
+      supplierCols.forEach((s) => totalsRow.push(fmtBRL(s.total)));
+      body.push(totalsRow);
+
+      autoTable(doc, {
+        startY: 90,
+        head: [head],
+        body,
+        theme: "grid",
+        headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
+        styles: { fontSize: 7, cellPadding: 3, valign: "middle" },
+        columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 50 } },
+        margin: { left: margin, right: margin },
+      });
+    }
 
     let y2 = (doc as any).lastAutoTable.finalY + 20;
     doc.setFontSize(11);
