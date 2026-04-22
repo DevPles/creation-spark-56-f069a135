@@ -88,6 +88,13 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
   const [classificacao, setClassificacao] = useState<string[]>([]);
   const [justificativa, setJustificativa] = useState("mensal");
   const [observacoes, setObservacoes] = useState("");
+  // Campos extras para justificativas legais (dispensa/inexigibilidade/emergencial)
+  const [justBaseLegal, setJustBaseLegal] = useState("");
+  const [justFundamentacao, setJustFundamentacao] = useState("");
+  const [justFornecedorUnico, setJustFornecedorUnico] = useState("");
+  const [justRiscoDescricao, setJustRiscoDescricao] = useState("");
+  const [justUrgenciaPrazo, setJustUrgenciaPrazo] = useState("");
+  const [justProcessoNumero, setJustProcessoNumero] = useState("");
   const [solicitante, setSolicitante] = useState(profile?.name || "");
   const [aprovadorImediato, setAprovadorImediato] = useState("");
   const [aprovadorDiretoria, setAprovadorDiretoria] = useState("");
