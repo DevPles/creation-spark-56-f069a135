@@ -248,6 +248,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       const validItems = items.filter(i => i.descricao.trim()).map((i, idx) => ({
         requisition_id: reqId,
         item_num: idx + 1,
+        product_id: i.product_id || null,
         descricao: i.descricao,
         quantidade: Number(i.quantidade) || 0,
         unidade_medida: i.unidade_medida || "UN",
