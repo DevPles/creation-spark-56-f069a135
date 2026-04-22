@@ -104,7 +104,7 @@ export async function generateQuotationPdf(quotationId: string) {
     if (currentY + needed > pageH - 60) {
       doc.addPage();
       drawHeaderBand(false);
-      return 100;
+      return 84;
     }
     return currentY;
   };
@@ -150,6 +150,7 @@ export async function generateQuotationPdf(quotationId: string) {
 
   const sectionTitle = (title: string) => {
     y = ensureSpace(28, y);
+    (doc as any).setCharSpace(0);
     doc.setFillColor(...BLUE);
     doc.rect(margin, y - 12, 4, 16, "F");
     doc.setFont("helvetica", "bold");
@@ -241,10 +242,9 @@ export async function generateQuotationPdf(quotationId: string) {
       alternateRowStyles: { fillColor: ALT_ROW },
       head: [["Slot", "Fornecedor", "CNPJ", "Pagamento", "Prazo entrega", "Origem", "Total"]],
       body: suppliers.map((s: any) => {
-        const isWin = s.id === winnerSupplierId;
         return [
           s.slot || "—",
-          (isWin ? "★ " : "") + (s.fornecedor_nome || "—"),
+          s.fornecedor_nome || "—",
           s.fornecedor_cnpj || "—",
           s.condicao_pagamento || "—",
           s.prazo_entrega || "—",
@@ -272,7 +272,7 @@ export async function generateQuotationPdf(quotationId: string) {
       "Descrição",
       "Qtd",
       "Un.",
-      ...suppliers.map((s: any) => `${s.fornecedor_nome || "Forn."}${s.id === winnerSupplierId ? " ★" : ""}`),
+      ...suppliers.map((s: any) => s.fornecedor_nome || "Forn."),
     ];
     const body = items.map((it: any) => {
       const cells: any[] = [
@@ -294,8 +294,7 @@ export async function generateQuotationPdf(quotationId: string) {
         } else if (Number(p.valor_unitario || 0) === 0) {
           cells.push("Não cot.");
         } else {
-          const isMin = minUnit !== null && Number(p.valor_unitario) === minUnit;
-          cells.push(`${fmtBRL(Number(p.valor_unitario))}${isMin ? " ✓" : ""}`);
+          cells.push(fmtBRL(Number(p.valor_unitario)));
         }
       });
       return cells;
