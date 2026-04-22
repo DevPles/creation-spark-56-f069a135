@@ -127,7 +127,29 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setMunicipio(requisition.municipio || "");
       setClassificacao(requisition.classificacao || []);
       setJustificativa(requisition.justificativa_tipo || "mensal");
-      setObservacoes(requisition.observacoes || "");
+      // Tenta extrair bloco JSON [JUST_LEGAL]{...}[/JUST_LEGAL] das observações
+      const rawObs: string = requisition.observacoes || "";
+      const blockMatch = rawObs.match(/\[JUST_LEGAL\]([\s\S]*?)\[\/JUST_LEGAL\]/);
+      if (blockMatch) {
+        try {
+          const data = JSON.parse(blockMatch[1]);
+          setJustBaseLegal(data.base_legal || "");
+          setJustFundamentacao(data.fundamentacao || "");
+          setJustFornecedorUnico(data.fornecedor_unico || "");
+          setJustRiscoDescricao(data.risco_descricao || "");
+          setJustUrgenciaPrazo(data.urgencia_prazo || "");
+          setJustProcessoNumero(data.processo_numero || "");
+        } catch { /* ignora */ }
+        setObservacoes(rawObs.replace(blockMatch[0], "").trim());
+      } else {
+        setObservacoes(rawObs);
+        setJustBaseLegal("");
+        setJustFundamentacao("");
+        setJustFornecedorUnico("");
+        setJustRiscoDescricao("");
+        setJustUrgenciaPrazo("");
+        setJustProcessoNumero("");
+      }
       setSolicitante(requisition.solicitante_nome || "");
       setAprovadorImediato(requisition.aprovador_imediato_nome || "");
       setAprovadorDiretoria(requisition.aprovador_diretoria_nome || "");
@@ -158,6 +180,12 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setClassificacao([]);
       setJustificativa("mensal");
       setObservacoes("");
+      setJustBaseLegal("");
+      setJustFundamentacao("");
+      setJustFornecedorUnico("");
+      setJustRiscoDescricao("");
+      setJustUrgenciaPrazo("");
+      setJustProcessoNumero("");
       setSolicitante(profile?.name || "");
       setAprovadorImediato("");
       setAprovadorDiretoria("");
