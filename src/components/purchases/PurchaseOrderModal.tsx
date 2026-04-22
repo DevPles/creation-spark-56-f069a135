@@ -89,6 +89,21 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         }
         const { data: itemsData } = await supabase.from("purchase_order_items").select("*").eq("purchase_order_id", orderId).order("item_num");
         setItems(itemsData || []);
+        // Load latest approval (link)
+        const { data: appr } = await supabase
+          .from("purchase_order_approvals" as any)
+          .select("*")
+          .eq("purchase_order_id", orderId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (appr) {
+          setApprovalLink(`${window.location.origin}/aprovar-oc/${(appr as any).token}`);
+          setSignedApproval((appr as any).signed_at ? appr : null);
+        } else {
+          setApprovalLink("");
+          setSignedApproval(null);
+        }
         // Also load quotation context if present (for re-selecting supplier)
         if (o?.quotation_id) {
           const { data: q } = await supabase.from("purchase_quotations").select("*").eq("id", o.quotation_id).single();
