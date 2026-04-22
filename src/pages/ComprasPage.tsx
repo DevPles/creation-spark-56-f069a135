@@ -359,6 +359,12 @@ export default function ComprasPage() {
         orderId={orderContext?.orderId}
         onSaved={() => { setOrderModalOpen(false); loadAll(); }}
       />
+      <SupplierInviteModal
+        open={inviteModalOpen}
+        onOpenChange={setInviteModalOpen}
+        requisitionId={inviteContext?.requisitionId || null}
+        requisitionNumero={inviteContext?.numero}
+      />
     </div>
   );
 }
