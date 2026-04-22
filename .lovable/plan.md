@@ -1,51 +1,80 @@
 
 
-## Convite a Fornecedores com Cadastro Integrado
+## Painel de Compras — Inteligência Operacional + Conformidade com Controle de Rubricas
 
-Hoje em **Convidar fornecedores** você precisa redigitar nome, CNPJ, e-mail e telefone toda vez. Vamos integrar o modal ao **cadastro de fornecedores** já existente (`suppliers`) e oferecer envio direto por **e-mail** e **WhatsApp**.
+Vamos transformar a aba **Painel** (hoje só 4 KPIs soltos) em um painel executivo completo, **totalmente alinhado ao card "Controle de Rubricas"** — usando exatamente a mesma fonte de verdade (orçamento contratado × execução real) para que os dois nunca divirjam.
+
+### Princípio de conformidade com Controle de Rubricas
+
+O card **Controle de Rubricas** já consolida, por contrato/unidade:
+- **Orçamento da rubrica** = `contracts.value × (rubrica.percent / 100)`
+- **Executado** = soma de `rubrica_entries.value_executed` (lançamentos reais) **+** OCs em `autorizada/enviada/recebida` por `contract_id + rubrica_id`
+- **% consumido** e faixa de cor (verde <60% / amarelo 60–80% / vermelho >80%)
+
+O Painel de Compras vai **reaproveitar exatamente esses cálculos** (mesma função utilitária, mesmas faixas de cor, mesmos rótulos) para que o gestor veja o mesmo número nos dois lugares.
 
 ### O que será construído
 
-**1. Seleção a partir do cadastro**
-- No topo do bloco "Adicionar fornecedor", um seletor **"Escolher fornecedor cadastrado"** (combobox com busca por nome / CNPJ).
-- Ao selecionar → preenche automaticamente Nome, CNPJ, E-mail e Telefone (campos ficam editáveis para ajustes pontuais).
-- Botão alternativo **"Inserir manualmente"** mantém o fluxo atual de digitação livre (sem precisar cadastrar antes).
-- Se o usuário digitar manualmente um CNPJ que já existe → aviso "Fornecedor já cadastrado — usar dados do cadastro?".
+**1. KPIs operacionais (8 cards, 2 linhas)**
+- Requisições abertas (rascunho + aguardando + em cotação) — variação vs mês anterior.
+- Cotações em andamento — nº + tempo médio aberto (dias).
+- OCs aguardando aprovação — destaque vermelho se alguma >3 dias.
+- OCs autorizadas no mês.
+- Convites enviados (mês) + taxa de resposta (`respondidos/enviados`).
+- Ticket médio de OC.
+- Total **autorizado** no mês (R$).
+- Total **recebido** no mês (R$, status `recebida`).
 
-**2. Cadastro inline (sem sair do modal)**
-- Botão **"Novo fornecedor"** abre um mini-form (Nome, CNPJ, E-mail, Telefone) que grava em `suppliers` e já seleciona para o convite.
-- Após gerar o convite, se os dados vieram do modo manual e ainda não existem em `suppliers`, oferece **"Salvar este fornecedor no cadastro"** (1 clique).
+**2. Funil de Compras (visual horizontal)**
+`Requisições → Convites → Cotações → OCs Aguardando → Autorizadas → Recebidas`, com quantidade absoluta e taxa de conversão entre etapas.
 
-**3. Envio direto por E-mail e WhatsApp**
-Na lista "Convites enviados", além de **Copiar link**, adicionar:
-- **Enviar por e-mail** → abre `mailto:` pré-preenchido com:
-  - Destinatário: e-mail do fornecedor
-  - Assunto: `Cotação ${numero_requisicao} — ${unidade}`
-  - Corpo: saudação + descrição da requisição + link único + prazo de validade.
-- **Enviar por WhatsApp** → abre `https://wa.me/<telefone>?text=<mensagem>` com a mesma mensagem (telefone normalizado: só dígitos, com código do país 55 se ausente).
-- Ambos os botões só ficam ativos se o respectivo contato existir; ao clicar, o convite passa de `pendente` → `enviado` e registra no `purchase_audit_log` (`action='invite_sent_email'` ou `'invite_sent_whatsapp'`).
+**3. Gasto autorizado por mês (12 meses)**
+Gráfico de barras/linha com `purchase_orders.valor_total` por mês.
 
-**4. Pequenos ajustes de UX**
-- Mensagem padrão editável (textarea opcional) — útil para reaproveitar o mesmo texto entre fornecedores.
-- Botão "Copiar mensagem completa" (link + texto) para colar em qualquer canal.
-- Indicação visual ao lado do nome quando o fornecedor já está no cadastro (badge "Cadastrado").
+**4. Bloco "Atenção Imediata" (lista priorizada e clicável)**
+- Requisições em rascunho >5 dias.
+- Cotações abertas >7 dias sem campeão.
+- OCs aguardando aprovação >3 dias.
+- Convites a expirar (<48h) sem resposta.
+- **Rubricas com >80% do orçamento consumido** (cálculo idêntico ao Controle de Rubricas).
+
+**5. Top 10 Fornecedores do período**
+Nome · CNPJ · nº OCs · valor total autorizado · ticket médio · última OC · badge "Cadastrado" (se em `suppliers`).
+
+**6. Top 10 Itens mais comprados**
+Descrição · quantidade total · valor acumulado · preço médio · variação % vs período anterior (a partir de `purchase_order_items` cruzado com `price_history`).
+
+**7. Conformidade Orçamentária — espelho do Controle de Rubricas (núcleo do painel)**
+Para cada **contrato ativo**, lista de rubricas com:
+- Rubrica · Orçamento (R$) · **Lançado** (`rubrica_entries`) · **Comprometido em OCs** (autorizada/enviada/recebida) · **Total executado** · **% consumido** · **Saldo disponível**.
+- Barra de progresso com **as mesmas faixas de cor** do Controle de Rubricas (verde/amarelo/vermelho).
+- Linha de alerta automático para itens >80% e estouro (>100%).
+- Botão "Ver no Controle de Rubricas" → leva direto ao card correspondente, garantindo navegação cruzada.
+- Totais por **contrato** e por **unidade** (somatório de orçamento × executado), reproduzindo a mesma agregação usada no card.
+
+**8. Distribuição por Unidade e Status**
+Barras horizontais: gasto autorizado por unidade · mini-distribuição: nº de OCs por status.
+
+### Filtros do painel
+- **Período**: Mês atual / 30 / 90 / 180 dias / Ano / Personalizado.
+- **Unidade**: Todas / específica.
+- Os mesmos filtros são aplicados ao bloco de Conformidade Orçamentária para que o resultado bata 1:1 com o que aparece em **Lançamentos → Controle de Rubricas** sob os mesmos filtros.
 
 ### Alterações técnicas
 
-- **Frontend (`src/components/purchases/SupplierInviteModal.tsx`)**:
-  - Carregar `suppliers` (ativos, ordem alfabética) ao abrir.
-  - Adicionar `Combobox` + toggle "Manual / Do cadastro".
-  - Mini-form de criação rápida (reusa lógica do `SupplierRegistryModal`).
-  - Novas ações na linha do convite: botões "E-mail" e "WhatsApp" ao lado de "Copiar link".
-  - Função `buildInviteMessage(invite, requisicao)` para padronizar o texto.
-  - Após envio (e-mail/WhatsApp): `update quotation_invites set status='enviado'` + log em `purchase_audit_log`.
+- **Novo**: `src/components/purchases/PurchasesDashboardPanel.tsx`.
+- **Novo utilitário compartilhado**: `src/lib/rubricaBudget.ts` — função `computeRubricaConsumption({ contracts, rubricaEntries, purchaseOrders, period, unit })` reutilizada **tanto pelo Controle de Rubricas quanto pelo novo painel** (refator leve no card de Rubricas para passar a importar daqui — sem mudar comportamento).
+- **`src/pages/ComprasPage.tsx`**: substituir o `<TabsContent value="painel">` atual por `<PurchasesDashboardPanel />`, passando `requisitions`, `quotations`, `orders`, `contracts`, `invitesByReq` por props (sem refetch).
+- **Queries adicionais (React Query)**:
+  - `purchase_order_items` (top itens).
+  - `quotation_invites` completo (taxa de resposta + expiração).
+  - `rubrica_entries` filtrado por período/unidade (para o bloco de conformidade).
+  - `suppliers` (badge "Cadastrado").
+- **Sem migrações novas**. Tudo a partir de tabelas existentes.
+- Gráficos via `recharts` (já presente em `src/components/ui/chart.tsx`).
 
-- **Banco**: nenhuma migração nova — `suppliers` e `quotation_invites` já existem.
+### Resultado para o gestor
 
-### Comportamento final
-
-- Abro **Convidar** → escolho "Cirúrgica Mafra" da lista → dados preenchem sozinhos.
-- Clico em **WhatsApp** → abre conversa pronta com o link.
-- Ou clico em **E-mail** → cliente de e-mail abre com tudo redigido.
-- Se for um fornecedor novo, posso digitar na hora e ainda salvar no cadastro com 1 clique para reusar depois.
+- Abre **Compras → Painel** e enxerga, em uma tela: operação (gargalos, tempos, aprovações pendentes), gasto (mês a mês, por fornecedor, por item) e **conformidade orçamentária por rubrica idêntica ao Controle de Rubricas** — mesmos números, mesmas cores, mesmos limites de alerta.
+- Clica em qualquer rubrica em alerta no painel → vai direto ao Controle de Rubricas para detalhar/lançar.
 
