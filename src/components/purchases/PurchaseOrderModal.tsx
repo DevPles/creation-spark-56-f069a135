@@ -305,7 +305,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const numero = order?.numero || "OC (rascunho)";
+    const numero = order?.numero || "Sem número";
     const now = new Date();
     const dataEmissao = now.toLocaleDateString("pt-BR");
     const horaEmissao = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -554,7 +554,7 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     doc.text(`Documento gerado eletronicamente • ${dataEmissao} ${horaEmissao}`, 12, pageH - 9);
     doc.text(`OC ${numero}${reqNumero ? "  •  Req. " + reqNumero : ""}`, pageW - 12, pageH - 9, { align: "right" });
 
-    doc.save(`${numero.replace(/[\/\s]/g, "_")}.pdf`);
+    doc.save(`OC_${numero.replace(/[\/\s]/g, "_")}.pdf`);
   };
 
   const authorize = async () => {
