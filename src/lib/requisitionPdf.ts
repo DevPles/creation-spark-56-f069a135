@@ -31,6 +31,26 @@ const REQ_STATUS_LABEL: Record<string, string> = {
   cancelada: "Cancelada",
 };
 
+const JUSTIFICATIVA_LABEL: Record<string, string> = {
+  mensal: "Reposição mensal",
+  reposicao: "Reposição de estoque",
+  emergencial: "Compra emergencial",
+  dispensa: "Dispensa de licitação",
+  inexigibilidade: "Inexigibilidade de licitação",
+  projeto: "Projeto / investimento",
+};
+
+const parseLegalBlock = (obs?: string | null): { legal: any; clean: string } => {
+  const raw = obs || "";
+  const match = raw.match(/\[JUST_LEGAL\]([\s\S]*?)\[\/JUST_LEGAL\]/);
+  let legal: any = null;
+  if (match) {
+    try { legal = JSON.parse(match[1]); } catch { legal = null; }
+  }
+  const clean = raw.replace(/\[JUST_LEGAL\][\s\S]*?\[\/JUST_LEGAL\]/, "").trim();
+  return { legal, clean };
+};
+
 // Paleta azul corporativa
 const NAVY: [number, number, number] = [11, 47, 99];     // header escuro
 const BLUE: [number, number, number] = [29, 78, 156];    // títulos / tabela header
@@ -66,6 +86,10 @@ export async function generateRequisitionPdf(requisitionId: string) {
 
   const totalItens = (items || []).reduce((s: number, it: any) => s + Number(it.quantidade || 0), 0);
   const linhasItens = (items || []).length;
+
+  const { legal, clean: cleanObs } = parseLegalBlock(req.observacoes);
+  const justTipo = (req.justificativa_tipo || "").toLowerCase();
+  const isLegalSpecial = ["dispensa", "inexigibilidade", "emergencial"].includes(justTipo);
 
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -175,7 +199,7 @@ export async function generateRequisitionPdf(requisitionId: string) {
     ["Solicitante", req.solicitante_nome || "—"],
     ["Aprovador imediato", req.aprovador_imediato_nome || "—"],
     ["Aprovador da diretoria", req.aprovador_diretoria_nome || "—"],
-    ["Justificativa / tipo", req.justificativa_tipo || "—"],
+    ["Justificativa / tipo", JUSTIFICATIVA_LABEL[justTipo] || req.justificativa_tipo || "—"],
     ["Criada em", fmtDateTime(req.created_at)],
     ["Atualizada em", fmtDateTime(req.updated_at)],
   ];
@@ -234,6 +258,45 @@ export async function generateRequisitionPdf(requisitionId: string) {
     },
   });
   y = (doc as any).lastAutoTable.finalY + 16;
+
+  // ===== Justificativa legal (Dispensa / Inexigibilidade / Emergencial) =====
+  if (isLegalSpecial) {
+    const tipoLabel =
+      justTipo === "dispensa" ? "Dispensa de Licitação"
+      : justTipo === "inexigibilidade" ? "Inexigibilidade de Licitação"
+      : "Compra Emergencial";
+    sectionTitle(`Justificativa legal — ${tipoLabel}`);
+    const legalRows: [string, string][] = [
+      ["Base legal / artigo", legal?.base_legal || "—"],
+      ["Justificativa da escolha", legal?.justificativa || "—"],
+      ["Fundamentação técnica", legal?.fundamentacao || "—"],
+    ];
+    if (justTipo === "inexigibilidade") {
+      legalRows.push(["Comprovação de exclusividade / fornecedor único", legal?.fornecedor_unico || "—"]);
+    }
+    if (justTipo === "dispensa") {
+      legalRows.push(["Comparativo / pesquisa de preços", legal?.fornecedor_unico || "—"]);
+    }
+    if (justTipo === "emergencial") {
+      legalRows.push(["Descrição do risco / dano potencial", legal?.risco_descricao || "—"]);
+      legalRows.push(["Prazo máximo (urgência)", legal?.urgencia_prazo || "—"]);
+    }
+    if (legal?.responsavel_tecnico) {
+      legalRows.push(["Responsável técnico", legal.responsavel_tecnico]);
+    }
+    autoTable(doc, {
+      startY: y,
+      theme: "grid",
+      styles: { fontSize: 9, cellPadding: 5, lineColor: BORDER_BLUE, textColor: TEXT_DARK },
+      headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: ALT_ROW },
+      head: [["Campo", "Conteúdo"]],
+      body: legalRows,
+      margin: { left: margin, right: margin },
+      columnStyles: { 0: { cellWidth: 200, fontStyle: "bold", textColor: NAVY } },
+    });
+    y = (doc as any).lastAutoTable.finalY + 16;
+  }
 
   // ===== Convites a fornecedores =====
   if (invites.length) {
@@ -307,11 +370,11 @@ export async function generateRequisitionPdf(requisitionId: string) {
   }
 
   // ===== Observações =====
-  if (req.observacoes) {
+  if (cleanObs) {
     sectionTitle("Observações");
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    const lines = doc.splitTextToSize(req.observacoes, pageW - margin * 2);
+    const lines = doc.splitTextToSize(cleanObs, pageW - margin * 2);
     y = ensureSpace(lines.length * 12 + 10, y);
     doc.setFillColor(...ALT_ROW);
     doc.setDrawColor(...BORDER_BLUE);
