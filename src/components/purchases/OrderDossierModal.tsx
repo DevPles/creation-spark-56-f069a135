@@ -290,21 +290,27 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
       y3 += 8;
       autoTable(doc, {
         startY: y3,
-        head: [["Fornecedor", "CNPJ", "E-mail / Telefone", "Enviado em", "Status", "Respondido em", "IP", "Link público"]],
-        body: invites.map((iv: any) => [
-          iv.fornecedor_nome,
-          iv.fornecedor_cnpj || "—",
-          [iv.fornecedor_email, iv.fornecedor_telefone].filter(Boolean).join(" / ") || "—",
-          fmtDateTime(iv.created_at),
-          iv.submitted_at ? "Respondido" : "Pendente",
-          iv.submitted_at ? fmtDateTime(iv.submitted_at) : "—",
-          iv.submission_ip || "—",
-          `${window.location.origin}/cotacao-publica/${iv.id}`,
-        ]),
+        head: [["Fornecedor", "CNPJ", "Contato fornecedor", "Enviado em", "Status", "Respondido em", "Respondente (nome / e-mail / cel / CPF)", "IP", "Link público"]],
+        body: invites.map((iv: any) => {
+          const respondente = iv.responder_name
+            ? `${iv.responder_name}\n${iv.responder_email || "—"}\nTel: ${iv.responder_phone || "—"}${iv.responder_cpf ? `\nCPF: ${iv.responder_cpf}` : ""}`
+            : "—";
+          return [
+            iv.fornecedor_nome,
+            iv.fornecedor_cnpj || "—",
+            [iv.fornecedor_email, iv.fornecedor_telefone].filter(Boolean).join(" / ") || "—",
+            fmtDateTime(iv.created_at),
+            iv.submitted_at ? "Respondido" : "Pendente",
+            iv.submitted_at ? fmtDateTime(iv.submitted_at) : "—",
+            respondente,
+            iv.submission_ip || "—",
+            `${window.location.origin}/cotacao-publica/${iv.id}`,
+          ];
+        }),
         theme: "grid",
         headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 6.5, halign: "center" },
         styles: { fontSize: 6.5, cellPadding: 2, valign: "middle", overflow: "linebreak" },
-        columnStyles: { 7: { cellWidth: 110, textColor: [13, 79, 79] } },
+        columnStyles: { 6: { cellWidth: 95 }, 8: { cellWidth: 95, textColor: [13, 79, 79] } },
         margin: { left: margin, right: margin },
       });
     }
