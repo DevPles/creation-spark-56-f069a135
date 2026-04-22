@@ -167,6 +167,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           setJustPlanoAcao(data.plano_acao || "");
           setJustPlanoResponsavel(data.plano_responsavel || "");
           setJustPlanoPrazo(data.plano_prazo || "");
+          setJustFornecedorAnexos(Array.isArray(data.fornecedor_unico_anexos) ? data.fornecedor_unico_anexos : []);
         } catch { /* ignora */ }
         setObservacoes(rawObs.replace(blockMatch[0], "").trim());
       } else {
