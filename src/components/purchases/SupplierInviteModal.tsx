@@ -89,13 +89,20 @@ export default function SupplierInviteModal({ open, onOpenChange, requisitionId,
   };
 
   const handleRegenerate = async (id: string) => {
-    const { error } = await (supabase as any).rpc("gen_random_uuid" as any);
-    // Postgres não expõe gen_random_uuid via RPC; faremos update direto pedindo novo token
-    const { error: e2 } = await (supabase as any)
+    const newToken = (typeof crypto !== "undefined" && "randomUUID" in crypto)
+      ? crypto.randomUUID()
+      : undefined;
+    const payload: Record<string, unknown> = {
+      status: "pendente",
+      submitted_at: null,
+      expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
+    };
+    if (newToken) payload.token = newToken;
+    const { error } = await (supabase as any)
       .from("quotation_invites")
-      .update({ status: "pendente", submitted_at: null, expires_at: new Date(Date.now() + 7 * 86400000).toISOString() })
+      .update(payload)
       .eq("id", id);
-    if (error || e2) {
+    if (error) {
       toast.error("Erro ao reenviar");
       return;
     }
