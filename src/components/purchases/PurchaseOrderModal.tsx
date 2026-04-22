@@ -400,6 +400,41 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     doc.text(doc.splitTextToSize(endereco || "—", pageW - 30).slice(0, 1), 15, y + 12);
     y += 22;
 
+    // Rubrica budget panel (when rubric is selected)
+    if (selectedRubrica && rubricaBudget > 0) {
+      const after = rubricaSpent + valorTotal;
+      const remaining = rubricaBudget - after;
+      const pct = (after / rubricaBudget) * 100;
+      const exceeds = after > rubricaBudget;
+      const panelH = 22;
+      doc.setDrawColor(...lineColor);
+      doc.setFillColor(exceeds ? 254 : 248, exceeds ? 242 : 250, exceeds ? 242 : 252);
+      doc.roundedRect(12, y, pageW - 24, panelH, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...brandTeal);
+      doc.text(`RUBRICA — ${(selectedRubrica.name || "").toUpperCase()} (${selectedRubrica.percent}%)`, 15, y + 5);
+
+      const cellW = (pageW - 24) / 4;
+      const drawCell = (i: number, label: string, val: string, highlight?: boolean) => {
+        const cx = 12 + i * cellW + 3;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.setTextColor(...muted);
+        doc.text(label.toUpperCase(), cx, y + 11);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        if (highlight) doc.setTextColor(exceeds ? 185 : 22, exceeds ? 28 : 78, exceeds ? 28 : 99);
+        else doc.setTextColor(...ink);
+        doc.text(val, cx, y + 17);
+      };
+      drawCell(0, "Orçamento", fmtBRL(rubricaBudget));
+      drawCell(1, "Já gasto", fmtBRL(rubricaSpent));
+      drawCell(2, "Esta OC", fmtBRL(valorTotal));
+      drawCell(3, `Saldo (${pct.toFixed(1)}%)`, fmtBRL(remaining), true);
+      y += panelH + 4;
+    }
+
     // ===== Items table =====
     autoTable(doc, {
       startY: y,
