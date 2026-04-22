@@ -152,7 +152,7 @@ export default function ComprasPage() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="flex flex-wrap h-auto">
+          <TabsList className="inline-flex w-auto h-auto flex-wrap">
             <TabsTrigger value="requisicoes">Requisições</TabsTrigger>
             <TabsTrigger value="cotacoes">Cotações</TabsTrigger>
             <TabsTrigger value="banco">Banco de Preços</TabsTrigger>
