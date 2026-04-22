@@ -24,6 +24,7 @@ import AssistentePage from "./pages/AssistentePage";
 import OpmePage from "./pages/OpmePage";
 import ComprasPage from "./pages/ComprasPage";
 import PublicQuotationPage from "./pages/PublicQuotationPage";
+import PublicOrderApprovalPage from "./pages/PublicOrderApprovalPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/opme" element={<ProtectedRoute><OpmePage /></ProtectedRoute>} />
             <Route path="/compras" element={<ProtectedRoute><ComprasPage /></ProtectedRoute>} />
             <Route path="/cotacao-publica/:token" element={<PublicQuotationPage />} />
+            <Route path="/aprovar-oc/:token" element={<PublicOrderApprovalPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

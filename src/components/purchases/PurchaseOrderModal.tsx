@@ -52,6 +52,9 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
   const [justificativaTroca, setJustificativaTroca] = useState("");
   const [winnerSupplierId, setWinnerSupplierId] = useState<string>("");
+  const [approvalLink, setApprovalLink] = useState<string>("");
+  const [signedApproval, setSignedApproval] = useState<any>(null);
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -86,6 +89,21 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         }
         const { data: itemsData } = await supabase.from("purchase_order_items").select("*").eq("purchase_order_id", orderId).order("item_num");
         setItems(itemsData || []);
+        // Load latest approval (link)
+        const { data: appr } = await supabase
+          .from("purchase_order_approvals" as any)
+          .select("*")
+          .eq("purchase_order_id", orderId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (appr) {
+          setApprovalLink(`${window.location.origin}/aprovar-oc/${(appr as any).token}`);
+          setSignedApproval((appr as any).signed_at ? appr : null);
+        } else {
+          setApprovalLink("");
+          setSignedApproval(null);
+        }
         // Also load quotation context if present (for re-selecting supplier)
         if (o?.quotation_id) {
           const { data: q } = await supabase.from("purchase_quotations").select("*").eq("id", o.quotation_id).single();
@@ -192,6 +210,37 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
       }
       return next;
     }));
+  };
+
+  const generateApprovalLink = async () => {
+    if (!profile) return;
+    if (!order?.id) {
+      toast.error("Salve a OC antes de gerar o link de aprovação");
+      return;
+    }
+    setGeneratingLink(true);
+    try {
+      const { data, error } = await supabase
+        .from("purchase_order_approvals" as any)
+        .insert({ purchase_order_id: order.id, created_by: profile.id })
+        .select()
+        .single();
+      if (error) throw error;
+      const url = `${window.location.origin}/aprovar-oc/${(data as any).token}`;
+      setApprovalLink(url);
+      try { await navigator.clipboard.writeText(url); toast.success("Link de aprovação copiado!"); }
+      catch { toast.success("Link gerado — copie manualmente"); }
+    } catch (e: any) {
+      toast.error("Erro ao gerar link: " + (e?.message || "desconhecido"));
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
+  const copyApprovalLink = async () => {
+    if (!approvalLink) return;
+    try { await navigator.clipboard.writeText(approvalLink); toast.success("Link copiado!"); }
+    catch { toast.error("Não foi possível copiar"); }
   };
 
   const saveDraft = async () => {
@@ -442,12 +491,23 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     const aprovadoEm = order?.aprovado_em ? new Date(order.aprovado_em) : null;
     const aprovadoData = aprovadoEm ? `${aprovadoEm.toLocaleDateString("pt-BR")} ${aprovadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : "";
     const isAuthorized = order?.status === "autorizada" || order?.status === "enviada" || order?.status === "recebida";
+    // If signed via public link, prefer that data
+    const signedAt = signedApproval?.signed_at ? new Date(signedApproval.signed_at) : null;
+    const signedData = signedAt
+      ? `${signedAt.toLocaleDateString("pt-BR")} ${signedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+      : "";
+    const approverName = signedApproval?.approver_name || (isAuthorized ? (order?.aprovado_por_nome || "") : "");
+    const approverCargo = signedApproval?.approver_cargo || "Gestor / Diretoria";
+    const approverIp = signedApproval?.approver_ip ? ` • IP ${signedApproval.approver_ip}` : "";
+    const dateLine = signedData
+      ? `Assinado em ${signedData}${approverIp}`
+      : (aprovadoData ? `Data: ${aprovadoData}` : "Data: ___/___/______");
     drawSignature(
       12 + sigW + 12,
-      isAuthorized ? "Autorizado por" : "Autorização (a preencher)",
-      isAuthorized ? (order?.aprovado_por_nome || "") : "",
-      "Gestor / Diretoria",
-      aprovadoData ? `Data: ${aprovadoData}` : "Data: ___/___/______",
+      signedApproval ? "Assinado digitalmente" : (isAuthorized ? "Autorizado por" : "Autorização (a preencher)"),
+      approverName,
+      approverCargo,
+      dateLine,
     );
 
     // ===== Footer =====
@@ -625,6 +685,46 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
                 <Button className="rounded-full" disabled={saving} onClick={authorize}>Autorizar</Button>
                 <Button variant="destructive" className="rounded-full" disabled={saving} onClick={deny}>Negar</Button>
               </div>
+            </div>
+          )}
+
+          {order?.id && (
+            <div className="border rounded-md p-3 space-y-2 bg-muted/30">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Label className="m-0">Aprovação por link (opcional)</Label>
+                {signedApproval ? (
+                  <Badge variant="default">Assinado por {signedApproval.approver_name}</Badge>
+                ) : approvalLink ? (
+                  <Badge variant="outline">Aguardando assinatura</Badge>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Gere um link único para enviar ao aprovador. Ele assina online (nome, cargo, ciência) e o sistema captura IP, data e hora. Você também pode simplesmente baixar o PDF e enviar por outro meio.
+              </p>
+              {approvalLink ? (
+                <div className="flex gap-2 flex-wrap">
+                  <Input value={approvalLink} readOnly className="text-xs" />
+                  <Button type="button" variant="outline" className="rounded-full" onClick={copyApprovalLink}>Copiar link</Button>
+                  {!signedApproval && (
+                    <Button type="button" variant="ghost" className="rounded-full" onClick={generateApprovalLink} disabled={generatingLink}>
+                      Gerar novo link
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <Button type="button" className="rounded-full" onClick={generateApprovalLink} disabled={generatingLink}>
+                  {generatingLink ? "Gerando..." : "Gerar link de aprovação"}
+                </Button>
+              )}
+              {signedApproval && (
+                <div className="text-xs text-muted-foreground space-y-0.5 pt-1">
+                  <div>Decisão: <strong>{signedApproval.decision}</strong></div>
+                  <div>Cargo: {signedApproval.approver_cargo || "—"}</div>
+                  <div>IP: {signedApproval.approver_ip || "—"}</div>
+                  <div>Data/hora: {new Date(signedApproval.signed_at).toLocaleString("pt-BR")}</div>
+                  {signedApproval.motivo_recusa && <div>Motivo: {signedApproval.motivo_recusa}</div>}
+                </div>
+              )}
             </div>
           )}
         </div>
