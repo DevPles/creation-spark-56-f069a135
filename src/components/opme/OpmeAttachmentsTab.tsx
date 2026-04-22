@@ -67,14 +67,13 @@ export default function OpmeAttachmentsTab({ opmeRequestId }: Props) {
       const path = `${user.id}/${opmeRequestId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: upErr } = await supabase.storage.from("opme-attachments").upload(path, file);
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("opme-attachments").getPublicUrl(path);
       const cat = CATEGORIES.find(c => c.value === category);
       const { error: insErr } = await supabase.from("opme_attachments").insert({
         opme_request_id: opmeRequestId,
         stage,
         category,
         file_name: file.name,
-        file_url: pub.publicUrl,
+        file_url: path,
         file_type: file.type,
         file_size: file.size,
         description: description || null,
@@ -109,9 +108,10 @@ export default function OpmeAttachmentsTab({ opmeRequestId }: Props) {
     if (!user) return;
     if (!confirm(`Excluir "${att.file_name}"?`)) return;
     try {
-      // Extract path from URL
-      const urlParts = att.file_url.split("/opme-attachments/");
-      const path = urlParts[1];
+      // file_url stores the storage path directly (private bucket)
+      const path = att.file_url.includes("/opme-attachments/")
+        ? att.file_url.split("/opme-attachments/")[1]
+        : att.file_url;
       if (path) await supabase.storage.from("opme-attachments").remove([path]);
       await supabase.from("opme_attachments").delete().eq("id", att.id);
       await supabase.from("opme_history").insert({
@@ -132,6 +132,21 @@ export default function OpmeAttachmentsTab({ opmeRequestId }: Props) {
   const requiredMissing = CATEGORIES
     .filter(c => c.required)
     .filter(c => !attachments.some(a => a.category === c.value));
+
+  const openAttachment = async (att: any) => {
+    try {
+      const path = att.file_url.includes("/opme-attachments/")
+        ? att.file_url.split("/opme-attachments/")[1]
+        : att.file_url;
+      const { data, error } = await supabase.storage
+        .from("opme-attachments")
+        .createSignedUrl(path, 3600);
+      if (error || !data?.signedUrl) throw error || new Error("URL não gerada");
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao abrir anexo");
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -228,10 +243,8 @@ export default function OpmeAttachmentsTab({ opmeRequestId }: Props) {
                   </p>
                 </div>
                 <div className="flex gap-1">
-                  <Button asChild variant="ghost" size="icon">
-                    <a href={att.file_url} target="_blank" rel="noopener noreferrer">
-                      <Download className="h-4 w-4" />
-                    </a>
+                  <Button variant="ghost" size="icon" onClick={() => openAttachment(att)}>
+                    <Download className="h-4 w-4" />
                   </Button>
                   {canDelete && (
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(att)}>
