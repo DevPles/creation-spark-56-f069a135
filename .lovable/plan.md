@@ -1,57 +1,82 @@
 
 
-## Imagens dos itens do catálogo nos convites
+## Dossiê de Auditoria da Ordem de Compra (Tribunal de Contas)
 
-Vamos adicionar uma foto opcional a cada item do catálogo de produtos. Essa imagem aparecerá no cadastro do item, na tela de requisição (ao escolher o item) e também na página pública que o fornecedor recebe pelo link de convite — assim ele clica, vê a imagem e cota com mais segurança.
+Adicionar, em **Compras → Ordens de Compra**, um novo botão **"Dossiê"** na coluna Ações que gera um documento PDF completo, oficial e auditável de todo o processo daquela OC — pronto para envio ao Tribunal de Contas. Também adicionar um **filtro por período (calendário)** na página.
 
 ---
 
 ### O que muda para o usuário
 
-**1. Cadastro do item (Catálogo de Produtos)**
-- Novo campo "Imagem do produto" no modal de cadastro/edição.
-- Botão para enviar foto (JPG/PNG/WEBP, até 5 MB). Pré-visualização logo abaixo.
-- Botão "Remover imagem" se já houver uma.
-- Imagem é opcional — itens antigos continuam funcionando normalmente.
+**1. Novo filtro de período (calendário) no topo da página**
+- Componente `Popover` + `Calendar` em modo `range`, com botões rápidos: "Hoje", "Últimos 7 dias", "Mês atual", "Limpar".
+- Aplica em todas as abas (Requisições, Cotações, Ordens) filtrando pela data principal de cada registro.
 
-**2. Requisição de compra**
-- Na lista de itens, ao lado da descrição, aparece uma miniatura clicável (quando o item do catálogo tem foto).
-- Clicar abre a imagem ampliada.
+**2. Botão "Dossiê" na coluna Ações de Ordens de Compra**
+- Ao clicar, abre modal com pré-visualização e botão **"Baixar PDF"**.
+- Nome do arquivo: `Dossie_OC_[numero]_[data].pdf`.
 
-**3. Página pública do convite (o que o fornecedor vê)**
-- Nova coluna "Foto" antes da Descrição na tabela "Itens para cotar".
-- Miniatura clicável; ao clicar, abre a imagem em tamanho maior numa janela.
-- Itens sem foto mostram um espaço neutro "—".
+**3. Conteúdo do Dossiê (PDF estruturado e numerado)**
+
+**Capa**
+- Marca Moss, número da OC, unidade hospitalar, fornecedor vencedor, valor total, data de emissão e data de geração do dossiê.
+
+**Seção 1 — Histórico do processo (linha do tempo)**
+- Requisição: criação (data/hora, solicitante, setor)
+- Convites enviados aos fornecedores (data/hora, e-mail/telefone, status)
+- Respostas recebidas via link público (data/hora, IP do envio)
+- Cotações lançadas (manuais ou via link), com autor e data/hora
+- Geração da OC (autor, data/hora)
+- Aprovação/recusa pública (assinante, cargo, e-mail, IP, LGPD, data/hora)
+- Mudanças de status posteriores
+- Origem: `purchase_audit_log` + `quotation_invites` + `purchase_order_approvals` + `purchase_orders`.
+
+**Seção 2 — Grade comparativa de preços e log de preenchimento**
+- Tabela cruzada: itens × fornecedores, com preço unitário, total, prazo, condição e marcação do vencedor.
+- Log detalhado por fornecedor:
+  - Razão social e CNPJ
+  - Origem (link público / manual)
+  - Data e hora de envio da resposta
+  - **Endereço IP** da máquina usada (capturado via header `x-forwarded-for` na submissão pública)
+  - Quem lançou (nome do usuário, no caso de cotação manual)
+
+**Seção 3 — Itens comprados**
+- Tabela completa: nº, **código do produto** (do catálogo), descrição, quantidade, unidade, preço unitário, total, **setor solicitante** (do `purchase_requisitions.setor` e/ou `product_catalog.setor`).
+- Quando houver foto cadastrada no catálogo, miniatura ao lado do código.
+
+**Seção 4 — Aprovação e rastreabilidade legal**
+- Dados completos do aprovador (nome, cargo, e-mail, IP, ciência LGPD, data/hora da assinatura).
+- Contrato vinculado, rubrica utilizada, saldo da rubrica antes/depois.
+
+**Rodapé em todas as páginas:** "Documento gerado automaticamente em DD/MM/AAAA HH:MM por [usuário] — Sistema MetricOss" + numeração de páginas.
 
 ---
 
 ### Detalhes técnicos
 
 **Banco de dados**
-- Nova coluna `image_url text` (nullable) na tabela `product_catalog`.
-- Atualizar a função `get_invite_by_token` para incluir `image_url` em cada item retornado, fazendo `LEFT JOIN` por descrição+unidade ou — preferencialmente — adicionando uma coluna `product_id uuid` em `purchase_requisition_items` referenciando `product_catalog(id)` (para vínculo confiável). Itens existentes ficam com `product_id NULL` e seguem sem imagem.
-
-**Storage**
-- Novo bucket público `product-images` para armazenar as fotos.
-- Políticas RLS:
-  - SELECT público (qualquer um pode ver — necessário para fornecedor anônimo no convite).
-  - INSERT/UPDATE/DELETE apenas para usuários autenticados.
+- Adicionar coluna `submission_ip text` em `quotation_invite_responses` (e/ou em `quotation_invites` no `submitted_at`) para registrar o IP de envio.
+- Atualizar a função RPC `submit_invite_response` para receber e gravar o IP (já existe parâmetro similar em `submit_order_approval`).
+- Nova função RPC `get_order_dossier(_order_id uuid)` retornando JSON consolidado: ordem, itens (com `product_id` → catálogo para código/setor/imagem), requisição, convites + respostas (com IP/data/hora), cotação + suppliers + prices, aprovação, audit log filtrado pelas entidades relacionadas.
 
 **Frontend**
-- `ProductCatalogModal.tsx`: input de arquivo + upload para o bucket + salvar `image_url` no registro.
-- `PurchaseRequisitionModal.tsx`: ao selecionar item do catálogo, gravar `product_id` no item; mostrar miniatura na tabela.
-- `PublicQuotationPage.tsx`: nova coluna "Foto" + Dialog para ampliar a imagem ao clicar.
-- A função RPC `get_invite_by_token` será ajustada para incluir `image_url` resolvido via `product_id` → `product_catalog`.
+- Novo componente `OrderDossierModal.tsx` em `src/components/purchases/`:
+  - Chama a RPC e renderiza preview na tela.
+  - Geração do PDF com **jsPDF + jspdf-autotable** (já compatível com o stack atual).
+- `ComprasPage.tsx`:
+  - Adicionar estado `dateRange: { from?: Date; to?: Date }` e `Popover` com `Calendar mode="range"` (com `pointer-events-auto`).
+  - Aplicar `dateRange` em `filteredReqs`, `filteredQuotes`, `filteredOrders` (campos `data_requisicao`, `data_cotacao`, `created_at`).
+  - Novo botão **"Dossiê"** (variant `outline`, rounded-full) na coluna Ações da tabela de Ordens, abrindo `OrderDossierModal`.
 
-**Compatibilidade**
-- Tudo é opcional. Itens, requisições e convites antigos continuam funcionando — apenas não exibem foto.
+**Captura de IP**
+- A página pública `PublicQuotationPage` ao chamar `submit_invite_response` enviará o IP obtido via serviço público leve (ex: `https://api.ipify.org?format=json`) como parâmetro adicional. Fallback: registra "não capturado".
 
 ---
 
 ### Arquivos afetados
 
-- `supabase/migrations/` — nova migração: coluna `image_url`, coluna `product_id` em `purchase_requisition_items`, bucket `product-images` com policies, atualização da função `get_invite_by_token`.
-- `src/components/purchases/ProductCatalogModal.tsx` — upload e exibição da imagem.
-- `src/components/purchases/PurchaseRequisitionModal.tsx` — gravar `product_id` e mostrar miniatura.
-- `src/pages/PublicQuotationPage.tsx` — coluna Foto + visualizador ampliado.
+- `supabase/migrations/` — nova coluna `submission_ip`, atualização de `submit_invite_response`, criação da RPC `get_order_dossier`.
+- `src/pages/ComprasPage.tsx` — filtro de calendário (range) + botão "Dossiê" nas Ordens.
+- `src/components/purchases/OrderDossierModal.tsx` — novo (preview + geração de PDF).
+- `src/pages/PublicQuotationPage.tsx` — captura e envio do IP na submissão.
 
