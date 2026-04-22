@@ -778,7 +778,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           descricao: string
+          facility_unit: string | null
           id: string
+          setor: string | null
           tipo: string
           unidade_medida: string
           updated_at: string
@@ -790,7 +792,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descricao: string
+          facility_unit?: string | null
           id?: string
+          setor?: string | null
           tipo?: string
           unidade_medida?: string
           updated_at?: string
@@ -802,7 +806,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descricao?: string
+          facility_unit?: string | null
           id?: string
+          setor?: string | null
           tipo?: string
           unidade_medida?: string
           updated_at?: string

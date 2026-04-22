@@ -84,6 +84,8 @@ const UNIDADES = [
   "PAR", "PC", "PCT", "RL", "SC", "SV", "TB", "UN",
 ];
 
+const FACILITY_UNITS = ["Hospital Geral", "UPA Norte", "UBS Centro"];
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -98,11 +100,27 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
   const [descricao, setDescricao] = useState("");
   const [unidade, setUnidade] = useState("UN");
   const [previewCode, setPreviewCode] = useState<string>("");
+  const [facilityUnit, setFacilityUnit] = useState<string>("Hospital Geral");
+  const [setor, setSetor] = useState<string>("");
+  const [sectorOptions, setSectorOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase
+        .from("sectors")
+        .select("name")
+        .eq("facility_unit", facilityUnit)
+        .order("name");
+      setSectorOptions((data || []).map((s: any) => s.name));
+    })();
+  }, [open, facilityUnit]);
 
   useEffect(() => {
     if (!open) {
       setDescricao("");
       setPreviewCode("");
+      setSetor("");
       return;
     }
     if (editing) {
@@ -111,6 +129,8 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
       setDescricao(editing.descricao || "");
       setUnidade(editing.unidade_medida || "UN");
       setPreviewCode(editing.codigo || "");
+      setFacilityUnit(editing.facility_unit || "Hospital Geral");
+      setSetor(editing.setor || "");
       return;
     }
     const loadPreview = async () => {
@@ -144,7 +164,9 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
             classificacao,
             descricao: descricao.trim(),
             unidade_medida: unidade,
-          })
+            facility_unit: facilityUnit,
+            setor: setor || null,
+          } as any)
           .eq("id", editing.id);
         if (error) throw error;
         toast.success("Item atualizado");
@@ -155,6 +177,8 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
           classificacao,
           descricao: descricao.trim(),
           unidade_medida: unidade,
+          facility_unit: facilityUnit,
+          setor: setor || null,
         } as any);
         if (error) throw error;
         toast.success(`Item cadastrado (${previewCode})`);
@@ -198,6 +222,27 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
           <div>
             <Label>Descrição técnica</Label>
             <Input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Seringa 10 ml" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Unidade hospitalar</Label>
+              <Select value={facilityUnit} onValueChange={(v) => { setFacilityUnit(v); setSetor(""); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FACILITY_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Setor</Label>
+              <Select value={setor || "__none__"} onValueChange={(v) => setSetor(v === "__none__" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— sem setor —</SelectItem>
+                  {sectorOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

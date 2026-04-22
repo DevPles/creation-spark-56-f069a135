@@ -79,7 +79,7 @@ export default function PriceBankPanel() {
   const filteredCatalog = catalog.filter(c => {
     if (!catalogSearch) return true;
     const q = catalogSearch.toLowerCase();
-    return [c.codigo, c.descricao, c.tipo, c.classificacao].filter(Boolean).join(" ").toLowerCase().includes(q);
+    return [c.codigo, c.descricao, c.tipo, c.classificacao, c.facility_unit, c.setor].filter(Boolean).join(" ").toLowerCase().includes(q);
   });
 
   // Agrupa histórico por unidade + descrição para calcular curva de consumo
@@ -226,6 +226,8 @@ export default function PriceBankPanel() {
                 <TableHead className="w-20">Tipo</TableHead>
                 <TableHead className="w-32">Classificação</TableHead>
                 <TableHead>Descrição</TableHead>
+                <TableHead className="w-32">Unidade</TableHead>
+                <TableHead className="w-32">Setor</TableHead>
                 <TableHead className="w-16">Un</TableHead>
                 <TableHead className="w-32 text-right">Ações</TableHead>
               </TableRow>
@@ -237,6 +239,8 @@ export default function PriceBankPanel() {
                   <TableCell>{c.tipo}</TableCell>
                   <TableCell className="capitalize">{c.classificacao}</TableCell>
                   <TableCell className="text-xs">{c.descricao}</TableCell>
+                  <TableCell className="text-xs">{c.facility_unit || "—"}</TableCell>
+                  <TableCell className="text-xs">{c.setor || "—"}</TableCell>
                   <TableCell>{c.unidade_medida}</TableCell>
                   <TableCell className="text-right">
                     <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditingProduct(c); setCatalogModalOpen(true); }}>Editar</Button>
@@ -251,7 +255,7 @@ export default function PriceBankPanel() {
                 </TableRow>
               ))}
               {filteredCatalog.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum item no catálogo</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum item no catálogo</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
