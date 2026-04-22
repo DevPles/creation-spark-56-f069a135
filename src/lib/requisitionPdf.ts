@@ -259,6 +259,45 @@ export async function generateRequisitionPdf(requisitionId: string) {
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
+  // ===== Justificativa legal (Dispensa / Inexigibilidade / Emergencial) =====
+  if (isLegalSpecial) {
+    const tipoLabel =
+      justTipo === "dispensa" ? "Dispensa de Licitação"
+      : justTipo === "inexigibilidade" ? "Inexigibilidade de Licitação"
+      : "Compra Emergencial";
+    sectionTitle(`Justificativa legal — ${tipoLabel}`);
+    const legalRows: [string, string][] = [
+      ["Base legal / artigo", legal?.base_legal || "—"],
+      ["Justificativa da escolha", legal?.justificativa || "—"],
+      ["Fundamentação técnica", legal?.fundamentacao || "—"],
+    ];
+    if (justTipo === "inexigibilidade") {
+      legalRows.push(["Comprovação de exclusividade / fornecedor único", legal?.fornecedor_unico || "—"]);
+    }
+    if (justTipo === "dispensa") {
+      legalRows.push(["Comparativo / pesquisa de preços", legal?.fornecedor_unico || "—"]);
+    }
+    if (justTipo === "emergencial") {
+      legalRows.push(["Descrição do risco / dano potencial", legal?.risco_descricao || "—"]);
+      legalRows.push(["Prazo máximo (urgência)", legal?.urgencia_prazo || "—"]);
+    }
+    if (legal?.responsavel_tecnico) {
+      legalRows.push(["Responsável técnico", legal.responsavel_tecnico]);
+    }
+    autoTable(doc, {
+      startY: y,
+      theme: "grid",
+      styles: { fontSize: 9, cellPadding: 5, lineColor: BORDER_BLUE, textColor: TEXT_DARK },
+      headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: ALT_ROW },
+      head: [["Campo", "Conteúdo"]],
+      body: legalRows,
+      margin: { left: margin, right: margin },
+      columnStyles: { 0: { cellWidth: 200, fontStyle: "bold", textColor: NAVY } },
+    });
+    y = (doc as any).lastAutoTable.finalY + 16;
+  }
+
   // ===== Convites a fornecedores =====
   if (invites.length) {
     sectionTitle("Convites a fornecedores");
