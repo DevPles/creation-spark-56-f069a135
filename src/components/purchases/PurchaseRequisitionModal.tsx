@@ -283,14 +283,36 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
 
           <div>
             <Label>Classificação</Label>
-            <div className="flex flex-wrap gap-3 mt-2">
-              {CLASSIFICACOES.map(c => (
-                <label key={c} className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={classificacao.includes(c)} onCheckedChange={() => toggleClassif(c)} />
-                  {CLASSIF_LABEL[c]}
-                </label>
-              ))}
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="mt-1 flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-left hover:bg-accent/30"
+                >
+                  <span className="truncate">
+                    {classificacao.length === 0
+                      ? "Selecione uma ou mais classificações"
+                      : classificacao.map(c => CLASSIF_LABEL[c]).join(", ")}
+                  </span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {classificacao.length > 0 ? `${classificacao.length} selecionada(s)` : ""}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 w-[360px]" align="start">
+                <div className="max-h-72 overflow-y-auto py-1">
+                  {CLASSIFICACOES.map(c => (
+                    <label
+                      key={c}
+                      className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent"
+                    >
+                      <Checkbox checked={classificacao.includes(c)} onCheckedChange={() => toggleClassif(c)} />
+                      {CLASSIF_LABEL[c]}
+                    </label>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
