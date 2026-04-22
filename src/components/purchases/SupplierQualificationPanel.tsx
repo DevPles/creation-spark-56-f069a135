@@ -9,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle, Upload, Trash2, FileText, Eye, ShieldAlert, ShieldCheck, Lock } from "lucide-react";
 
 /**
  * Documentos obrigatórios — Art. 9º (qualificação do fornecedor)
@@ -125,16 +124,10 @@ export default function SupplierQualificationPanel({
     return (
       <div key={def.key} className="flex items-start justify-between gap-3 p-3 rounded-lg border bg-card">
         <div className="flex items-start gap-2 flex-1 min-w-0">
-          {existing ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
-          ) : (
-            <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-          )}
           <div className="flex-1 min-w-0">
             <div className="text-xs font-medium">{def.label}</div>
             {existing ? (
               <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                <FileText className="h-3 w-3 inline mr-1" />
                 {existing.file_name} • enviado por {existing.uploaded_by_name || "—"}
               </div>
             ) : (
@@ -145,11 +138,11 @@ export default function SupplierQualificationPanel({
         <div className="flex items-center gap-1 shrink-0">
           {existing && (
             <>
-              <Button size="sm" variant="outline" className="h-7 rounded-full px-2" onClick={() => window.open(existing.file_url, "_blank")}>
-                <Eye className="h-3 w-3" />
+              <Button size="sm" variant="outline" className="h-7 rounded-full px-3" onClick={() => window.open(existing.file_url, "_blank")}>
+                Ver
               </Button>
-              <Button size="sm" variant="outline" className="h-7 rounded-full px-2 text-destructive" onClick={() => handleRemove(existing)}>
-                <Trash2 className="h-3 w-3" />
+              <Button size="sm" variant="outline" className="h-7 rounded-full px-3 text-destructive" onClick={() => handleRemove(existing)}>
+                Remover
               </Button>
             </>
           )}
@@ -168,7 +161,6 @@ export default function SupplierQualificationPanel({
             disabled={uploadingKey === def.key}
             onClick={() => fileInputs.current[def.key]?.click()}
           >
-            <Upload className="h-3 w-3 mr-1" />
             {uploadingKey === def.key ? "..." : existing ? "Trocar" : "Enviar"}
           </Button>
         </div>
@@ -180,12 +172,12 @@ export default function SupplierQualificationPanel({
   const missingCount = allRequired.filter(d => !presentKeys.has(d.key)).length;
 
   const statusBadge = inidoneo
-    ? <Badge variant="destructive" className="gap-1"><ShieldAlert className="h-3 w-3" /> Inidôneo (vedada contratação)</Badge>
+    ? <Badge variant="destructive">Inidôneo (vedada contratação)</Badge>
     : qualificacaoStatus === "habilitado"
-      ? <Badge className="gap-1 bg-emerald-600 hover:bg-emerald-700"><ShieldCheck className="h-3 w-3" /> Habilitado para cotação</Badge>
+      ? <Badge className="bg-emerald-600 hover:bg-emerald-700">Habilitado para cotação</Badge>
       : qualificacaoStatus === "liberado_admin"
-        ? <Badge className="gap-1 bg-amber-500 hover:bg-amber-600"><Lock className="h-3 w-3" /> Liberação administrativa</Badge>
-        : <Badge variant="outline" className="gap-1 border-destructive text-destructive"><AlertCircle className="h-3 w-3" /> Pendente — {missingCount} documento(s) faltando</Badge>;
+        ? <Badge className="bg-amber-500 hover:bg-amber-600">Liberação administrativa</Badge>
+        : <Badge variant="outline" className="border-destructive text-destructive">Pendente — {missingCount} documento(s) faltando</Badge>;
 
   return (
     <div className="space-y-4">
@@ -230,9 +222,7 @@ export default function SupplierQualificationPanel({
       {/* Liberação administrativa excepcional */}
       {isAdmin && missingCount > 0 && qualificacaoStatus !== "liberado_admin" && !inidoneo && (
         <div className="p-3 rounded-lg border border-amber-300 bg-amber-50 space-y-2">
-          <div className="text-xs font-semibold text-amber-900 flex items-center gap-1">
-            <Lock className="h-3 w-3" /> Liberação excepcional (somente admin)
-          </div>
+          <div className="text-xs font-semibold text-amber-900">Liberação excepcional (somente admin)</div>
           <div className="text-[11px] text-amber-800">
             Permite que o fornecedor participe de cotação mesmo com documentação pendente. A justificativa será registrada no dossiê.
           </div>

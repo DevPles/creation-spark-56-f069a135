@@ -9,8 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import SupplierQualificationPanel, { REQUIRED_DOCS, MEDICAMENTOS_DOCS } from "./SupplierQualificationPanel";
-import { ShieldCheck, ShieldAlert, AlertCircle, Lock } from "lucide-react";
+import SupplierQualificationPanel from "./SupplierQualificationPanel";
 
 interface Props {
   open: boolean;
@@ -173,10 +172,10 @@ export default function SupplierRegistryModal({ open, onOpenChange, onSaved }: P
   };
 
   const renderQualifBadge = (s: Supplier) => {
-    if (s.inidoneo) return <Badge variant="destructive" className="gap-1"><ShieldAlert className="h-3 w-3" /> Inidôneo</Badge>;
-    if (s.qualificacao_status === "habilitado") return <Badge className="gap-1 bg-emerald-600 hover:bg-emerald-700"><ShieldCheck className="h-3 w-3" /> Habilitado</Badge>;
-    if (s.qualificacao_status === "liberado_admin") return <Badge className="gap-1 bg-amber-500 hover:bg-amber-600"><Lock className="h-3 w-3" /> Liberado (admin)</Badge>;
-    return <Badge variant="outline" className="gap-1 border-destructive text-destructive"><AlertCircle className="h-3 w-3" /> Pendente</Badge>;
+    if (s.inidoneo) return <Badge variant="destructive">Inidôneo</Badge>;
+    if (s.qualificacao_status === "habilitado") return <Badge className="bg-emerald-600 hover:bg-emerald-700">Habilitado</Badge>;
+    if (s.qualificacao_status === "liberado_admin") return <Badge className="bg-amber-500 hover:bg-amber-600">Liberado (admin)</Badge>;
+    return <Badge variant="outline" className="border-destructive text-destructive">Pendente</Badge>;
   };
 
   return (
