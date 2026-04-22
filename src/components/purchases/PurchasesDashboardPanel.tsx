@@ -174,12 +174,12 @@ export default function PurchasesDashboardPanel({
     const oRec = fOrders.filter(o => o.status === "recebida").length;
     const max = Math.max(r, i, q, oa, oAuth, oRec, 1);
     const stages = [
-      { label: "Requisições", value: r, icon: FileText },
-      { label: "Convites", value: i, icon: Mail },
-      { label: "Cotações", value: q, icon: ShoppingCart },
-      { label: "OCs aguardando", value: oa, icon: Clock },
-      { label: "Autorizadas", value: oAuth, icon: CheckCircle2 },
-      { label: "Recebidas", value: oRec, icon: Truck },
+      { label: "Requisições", value: r },
+      { label: "Convites", value: i },
+      { label: "Cotações", value: q },
+      { label: "OCs aguardando", value: oa },
+      { label: "Autorizadas", value: oAuth },
+      { label: "Recebidas", value: oRec },
     ];
     return stages.map((s, idx) => ({
       ...s,
