@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import ProfileModal from "@/components/ProfileModal";
+import InviteNotificationsBell from "@/components/InviteNotificationsBell";
 
 const TopBar = () => {
   const navigate = useNavigate();
@@ -36,6 +37,8 @@ const TopBar = () => {
             <Button size="sm" onClick={() => navigate("/dashboard")} className="rounded-full px-4 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 border-0">Menu</Button>
           </div>
 
+          <div className="flex items-center gap-2 shrink-0">
+          <InviteNotificationsBell />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-xs font-semibold text-primary-foreground hover:bg-primary-foreground/30 transition-colors shrink-0 overflow-hidden">
@@ -55,6 +58,7 @@ const TopBar = () => {
               <DropdownMenuItem onClick={handleSignOut}>Sair</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
           <ProfileModal open={profileOpen} onOpenChange={setProfileOpen} />
         </div>
       </div>
