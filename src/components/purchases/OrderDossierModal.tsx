@@ -457,6 +457,13 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
   const invites = dossier?.invites || [];
   const suppliers = dossier?.quote_suppliers || [];
   const approvals = dossier?.approvals || [];
+  const req = dossier?.requisition;
+  const legalPreview: any = (() => {
+    if (!req || !["dispensa", "inexigibilidade", "emergencial"].includes(req.justificativa_tipo || "")) return null;
+    const m = (req.observacoes || "").match(/\[JUST_LEGAL\]([\s\S]*?)\[\/JUST_LEGAL\]/);
+    if (!m) return { tipo: req.justificativa_tipo };
+    try { return { tipo: req.justificativa_tipo, ...JSON.parse(m[1]) }; } catch { return { tipo: req.justificativa_tipo }; }
+  })();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
