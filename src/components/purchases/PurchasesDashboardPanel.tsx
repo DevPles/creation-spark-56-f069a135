@@ -347,29 +347,37 @@ export default function PurchasesDashboardPanel({
   // ---------- Render ----------
   return (
     <div className="space-y-6">
-      {/* Filtros */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
-            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {(Object.keys(PERIOD_LABEL) as PeriodKey[]).map(k =>
-                <SelectItem key={k} value={k}>{PERIOD_LABEL[k]}</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-          <Select value={unit} onValueChange={setUnit}>
-            <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as unidades</SelectItem>
-              {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-            </SelectContent>
-          </Select>
+      {!hideFilters && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(PERIOD_LABEL) as PeriodKey[]).map(k =>
+                  <SelectItem key={k} value={k}>{PERIOD_LABEL[k]}</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            <Select value={unit} onValueChange={setUnit}>
+              <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as unidades</SelectItem>
+                {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate("/controle-rubrica")}>
+            Ver Controle de Rubricas
+          </Button>
         </div>
-        <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate("/controle-rubrica")}>
-          Ver Controle de Rubricas
-        </Button>
-      </div>
+      )}
+      {hideFilters && (
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate("/controle-rubrica")}>
+            Ver Controle de Rubricas
+          </Button>
+        </div>
+      )}
 
       {/* KPIs operacionais */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
