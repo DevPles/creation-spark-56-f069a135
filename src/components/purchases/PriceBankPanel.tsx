@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,7 +69,14 @@ export default function PriceBankPanel() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Tabs defaultValue="catalogo" className="w-full">
+        <TabsList className="inline-flex w-auto h-auto">
+          <TabsTrigger value="catalogo">Cadastro de itens</TabsTrigger>
+          <TabsTrigger value="historico">Histórico de preços</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="catalogo" className="mt-4">
+          <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Catálogo de itens</CardTitle>
           <Button size="sm" className="rounded-full" onClick={() => setCatalogModalOpen(true)}>Cadastrar item</Button>
@@ -101,9 +109,11 @@ export default function PriceBankPanel() {
             </TableBody>
           </Table>
         </CardContent>
-      </Card>
+          </Card>
+        </TabsContent>
 
-      <Card>
+        <TabsContent value="historico" className="mt-4 space-y-4">
+          <Card>
         <CardHeader><CardTitle className="text-base">Buscar preços de mercado</CardTitle></CardHeader>
         <CardContent>
           <div className="flex gap-2">
@@ -111,9 +121,9 @@ export default function PriceBankPanel() {
             <Button className="rounded-full" disabled={loadingGoogle} onClick={runGoogleSearch}>{loadingGoogle ? "Buscando..." : "Buscar no Google"}</Button>
           </div>
         </CardContent>
-      </Card>
+          </Card>
 
-      <Card>
+          <Card>
         <CardHeader>
           <CardTitle className="text-base">Histórico de preços</CardTitle>
         </CardHeader>
@@ -150,7 +160,9 @@ export default function PriceBankPanel() {
             </TableBody>
           </Table>
         </CardContent>
-      </Card>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <ProductCatalogModal open={catalogModalOpen} onOpenChange={setCatalogModalOpen} onSaved={load} />
     </div>
