@@ -428,6 +428,14 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
                       <div className="text-muted-foreground">
                         Enviado: {fmtDateTime(iv.created_at)} • Respondido: {fmtDateTime(iv.submitted_at)} • IP: {iv.submission_ip || "não capturado"}
                       </div>
+                      {iv.responder_name && (
+                        <div className="text-muted-foreground">
+                          Respondente: <span className="font-medium text-foreground">{iv.responder_name}</span>
+                          {" • "}{iv.responder_email || "—"}
+                          {" • Tel "}{iv.responder_phone || "—"}
+                          {iv.responder_cpf ? <> • CPF {iv.responder_cpf}</> : null}
+                        </div>
+                      )}
                       <div className="mt-1 break-all">
                         <span className="text-muted-foreground">Link público: </span>
                         <a
