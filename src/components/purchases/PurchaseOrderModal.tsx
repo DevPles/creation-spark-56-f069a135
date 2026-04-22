@@ -464,6 +464,9 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         </div>
         <DialogFooter>
           <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button variant="secondary" className="rounded-full" onClick={generatePdf} disabled={!items.length}>
+            Gerar PDF
+          </Button>
           <Button className="rounded-full" disabled={saving} onClick={saveDraft}>{saving ? "Salvando..." : "Salvar"}</Button>
         </DialogFooter>
       </DialogContent>
