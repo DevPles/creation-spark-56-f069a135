@@ -245,6 +245,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
       setJustPlanoResponsavel("");
       setJustPlanoPrazo("");
       setJustFornecedorAnexos([]);
+      setJustDispensaAnexos([]);
       setSolicitante(profile?.name || "");
       setAprovadorImediato("");
       setAprovadorDiretoria("");
