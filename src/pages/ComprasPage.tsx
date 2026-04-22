@@ -16,6 +16,7 @@ import PurchaseQuotationModal from "@/components/purchases/PurchaseQuotationModa
 import PurchaseOrderModal from "@/components/purchases/PurchaseOrderModal";
 import PriceBankPanel from "@/components/purchases/PriceBankPanel";
 import SupplierInviteModal from "@/components/purchases/SupplierInviteModal";
+import PurchasesDashboardPanel from "@/components/purchases/PurchasesDashboardPanel";
 
 const REQ_STATUS_LABEL: Record<string, string> = {
   rascunho: "Rascunho",
