@@ -48,6 +48,7 @@ export default function ComprasPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
   const [reqItemsCount, setReqItemsCount] = useState<Record<string, number>>({});
+  const [invitesByReq, setInvitesByReq] = useState<Record<string, { total: number; respondidos: number; firstToken?: string }>>({});
 
   const [unitFilter, setUnitFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -63,12 +64,13 @@ export default function ComprasPage() {
   const [inviteContext, setInviteContext] = useState<{ requisitionId: string; numero: string } | null>(null);
 
   const loadAll = async () => {
-    const [reqRes, quoteRes, ordRes, contractRes, itemsRes] = await Promise.all([
+    const [reqRes, quoteRes, ordRes, contractRes, itemsRes, invitesRes] = await Promise.all([
       supabase.from("purchase_requisitions").select("*").order("created_at", { ascending: false }),
       supabase.from("purchase_quotations").select("*").order("created_at", { ascending: false }),
       supabase.from("purchase_orders").select("*").order("created_at", { ascending: false }),
       supabase.from("contracts").select("*"),
       supabase.from("purchase_requisition_items").select("requisition_id"),
+      (supabase as any).from("quotation_invites").select("requisition_id, token, status, submitted_at").order("created_at", { ascending: true }),
     ]);
     if (reqRes.error || quoteRes.error || ordRes.error) {
       toast.error("Erro ao carregar dados de compras");
@@ -83,6 +85,15 @@ export default function ComprasPage() {
       counts[i.requisition_id] = (counts[i.requisition_id] || 0) + 1;
     });
     setReqItemsCount(counts);
+    const inv: Record<string, { total: number; respondidos: number; firstToken?: string }> = {};
+    (invitesRes?.data || []).forEach((i: any) => {
+      const cur = inv[i.requisition_id] || { total: 0, respondidos: 0, firstToken: undefined };
+      cur.total += 1;
+      if (i.submitted_at || i.status === "respondido") cur.respondidos += 1;
+      if (!cur.firstToken) cur.firstToken = i.token;
+      inv[i.requisition_id] = cur;
+    });
+    setInvitesByReq(inv);
   };
 
   useEffect(() => { loadAll(); }, []);
@@ -244,35 +255,83 @@ export default function ComprasPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nº</TableHead>
+                      <TableHead>Requisição</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead>Unidade</TableHead>
                       <TableHead>Setor comprador</TableHead>
                       <TableHead>Fornecedor campeão</TableHead>
                       <TableHead className="text-right">Total campeão</TableHead>
+                      <TableHead className="text-center">Rastreio</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredQuotes.map(q => (
-                      <TableRow key={q.id}>
-                        <TableCell className="font-mono text-xs">{q.numero}</TableCell>
-                        <TableCell>{q.data_cotacao ? new Date(q.data_cotacao).toLocaleDateString("pt-BR") : "-"}</TableCell>
-                        <TableCell>{q.facility_unit}</TableCell>
-                        <TableCell>{q.setor_comprador || "-"}</TableCell>
-                        <TableCell>{q.winner_supplier || "—"}</TableCell>
-                        <TableCell className="text-right">{fmtBRL(Number(q.total_winner))}</TableCell>
-                        <TableCell><Badge variant="outline">{q.status}</Badge></TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-1 justify-end">
-                            <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditQuote(q.id)}>Abrir</Button>
-                            <Button size="sm" className="rounded-full" onClick={() => openCreateOrder(q.id)}>Gerar OC</Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredQuotes.map(q => {
+                      const req = requisitions.find(r => r.id === q.requisition_id);
+                      const inv = invitesByReq[q.requisition_id] || { total: 0, respondidos: 0 };
+                      const trackingUrl = inv.firstToken ? `${window.location.origin}/cotacao-publica/${inv.firstToken}` : null;
+                      const copyTracking = async () => {
+                        if (!trackingUrl) return;
+                        try {
+                          await navigator.clipboard.writeText(trackingUrl);
+                          toast.success("Link de rastreio copiado");
+                        } catch {
+                          toast.error("Não foi possível copiar");
+                        }
+                      };
+                      return (
+                        <TableRow key={q.id}>
+                          <TableCell className="font-mono text-xs">{q.numero}</TableCell>
+                          <TableCell className="font-mono text-xs">{req?.numero || "—"}</TableCell>
+                          <TableCell>{q.data_cotacao ? new Date(q.data_cotacao).toLocaleDateString("pt-BR") : "-"}</TableCell>
+                          <TableCell>{q.facility_unit}</TableCell>
+                          <TableCell>{q.setor_comprador || "-"}</TableCell>
+                          <TableCell>{q.winner_supplier || "—"}</TableCell>
+                          <TableCell className="text-right">{fmtBRL(Number(q.total_winner))}</TableCell>
+                          <TableCell className="text-center">
+                            {req && (
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 rounded-full px-3 text-xs"
+                                  onClick={() => openInvite(req)}
+                                >
+                                  Convites
+                                </Button>
+                                {trackingUrl && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 rounded-full px-3 text-xs"
+                                    onClick={copyTracking}
+                                  >
+                                    Copiar link
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="outline" className="w-fit">{q.status}</Badge>
+                              <span className="text-[11px] text-muted-foreground">
+                                {inv.respondidos} de {inv.total} respostas
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-1 justify-end">
+                              <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditQuote(q.id)}>Abrir</Button>
+                              <Button size="sm" className="rounded-full" onClick={() => openCreateOrder(q.id)}>Gerar OC</Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                     {filteredQuotes.length === 0 && (
-                      <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhuma cotação encontrada</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Nenhuma cotação encontrada</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
