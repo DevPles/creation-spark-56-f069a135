@@ -8,6 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +25,7 @@ import PriceBankPanel from "@/components/purchases/PriceBankPanel";
 import SupplierInviteModal from "@/components/purchases/SupplierInviteModal";
 import PurchasesDashboardPanel from "@/components/purchases/PurchasesDashboardPanel";
 import { PERIOD_LABEL, type PeriodKey } from "@/components/purchases/PurchasesDashboardPanel";
+import OrderDossierModal from "@/components/purchases/OrderDossierModal";
 
 const REQ_STATUS_LABEL: Record<string, string> = {
   rascunho: "Rascunho",
