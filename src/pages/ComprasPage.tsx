@@ -409,7 +409,12 @@ export default function ComprasPage() {
                           <TableCell className="text-right">{fmtBRL(Number(o.valor_total))}</TableCell>
                           <TableCell><Badge variant="outline">{OC_STATUS_LABEL[o.status] || o.status}</Badge></TableCell>
                           <TableCell className="text-right">
-                            <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditOrder(o.id)}>Abrir</Button>
+                            <div className="flex gap-1 justify-end">
+                              <Button size="sm" variant="outline" className="rounded-full" onClick={() => openEditOrder(o.id)}>Abrir</Button>
+                              {isAdmin && (
+                                <Button size="sm" variant="destructive" className="rounded-full" onClick={() => handleDeleteOrder(o)}>Excluir</Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
