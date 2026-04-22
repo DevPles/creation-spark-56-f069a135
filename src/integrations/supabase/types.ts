@@ -1316,6 +1316,116 @@ export type Database = {
         }
         Relationships: []
       }
+      quotation_invite_responses: {
+        Row: {
+          created_at: string
+          disponivel: boolean
+          id: string
+          invite_id: string
+          observacao: string | null
+          requisition_item_id: string
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string
+          disponivel?: boolean
+          id?: string
+          invite_id: string
+          observacao?: string | null
+          requisition_item_id: string
+          valor_unitario?: number
+        }
+        Update: {
+          created_at?: string
+          disponivel?: boolean
+          id?: string
+          invite_id?: string
+          observacao?: string | null
+          requisition_item_id?: string
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_invite_responses_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "quotation_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_invite_responses_requisition_item_id_fkey"
+            columns: ["requisition_item_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisition_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_invites: {
+        Row: {
+          condicao_pagamento: string | null
+          created_at: string
+          created_by: string
+          expires_at: string
+          fornecedor_cnpj: string | null
+          fornecedor_email: string | null
+          fornecedor_nome: string
+          fornecedor_telefone: string | null
+          id: string
+          observacoes: string | null
+          prazo_entrega: string | null
+          requisition_id: string
+          status: string
+          submitted_at: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          condicao_pagamento?: string | null
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          fornecedor_cnpj?: string | null
+          fornecedor_email?: string | null
+          fornecedor_nome: string
+          fornecedor_telefone?: string | null
+          id?: string
+          observacoes?: string | null
+          prazo_entrega?: string | null
+          requisition_id: string
+          status?: string
+          submitted_at?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          condicao_pagamento?: string | null
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          fornecedor_cnpj?: string | null
+          fornecedor_email?: string | null
+          fornecedor_nome?: string
+          fornecedor_telefone?: string | null
+          id?: string
+          observacoes?: string | null
+          prazo_entrega?: string | null
+          requisition_id?: string
+          status?: string
+          submitted_at?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_invites_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_attachments: {
         Row: {
           created_at: string
@@ -1773,12 +1883,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_invite_by_token: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      submit_invite_response: {
+        Args: {
+          _condicao_pagamento: string
+          _observacoes: string
+          _prazo_entrega: string
+          _responses: Json
+          _token: string
+        }
+        Returns: Json
       }
     }
     Enums: {
