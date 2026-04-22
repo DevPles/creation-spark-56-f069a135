@@ -12,11 +12,42 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCatalogModal from "./ProductCatalogModal";
 
-const CLASSIFICACOES = ["medico", "medicamento", "dieta", "higiene", "escritorio", "descartavel", "limpeza", "outros"];
 const CLASSIF_LABEL: Record<string, string> = {
-  medico: "Médico", medicamento: "Medicamento", dieta: "Dieta", higiene: "Higiene",
-  escritorio: "Escritório", descartavel: "Descartável", limpeza: "Limpeza", outros: "Outros"
+  alimenticio: "Alimentício",
+  audiovisual: "Audiovisual",
+  descartavel: "Descartável",
+  dieta: "Dieta",
+  eletrico: "Elétrico",
+  engenharia_clinica: "Engenharia Clínica",
+  epi: "EPI",
+  escritorio: "Escritório",
+  farmaceutico: "Farmacêutico",
+  gases: "Gases Medicinais",
+  grafico: "Gráfico",
+  hidraulico: "Hidráulico",
+  higiene: "Higiene",
+  hotelaria: "Hotelaria",
+  implante: "Implante / OPME",
+  informatica: "Informática / TI",
+  laboratorial: "Laboratorial",
+  lavanderia: "Lavanderia",
+  limpeza: "Limpeza",
+  manutencao: "Manutenção",
+  medicamento: "Medicamento",
+  medico: "Médico",
+  mobiliario: "Mobiliário",
+  odontologico: "Odontológico",
+  outros: "Outros",
+  quimico: "Químico",
+  radiologico: "Radiológico",
+  rouparia: "Rouparia",
+  seguranca: "Segurança",
+  servico: "Serviço",
+  telecom: "Telecomunicações",
+  uniforme: "Uniforme",
+  veicular: "Veicular",
 };
+const CLASSIFICACOES = Object.keys(CLASSIF_LABEL).sort((a, b) => CLASSIF_LABEL[a].localeCompare(CLASSIF_LABEL[b]));
 const JUSTIFICATIVAS = [
   { v: "mensal", l: "Compra mensal" },
   { v: "especifica", l: "Compra específica" },
