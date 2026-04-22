@@ -27,6 +27,7 @@ import PurchasesDashboardPanel from "@/components/purchases/PurchasesDashboardPa
 import { PERIOD_LABEL, type PeriodKey } from "@/components/purchases/PurchasesDashboardPanel";
 import OrderDossierModal from "@/components/purchases/OrderDossierModal";
 import { generateRequisitionPdf } from "@/lib/requisitionPdf";
+import { generateQuotationPdf } from "@/lib/quotationPdf";
 
 const REQ_STATUS_LABEL: Record<string, string> = {
   rascunho: "Rascunho",
