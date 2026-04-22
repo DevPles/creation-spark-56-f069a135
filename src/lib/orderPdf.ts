@@ -149,6 +149,23 @@ export async function generateOrderPdf(orderId: string) {
     y += 8;
   };
 
+  // Hook para garantir charSpace=0 em TODAS as células (corrige glitch "C am po")
+  const fixCharSpace = {
+    didParseCell: (data: any) => {
+      // sem-op: hook didDrawCell faz o trabalho real
+    },
+    didDrawPage: () => { (doc as any).setCharSpace(0); },
+    willDrawCell: () => { (doc as any).setCharSpace(0); },
+  };
+  const baseTableStyles = {
+    font: "helvetica",
+    fontSize: 9,
+    cellPadding: 5,
+    lineColor: BORDER_BLUE,
+    textColor: TEXT_DARK,
+    overflow: "linebreak" as const,
+  };
+
   // ===== KPIs =====
   const totalItens = items.reduce((acc: number, it: any) => acc + Number(it.quantidade || 0), 0);
   const kpis = [
