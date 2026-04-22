@@ -454,9 +454,8 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved, d
                 <div><Label>Data do exame</Label><Input type="date" value={form.preop_exam_date} onChange={e => set("preop_exam_date", e.target.value)} /></div>
                 <div><Label>Número do exame / laudo</Label><Input value={form.preop_exam_number} onChange={e => set("preop_exam_number", e.target.value)} /></div>
                 <div className="md:col-span-2"><Label>Descrição da indicação / achado</Label><Textarea value={form.preop_finding_description} onChange={e => set("preop_finding_description", e.target.value)} /></div>
-                <label className="flex items-center gap-2"><Checkbox checked={form.preop_image_attached} onCheckedChange={(c) => set("preop_image_attached", !!c)} />Imagem anexada</label>
-                <div><Label>Nº de anexos</Label><Input type="number" value={form.preop_image_count} onChange={e => set("preop_image_count", e.target.value)} /></div>
                 <div className="md:col-span-2"><Label>Responsável pela validação pré-operatória</Label><Input value={form.preop_validation_responsible} onChange={e => set("preop_validation_responsible", e.target.value)} /></div>
+                <p className="md:col-span-2 text-xs text-muted-foreground">Use a aba <strong>Anexos</strong> para enviar as imagens dos exames.</p>
               </div>
             </section>
           </TabsContent>
@@ -579,9 +578,8 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved, d
                 <div><Label>Data do exame</Label><Input type="date" value={form.postop_exam_date} onChange={e => set("postop_exam_date", e.target.value)} /></div>
                 <div><Label>Número do exame / laudo</Label><Input value={form.postop_exam_number} onChange={e => set("postop_exam_number", e.target.value)} /></div>
                 <div className="md:col-span-2"><Label>Descrição do resultado / posicionamento</Label><Textarea value={form.postop_result_description} onChange={e => set("postop_result_description", e.target.value)} /></div>
-                <label className="flex items-center gap-2"><Checkbox checked={form.postop_image_attached} onCheckedChange={(c) => set("postop_image_attached", !!c)} />Imagem anexada</label>
-                <div><Label>Nº de anexos</Label><Input type="number" value={form.postop_image_count} onChange={e => set("postop_image_count", e.target.value)} /></div>
                 <div className="md:col-span-2"><Label>Responsável pela validação pós-operatória</Label><Input value={form.postop_validation_responsible} onChange={e => set("postop_validation_responsible", e.target.value)} /></div>
+                <p className="md:col-span-2 text-xs text-muted-foreground">Use a aba <strong>Anexos</strong> para enviar as imagens pós-operatórias.</p>
               </div>
             </section>
           </TabsContent>
@@ -696,8 +694,6 @@ export default function OpmeFormModal({ open, onOpenChange, recordId, onSaved, d
         </Tabs>
 
         <DialogFooter className="gap-2 flex-wrap">
-          <Button variant="secondary" type="button" onClick={() => loadSimulation("ortopedia")} disabled={saving}>Simular caso 1 — Ortopedia</Button>
-          <Button variant="secondary" type="button" onClick={() => loadSimulation("cardio")} disabled={saving}>Simular caso 2 — Cardiologia</Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Fechar</Button>
           <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : currentId ? "Atualizar" : "Salvar"}</Button>
         </DialogFooter>
