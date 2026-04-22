@@ -128,10 +128,13 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
           const codMatch = raw.match(/^\[COD:([^\]]+)\]\s?/);
           const codigo = codMatch ? codMatch[1] : undefined;
           const observacao = codMatch ? raw.replace(codMatch[0], "").trim() : raw;
+          const prod = codigo ? catalog.find(c => c.codigo === codigo) : null;
           return {
             id: i.id,
             item_num: i.item_num,
             codigo,
+            product_id: i.product_id || prod?.id || null,
+            image_url: prod?.image_url || null,
             descricao: i.descricao,
             quantidade: Number(i.quantidade),
             unidade_medida: i.unidade_medida,
