@@ -259,11 +259,14 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     y2 += 8;
     autoTable(doc, {
       startY: y2,
-      head: [["Fornecedor", "CNPJ", "Origem", "Data/Hora envio", "IP da máquina", "Link público enviado"]],
+      head: [["Fornecedor", "CNPJ", "Origem", "Data/Hora envio", "IP", "Respondente (nome / e-mail / cel / CPF)", "Link público enviado"]],
       body: suppliers.map((s) => {
         const inv = invites.find((i) => i.fornecedor_cnpj === s.fornecedor_cnpj || i.fornecedor_nome === s.fornecedor_nome);
         const link = inv?.id
           ? `${window.location.origin}/cotacao-publica/${inv.id}`
+          : "—";
+        const respondente = inv?.responder_name
+          ? `${inv.responder_name}\n${inv.responder_email || "—"}\nTel: ${inv.responder_phone || "—"}${inv.responder_cpf ? `\nCPF: ${inv.responder_cpf}` : ""}`
           : "—";
         return [
           s.fornecedor_nome,
@@ -271,13 +274,14 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
           s.fonte === "invite_link" ? "Link público" : "Manual",
           fmtDateTime(inv?.submitted_at || s.created_at),
           s.submission_ip || inv?.submission_ip || "não capturado",
+          respondente,
           link,
         ];
       }),
       theme: "striped",
       headStyles: { fillColor: [13, 79, 79], textColor: 255, fontSize: 7, halign: "center" },
       styles: { fontSize: 7, cellPadding: 3, valign: "middle", overflow: "linebreak" },
-      columnStyles: { 5: { cellWidth: 130, textColor: [13, 79, 79] } },
+      columnStyles: { 5: { cellWidth: 95 }, 6: { cellWidth: 110, textColor: [13, 79, 79] } },
       margin: { left: margin, right: margin },
     });
 
