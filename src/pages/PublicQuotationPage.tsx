@@ -116,12 +116,21 @@ export default function PublicQuotationPage() {
       disponivel: r.disponivel,
       observacao: r.observacao || null,
     }));
+    let clientIp: string | null = null;
+    try {
+      const ipRes = await fetch("https://api.ipify.org?format=json");
+      const ipJson = await ipRes.json();
+      clientIp = ipJson?.ip || null;
+    } catch {
+      clientIp = null;
+    }
     const { data: res, error: rpcErr } = await (supabase as any).rpc("submit_invite_response", {
       _token: token,
       _prazo_entrega: prazoEntrega,
       _condicao_pagamento: condPagamento,
       _observacoes: obs,
       _responses: responses,
+      _ip: clientIp,
     });
     setSubmitting(false);
     if (rpcErr || !res?.success) {
