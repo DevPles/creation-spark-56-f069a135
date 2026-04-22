@@ -611,27 +611,22 @@ export default function PurchasesDashboardPanel({
 }
 
 function KpiBox({
-  label, value, subtitle, icon: Icon, delta, hint, danger, valueSize = "text-2xl",
+  label, value, subtitle, delta, hint, danger, valueSize = "text-2xl",
 }: {
   label: string; value: string | number; subtitle?: string;
-  icon: React.ComponentType<{ className?: string }>;
   delta?: number; hint?: string; danger?: boolean; valueSize?: string;
 }) {
   const showDelta = typeof delta === "number" && delta !== 0;
   return (
     <Card className={danger ? "border-destructive/40" : ""}>
       <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <p className="text-xs font-medium text-muted-foreground leading-tight">{label}</p>
-          <Icon className={`h-4 w-4 ${danger ? "text-destructive" : "text-muted-foreground"}`} />
-        </div>
+        <p className="text-xs font-medium text-muted-foreground leading-tight">{label}</p>
         <p className={`mt-2 font-semibold ${valueSize} ${danger ? "text-destructive" : "text-foreground"}`}>{value}</p>
         {(subtitle || showDelta) && (
           <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
             {showDelta && (
-              <span className={`inline-flex items-center gap-0.5 ${delta! > 0 ? "text-emerald-600" : "text-destructive"}`}>
-                {delta! > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                {Math.abs(delta!)}
+              <span className={`${delta! > 0 ? "text-emerald-600" : "text-destructive"}`}>
+                {delta! > 0 ? "+" : "−"}{Math.abs(delta!)}
               </span>
             )}
             {hint && showDelta && <span>{hint}</span>}
