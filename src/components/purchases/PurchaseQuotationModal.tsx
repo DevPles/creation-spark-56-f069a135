@@ -192,6 +192,20 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
 
       // Save to price_history
       const histRows: any[] = [];
+      // Resolve supplier_id por CNPJ (cria/atualiza cadastro de fornecedor)
+      const supplierIdBySlot: Record<number, string | null> = {};
+      for (let i = 0; i < suppliers.length; i++) {
+        const s = suppliers[i];
+        if (s.fornecedor_cnpj && s.fornecedor_nome) {
+          const { data: sid } = await supabase.rpc("upsert_supplier_from_cnpj", {
+            _nome: s.fornecedor_nome,
+            _cnpj: s.fornecedor_cnpj,
+          });
+          supplierIdBySlot[i] = (sid as string) || null;
+        } else {
+          supplierIdBySlot[i] = null;
+        }
+      }
       items.forEach(it => {
         suppliers.forEach((s, i) => {
           const v = Number(prices[it.id]?.[i] || 0);
@@ -202,6 +216,7 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
               valor_unitario: v,
               fornecedor_nome: s.fornecedor_nome,
               fornecedor_cnpj: s.fornecedor_cnpj || null,
+              supplier_id: supplierIdBySlot[i],
               fonte: "cotacao",
               quotation_id: qId,
               created_by: profile.id,
