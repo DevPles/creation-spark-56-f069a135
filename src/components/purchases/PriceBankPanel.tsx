@@ -144,28 +144,61 @@ export default function PriceBankPanel() {
 
   const purchaseUnits = Array.from(new Set(purchaseHistory.map(p => p.facility_unit).filter(Boolean))).sort();
 
-  const runGoogleSearch = async () => {
-    if (!searchGoogle.trim() || !profile) return;
-    setLoadingGoogle(true);
+  const runAISearch = async () => {
+    if (!searchAI.trim() || !profile) return;
+    setLoadingAI(true);
     try {
-      const { data, error } = await supabase.functions.invoke("price-search", { body: { descricao: searchGoogle } });
+      const { data, error } = await supabase.functions.invoke("price-search", { body: { descricao: searchAI } });
       if (error) throw error;
       const results = data?.results || [];
-      if (!results.length) { toast.warning("Nenhum preço encontrado"); return; }
+      if (!results.length) { toast.warning("Nenhum preço encontrado pela IA"); return; }
       const rows = results.map((r: any) => ({
-        descricao_produto: searchGoogle,
+        descricao_produto: searchAI,
         valor_unitario: Number(r.preco) || 0,
         fornecedor_nome: r.fornecedor || "Indefinido",
         fonte_url: r.fonte_url || null,
-        fonte: "google",
+        fonte: "ia",
         created_by: profile.id,
       }));
       await supabase.from("price_history").insert(rows);
-      toast.success(`${rows.length} preço(s) salvos no banco`);
+      toast.success(`${rows.length} preço(s) encontrado(s) pela IA e salvos`);
       load();
     } catch (e: any) {
       toast.error(e.message || "Erro na busca");
-    } finally { setLoadingGoogle(false); }
+    } finally { setLoadingAI(false); }
+  };
+
+  const deleteOne = async (id: string) => {
+    if (!confirm("Apagar este preço do histórico?")) return;
+    const { error } = await supabase.from("price_history").delete().eq("id", id);
+    if (error) { toast.error("Erro ao apagar"); return; }
+    setSelectedHistory(prev => { const n = new Set(prev); n.delete(id); return n; });
+    toast.success("Preço removido");
+    load();
+  };
+
+  const deleteSelected = async () => {
+    if (selectedHistory.size === 0) return;
+    if (!confirm(`Apagar ${selectedHistory.size} preço(s) selecionado(s)?`)) return;
+    const ids = Array.from(selectedHistory);
+    const { error } = await supabase.from("price_history").delete().in("id", ids);
+    if (error) { toast.error("Erro ao apagar"); return; }
+    setSelectedHistory(new Set());
+    toast.success(`${ids.length} preço(s) removido(s)`);
+    load();
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedHistory(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedHistory.size === filtered.length) setSelectedHistory(new Set());
+    else setSelectedHistory(new Set(filtered.map(h => h.id)));
   };
 
   return (
