@@ -1,19 +1,12 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { UNIVIDA_LOGO_BASE64 } from "@/assets/univida-logo-base64";
-
-const fmtDate = (d?: string | null) => {
-  if (!d) return "—";
-  try { return format(new Date(d), "dd/MM/yyyy"); } catch { return "—"; }
-};
-const fmtDateTime = (d?: string | null) => {
-  if (!d) return "—";
-  try { return format(new Date(d), "dd/MM/yyyy HH:mm"); } catch { return "—"; }
-};
-const fmtBRL = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
+import {
+  NAVY, BLUE, SOFT_BLUE, ALT_ROW, BORDER_BLUE, TEXT_DARK, TEXT_MUTED,
+  fmtDate, fmtDateTime, fmtBRL,
+  drawHeaderBand, drawSectionTitle, drawFooter, drawKpiRow, drawSoftTextBox,
+  baseTableStyles, fixCharSpaceHook,
+} from "./purchasePdfTheme";
 
 const OC_STATUS_LABEL: Record<string, string> = {
   aguardando_aprovacao: "Aguardando aprovação",
@@ -23,15 +16,6 @@ const OC_STATUS_LABEL: Record<string, string> = {
   recebida: "Recebida",
   cancelada: "Cancelada",
 };
-
-// Paleta azul corporativa (igual cotação/requisição)
-const NAVY: [number, number, number] = [11, 47, 99];
-const BLUE: [number, number, number] = [29, 78, 156];
-const SOFT_BLUE: [number, number, number] = [219, 232, 248];
-const ALT_ROW: [number, number, number] = [243, 247, 252];
-const BORDER_BLUE: [number, number, number] = [180, 202, 230];
-const TEXT_DARK: [number, number, number] = [20, 32, 56];
-const TEXT_MUTED: [number, number, number] = [90, 105, 130];
 
 export async function generateOrderPdf(
   orderId: string,
@@ -93,159 +77,45 @@ export async function generateOrderPdf(
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 36;
 
-  const drawHeaderBand = (full: boolean) => {
-    // Banner mais alto para acomodar duas colunas sem encostar no logo
-    const bandH = full ? 110 : 70;
-    doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pageW, bandH, "F");
-    doc.setFillColor(...BLUE);
-    doc.rect(0, bandH, pageW, 4, "F");
-
-    // Logo com área reservada — calcula a "zona segura" à esquerda dele
-    const logoH = full ? 56 : 38;
-    const logoW = logoH * 1.6;
-    const logoMargin = 14; // respiração entre texto e logo
-    const logoX = pageW - margin - logoW;
-    const logoY = (bandH - logoH) / 2;
-    try {
-      doc.addImage(UNIVIDA_LOGO_BASE64, "PNG", logoX, logoY, logoW, logoH, undefined, "FAST");
-    } catch {/* ignore */}
-
-    // Limite máximo onde os textos da direita podem chegar (não invadem o logo)
-    const rightTextLimit = logoX - logoMargin;
-
-    doc.setTextColor(255, 255, 255);
-    (doc as any).setCharSpace(0);
-
-    // ----- Coluna esquerda -----
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(full ? 18 : 13);
-    doc.text("ORDEM DE COMPRA", margin, full ? 30 : 24);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(full ? 10 : 9);
-    const ocLine = `No. ${order.numero || "-"}`;
-    const reqLine = req?.numero ? `Requisição: ${req.numero}` : null;
-    doc.text(ocLine, margin, full ? 50 : 42);
-
-    if (full) {
-      // Linha 3 esquerda: requisição (se houver) + unidade
-      if (reqLine) {
-        doc.text(reqLine, margin, 68);
-        doc.text(order.facility_unit || "-", margin, 86);
-      } else {
-        doc.text(order.facility_unit || "-", margin, 68);
-      }
-
-      // ----- Coluna direita (alinhada ao limite seguro do logo) -----
-      doc.text(
-        `Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
-        rightTextLimit,
-        50,
-        { align: "right" }
-      );
-      doc.text(
-        `Status: ${OC_STATUS_LABEL[order.status] || order.status || "-"}`,
-        rightTextLimit,
-        68,
-        { align: "right" }
-      );
-      if (order.aprovado_em) {
-        doc.text(
-          `Aprovada em ${fmtDateTime(order.aprovado_em)}`,
-          rightTextLimit,
-          86,
-          { align: "right" }
-        );
-      }
-    } else {
-      // Header reduzido nas páginas seguintes
-      if (reqLine) {
-        doc.text(reqLine, margin, 60);
-      }
-      doc.text(
-        `Emitido em ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
-        rightTextLimit,
-        42,
-        { align: "right" }
-      );
-    }
-    doc.setTextColor(...TEXT_DARK);
-  };
+  /** Header com requisição vinculada e Aprovado em (linha 3 da direita). */
+  const headerConfig = (full: boolean) => ({
+    title: "ORDEM DE COMPRA",
+    leftLines: [
+      `No. ${order.numero || "-"}`,
+      ...(req?.numero ? [`Requisição: ${req.numero}`] : []),
+      order.facility_unit || "-",
+    ],
+    rightLines: [
+      `Emitido em ${fmtDateTime(new Date().toISOString())}`,
+      `Status: ${OC_STATUS_LABEL[order.status] || order.status || "-"}`,
+      ...(order.aprovado_em ? [`Aprovada em ${fmtDateTime(order.aprovado_em)}`] : []),
+    ],
+  });
 
   const ensureSpace = (needed: number, currentY: number) => {
     if (currentY + needed > pageH - 60) {
       doc.addPage();
-      drawHeaderBand(false);
-      return 96; // banda reduzida = 70 + 4 + ~22 de respiração
+      drawHeaderBand(doc, margin, false, headerConfig(false));
+      return 96;
     }
     return currentY;
   };
 
-  drawHeaderBand(true);
-  let y = 138; // banda completa = 110 + 4 + ~24 de respiração
-
-  const sectionTitle = (title: string) => {
-    y = ensureSpace(28, y);
-    (doc as any).setCharSpace(0);
-    doc.setFillColor(...BLUE);
-    doc.rect(margin, y - 12, 4, 16, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(...BLUE);
-    doc.text(title.toUpperCase(), margin + 10, y);
-    doc.setTextColor(...TEXT_DARK);
-    y += 14;
-  };
-
-  // Hook para garantir charSpace=0 em TODAS as células (corrige glitch "C am po")
-  const fixCharSpace = {
-    didParseCell: (data: any) => {
-      // sem-op: hook didDrawCell faz o trabalho real
-    },
-    didDrawPage: () => { (doc as any).setCharSpace(0); },
-    willDrawCell: () => { (doc as any).setCharSpace(0); },
-  };
-  const baseTableStyles = {
-    font: "helvetica",
-    fontSize: 9,
-    cellPadding: 5,
-    lineColor: BORDER_BLUE,
-    textColor: TEXT_DARK,
-    overflow: "linebreak" as const,
-  };
+  drawHeaderBand(doc, margin, true, headerConfig(true));
+  let y = 138;
 
   // ===== KPIs =====
   const totalItens = items.reduce((acc: number, it: any) => acc + Number(it.quantidade || 0), 0);
-  const kpis = [
+  y = drawKpiRow(doc, margin, y, [
     { label: "Itens", value: String(items.length) },
     { label: "Quantidade total", value: String(totalItens) },
     { label: "Valor total", value: fmtBRL(Number(order.valor_total || 0)) },
     { label: "Status", value: OC_STATUS_LABEL[order.status] || order.status || "—" },
-  ];
-  const kpiW = (pageW - margin * 2 - 8 * (kpis.length - 1)) / kpis.length;
-  const kpiH = 46;
-  kpis.forEach((k, i) => {
-    const x = margin + i * (kpiW + 8);
-    doc.setFillColor(...SOFT_BLUE);
-    doc.setDrawColor(...BORDER_BLUE);
-    doc.roundedRect(x, y, kpiW, kpiH, 4, 4, "FD");
-    (doc as any).setCharSpace(0);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(...NAVY);
-    const valueLines = doc.splitTextToSize(k.value, kpiW - 12);
-    doc.text(valueLines[0] || "—", x + kpiW / 2, y + 22, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(...TEXT_MUTED);
-    doc.text(k.label, x + kpiW / 2, y + 36, { align: "center" });
-  });
-  y += kpiH + 18;
-  doc.setTextColor(...TEXT_DARK);
+  ], { valueFontSize: 12 });
 
   // ===== Dados gerais =====
-  sectionTitle("Dados gerais");
+  y = ensureSpace(28, y);
+  y = drawSectionTitle(doc, margin, y, "Dados gerais");
   const reqItemsCount = reqItems.length;
   const reqItemsQty = reqItems.reduce((acc: number, it: any) => acc + Number(it.quantidade || 0), 0);
   const leftRows: [string, string][] = [
@@ -279,7 +149,7 @@ export async function generateOrderPdf(
     tableWidth: colWidth,
     columnStyles: { 0: { cellWidth: 140, fontStyle: "bold", textColor: NAVY } },
     rowPageBreak: "avoid",
-    ...fixCharSpace,
+    ...fixCharSpaceHook,
   });
   const leftEnd = (doc as any).lastAutoTable.finalY;
   autoTable(doc, {
@@ -294,13 +164,14 @@ export async function generateOrderPdf(
     tableWidth: colWidth,
     columnStyles: { 0: { cellWidth: 150, fontStyle: "bold", textColor: NAVY } },
     rowPageBreak: "avoid",
-    ...fixCharSpace,
+    ...fixCharSpaceHook,
   });
   const rightEnd = (doc as any).lastAutoTable.finalY;
   y = Math.max(leftEnd, rightEnd) + 16;
 
   // ===== Vínculos (Requisição / Cotação / Contrato) =====
-  sectionTitle("Vínculos");
+  y = ensureSpace(28, y);
+  y = drawSectionTitle(doc, margin, y, "Vínculos");
   autoTable(doc, {
     startY: y,
     theme: "grid",
@@ -341,12 +212,13 @@ export async function generateOrderPdf(
       2: { cellWidth: "auto" as any },
     },
     rowPageBreak: "avoid",
-    ...fixCharSpace,
+    ...fixCharSpaceHook,
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
   // ===== Fornecedor =====
-  sectionTitle("Fornecedor");
+  y = ensureSpace(28, y);
+  y = drawSectionTitle(doc, margin, y, "Fornecedor");
   autoTable(doc, {
     startY: y,
     theme: "grid",
@@ -364,12 +236,13 @@ export async function generateOrderPdf(
     margin: { left: margin, right: margin },
     columnStyles: { 0: { cellWidth: 180, fontStyle: "bold", textColor: NAVY } },
     rowPageBreak: "avoid",
-    ...fixCharSpace,
+    ...fixCharSpaceHook,
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
   // ===== Itens =====
-  sectionTitle("Itens da ordem de compra");
+  y = ensureSpace(28, y);
+  y = drawSectionTitle(doc, margin, y, "Itens da ordem de compra");
   autoTable(doc, {
     startY: y,
     theme: "grid",
@@ -399,30 +272,21 @@ export async function generateOrderPdf(
       5: { cellWidth: 90, halign: "right", fontStyle: "bold" },
     },
     rowPageBreak: "auto",
-    ...fixCharSpace,
+    ...fixCharSpaceHook,
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
   // ===== Texto obrigatório NF =====
   if (order.texto_obrigatorio_nf && String(order.texto_obrigatorio_nf).trim()) {
-    sectionTitle("Texto obrigatório na NF");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    (doc as any).setCharSpace(0);
-    y += 6; // respiração entre título e caixa
-    const lines = doc.splitTextToSize(String(order.texto_obrigatorio_nf), pageW - margin * 2 - 16);
-    const boxH = lines.length * 12 + 16;
-    y = ensureSpace(boxH + 8, y);
-    doc.setFillColor(...ALT_ROW);
-    doc.setDrawColor(...BORDER_BLUE);
-    doc.roundedRect(margin, y, pageW - margin * 2, boxH, 3, 3, "FD");
-    doc.setTextColor(...TEXT_DARK);
-    doc.text(lines, margin + 8, y + 14);
-    y += boxH + 20;
+    y = ensureSpace(28, y);
+    y = drawSectionTitle(doc, margin, y, "Texto obrigatório na NF");
+    y = ensureSpace(60, y);
+    y = drawSoftTextBox(doc, margin, y, String(order.texto_obrigatorio_nf), { fontSize: 9.5 });
   }
 
   // ===== Aprovação / autorização =====
-  sectionTitle("Aprovação");
+  y = ensureSpace(28, y);
+  y = drawSectionTitle(doc, margin, y, "Aprovação");
   const approvalRows: [string, string][] = [
     ["Responsável pela emissão", order.responsavel_emissao_nome || "—"],
     ["Cargo", order.cargo || "—"],
@@ -449,12 +313,13 @@ export async function generateOrderPdf(
     margin: { left: margin, right: margin },
     columnStyles: { 0: { cellWidth: 200, fontStyle: "bold", textColor: NAVY } },
     rowPageBreak: "avoid",
-    ...fixCharSpace,
+    ...fixCharSpaceHook,
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
   // ===== Linha do tempo =====
-  sectionTitle("Linha do tempo");
+  y = ensureSpace(28, y);
+  y = drawSectionTitle(doc, margin, y, "Linha do tempo");
   const timelineRows: [string, string, string][] = [];
   timelineRows.push(["Criação da OC", fmtDateTime(order.created_at), "Sistema"]);
   if (order.data_envio_setor) timelineRows.push(["Envio ao setor", fmtDate(order.data_envio_setor), order.responsavel_emissao_nome || "—"]);
@@ -476,42 +341,20 @@ export async function generateOrderPdf(
       2: { cellWidth: "auto" as any },
     },
     rowPageBreak: "avoid",
-    ...fixCharSpace,
+    ...fixCharSpaceHook,
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
   // ===== Observações =====
   if (order.observacoes && String(order.observacoes).trim()) {
-    sectionTitle("Observações");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    (doc as any).setCharSpace(0);
-    y += 6; // respiração entre título e caixa
-    const lines = doc.splitTextToSize(String(order.observacoes), pageW - margin * 2 - 16);
-    const boxH = lines.length * 12 + 16;
-    y = ensureSpace(boxH + 8, y);
-    doc.setFillColor(...ALT_ROW);
-    doc.setDrawColor(...BORDER_BLUE);
-    doc.roundedRect(margin, y, pageW - margin * 2, boxH, 3, 3, "FD");
-    doc.setTextColor(...TEXT_DARK);
-    doc.text(lines, margin + 8, y + 14);
-    y += boxH + 20;
+    y = ensureSpace(28, y);
+    y = drawSectionTitle(doc, margin, y, "Observações");
+    y = ensureSpace(60, y);
+    y = drawSoftTextBox(doc, margin, y, String(order.observacoes));
   }
 
-  // ===== Rodapé =====
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    doc.setPage(p);
-    doc.setDrawColor(...BORDER_BLUE);
-    doc.setLineWidth(0.4);
-    doc.line(margin, pageH - 36, pageW - margin, pageH - 36);
-    (doc as any).setCharSpace(0);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(...TEXT_MUTED);
-    doc.text(`OC ${order.numero || ""} • ${order.facility_unit || ""}`, margin, pageH - 22);
-    doc.text(`Página ${p} de ${totalPages}`, pageW - margin, pageH - 22, { align: "right" });
-  }
+  // ===== Rodapé padrão =====
+  drawFooter(doc, margin, `OC ${order.numero || ""} • ${order.facility_unit || ""}`);
 
   if (options?.returnBlob) {
     return doc.output("blob") as Blob;
