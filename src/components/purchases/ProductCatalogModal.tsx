@@ -172,6 +172,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
             unidade_medida: unidade,
             facility_unit: facilityUnit,
             setor: setor || null,
+            image_url: imageUrl || null,
           } as any)
           .eq("id", editing.id);
         if (error) throw error;
@@ -185,6 +186,7 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
           unidade_medida: unidade,
           facility_unit: facilityUnit,
           setor: setor || null,
+          image_url: imageUrl || null,
         } as any);
         if (error) throw error;
         toast.success(`Item cadastrado (${previewCode})`);
@@ -195,6 +197,34 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
       toast.error(e.message || "Erro ao salvar item");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx. 5 MB)");
+      return;
+    }
+    if (!/^image\/(jpeg|png|webp|jpg)$/i.test(file.type)) {
+      toast.error("Formato inválido. Use JPG, PNG ou WEBP.");
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${editing?.id || "novo"}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
+      setImageUrl(pub.publicUrl);
+      toast.success("Imagem enviada");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao enviar imagem");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
