@@ -176,7 +176,7 @@ export async function generateRequisitionPdf(
     startY: y,
     theme: "striped",
     styles: baseTableStyles,
-    headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold" },
+    headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
     alternateRowStyles: { fillColor: ALT_ROW },
     head: [["#", "Descrição", "Qtd", "Unid.", "Observação"]],
     body: (items || []).map((it: any) => {
@@ -311,7 +311,7 @@ export async function generateRequisitionPdf(
       startY: y,
       theme: "grid",
       styles: { ...baseTableStyles, fontSize: 8.5, cellPadding: 4 },
-      headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold" },
+      headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
       alternateRowStyles: { fillColor: ALT_ROW },
       head: [["Fornecedor", "CNPJ", "E-mail", "Status", "Enviado", "Respondido"]],
       body: invites.map((i: any) => [
@@ -335,7 +335,7 @@ export async function generateRequisitionPdf(
       startY: y,
       theme: "grid",
       styles: { ...baseTableStyles, fontSize: 8.5, cellPadding: 4 },
-      headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold" },
+      headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
       alternateRowStyles: { fillColor: ALT_ROW },
       head: [["Nº", "Data", "Setor comprador", "Fornecedor vencedor", "Total vencedor", "Status"]],
       body: quotations.map((q: any) => [
@@ -360,7 +360,7 @@ export async function generateRequisitionPdf(
       startY: y,
       theme: "grid",
       styles: { ...baseTableStyles, fontSize: 8.5, cellPadding: 4 },
-      headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold" },
+      headStyles: { fillColor: SOFT_BLUE, textColor: NAVY, fontStyle: "bold" },
       alternateRowStyles: { fillColor: ALT_ROW },
       head: [["Nº", "Fornecedor", "CNPJ", "Valor total", "Status", "Aprovada em"]],
       body: orders.map((o: any) => [
