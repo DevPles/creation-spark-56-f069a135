@@ -45,14 +45,21 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
     if (!open) return;
     const load = async () => {
       const { data: cs } = await supabase.from("contracts").select("*");
-      setContracts(cs || []);
+      const contractsList = cs || [];
+      setContracts(contractsList);
       const { data: allOrders } = await supabase.from("purchase_orders").select("*").in("status", ["autorizada", "enviada", "recebida"]);
       setOrders(allOrders || []);
 
       if (orderId) {
         const { data: o } = await supabase.from("purchase_orders").select("*").eq("id", orderId).single();
         setOrder(o);
-        setContractId(o?.contract_id || "");
+        let cid = o?.contract_id || "";
+        if (!cid && o?.facility_unit) {
+          const auto = contractsList.find((c: any) => c.unit === o.facility_unit && c.status === "Vigente")
+            || contractsList.find((c: any) => c.unit === o.facility_unit);
+          cid = auto?.id || "";
+        }
+        setContractId(cid);
         setRubricaId(o?.rubrica_id || "");
         setFornecedor(o?.fornecedor_nome || "");
         setFornecedorCnpj(o?.fornecedor_cnpj || "");
@@ -70,6 +77,9 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
         setFacilityUnit(q.facility_unit);
         setReqId(q.requisition_id);
         setFornecedor(q.winner_supplier || "");
+        const auto = contractsList.find((c: any) => c.unit === q.facility_unit && c.status === "Vigente")
+          || contractsList.find((c: any) => c.unit === q.facility_unit);
+        if (auto) setContractId(auto.id);
         const { data: sups } = await supabase.from("purchase_quotation_suppliers").select("*").eq("quotation_id", quotationId);
         const winner = (sups || []).find((s: any) => s.fornecedor_nome === q.winner_supplier);
         if (winner) {
