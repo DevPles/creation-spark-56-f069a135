@@ -299,7 +299,7 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
         <CardContent>
           <div className="flex gap-2">
             <Input placeholder="Ex: Soro fisiológico 0,9% 500ml" value={searchAI} onChange={e => setSearchAI(e.target.value)} onKeyDown={e => e.key === "Enter" && runAISearch()} />
-            <Button className="rounded-full" disabled={loadingAI} onClick={runAISearch}>{loadingAI ? "Pesquisando..." : "Pesquisar com IA"}</Button>
+            <Button className="rounded-full" disabled={loadingAI} onClick={runAISearch}>{loadingAI ? "Pesquisando..." : "Pesquisa"}</Button>
           </div>
         </CardContent>
           </Card>
