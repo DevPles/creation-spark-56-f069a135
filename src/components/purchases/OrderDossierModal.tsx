@@ -156,7 +156,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     });
 
     // ===== SECTION 1: TIMELINE =====
-    startSection("Seção 1 — Histórico do processo (linha do tempo)", 200, true);
+    startSection("Seção 1 — Histórico do processo (linha do tempo)");
     const timeline: Array<[string, string]> = [];
     if (req) {
       timeline.push([fmtDateTime(req.created_at), `Requisição ${req.numero} criada — Solicitante: ${req.solicitante_nome || "—"} | Setor: ${req.setor || "—"}`]);
@@ -198,7 +198,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     });
 
     // ===== SECTION 2: PRICE GRID =====
-    startSection("Seção 2 — Grade comparativa de preços", 220);
+    startSection("Seção 2 — Grade comparativa de preços");
 
     // Monta lista unificada de "colunas-fornecedor" combinando suppliers da cotação e convites respondidos
     type SupplierCol = {
@@ -354,7 +354,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     }
 
     // ===== SECTION 3: ITEMS =====
-    startSection("Seção 3 — Itens comprados", 160);
+    startSection("Seção 3 — Itens comprados");
     const itemsBody = reqItems.map((it, idx) => {
       const oi = orderItems.find((o) => o.descricao === it.descricao) || orderItems[idx];
       return [
@@ -381,7 +381,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
     });
 
     // ===== SECTION 4: APPROVAL =====
-    startSection("Seção 4 — Aprovação e rastreabilidade legal", 220);
+    startSection("Seção 4 — Aprovação e rastreabilidade legal");
     const apprRows: any[] = [];
     approvals.forEach((a) => {
       apprRows.push(["Aprovador", a.approver_name || "—"]);
@@ -427,7 +427,7 @@ export default function OrderDossierModal({ open, onOpenChange, orderId }: Props
         : req.justificativa_tipo === "inexigibilidade" ? "Inexigibilidade"
         : "Compra emergencial";
 
-      startSection(`Seção 5 — Justificativa legal (${tipoLabel})`, 200);
+      startSection(`Seção 5 — Justificativa legal (${tipoLabel})`);
       const legalRows: any[] = [
         ["Modalidade", tipoLabel],
         ["Base legal (Lei 14.133/2021)", legal?.base_legal || "—"],
