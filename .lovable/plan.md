@@ -1,76 +1,56 @@
 
 
-## Portal de Cotação por Link Público
+## Banco de Preços por Fornecedor
 
-Permitir que, ao criar uma requisição, você envie um **link único** para cada fornecedor. O fornecedor abre o link (sem precisar de login), preenche valores unitários e disponibilidade dos itens, e envia. As respostas aparecem automaticamente no **Mapa de Cotação** da requisição correspondente.
+Hoje o **Banco de Preços** (`price_history`) só guarda o histórico de preços por descrição do produto, sem um cadastro estruturado de fornecedores. Vamos transformá-lo num histórico **organizado por fornecedor (CNPJ)**, com filtro dedicado e visualização cronológica.
 
-### Fluxo proposto
+### O que será construído
 
-```text
-Requisição criada
-   │
-   ├─► Botão "Enviar para fornecedores"
-   │     │
-   │     ├─ Cadastra fornecedor (Nome, CNPJ, e-mail/WhatsApp)
-   │     ├─ Sistema gera link único: /cotacao-publica/{token}
-   │     └─ Copia link / envia por e-mail
-   │
-Fornecedor abre link
-   │
-   ├─► Vê dados da requisição (unidade, itens, qtd, unidade de medida)
-   ├─► Preenche por item:
-   │     - Valor unitário
-   │     - Disponibilidade (sim/não)
-   │     - Prazo entrega / Condição pagamento (geral)
-   ├─► Confirma envio (uma vez só, depois link bloqueia)
-   │
-Comprador
-   │
-   └─► Mapa de Cotação mostra automaticamente as 3 propostas recebidas
-        - Campeão calculado por menor total
-        - Pode ainda editar/complementar manualmente
-```
+**1. Cadastro de Fornecedores (nova tabela `suppliers`)**
+- Campos: `id`, `nome`, `cnpj` (único), `email`, `telefone`, `endereco`, `contato_responsavel`, `ativo`, `created_at/by`.
+- CNPJ é a chave de identificação. Um fornecedor = um CNPJ.
+- Acessível via novo sub-painel **"Fornecedores"** dentro da aba Banco de Preços (botão "Gerenciar fornecedores").
 
-### Componentes a criar
+**2. Vínculo automático preço → fornecedor**
+- Adicionar coluna `supplier_id` em `price_history`.
+- Sempre que um preço entrar no banco (cotação manual, cotação via link, ou cadastro avulso), o sistema:
+  - Procura o fornecedor pelo **CNPJ informado**.
+  - Se existir → reaproveita (`supplier_id` = existente).
+  - Se não existir → cria automaticamente o fornecedor com o nome/CNPJ recebidos.
+- Resultado: cada novo preço daquele CNPJ se acumula no mesmo "perfil" do fornecedor.
 
-**Backend (Lovable Cloud)**
-- Nova tabela `quotation_invites`: `id`, `token` (uuid único, indexado), `requisition_id`, `fornecedor_nome`, `fornecedor_cnpj`, `fornecedor_email`, `status` (pendente / enviado / respondido / expirado), `prazo_entrega`, `condicao_pagamento`, `submitted_at`, `expires_at`, `created_by`, `created_at`
-- Nova tabela `quotation_invite_responses`: `id`, `invite_id`, `requisition_item_id`, `valor_unitario`, `disponivel` (bool), `observacao`
-- RLS:
-  - `quotation_invites`: SELECT/INSERT/UPDATE para usuários autenticados (criadores/admin); **acesso público (anon)** somente via função RPC `get_invite_by_token(token)` que retorna dados não-sensíveis
-  - `quotation_invite_responses`: INSERT público via RPC `submit_invite_response(token, responses[])` (SECURITY DEFINER, valida token ativo e não respondido)
-- Após submissão, gatilho/RPC popula automaticamente `purchase_quotations` + `purchase_quotation_suppliers` + `purchase_quotation_prices` para a requisição
+**3. Filtro por fornecedor na aba Banco de Preços**
+- Ao lado do filtro de **Unidade**, adicionar filtro **Fornecedor** (dropdown alfabético com nome — CNPJ).
+- Filtros combinam: Unidade + Fornecedor + busca por descrição.
+- Adicionar também um seletor rápido de **período** (últimos 30/90/180 dias / personalizado).
 
-**Frontend autenticado (área comprador)**
-- Em `PurchaseRequisitionModal` (ou na lista de requisições): novo botão **"Convidar fornecedores"**
-- Novo modal `SupplierInviteModal.tsx`:
-  - Lista convites já criados (status, link, data)
-  - Botão **"Adicionar fornecedor"** → cadastra nome/CNPJ/e-mail e gera link
-  - Botão **"Copiar link"** por convite
-  - Botão **"Reenviar"** (regera token se necessário)
+**4. Visão "Histórico do fornecedor"**
+- Quando um fornecedor é selecionado, o painel troca para uma visão dedicada:
+  - **Cabeçalho**: nome, CNPJ, contato, total de itens cotados, último preço enviado.
+  - **Tabela agrupada por produto** com colunas: Descrição · Última cotação · Preço atual · Variação (%) vs cotação anterior · Nº de cotações.
+  - Ao clicar num produto → expande mostrando **todas as datas e preços** daquele item para aquele fornecedor (linha do tempo).
+- Sem fornecedor selecionado → mantém a visão atual (lista geral de preços).
 
-**Frontend público (fornecedor)**
-- Nova rota `/cotacao-publica/:token` (sem `ProtectedRoute`)
-- Nova página `PublicQuotationPage.tsx`:
-  - Cabeçalho: nome do hospital/unidade, número da requisição, prazo
-  - Tabela de itens (descrição, quantidade, unidade) + coluna "Valor unitário (R$)" editável + checkbox "Disponível"
-  - Campos gerais: Prazo de entrega, Condição de pagamento, Observações
-  - Botão **"Enviar proposta"** (valida obrigatórios, bloqueia reenvio)
-  - Tela de confirmação após envio
+**5. Integração com cotações existentes**
+- `submit_invite_response` (cotação por link) e o salvamento de cotação manual passam a chamar o mesmo helper `upsert_supplier_and_price`, garantindo que todo preço capturado já caia no fornecedor certo.
 
-**Mapa de Cotação (`PurchaseQuotationModal`)**
-- Ao abrir uma requisição que possui convites respondidos: pré-preencher os 3 slots de fornecedores e os preços automaticamente
-- Badge **"Recebido via link"** quando o slot vier de um convite
-- Comprador ainda pode adicionar/editar fornecedores manualmente
+### Alterações técnicas
 
-### Detalhes técnicos
+- **Migração SQL:**
+  - `CREATE TABLE public.suppliers` + RLS (view: authenticated; insert/update: authenticated; delete: admin) + índice único em `cnpj`.
+  - `ALTER TABLE price_history ADD COLUMN supplier_id uuid` + índice.
+  - Função `upsert_supplier_from_cnpj(_nome, _cnpj) RETURNS uuid` (SECURITY DEFINER) para resolver/criar fornecedor.
+  - Backfill: popular `suppliers` a partir dos CNPJs já existentes em `price_history` e preencher `supplier_id` retroativamente.
 
-- Token: `gen_random_uuid()` (indexado, único)
-- Expiração padrão: 7 dias (configurável)
-- Após `submitted_at` preenchido, RPC bloqueia novas submissões com o mesmo token
-- Acesso público sem autenticação usa apenas as RPCs `get_invite_by_token` e `submit_invite_response` (SECURITY DEFINER) — nenhuma tabela exposta diretamente ao role `anon`
-- Auditoria: cada criação de convite e cada resposta gera entrada em `purchase_audit_log`
-- Envio do link: nesta primeira fase apenas **copiar link** (fornecedor recebe por WhatsApp/e-mail manualmente). Se quiser disparo automático de e-mail depois, configuramos Lovable Emails em etapa separada.
+- **Frontend:**
+  - `src/components/purchases/PriceBankPanel.tsx`: adicionar filtro de fornecedor, modo "Histórico do fornecedor" e expansão por produto.
+  - Novo `src/components/purchases/SupplierRegistryModal.tsx`: CRUD de fornecedores (lista, novo, editar, desativar).
+  - `src/components/purchases/PurchaseQuotationModal.tsx`: ao salvar cotação manual, chamar `upsert_supplier_from_cnpj` antes de inserir em `price_history`.
+  - Edge logic / RPC de cotação por link já é central — atualizar `submit_invite_response` para também alimentar `price_history` com `supplier_id` resolvido.
 
-### O que o usuário precisa decidir
+### Comportamento final
+
+- Cadastrei "Cirúrgica Mafra — CNPJ 12.345…" uma vez.
+- Toda nova cotação recebida desse CNPJ (manual, link, ou registro avulso) **atualiza o histórico desse fornecedor automaticamente**.
+- Em **Banco de Preços**, filtro por **Cirúrgica Mafra** → vejo todos os itens já cotados por ele, com o preço mais recente, variação e a linha do tempo de cada produto.
 
