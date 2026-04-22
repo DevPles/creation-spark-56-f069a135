@@ -160,7 +160,7 @@ export default function ComprasPage() {
               <TabsTrigger value="ordens">Ordens de Compra</TabsTrigger>
               <TabsTrigger value="painel">Painel</TabsTrigger>
             </TabsList>
-            {tab !== "painel" && tab !== "banco" && (
+            {tab !== "painel" && (
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end">
                 <Input placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)} className="w-full xl:max-w-[260px]" />
                 <Select value={unitFilter} onValueChange={setUnitFilter}>
