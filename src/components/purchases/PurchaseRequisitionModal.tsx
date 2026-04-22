@@ -397,6 +397,7 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
                           align="start"
                           onOpenAutoFocus={(e) => e.preventDefault()}
                           onInteractOutside={() => setDescFocusIdx(null)}
+                          onPointerDownOutside={() => setDescFocusIdx(null)}
                           onWheel={(e) => e.stopPropagation()}
                         >
                           <div
