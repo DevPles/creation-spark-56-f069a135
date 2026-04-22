@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SupplierQualificationPanel, { REQUIRED_DOCS, MEDICAMENTOS_DOCS } from "./SupplierQualificationPanel";
+import { ShieldCheck, ShieldAlert, AlertCircle, Lock } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -25,6 +28,11 @@ interface Supplier {
   contato_responsavel?: string | null;
   ativo: boolean;
   observacoes?: string | null;
+  qualificacao_status?: string;
+  qualificacao_observacoes?: string | null;
+  liberado_motivo?: string | null;
+  fornece_medicamentos?: boolean;
+  inidoneo?: boolean;
 }
 
 const cleanCnpj = (v: string) => (v || "").replace(/\D/g, "");
