@@ -26,16 +26,16 @@ interface PageHeaderProps {
 }
 
 const PageHeader = ({ title, subtitle, period, onPeriodChange, selectedUnit, onUnitChange, action }: PageHeaderProps) => (
-  <div className="flex flex-col gap-3 mb-6">
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-6">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
       <div>
         <h1 className="font-display text-lg sm:text-xl font-bold text-foreground">{title}</h1>
         {subtitle && <p className="text-xs sm:text-sm text-muted-foreground">{subtitle}</p>}
       </div>
-      <div className="flex flex-wrap items-center gap-2 shrink-0">
+      <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
         {selectedUnit && onUnitChange && (
           <Select value={selectedUnit} onValueChange={onUnitChange}>
-            <SelectTrigger className="w-[160px] h-9 text-xs">
+            <SelectTrigger className="w-full sm:w-[160px] h-8 sm:h-9 text-xs">
               <SelectValue placeholder="Unidade" />
             </SelectTrigger>
             <SelectContent>
