@@ -324,25 +324,22 @@ const ControleRubricaPage = () => {
     <div className="min-h-screen bg-background">
       <TopBar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full mb-4">
-          Voltar
-        </Button>
+        <div className="flex items-center flex-wrap gap-2 mb-6">
+          <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full h-9">
+            Voltar
+          </Button>
+          <h1 className="font-display text-xl font-bold text-foreground">Controle de Rubrica</h1>
 
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">Controle de Rubrica</h1>
-            
-          </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center flex-wrap gap-2 ml-auto">
             <Select value={selectedContract} onValueChange={setSelectedContract}>
-              <SelectTrigger className="w-[240px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[160px] sm:w-[220px] h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os contratos</SelectItem>
                 {contracts.map(c => <SelectItem key={c.id} value={c.unit}>{c.unit}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[90px] h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {[currentYear - 2, currentYear - 1, currentYear, currentYear + 1].map(y => (
                   <SelectItem key={y} value={String(y)}>{y}</SelectItem>
@@ -350,16 +347,16 @@ const ControleRubricaPage = () => {
               </SelectContent>
             </Select>
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[90px] h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 {MONTHS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button variant="default" size="sm" className="h-9" onClick={handleGeneratePdf}>
+            <Button variant="default" size="sm" className="rounded-full h-9" onClick={handleGeneratePdf}>
               Gerar PDF
             </Button>
-            <Button variant="outline" size="sm" className="h-9" onClick={() => handleOpenRubricaModal()}>
+            <Button variant="outline" size="sm" className="rounded-full h-9" onClick={() => handleOpenRubricaModal()}>
               Gerenciar Rubricas
             </Button>
           </div>
