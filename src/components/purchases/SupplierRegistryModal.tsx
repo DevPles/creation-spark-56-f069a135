@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SupplierQualificationPanel from "./SupplierQualificationPanel";
+import { Loader2 } from "lucide-react";
 
 interface Props {
   open: boolean;

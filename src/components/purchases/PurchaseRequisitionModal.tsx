@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductCatalogModal from "./ProductCatalogModal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Loader2 } from "lucide-react";
 
 const CLASSIF_LABEL: Record<string, string> = {
   alimenticio: "Alimentício",
