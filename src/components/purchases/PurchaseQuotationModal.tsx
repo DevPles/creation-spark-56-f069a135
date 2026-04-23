@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 interface Supplier {
   id?: string;
@@ -418,7 +419,9 @@ export default function PurchaseQuotationModal({ open, onOpenChange, requisition
         </div>
         <DialogFooter>
           <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="rounded-full" disabled={saving} onClick={handleSave}>{saving ? "Salvando..." : "Salvar cotação"}</Button>
+          <Button className="rounded-full" disabled={saving} onClick={handleSave}>
+            {saving ? (<><Loader2 className="h-4 w-4 animate-spin" />Salvando...</>) : "Salvar cotação"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

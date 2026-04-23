@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { UNIVIDA_LOGO_BASE64 } from "@/assets/univida-logo-base64";
+import { Loader2 } from "lucide-react";
 
 const fmtBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
@@ -731,8 +732,12 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
               <Label>Motivo (em caso de negação)</Label>
               <Textarea value={motivoNegacao} onChange={e => setMotivoNegacao(e.target.value)} rows={2} />
               <div className="flex gap-2">
-                <Button className="rounded-full" disabled={saving} onClick={authorize}>Autorizar</Button>
-                <Button variant="destructive" className="rounded-full" disabled={saving} onClick={deny}>Negar</Button>
+                <Button className="rounded-full" disabled={saving} onClick={authorize}>
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}Autorizar
+                </Button>
+                <Button variant="destructive" className="rounded-full" disabled={saving} onClick={deny}>
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}Negar
+                </Button>
               </div>
             </div>
           )}
@@ -782,7 +787,9 @@ export default function PurchaseOrderModal({ open, onOpenChange, quotationId, or
           <Button variant="secondary" className="rounded-full" onClick={generatePdf} disabled={!items.length}>
             Gerar PDF
           </Button>
-          <Button className="rounded-full" disabled={saving} onClick={saveDraft}>{saving ? "Salvando..." : "Salvar"}</Button>
+          <Button className="rounded-full" disabled={saving} onClick={saveDraft}>
+            {saving ? (<><Loader2 className="h-4 w-4 animate-spin" />Salvando...</>) : "Salvar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
