@@ -1823,21 +1823,21 @@ const RelatoriosPage = () => {
         </div>
 
         {/* ─── FILTERS BAR ─── */}
-        <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-card rounded-lg border border-border">
-          <div className="space-y-1">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-3 mb-6 p-3 sm:p-4 bg-card rounded-lg border border-border">
+          <div className="space-y-1 col-span-2 sm:col-span-1 w-full sm:w-auto">
             <Label className="text-[10px] text-muted-foreground">Contrato</Label>
             <Select value={selectedContractId} onValueChange={setSelectedContractId}>
-              <SelectTrigger className="w-[240px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[240px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {CONTRACTS.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 w-full sm:w-auto">
             <Label className="text-[10px] text-muted-foreground">Tipo de meta</Label>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todos os tipos</SelectItem>
                 <SelectItem value="QNT">Quantitativas</SelectItem>
@@ -1847,10 +1847,10 @@ const RelatoriosPage = () => {
             </Select>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 w-full sm:w-auto">
             <Label className="text-[10px] text-muted-foreground">Status</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todos os status</SelectItem>
                 <SelectItem value="atingidas">Atingidas (≥90%)</SelectItem>
@@ -1861,12 +1861,12 @@ const RelatoriosPage = () => {
             </Select>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto border-l border-border pl-4">
+          <div className="flex items-center gap-2 col-span-2 w-full sm:w-auto sm:ml-auto sm:border-l sm:border-border sm:pl-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
             <Label className="text-xs text-muted-foreground cursor-pointer" htmlFor="compare-toggle">⇄ Comparar</Label>
             <Switch id="compare-toggle" checked={compareMode} onCheckedChange={setCompareMode} />
             {compareMode && (
               <Select value={compareContractId} onValueChange={setCompareContractId}>
-                <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="flex-1 sm:w-[200px] sm:flex-none"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {CONTRACTS.filter(c => c.id !== selectedContractId).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
