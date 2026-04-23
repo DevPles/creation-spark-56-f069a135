@@ -52,24 +52,21 @@ const ContratosPage = () => {
     <div className="min-h-screen bg-background">
       <TopBar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full mb-4">
-          Voltar
-        </Button>
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full">
+            Voltar
+          </Button>
+          <Button size="sm" onClick={handleNew} className="rounded-full">Novo contrato</Button>
+        </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">Contratos de gestão</h1>
-            
-          </div>
-          <div className="flex items-center gap-3">
-            <Input
-              placeholder="Buscar contrato por nome..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-[260px] h-9 text-sm"
-            />
-            <Button onClick={handleNew}>Novo contrato</Button>
-          </div>
+        <div className="flex items-center justify-between gap-2 mb-6">
+          <h1 className="font-display text-lg sm:text-xl font-bold text-foreground shrink-0">Contratos de gestão</h1>
+          <Input
+            placeholder="Buscar contrato..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-9 text-sm max-w-[260px]"
+          />
         </div>
 
         <div className="space-y-4">
