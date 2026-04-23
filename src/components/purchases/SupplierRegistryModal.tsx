@@ -225,7 +225,9 @@ export default function SupplierRegistryModal({ open, onOpenChange, onSaved }: P
             </div>
             <DialogFooter>
               <Button variant="outline" className="rounded-full" onClick={() => setEditing(null)}>Cancelar</Button>
-              <Button className="rounded-full" disabled={saving} onClick={save}>{saving ? "Salvando..." : "Salvar"}</Button>
+              <Button className="rounded-full" disabled={saving} onClick={save}>
+                {saving ? (<><Loader2 className="h-4 w-4 animate-spin" />Salvando...</>) : "Salvar"}
+              </Button>
             </DialogFooter>
             </TabsContent>
             <TabsContent value="qualif">

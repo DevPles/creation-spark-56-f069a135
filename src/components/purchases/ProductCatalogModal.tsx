@@ -343,7 +343,9 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
         </div>
         <DialogFooter>
           <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="rounded-full" disabled={saving} onClick={handleSave}>{saving ? "Salvando..." : (editing ? "Salvar" : "Cadastrar")}</Button>
+          <Button className="rounded-full" disabled={saving} onClick={handleSave}>
+            {saving ? (<><Loader2 className="h-4 w-4 animate-spin" />Salvando...</>) : (editing ? "Salvar" : "Cadastrar")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

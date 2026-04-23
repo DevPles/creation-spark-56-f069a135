@@ -993,7 +993,9 @@ export default function PurchaseRequisitionModal({ open, onOpenChange, requisiti
         </div>
         <DialogFooter>
           <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="rounded-full" disabled={saving} onClick={handleSave}>{saving ? "Salvando..." : "Salvar"}</Button>
+          <Button className="rounded-full" disabled={saving} onClick={handleSave}>
+            {saving ? (<><Loader2 className="h-4 w-4 animate-spin" />Salvando...</>) : "Salvar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
       <ProductCatalogModal open={catalogOpen} onOpenChange={setCatalogOpen} onSaved={loadCatalog} />
