@@ -234,15 +234,13 @@ export default function ComprasPage() {
 
         <Tabs value={tab} onValueChange={setTab}>
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="-mx-4 sm:mx-0 overflow-x-auto sm:overflow-visible">
-              <TabsList className="inline-flex w-max sm:w-auto h-auto sm:flex-wrap shrink-0 mx-4 sm:mx-0">
-                <TabsTrigger value="requisicoes" className="text-xs sm:text-sm whitespace-nowrap">Requisições</TabsTrigger>
-                <TabsTrigger value="cotacoes" className="text-xs sm:text-sm whitespace-nowrap">Cotações</TabsTrigger>
-                <TabsTrigger value="ordens" className="text-xs sm:text-sm whitespace-nowrap">Ordens de Compra</TabsTrigger>
-                <TabsTrigger value="banco" className="text-xs sm:text-sm whitespace-nowrap">Banco de Preços</TabsTrigger>
-                <TabsTrigger value="painel" className="text-xs sm:text-sm whitespace-nowrap">Painel</TabsTrigger>
-              </TabsList>
-            </div>
+            <TabsList className="grid grid-cols-2 sm:inline-flex sm:w-auto h-auto sm:flex-wrap gap-1 w-full shrink-0">
+              <TabsTrigger value="requisicoes" className="text-xs sm:text-sm">Requisições</TabsTrigger>
+              <TabsTrigger value="cotacoes" className="text-xs sm:text-sm">Cotações</TabsTrigger>
+              <TabsTrigger value="ordens" className="text-xs sm:text-sm">Ordens de Compra</TabsTrigger>
+              <TabsTrigger value="banco" className="text-xs sm:text-sm">Banco de Preços</TabsTrigger>
+              <TabsTrigger value="painel" className="col-span-2 sm:col-span-1 text-xs sm:text-sm">Painel</TabsTrigger>
+            </TabsList>
             {tab !== "painel" && (
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end">
                 <Input placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)} className="w-full xl:max-w-[260px]" />
