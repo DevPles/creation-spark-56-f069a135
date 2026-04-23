@@ -1299,12 +1299,12 @@ const RelatorioAssistencialPage = () => {
           </div>
 
           {/* Filters */}
-          <div className="bg-card rounded-xl border border-border p-4 mb-4">
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-              <div>
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-4 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
+              <div className="col-span-2 sm:col-span-1">
                 <Label className="text-[10px] text-muted-foreground">Contrato</Label>
                 <Select value={selectedContractId} onValueChange={setSelectedContractId}>
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Todos" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Todos" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
                     {contracts.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -1314,31 +1314,31 @@ const RelatorioAssistencialPage = () => {
               <div>
                 <Label className="text-[10px] text-muted-foreground">Ano</Label>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="h-9 px-2 text-xs" onClick={() => setRefYear(y => y - 1)}>{"<"}</Button>
-                  <Input type="number" value={refYear} onChange={e => setRefYear(Number(e.target.value))} className="h-9 text-center" />
-                  <Button variant="ghost" size="sm" className="h-9 px-2 text-xs" onClick={() => setRefYear(y => y + 1)}>{">"}</Button>
+                  <Button variant="ghost" size="sm" className="h-9 px-1.5 text-xs shrink-0" onClick={() => setRefYear(y => y - 1)}>{"<"}</Button>
+                  <Input type="number" value={refYear} onChange={e => setRefYear(Number(e.target.value))} className="h-9 text-center text-sm px-1 min-w-0" />
+                  <Button variant="ghost" size="sm" className="h-9 px-1.5 text-xs shrink-0" onClick={() => setRefYear(y => y + 1)}>{">"}</Button>
                 </div>
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">Mês</Label>
                 <Select value={String(refMonth)} onValueChange={v => setRefMonth(Number(v))}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">Status</Label>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
                     {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <Label className="text-[10px] text-muted-foreground">Busca</Label>
-                <Input value={searchText} onChange={e => setSearchText(e.target.value)} placeholder="Buscar..." className="h-9" />
+                <Input value={searchText} onChange={e => setSearchText(e.target.value)} placeholder="Buscar..." className="h-9 text-sm" />
               </div>
             </div>
           </div>
