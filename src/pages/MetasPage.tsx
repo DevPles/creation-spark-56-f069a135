@@ -181,9 +181,9 @@ const MetasPage = () => {
             selectedUnit={selectedUnit}
             onUnitChange={(v) => { setSelectedUnit(v); setSelectedGoalName("Todas"); setSelectedSector("Todos"); }}
             action={
-              <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:items-center sm:flex-wrap sm:w-auto">
+              <div className="contents sm:flex sm:items-center sm:flex-wrap sm:gap-2">
                 <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setSelectedGoalName("Todas"); setSelectedSector("Todos"); }}>
-                  <SelectTrigger className="w-full sm:w-[140px] h-9 text-xs">
+                  <SelectTrigger className="w-full sm:w-[140px] h-8 sm:h-9 text-xs">
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -194,7 +194,7 @@ const MetasPage = () => {
                   </SelectContent>
                 </Select>
                 <Select value={selectedSector} onValueChange={(v) => { setSelectedSector(v); setSelectedGoalName("Todas"); }}>
-                  <SelectTrigger className="w-full sm:w-[160px] h-9 text-xs">
+                  <SelectTrigger className="w-full sm:w-[160px] h-8 sm:h-9 text-xs">
                     <SelectValue placeholder="Setor" />
                   </SelectTrigger>
                    <SelectContent>
@@ -205,7 +205,7 @@ const MetasPage = () => {
                   </SelectContent>
                 </Select>
                 <Select value={selectedGoalName} onValueChange={setSelectedGoalName}>
-                  <SelectTrigger className="col-span-2 sm:col-span-1 w-full sm:w-[180px] h-9 text-xs">
+                  <SelectTrigger className="w-full sm:w-[180px] h-8 sm:h-9 text-xs">
                     <SelectValue placeholder="Meta" />
                   </SelectTrigger>
                   <SelectContent>
@@ -221,12 +221,12 @@ const MetasPage = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={handleNew} className="w-full sm:w-auto">Nova meta</Button>
-                <div className="flex items-center border rounded-md overflow-hidden justify-center sm:justify-start">
+                <Button onClick={handleNew} size="sm" className="h-8 sm:h-9 sm:size-default">Nova meta</Button>
+                <div className="flex items-center border rounded-md overflow-hidden">
                   <Button
                     variant={viewMode === "cards" ? "default" : "ghost"}
                     size="icon"
-                    className="h-9 w-9 rounded-none"
+                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-none"
                     onClick={() => setViewMode("cards")}
                   >
                     <LayoutGrid className="h-4 w-4" />
@@ -234,7 +234,7 @@ const MetasPage = () => {
                   <Button
                     variant={viewMode === "list" ? "default" : "ghost"}
                     size="icon"
-                    className="h-9 w-9 rounded-none"
+                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-none"
                     onClick={() => setViewMode("list")}
                   >
                     <List className="h-4 w-4" />
@@ -242,7 +242,7 @@ const MetasPage = () => {
                   <Button
                     variant={viewMode === "calendar" ? "default" : "ghost"}
                     size="icon"
-                    className="h-9 w-9 rounded-none"
+                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-none"
                     onClick={() => setViewMode("calendar")}
                   >
                     <CalendarDays className="h-4 w-4" />
@@ -250,7 +250,7 @@ const MetasPage = () => {
                   <Button
                     variant={viewMode === "chart" ? "default" : "ghost"}
                     size="icon"
-                    className="h-9 w-9 rounded-none"
+                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-none"
                     onClick={() => setViewMode("chart")}
                   >
                     <BarChart3 className="h-4 w-4" />
