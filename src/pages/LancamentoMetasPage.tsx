@@ -877,44 +877,42 @@ const LancamentoMetasPage = () => {
           Voltar
         </Button>
 
-        <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">Lançamentos</h1>
-          </div>
-          <div className="flex items-end gap-3 flex-wrap">
+        <div className="mb-4">
+          <h1 className="font-display text-xl font-bold text-foreground mb-3">Lançamentos</h1>
+          <div className="grid grid-cols-2 sm:flex sm:items-end sm:flex-wrap gap-2 sm:gap-3">
             {/* Unidade — Metas e Leitos */}
             {(activeTab === "lancar-metas" || activeTab === "lancar-leitos" || activeTab === "mapa-termico") && (
               isAdmin ? (
-                <div>
+                <div className="w-full sm:w-auto">
                   <label className="text-[10px] text-muted-foreground block mb-1">Unidade</label>
                   <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                    <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               ) : (
-                <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
-                  <p className="text-xs text-muted-foreground">Sua unidade</p>
+                <div className="col-span-2 sm:col-span-1 bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5">
+                  <p className="text-[10px] text-muted-foreground">Sua unidade</p>
                   <p className="font-display font-semibold text-foreground text-sm">{profile?.facility_unit || "Carregando..."}</p>
                 </div>
               )
             )}
             {/* Contrato — apenas Rubricas */}
             {activeTab === "lancamento-rubricas" && (
-              <div>
+              <div className="w-full sm:w-auto">
                 <label className="text-[10px] text-muted-foreground block mb-1">Contrato</label>
                 <Select value={selectedContract} onValueChange={setSelectedContract}>
-                  <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>{realContracts.map(c => <SelectItem key={c.id} value={c.id}>{c.unit}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             )}
             {/* Período — calendário inteligente */}
-            <div>
+            <div className="w-full sm:w-auto">
               <label className="text-[10px] text-muted-foreground block mb-1">Período</label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[180px] h-9 justify-start text-left font-normal text-sm">
+                  <Button variant="outline" className="w-full sm:w-[180px] h-9 justify-start text-left font-normal text-sm">
                     <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                     {format(selectedDate, "MMMM yyyy", { locale: ptBR })}
                   </Button>
@@ -933,10 +931,10 @@ const LancamentoMetasPage = () => {
             </div>
             {/* Setor — Metas e Mapa Térmico */}
             {(activeTab === "lancar-metas" || activeTab === "mapa-termico") && (
-              <div>
+              <div className="w-full sm:w-auto">
                 <label className="text-[10px] text-muted-foreground block mb-1">Setor</label>
                 <Select value={filterSector} onValueChange={(v) => { setFilterSector(v); setFilterGoal("todos"); }}>
-                  <SelectTrigger className="w-[160px] h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-[160px] h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos os setores</SelectItem>
                     {dbSectors.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -946,10 +944,10 @@ const LancamentoMetasPage = () => {
             )}
             {/* Meta específica — Metas e Mapa Térmico */}
             {(activeTab === "lancar-metas" || activeTab === "mapa-termico") && (
-              <div>
+              <div className="w-full sm:w-auto">
                 <label className="text-[10px] text-muted-foreground block mb-1">Meta</label>
                 <Select value={filterGoal} onValueChange={setFilterGoal}>
-                  <SelectTrigger className="w-[180px] h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todas</SelectItem>
                     {goals
@@ -960,18 +958,18 @@ const LancamentoMetasPage = () => {
                 </Select>
               </div>
             )}
-            <Button variant="outline" size="sm" className="h-9" onClick={() => setPdfModalOpen(true)}>
+            <Button variant="outline" size="sm" className="col-span-2 sm:col-span-1 w-full sm:w-auto h-9 sm:self-end" onClick={() => setPdfModalOpen(true)}>
               Gerar PDF
             </Button>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="lancar-metas">Lançamento de Metas</TabsTrigger>
-            {isAdmin && <TabsTrigger value="lancamento-rubricas">Lançamento de Rubricas</TabsTrigger>}
-            <TabsTrigger value="lancar-leitos">Movimentação de Leitos</TabsTrigger>
-            {isAdmin && <TabsTrigger value="mapa-termico">Mapa Térmico Diário</TabsTrigger>}
+          <TabsList className="mb-6 grid grid-cols-2 sm:inline-flex h-auto sm:h-10 w-full sm:w-auto gap-1 sm:gap-0 p-1">
+            <TabsTrigger value="lancar-metas" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap h-9">Lançamento de Metas</TabsTrigger>
+            {isAdmin && <TabsTrigger value="lancamento-rubricas" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap h-9">Lançamento de Rubricas</TabsTrigger>}
+            <TabsTrigger value="lancar-leitos" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap h-9">Movimentação de Leitos</TabsTrigger>
+            {isAdmin && <TabsTrigger value="mapa-termico" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap h-9">Mapa Térmico Diário</TabsTrigger>}
           </TabsList>
 
           {/* ── TAB: Lançamento de Metas ── */}
