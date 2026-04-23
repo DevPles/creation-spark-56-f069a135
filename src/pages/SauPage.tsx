@@ -142,22 +142,21 @@ const SauPage = () => {
     <div className="min-h-screen bg-background">
       <TopBar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center flex-wrap gap-2 mb-6">
           <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="rounded-full">
             Voltar
           </Button>
           <h1 className="font-display text-xl font-bold text-foreground">SAU</h1>
-        </div>
-
-        <div className="flex items-center gap-2 mb-6">
-          <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-            <SelectTrigger className="flex-1 sm:flex-none sm:w-[180px] h-9 text-sm"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Todas as unidades">Todas as unidades</SelectItem>
-              {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Button onClick={() => setModalOpen(true)} className="rounded-full h-9">Novo Registro</Button>
+          <div className="flex items-center gap-2 ml-auto">
+            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+              <SelectTrigger className="w-[150px] sm:w-[180px] h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todas as unidades">Todas as unidades</SelectItem>
+                {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button onClick={() => setModalOpen(true)} className="rounded-full h-9">Novo Registro</Button>
+          </div>
         </div>
 
         {/* KPIs */}
