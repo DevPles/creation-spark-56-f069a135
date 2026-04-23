@@ -809,11 +809,11 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
           O relatório inclui diagramas de Pareto e Ishikawa, tabelas de distribuição, detalhamento dos planos
           e uma análise inteligente com padrões de incidência, áreas críticas e recomendações priorizadas.
         </p>
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="space-y-1.5">
+        <div className="grid grid-cols-1 sm:flex sm:flex-wrap sm:items-end gap-3 sm:gap-4">
+          <div className="space-y-1.5 w-full sm:w-auto">
             <Label className="text-xs text-muted-foreground">Unidade</Label>
             <Select value={reportUnit} onValueChange={setReportUnit}>
-              <SelectTrigger className="w-48 h-9 text-xs">
+              <SelectTrigger className="w-full sm:w-48 h-9 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -822,11 +822,11 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 w-full sm:w-auto">
             <Label className="text-xs text-muted-foreground">Período</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-64 h-9 justify-start text-left text-xs font-normal")}>
+                <Button variant="outline" className={cn("w-full sm:w-64 h-9 justify-start text-left text-xs font-normal")}>
                   <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                   {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} — {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
                 </Button>
@@ -847,10 +847,10 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
               </PopoverContent>
             </Popover>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 w-full sm:w-auto">
             <Label className="text-xs text-muted-foreground">Plano de ação</Label>
             <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
-              <SelectTrigger className="w-56 h-9 text-xs">
+              <SelectTrigger className="w-full sm:w-56 h-9 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -863,7 +863,7 @@ const ActionPlanReportTab = ({ plans, selectedUnit, availableUnits }: Props) => 
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={generatePdfReport} disabled={loading || total === 0} size="sm">
+          <Button onClick={generatePdfReport} disabled={loading || total === 0} size="sm" className="w-full sm:w-auto">
             {loading ? "Gerando PDF..." : "Gerar relatório PDF"}
           </Button>
         </div>
