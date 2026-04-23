@@ -1536,10 +1536,10 @@ const RelatorioAssistencialPage = () => {
           </div>
         </div>
 
-        <div className="flex gap-5">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-5">
           {/* Sidebar */}
-          <div className="w-72 shrink-0">
-            <div className="bg-card rounded-xl border border-border p-3 sticky top-4 shadow-sm">
+          <div className="w-full lg:w-72 lg:shrink-0">
+            <div className="bg-card rounded-xl border border-border p-3 lg:sticky lg:top-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-foreground">Sumário</h3>
                 <div className="flex items-center gap-1">
