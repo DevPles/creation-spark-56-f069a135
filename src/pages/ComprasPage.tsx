@@ -234,13 +234,15 @@ export default function ComprasPage() {
 
         <Tabs value={tab} onValueChange={setTab}>
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <TabsList className="inline-flex w-auto h-auto flex-wrap shrink-0">
-              <TabsTrigger value="requisicoes">Requisições</TabsTrigger>
-              <TabsTrigger value="cotacoes">Cotações</TabsTrigger>
-              <TabsTrigger value="ordens">Ordens de Compra</TabsTrigger>
-              <TabsTrigger value="banco">Banco de Preços</TabsTrigger>
-              <TabsTrigger value="painel">Painel</TabsTrigger>
-            </TabsList>
+            <div className="-mx-4 sm:mx-0 overflow-x-auto sm:overflow-visible">
+              <TabsList className="inline-flex w-max sm:w-auto h-auto sm:flex-wrap shrink-0 mx-4 sm:mx-0">
+                <TabsTrigger value="requisicoes" className="text-xs sm:text-sm whitespace-nowrap">Requisições</TabsTrigger>
+                <TabsTrigger value="cotacoes" className="text-xs sm:text-sm whitespace-nowrap">Cotações</TabsTrigger>
+                <TabsTrigger value="ordens" className="text-xs sm:text-sm whitespace-nowrap">Ordens de Compra</TabsTrigger>
+                <TabsTrigger value="banco" className="text-xs sm:text-sm whitespace-nowrap">Banco de Preços</TabsTrigger>
+                <TabsTrigger value="painel" className="text-xs sm:text-sm whitespace-nowrap">Painel</TabsTrigger>
+              </TabsList>
+            </div>
             {tab !== "painel" && (
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end">
                 <Input placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)} className="w-full xl:max-w-[260px]" />
