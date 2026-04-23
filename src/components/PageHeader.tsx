@@ -32,7 +32,7 @@ const PageHeader = ({ title, subtitle, period, onPeriodChange, selectedUnit, onU
         <h1 className="font-display text-lg sm:text-xl font-bold text-foreground">{title}</h1>
         {subtitle && <p className="text-xs sm:text-sm text-muted-foreground">{subtitle}</p>}
       </div>
-      <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
+      <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:flex-wrap sm:items-center sm:w-auto sm:shrink-0">
         {selectedUnit && onUnitChange && (
           <Select value={selectedUnit} onValueChange={onUnitChange}>
             <SelectTrigger className="w-full sm:w-[160px] h-8 sm:h-9 text-xs">
