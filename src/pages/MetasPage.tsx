@@ -181,9 +181,9 @@ const MetasPage = () => {
             selectedUnit={selectedUnit}
             onUnitChange={(v) => { setSelectedUnit(v); setSelectedGoalName("Todas"); setSelectedSector("Todos"); }}
             action={
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:items-center sm:flex-wrap sm:w-auto">
                 <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setSelectedGoalName("Todas"); setSelectedSector("Todos"); }}>
-                  <SelectTrigger className="w-[140px] h-9 text-xs">
+                  <SelectTrigger className="w-full sm:w-[140px] h-9 text-xs">
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -194,7 +194,7 @@ const MetasPage = () => {
                   </SelectContent>
                 </Select>
                 <Select value={selectedSector} onValueChange={(v) => { setSelectedSector(v); setSelectedGoalName("Todas"); }}>
-                  <SelectTrigger className="w-[160px] h-9 text-xs">
+                  <SelectTrigger className="w-full sm:w-[160px] h-9 text-xs">
                     <SelectValue placeholder="Setor" />
                   </SelectTrigger>
                    <SelectContent>
@@ -205,7 +205,7 @@ const MetasPage = () => {
                   </SelectContent>
                 </Select>
                 <Select value={selectedGoalName} onValueChange={setSelectedGoalName}>
-                  <SelectTrigger className="w-[180px] h-9 text-xs">
+                  <SelectTrigger className="col-span-2 sm:col-span-1 w-full sm:w-[180px] h-9 text-xs">
                     <SelectValue placeholder="Meta" />
                   </SelectTrigger>
                   <SelectContent>
@@ -221,8 +221,8 @@ const MetasPage = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={handleNew}>Nova meta</Button>
-                <div className="flex items-center border rounded-md overflow-hidden">
+                <Button onClick={handleNew} className="w-full sm:w-auto">Nova meta</Button>
+                <div className="flex items-center border rounded-md overflow-hidden justify-center sm:justify-start">
                   <Button
                     variant={viewMode === "cards" ? "default" : "ghost"}
                     size="icon"
