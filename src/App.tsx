@@ -7,7 +7,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ContractsProvider } from "@/contexts/ContractsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import FloatingTrainingHeart from "@/components/FloatingTrainingHeart";
-import PrsCredit from "@/components/PrsCredit";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import MetasPage from "./pages/MetasPage";
@@ -39,7 +38,6 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <FloatingTrainingHeart />
-          <PrsCredit />
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
