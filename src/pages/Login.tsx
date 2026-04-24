@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import prsLogo from "@/assets/prs-logo.png";
 
 const ORB_COUNT = 8;
 const generateOrb = (id: number) => ({
@@ -258,6 +259,10 @@ const Login = () => {
           </AnimatePresence>
         </motion.div>
       </motion.div>
+      <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 text-xs text-white/80 drop-shadow-md">
+        <span>Desenvolvido por</span>
+        <img src={prsLogo} alt="PRS" className="h-5 w-auto object-contain" />
+      </div>
     </div>
   );
 };
