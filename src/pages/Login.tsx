@@ -259,10 +259,15 @@ const Login = () => {
           </AnimatePresence>
         </motion.div>
       </motion.div>
-      <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 text-xs text-white/80 drop-shadow-md">
+      <a
+        href="https://periclesribeiro.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-4 left-4 z-50 flex items-center gap-2 text-xs text-white/80 drop-shadow-md hover:text-white transition-colors"
+      >
         <span>Desenvolvido por</span>
         <img src={prsLogo} alt="PRS" className="h-5 w-auto object-contain" />
-      </div>
+      </a>
     </div>
   );
 };
