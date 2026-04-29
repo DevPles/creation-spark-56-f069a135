@@ -13,26 +13,29 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
-const STEPS_P1 = [
-  { id: "paciente", title: "Paciente", description: "Identificação" },
-  { id: "procedimento", title: "Procedimento", description: "Dados Cirúrgicos" },
-  { id: "solicitante", title: "Solicitante", description: "Profissional" },
-  { id: "materiais", title: "Materiais", description: "OPME Solicitada" },
-  { id: "justificativa", title: "Justificativa", description: "Instrumentais" },
-  { id: "imagem", title: "Imagem", description: "Pré-Operatório" },
+const STEPS_CADASTRO = [
+  { id: "paciente", title: "Paciente", description: "Identificação do Paciente" },
+  { id: "procedimento", title: "Procedimento", description: "Características Cirúrgicas" },
+  { id: "imagem", title: "Exames", description: "Anexar Exames e Laudos" },
 ];
 
-const STEPS_P2 = [
+const STEPS_REQUISICAO = [
+  { id: "solicitante", title: "Solicitante", description: "Profissional Responsável" },
+  { id: "materiais", title: "Materiais", description: "Solicitação de OPME" },
+  { id: "justificativa", title: "Justificativa", description: "Indicação e Instrumentais" },
+];
+
+const STEPS_AUDITORIA = [
   { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Pré-OP" },
-  { id: "administrativo", title: "Administrativo", description: "Controle" },
-  { id: "consumo", title: "Consumo", description: "Registro Cirúrgico" },
+  { id: "administrativo", title: "Controle", description: "Logística e Suprimentos" },
+  { id: "consumo", title: "Consumo", description: "Registro de Uso e Devolução" },
   { id: "imagem_pos", title: "Imagem Pós", description: "Controle Pós-OP" },
 ];
 
-const STEPS_P3 = [
-  { id: "auditoria_pos", title: "Médico Auditor", description: "Validação Pós-OP" },
-  { id: "cirurgiao_just", title: "Cirurgião", description: "Justificativa Perda/Dano" },
-  { id: "faturamento", title: "Faturamento", description: "Codificação Final" },
+const STEPS_FATURAMENTO = [
+  { id: "auditoria_pos", title: "Auditoria Pós", description: "Validação Final" },
+  { id: "cirurgiao_just", title: "Justificativa", description: "Descrição de Intercorrências" },
+  { id: "faturamento", title: "Codificação", description: "Fechamento e AIH" },
 ];
 
 export default function OpmeApp() {
@@ -40,7 +43,7 @@ export default function OpmeApp() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const recordId = searchParams.get("id");
-  const [part, setPart] = useState(1);
+  const [part, setPart] = useState<number | null>(null);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -49,7 +52,7 @@ export default function OpmeApp() {
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[] }>({ idx: -1, items: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const STEPS = part === 1 ? STEPS_P1 : part === 2 ? STEPS_P2 : STEPS_P3;
+  const STEPS = part === 1 ? STEPS_CADASTRO : part === 2 ? STEPS_REQUISICAO : part === 3 ? STEPS_AUDITORIA : STEPS_FATURAMENTO;
 
   const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
