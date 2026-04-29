@@ -262,15 +262,6 @@ const Login = () => {
                       OPME
                     </button>
                   </div>
-                  {isOpmeMode && (
-                    <motion.p 
-                      initial={{ opacity: 0, y: -5 }} 
-                      animate={{ opacity: 1, y: 0 }} 
-                      className="text-[10px] text-emerald-600 font-medium uppercase tracking-tighter"
-                    >
-                      Você será redirecionado para o App OPME após o login
-                    </motion.p>
-                  )}
                 </div>
               </motion.div>
             ) : (
