@@ -823,77 +823,159 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {part === 2 && step === 1 && (
+            {part === 2 && step === 2 && (
               <div className="space-y-4">
-                {form.opme_requested.map((item: any, idx: number) => (
-                  <Card key={idx} className="border-slate-200">
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-bold text-primary uppercase">Item #{idx + 1}</span>
-                        {form.opme_requested.length > 1 && (
-                          <Button variant="ghost" size="sm" className="h-6 text-destructive text-[10px]" onClick={() => setForm((p: any) => ({ ...p, opme_requested: p.opme_requested.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
-                        )}
-                      </div>
-                      <div className="space-y-2 relative">
-                        <Label className="text-[10px] uppercase text-slate-400">Descrição</Label>
-                        <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value)} placeholder="Nome do material" className="h-10 text-sm bg-slate-50/50" />
-                        {materialSuggestions.idx === idx && materialSuggestions.items.length > 0 && (
-                          <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-40 overflow-auto">
-                            {materialSuggestions.items.map((m) => (
-                              <button key={m.code} type="button" className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
-                                const arr = [...form.opme_requested]; arr[idx] = { ...arr[idx], description: m.name, sigtap: m.code };
-                                setForm((p: any) => ({ ...p, opme_requested: arr })); setMaterialSuggestions({ idx: -1, items: [] });
-                              }}>
-                                <p className="text-[10px] font-bold text-slate-800">{m.name}</p>
-                                <p className="text-[9px] text-slate-500">Cód: {m.code}</p>
-                              </button>
-                            ))}
+                <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">4. OPME Solicitada</h3>
+                <div className="space-y-3">
+                  {form.opme_requested.map((item: any, idx: number) => (
+                    <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
+                      <CardContent className="p-0">
+                        <div className="bg-slate-50 px-3 py-1.5 border-b border-slate-100 flex justify-between items-center">
+                          <span className="text-[9px] font-black text-slate-500 uppercase">Item #{String(idx + 1).padStart(2, '0')}</span>
+                          {form.opme_requested.length > 1 && (
+                            <Button variant="ghost" size="sm" className="h-5 px-1.5 text-destructive text-[9px] font-bold" onClick={() => setForm((p: any) => ({ ...p, opme_requested: p.opme_requested.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
+                          )}
+                        </div>
+                        <div className="p-3 space-y-3">
+                          <div className="space-y-1 relative">
+                            <Label className="text-[9px] uppercase text-slate-400 font-bold">Descrição / Especificação</Label>
+                            <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value)} placeholder="Ex: Prótese de quadril..." className="h-9 text-xs bg-white border-slate-200" />
+                            {materialSuggestions.idx === idx && materialSuggestions.items.length > 0 && (
+                              <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-40 overflow-auto">
+                                {materialSuggestions.items.map((m) => (
+                                  <button key={m.code} type="button" className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
+                                    const arr = [...form.opme_requested]; arr[idx] = { ...arr[idx], description: m.name, sigtap: m.code };
+                                    setForm((p: any) => ({ ...p, opme_requested: arr })); setMaterialSuggestions({ idx: -1, items: [] });
+                                  }}>
+                                    <p className="text-[10px] font-bold text-slate-800">{m.name}</p>
+                                    <p className="text-[9px] text-slate-500">Cód: {m.code}</p>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-[10px] uppercase text-slate-400">Qtd</Label>
-                          <Input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value)} className="h-10 text-sm bg-slate-50/50" />
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-[9px] uppercase text-slate-400 font-bold">Qtd</Label>
+                              <Input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value)} className="h-9 text-xs bg-white border-slate-200" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[9px] uppercase text-slate-400 font-bold">Tam/Mod</Label>
+                              <Input value={item.size_model} onChange={e => updateItem(idx, "size_model", e.target.value)} placeholder="G/P/42" className="h-9 text-xs bg-white border-slate-200" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[9px] uppercase text-slate-400 font-bold">SIGTAP</Label>
+                              <Input value={item.sigtap} onChange={e => updateItem(idx, "sigtap", e.target.value)} placeholder="000..." className="h-9 text-xs bg-white border-slate-200" />
+                            </div>
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] uppercase text-slate-400">Tam/Modelo</Label>
-                          <Input value={item.size_model} onChange={e => updateItem(idx, "size_model", e.target.value)} placeholder="Tamanho" className="h-10 text-sm bg-slate-50/50" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                <Button variant="outline" className="w-full border-dashed border-2 h-12 text-slate-500" onClick={addItem}>Adicionar outro material</Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {form.opme_requested.length < 10 && (
+                    <Button variant="outline" className="w-full border-dashed border-2 h-10 text-[10px] font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={addItem}>+ Adicionar Material (Até 10)</Button>
+                  )}
+                </div>
               </div>
             )}
 
-            {part === 2 && step === 2 && (
+            {part === 2 && step === 3 && (
               <div className="space-y-6">
-                <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                  <h3 className="text-xs font-bold uppercase text-slate-400">Instrumentais / Acessórios</h3>
-                  <div className="space-y-3">
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">5. Instrumentais / Acessórios</h3>
+                  <div className="grid grid-cols-1 gap-3 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
                     <div className="flex items-center space-x-2">
                       <Checkbox id="instr_spec" checked={form.instruments_specific} onCheckedChange={v => updateForm("instruments_specific", v)} />
-                      <Label htmlFor="instr_spec" className="text-sm">Necessita instrumental específico</Label>
+                      <Label htmlFor="instr_spec" className="text-xs font-bold text-slate-600">Necessita instrumental específico</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox id="instr_loan" checked={form.instruments_loan} onCheckedChange={v => updateForm("instruments_loan", v)} />
-                      <Label htmlFor="instr_loan" className="text-sm">Necessita comodato</Label>
+                      <Label htmlFor="instr_loan" className="text-xs font-bold text-slate-600">Necessita comodato</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox id="instr_na" checked={form.instruments_na} onCheckedChange={v => updateForm("instruments_na", v)} />
-                      <Label htmlFor="instr_na" className="text-sm">Não se aplica</Label>
+                      <Label htmlFor="instr_na" className="text-xs font-bold text-slate-600">Não se aplica</Label>
+                    </div>
+                    <div className="space-y-1.5 mt-2">
+                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Especificar Instrumentais</Label>
+                      <Textarea value={form.instruments_specify} onChange={e => updateForm("instruments_specify", e.target.value)} placeholder="Descreva os itens..." className="min-h-[60px] text-xs" />
                     </div>
                   </div>
-                  <div className="space-y-2 mt-4">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Especificar Instrumentais</Label>
-                    <Textarea value={form.instruments_specify} onChange={e => updateForm("instruments_specify", e.target.value)} placeholder="Descreva os instrumentais necessários..." className="min-h-[80px] bg-white border-slate-200" />
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">6. Justificativa OPME</h3>
+                  <div className="space-y-2">
+                    <Label className="text-[9px] uppercase text-slate-400 font-bold">Indicação Clínica / Evidência</Label>
+                    <Textarea value={form.clinical_indication} onChange={e => updateForm("clinical_indication", e.target.value)} placeholder="Justificativa para uso de OPME..." className="min-h-[80px] text-xs shadow-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[9px] uppercase text-slate-400 font-bold">Parecer da Comissão</Label>
+                    <Select value={form.auditor_pre_analysis} onValueChange={(v) => updateForm("auditor_pre_analysis", v)}>
+                      <SelectTrigger className="h-10 text-xs font-bold">
+                        <SelectValue placeholder="Status da análise" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="adequada">Aprovado</SelectItem>
+                        <SelectItem value="reprovada">Reprovado</SelectItem>
+                        <SelectItem value="em_analise">Em Análise</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Justificativa Clínica</Label>
-                  <Textarea value={form.clinical_indication} onChange={e => updateForm("clinical_indication", e.target.value)} placeholder="Indicação clínica / evidência terapêutica" className="min-h-[120px] bg-white border-slate-200 shadow-sm" />
+
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">7. Comprovação por Imagem</h3>
+                  <div className="space-y-4 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Data do Exame</Label>
+                        <Input type="date" value={form.preop_exam_date} onChange={e => updateForm("preop_exam_date", e.target.value)} className="h-9 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Nº do Exame / Laudo</Label>
+                        <Input value={form.preop_exam_number} onChange={e => updateForm("preop_exam_number", e.target.value)} className="h-9 text-xs" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Tipo de Exame Realizado</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        {["Radiografia", "Tomografia", "Ressonância", "Ultrassonografia"].map(type => (
+                          <div key={type} className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`pre_${type}`} 
+                              checked={form.preop_image_types?.includes(type)} 
+                              onCheckedChange={checked => {
+                                const types = [...(form.preop_image_types || [])];
+                                if (checked) types.push(type);
+                                else return updateForm("preop_image_types", types.filter(t => t !== type));
+                                updateForm("preop_image_types", types);
+                              }} 
+                            />
+                            <Label htmlFor={`pre_${type}`} className="text-[10px]">{type}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Descrição dos Achados</Label>
+                      <Textarea value={form.preop_finding_description} onChange={e => updateForm("preop_finding_description", e.target.value)} placeholder="Descrição da indicação..." className="min-h-[60px] text-xs" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-50">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="img_att" checked={form.preop_image_attached} onCheckedChange={v => updateForm("preop_image_attached", v)} />
+                        <Label htmlFor="img_att" className="text-[10px] font-bold">Imagem Anexada</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Label className="text-[9px] font-bold text-slate-400">Nº Anexos:</Label>
+                        <Input type="number" value={form.preop_image_count} onChange={e => updateForm("preop_image_count", parseInt(e.target.value))} className="h-7 w-12 text-xs p-1" />
+                      </div>
+                    </div>
+                    <div className="space-y-1 pt-2 border-t border-slate-50">
+                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Responsável Validação</Label>
+                      <Input value={form.preop_validation_responsible} onChange={e => updateForm("preop_validation_responsible", e.target.value)} placeholder="Assinatura / Carimbo" className="h-9 text-xs" />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
