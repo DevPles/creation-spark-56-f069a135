@@ -668,11 +668,11 @@ export default function OpmeApp() {
                   <Input value={form.requester_register} onChange={e => updateForm("requester_register", e.target.value)} placeholder="CRM / CRO / COREN" className="h-12 bg-white shadow-sm border-slate-200" />
                 </div>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade (Médico)</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-400">Lateralidade</Label>
                       <Select value={form.procedure_side_requisicao} onValueChange={(v) => updateForm("procedure_side_requisicao", v)}>
-                        <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
                           <SelectValue placeholder="Lado" />
                         </SelectTrigger>
                         <SelectContent>
@@ -684,34 +684,49 @@ export default function OpmeApp() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase text-slate-500">Região (Médico)</Label>
-                      <Select value={form.procedure_region_requisicao} onValueChange={(v) => updateForm("procedure_region_requisicao", v)}>
-                        <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-400">Região</Label>
+                      <Select value={form.procedure_region_requisicao} onValueChange={(v) => {
+                        updateForm("procedure_region_requisicao", v);
+                        updateForm("procedure_segment_requisicao", "");
+                      }}>
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
                           <SelectValue placeholder="Região" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Cabeça/Pescoço">Cabeça e Pescoço</SelectItem>
-                          <SelectItem value="Tórax">Tórax</SelectItem>
-                          <SelectItem value="Abdome">Abdome</SelectItem>
-                          <SelectItem value="Membro Superior">Membro Superior</SelectItem>
-                          <SelectItem value="Membro Inferior">Membro Inferior</SelectItem>
-                          <SelectItem value="Coluna">Coluna Vertebral</SelectItem>
+                          {Object.keys(ANATOMY_DATA).map(reg => (
+                            <SelectItem key={reg} value={reg}>{reg}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase text-slate-500">Segmento (Médico)</Label>
-                      <Select value={form.procedure_segment_requisicao} onValueChange={(v) => updateForm("procedure_segment_requisicao", v)}>
-                        <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
-                          <SelectValue placeholder="Nível" />
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-400">Segmento</Label>
+                      <Select 
+                        value={form.procedure_segment_requisicao} 
+                        onValueChange={(v) => updateForm("procedure_segment_requisicao", v)}
+                        disabled={!form.procedure_region_requisicao}
+                      >
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
+                          <SelectValue placeholder="Parte/Nível" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {form.procedure_region_requisicao && ANATOMY_DATA[form.procedure_region_requisicao]?.map(seg => (
+                            <SelectItem key={seg} value={seg}>{seg}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-400">Posição</Label>
+                      <Select value={form.procedure_position_requisicao} onValueChange={(v) => updateForm("procedure_position_requisicao", v)}>
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
+                          <SelectValue placeholder="Posição" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Proximal">Proximal</SelectItem>
+                          <SelectItem value="Médio">Médio</SelectItem>
                           <SelectItem value="Distal">Distal</SelectItem>
-                          <SelectItem value="Cervical">Cervical</SelectItem>
-                          <SelectItem value="Torácica">Torácica</SelectItem>
-                          <SelectItem value="Lombar">Lombar</SelectItem>
                           <SelectItem value="Anterior">Anterior</SelectItem>
                           <SelectItem value="Posterior">Posterior</SelectItem>
                         </SelectContent>
