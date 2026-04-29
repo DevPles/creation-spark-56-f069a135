@@ -834,16 +834,48 @@ export default function OpmeApp() {
             )}
 
             {part === 2 && step === 4 && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Comprovação Pós-Cirúrgica</Label>
-                  <Textarea value={form.postop_result_description} onChange={e => updateForm("postop_result_description", e.target.value)} placeholder="Descrição do resultado / posicionamento da OPME" className="min-h-[100px] bg-white" />
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Exame (Pós-OP)</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["Radiografia", "Tomografia", "Ressonância", "Ultrassonografia"].map(type => (
+                      <div key={type} className="flex items-center space-x-2 bg-white p-3 rounded-lg border shadow-sm">
+                        <Checkbox 
+                          id={`postimg_${type}`} 
+                          checked={form.postop_image_types?.includes(type)}
+                          onCheckedChange={(v) => {
+                            const current = form.postop_image_types || [];
+                            updateForm("postop_image_types", v ? [...current, type] : current.filter((t: string) => t !== type));
+                          }}
+                        />
+                        <Label htmlFor={`postimg_${type}`} className="text-[10px]">{type}</Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full h-20 border-dashed border-2 flex flex-col gap-1 bg-slate-50"
-                  onClick={() => fileInputRef.current?.click()}
-                >
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Data do Exame</Label>
+                    <Input type="date" value={form.postop_exam_date} onChange={e => updateForm("postop_exam_date", e.target.value)} className="h-12 bg-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Nº Laudo</Label>
+                    <Input value={form.postop_exam_number} onChange={e => updateForm("postop_exam_number", e.target.value)} placeholder="Nº" className="h-12 bg-white" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Resultado / Posicionamento</Label>
+                  <Textarea value={form.postop_result_description} onChange={e => updateForm("postop_result_description", e.target.value)} placeholder="Descrição técnica..." className="min-h-[100px] bg-white" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Responsável Validação</Label>
+                  <Input value={form.postop_validation_responsible} onChange={e => updateForm("postop_validation_responsible", e.target.value)} placeholder="Assinatura / Carimbo" className="h-12 bg-white" />
+                </div>
+
+                <Button variant="outline" className="w-full h-20 border-dashed border-2 bg-slate-50" onClick={() => fileInputRef.current?.click()}>
                   <span className="text-xs font-medium text-slate-500">Anexar Imagem Pós-Operatória</span>
                 </Button>
               </div>
