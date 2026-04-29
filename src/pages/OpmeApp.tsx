@@ -369,15 +369,6 @@ export default function OpmeApp() {
         </main>
       </div>
     );
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
   }
 
   return (
