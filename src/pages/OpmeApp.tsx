@@ -169,6 +169,24 @@ export default function OpmeApp() {
   }, [recordId]);
 
   useEffect(() => {
+    if (part === null) {
+      (async () => {
+        const { data: counts, error } = await supabase.from("opme_requests").select("status");
+        if (counts && !error) {
+          const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0 };
+          counts.forEach((c: any) => {
+            if (c.status === "rascunho") s.cadastro++;
+            if (c.status === "pendente_requisicao") s.requisicao++;
+            if (c.status === "pendente_auditoria") s.auditoria++;
+            if (c.status === "pendente_faturamento") s.faturamento++;
+          });
+          setStats(s);
+        }
+      })();
+    }
+  }, [part]);
+
+  useEffect(() => {
     (async () => {
       const [{ data: profs }, { data: ctrs }] = await Promise.all([
         supabase.from("profiles").select("facility_unit"),
