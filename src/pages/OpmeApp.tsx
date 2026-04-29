@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
-const STEPS = [
+const STEPS_P1 = [
   { id: "paciente", title: "Paciente", description: "Identificação" },
   { id: "procedimento", title: "Procedimento", description: "Dados Cirúrgicos" },
   { id: "solicitante", title: "Solicitante", description: "Profissional" },
@@ -22,17 +22,34 @@ const STEPS = [
   { id: "imagem", title: "Imagem", description: "Pré-Operatório" },
 ];
 
+const STEPS_P2 = [
+  { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Pré-OP" },
+  { id: "administrativo", title: "Administrativo", description: "Controle" },
+  { id: "almoxarifado", title: "Almoxarifado/CME", description: "Dispensação" },
+  { id: "consumo", title: "Consumo", description: "Registro Cirúrgico" },
+  { id: "imagem_pos", title: "Imagem Pós", description: "Controle Pós-OP" },
+];
+
+const STEPS_P3 = [
+  { id: "auditoria_pos", title: "Médico Auditor", description: "Validação Pós-OP" },
+  { id: "cirurgiao_just", title: "Cirurgião", description: "Justificativa Perda/Dano" },
+  { id: "faturamento", title: "Faturamento", description: "Codificação Final" },
+];
+
 export default function OpmeApp() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const recordId = searchParams.get("id");
+  const [part, setPart] = useState(1);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<string[]>([]);
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const STEPS = part === 1 ? STEPS_P1 : part === 2 ? STEPS_P2 : STEPS_P3;
 
   const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
@@ -61,7 +78,62 @@ export default function OpmeApp() {
     preop_exam_number: "",
     preop_finding_description: "",
     preop_image_attached: false,
-    preop_image_count: 0
+    preop_image_count: 0,
+    // Campos Parte 2
+    auditor_pre_name: "",
+    auditor_pre_crm: "",
+    auditor_pre_analysis: "adequada",
+    auditor_pre_sigtap_compat: "sim",
+    auditor_pre_opinion: "",
+    auditor_pre_date: "",
+    request_date: "",
+    request_time: "",
+    warehouse_received_by: "",
+    warehouse_date: "",
+    warehouse_time: "",
+    stock_available: "sim",
+    sent_to_cme: false,
+    cme_processing_date: "",
+    cme_responsible: "",
+    surgery_dispatch_date: "",
+    surgery_dispatch_responsible: "",
+    opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim" }],
+    opme_returned: [{ description: "", quantity: "0", reason: "", responsible: "" }],
+    postop_image_types: [],
+    postop_image_other: "",
+    postop_exam_date: "",
+    postop_exam_number: "",
+    postop_result_description: "",
+    postop_image_attached: false,
+    postop_image_count: 0,
+    postop_validation_responsible: "",
+    // Campos Parte 3
+    auditor_post_name: "",
+    auditor_post_crm: "",
+    auditor_post_procedure_compat: "sim",
+    auditor_post_sigtap_compat: "sim",
+    auditor_post_image_conformity: "sim",
+    auditor_post_final_opinion: "",
+    auditor_post_date: "",
+    incident_date: "",
+    incident_description: "",
+    incident_responsible: "",
+    billing_aih_number: "",
+    billing_procedure_name: "",
+    billing_sigtap_code: "",
+    billing_prior_authorization: "nao_se_aplica",
+    billing_aih_generated: false,
+    billing_opme_compatibility: "sim",
+    billing_divergence: false,
+    billing_divergence_description: "",
+    billing_docs: {
+      nf: false,
+      rastreabilidade: false,
+      laudo: false,
+      consumo: false,
+      autorizacao: false,
+      exames: false
+    }
   });
 
   useEffect(() => {
@@ -154,8 +226,25 @@ export default function OpmeApp() {
     }
   };
 
-  const next = () => step < STEPS.length - 1 && setStep(step + 1);
-  const prev = () => step > 0 && setStep(step - 1);
+  const next = () => {
+    if (step < STEPS.length - 1) {
+      setStep(step + 1);
+    } else if (part < 3) {
+      setPart(part + 1);
+      setStep(0);
+    }
+  };
+
+  const prev = () => {
+    if (step > 0) {
+      setStep(step - 1);
+    } else if (part > 1) {
+      const prevPart = part - 1;
+      const prevSteps = prevPart === 1 ? STEPS_P1 : STEPS_P2;
+      setPart(prevPart);
+      setStep(prevSteps.length - 1);
+    }
+  };
 
   if (loading) {
     return (
