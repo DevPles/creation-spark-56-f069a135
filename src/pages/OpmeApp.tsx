@@ -246,7 +246,18 @@ export default function OpmeApp() {
     
     setSaving(true);
     try {
-      const payload = { ...form, created_by: user.id, updated_at: new Date().toISOString() };
+      let nextStatus = form.status;
+      if (part === 1) nextStatus = "pendente_requisicao";
+      else if (part === 2) nextStatus = "pendente_auditoria";
+      else if (part === 3) nextStatus = "pendente_faturamento";
+      else if (part === 4) nextStatus = "concluido";
+
+      const payload = { 
+        ...form, 
+        status: nextStatus,
+        created_by: user.id, 
+        updated_at: new Date().toISOString() 
+      };
       
       if (recordId) {
         const { error } = await supabase.from("opme_requests").update(payload).eq("id", recordId);
