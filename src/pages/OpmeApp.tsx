@@ -737,18 +737,33 @@ export default function OpmeApp() {
             )}
 
             {part === 2 && step === 2 && (
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2 bg-white p-4 rounded-lg border">
-                  <Checkbox id="sent_cme" checked={form.sent_to_cme} onCheckedChange={v => updateForm("sent_to_cme", v)} />
-                  <Label htmlFor="sent_cme">Enviado para CME</Label>
+              <div className="space-y-6">
+                <div className="space-y-4 bg-white p-4 rounded-xl border">
+                  <h4 className="text-[10px] font-bold uppercase text-slate-400 italic">Uso do CME (Esterilização)</h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Data Processamento</Label>
+                      <Input type="date" value={form.cme_processing_date} onChange={e => updateForm("cme_processing_date", e.target.value)} className="h-12 bg-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Responsável</Label>
+                      <Input value={form.cme_responsible} onChange={e => updateForm("cme_responsible", e.target.value)} placeholder="Identificação" className="h-12 bg-white" />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Data Processamento</Label>
-                  <Input type="date" value={form.cme_processing_date} onChange={e => updateForm("cme_processing_date", e.target.value)} className="h-12 bg-white" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Responsável CME</Label>
-                  <Input value={form.cme_responsible} onChange={e => updateForm("cme_responsible", e.target.value)} className="h-12 bg-white" />
+
+                <div className="space-y-4 bg-slate-50 p-4 rounded-xl border">
+                  <h4 className="text-[10px] font-bold uppercase text-slate-400 italic">Uso do Centro Cirúrgico</h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Data de Dispensação para Sala</Label>
+                      <Input type="date" value={form.surgery_dispatch_date} onChange={e => updateForm("surgery_dispatch_date", e.target.value)} className="h-12 bg-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Responsável pela Dispensação</Label>
+                      <Input value={form.surgery_dispatch_responsible} onChange={e => updateForm("surgery_dispatch_responsible", e.target.value)} placeholder="Identificação" className="h-12 bg-white" />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
