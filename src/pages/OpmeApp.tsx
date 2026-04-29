@@ -48,6 +48,12 @@ export default function OpmeApp() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<string[]>([]);
+  const [stats, setStats] = useState({
+    cadastro: 0,
+    requisicao: 0,
+    auditoria: 0,
+    faturamento: 0
+  });
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[] }>({ idx: -1, items: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
