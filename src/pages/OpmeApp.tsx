@@ -304,33 +304,59 @@ export default function OpmeApp() {
   if (part === null) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
-        <header className="bg-white border-b px-4 py-6 flex items-center justify-between sticky top-0 z-20">
+        <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="text-center">
-            <h1 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Menu OPME</h1>
-            <p className="text-xs text-slate-500">Selecione a etapa desejada</p>
+            <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Módulos OPME</h1>
+            <p className="text-[10px] text-slate-500 uppercase">Gestão Hospitalar</p>
           </div>
           <div className="w-10" />
         </header>
 
-        <main className="flex-1 p-6 grid grid-cols-1 gap-4 overflow-y-auto pb-10">
-          {[
-            { id: 1, title: "CADASTRO", desc: "Equipe de Enfermagem: Dados do paciente e exames", color: "border-blue-500 bg-blue-50" },
-            { id: 2, title: "REQUISIÇÃO", desc: "Médico Solicitante: Materiais e justificativa", color: "border-emerald-500 bg-emerald-50" },
-            { id: 3, title: "AUDITORIA", desc: "Médico Auditor e Administrativo: Validação e Consumo", color: "border-amber-500 bg-amber-50" },
-            { id: 4, title: "FATURAMENTO", desc: "Setor de Faturamento: Codificação e fechamento AIH", color: "border-slate-500 bg-slate-50" },
-          ].map((card) => (
-            <button
-              key={card.id}
-              onClick={() => setPart(card.id)}
-              className={`w-full p-6 rounded-2xl border-2 text-left shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] ${card.color}`}
-            >
-              <h3 className="text-xl font-black text-slate-800 mb-1">{card.title}</h3>
-              <p className="text-sm text-slate-600 font-medium leading-tight">{card.desc}</p>
-            </button>
-          ))}
+        <main className="flex-1 p-4 overflow-y-auto pb-10 space-y-6">
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { id: 1, title: "CADASTRO", color: "border-blue-500 bg-blue-50" },
+              { id: 2, title: "REQUISIÇÃO", color: "border-emerald-500 bg-emerald-50" },
+              { id: 3, title: "AUDITORIA", color: "border-amber-500 bg-amber-50" },
+              { id: 4, title: "FATURAMENTO", color: "border-slate-500 bg-slate-50" },
+            ].map((card) => (
+              <button
+                key={card.id}
+                onClick={() => setPart(card.id)}
+                className={`p-4 rounded-xl border-2 text-left shadow-sm transition-all active:scale-95 ${card.color}`}
+              >
+                <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-tighter">{card.title}</h3>
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Mini Dashboard</h3>
+            <div className="grid grid-cols-1 gap-2">
+              <Card className="border-none shadow-sm bg-white overflow-hidden">
+                <CardContent className="p-0">
+                  {[
+                    { label: "Prontos para Requisição", value: stats.requisicao, sub: "Equipe médica pode iniciar etapa 2", color: "bg-blue-500" },
+                    { label: "Aguardando Auditoria", value: stats.auditoria, sub: "Prontos para validação médica", color: "bg-emerald-500" },
+                    { label: "Prontos para Faturamento", value: stats.faturamento, sub: "Finalizados aguardando fechamento", color: "bg-amber-500" },
+                    { label: "Total Finalizados", value: stats.cadastro, sub: "Processos concluídos no mês", color: "bg-slate-500" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 border-b last:border-0 border-slate-50">
+                      <div className={`w-1 h-8 rounded-full ${item.color}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase">{item.label}</p>
+                        <p className="text-[9px] text-slate-400 truncate">{item.sub}</p>
+                      </div>
+                      <div className="text-xl font-black text-slate-800">{item.value}</div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </main>
       </div>
     );
