@@ -337,6 +337,7 @@ export default function OpmeApp() {
               <p className="text-xs text-slate-500">{STEPS[step]?.description}</p>
             </div>
 
+            {/* --- PARTE 1: CADASTRO --- */}
             {part === 1 && step === 0 && (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -352,50 +353,25 @@ export default function OpmeApp() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Nome Completo</Label>
-                  <Input 
-                    value={form.patient_name} 
-                    onChange={e => updateForm("patient_name", e.target.value)}
-                    placeholder="Nome do paciente"
-                    className="h-12 bg-white shadow-sm border-slate-200"
-                  />
+                  <Input value={form.patient_name} onChange={e => updateForm("patient_name", e.target.value)} placeholder="Nome do paciente" className="h-12 bg-white shadow-sm border-slate-200" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Nascimento</Label>
-                    <Input 
-                      type="date"
-                      value={form.patient_birthdate} 
-                      onChange={e => updateForm("patient_birthdate", e.target.value)}
-                      className="h-12 bg-white shadow-sm border-slate-200"
-                    />
+                    <Input type="date" value={form.patient_birthdate} onChange={e => updateForm("patient_birthdate", e.target.value)} className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Prontuário</Label>
-                    <Input 
-                      value={form.patient_record} 
-                      onChange={e => updateForm("patient_record", e.target.value)}
-                      placeholder="Nº Registro"
-                      className="h-12 bg-white shadow-sm border-slate-200"
-                    />
+                    <Input value={form.patient_record} onChange={e => updateForm("patient_record", e.target.value)} placeholder="Nº Registro" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Nome da Mãe</Label>
-                  <Input 
-                    value={form.patient_mother_name} 
-                    onChange={e => updateForm("patient_mother_name", e.target.value)}
-                    placeholder="Nome completo da mãe"
-                    className="h-12 bg-white shadow-sm border-slate-200"
-                  />
+                  <Input value={form.patient_mother_name} onChange={e => updateForm("patient_mother_name", e.target.value)} placeholder="Nome completo da mãe" className="h-12 bg-white shadow-sm border-slate-200" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Cartão SUS</Label>
-                  <Input 
-                    value={form.patient_sus} 
-                    onChange={e => updateForm("patient_sus", e.target.value)}
-                    placeholder="Número do CNS"
-                    className="h-12 bg-white shadow-sm border-slate-200"
-                  />
+                  <Input value={form.patient_sus} onChange={e => updateForm("patient_sus", e.target.value)} placeholder="Número do CNS" className="h-12 bg-white shadow-sm border-slate-200" />
                 </div>
               </div>
             )}
@@ -404,12 +380,7 @@ export default function OpmeApp() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Data do Procedimento</Label>
-                  <Input 
-                    type="date"
-                    value={form.procedure_date} 
-                    onChange={e => updateForm("procedure_date", e.target.value)}
-                    className="h-12 bg-white shadow-sm border-slate-200"
-                  />
+                  <Input type="date" value={form.procedure_date} onChange={e => updateForm("procedure_date", e.target.value)} className="h-12 bg-white shadow-sm border-slate-200" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Tipo</Label>
@@ -426,28 +397,14 @@ export default function OpmeApp() {
                 </div>
                 <div className="space-y-2 relative">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Procedimento</Label>
-                  <Input 
-                    value={form.procedure_name} 
-                    onChange={e => updateForm("procedure_name", e.target.value)}
-                    placeholder="Nome conforme SIGTAP"
-                    className="h-12 bg-white shadow-sm border-slate-200"
-                  />
+                  <Input value={form.procedure_name} onChange={e => updateForm("procedure_name", e.target.value)} placeholder="Nome conforme SIGTAP" className="h-12 bg-white shadow-sm border-slate-200" />
                   {sigtapSuggestions.length > 0 && (
                     <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-auto">
                       {sigtapSuggestions.map((item) => (
-                        <button
-                          key={item.code}
-                          type="button"
-                          className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0"
-                          onClick={() => {
-                            setForm((p: any) => ({ 
-                              ...p, 
-                              procedure_name: item.name, 
-                              procedure_sigtap_code: item.code 
-                            }));
-                            setSigtapSuggestions([]);
-                          }}
-                        >
+                        <button key={item.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
+                          setForm((p: any) => ({ ...p, procedure_name: item.name, procedure_sigtap_code: item.code }));
+                          setSigtapSuggestions([]);
+                        }}>
                           <p className="text-xs font-bold text-slate-800">{item.name}</p>
                           <p className="text-[10px] text-slate-500 uppercase">Cód: {item.code}</p>
                         </button>
@@ -458,25 +415,117 @@ export default function OpmeApp() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Cód. SIGTAP</Label>
-                    <Input 
-                      value={form.procedure_sigtap_code} 
-                      onChange={e => updateForm("procedure_sigtap_code", e.target.value)}
-                      placeholder="00.00.00.00"
-                      className="h-12 bg-white shadow-sm border-slate-200"
-                    />
+                    <Input value={form.procedure_sigtap_code} onChange={e => updateForm("procedure_sigtap_code", e.target.value)} placeholder="00.00.00.00" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Sala / Setor</Label>
-                    <Input 
-                      value={form.procedure_room} 
-                      onChange={e => updateForm("procedure_room", e.target.value)}
-                      placeholder="Ex: Sala 01"
-                      className="h-12 bg-white shadow-sm border-slate-200"
-                    />
+                    <Input value={form.procedure_room} onChange={e => updateForm("procedure_room", e.target.value)} placeholder="Ex: Sala 01" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
                 </div>
               </div>
             )}
+
+            {part === 1 && step === 2 && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple />
+                  <Button variant="outline" className="w-full h-24 border-dashed border-2 flex flex-col gap-2 bg-slate-50" onClick={() => fileInputRef.current?.click()}>
+                    <span className="text-xs font-medium text-slate-500">Anexar Imagem Pré-Operatória</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* --- PARTE 2: REQUISIÇÃO --- */}
+            {part === 2 && step === 0 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Profissional</Label>
+                  <Input value={form.requester_name} onChange={e => updateForm("requester_name", e.target.value)} placeholder="Carimbo ou Identificação" className="h-12 bg-white shadow-sm border-slate-200" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Registro Profissional</Label>
+                  <Input value={form.requester_register} onChange={e => updateForm("requester_register", e.target.value)} placeholder="CRM / CRO / COREN" className="h-12 bg-white shadow-sm border-slate-200" />
+                </div>
+              </div>
+            )}
+
+            {part === 2 && step === 1 && (
+              <div className="space-y-4">
+                {form.opme_requested.map((item: any, idx: number) => (
+                  <Card key={idx} className="border-slate-200">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-primary uppercase">Item #{idx + 1}</span>
+                        {form.opme_requested.length > 1 && (
+                          <Button variant="ghost" size="sm" className="h-6 text-destructive text-[10px]" onClick={() => setForm((p: any) => ({ ...p, opme_requested: p.opme_requested.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
+                        )}
+                      </div>
+                      <div className="space-y-2 relative">
+                        <Label className="text-[10px] uppercase text-slate-400">Descrição</Label>
+                        <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value)} placeholder="Nome do material" className="h-10 text-sm bg-slate-50/50" />
+                        {materialSuggestions.idx === idx && materialSuggestions.items.length > 0 && (
+                          <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-40 overflow-auto">
+                            {materialSuggestions.items.map((m) => (
+                              <button key={m.code} type="button" className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
+                                const arr = [...form.opme_requested]; arr[idx] = { ...arr[idx], description: m.name, sigtap: m.code };
+                                setForm((p: any) => ({ ...p, opme_requested: arr })); setMaterialSuggestions({ idx: -1, items: [] });
+                              }}>
+                                <p className="text-[10px] font-bold text-slate-800">{m.name}</p>
+                                <p className="text-[9px] text-slate-500">Cód: {m.code}</p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase text-slate-400">Qtd</Label>
+                          <Input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value)} className="h-10 text-sm bg-slate-50/50" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase text-slate-400">Tam/Modelo</Label>
+                          <Input value={item.size_model} onChange={e => updateItem(idx, "size_model", e.target.value)} placeholder="Tamanho" className="h-10 text-sm bg-slate-50/50" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                <Button variant="outline" className="w-full border-dashed border-2 h-12 text-slate-500" onClick={addItem}>Adicionar outro material</Button>
+              </div>
+            )}
+
+            {part === 2 && step === 2 && (
+              <div className="space-y-6">
+                <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                  <h3 className="text-xs font-bold uppercase text-slate-400">Instrumentais / Acessórios</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="instr_spec" checked={form.instruments_specific} onCheckedChange={v => updateForm("instruments_specific", v)} />
+                      <Label htmlFor="instr_spec" className="text-sm">Necessita instrumental específico</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="instr_loan" checked={form.instruments_loan} onCheckedChange={v => updateForm("instruments_loan", v)} />
+                      <Label htmlFor="instr_loan" className="text-sm">Necessita comodato</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="instr_na" checked={form.instruments_na} onCheckedChange={v => updateForm("instruments_na", v)} />
+                      <Label htmlFor="instr_na" className="text-sm">Não se aplica</Label>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Especificar Instrumentais</Label>
+                    <Textarea value={form.instruments_specify} onChange={e => updateForm("instruments_specify", e.target.value)} placeholder="Descreva os instrumentais necessários..." className="min-h-[80px] bg-white border-slate-200" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Justificativa Clínica</Label>
+                  <Textarea value={form.clinical_indication} onChange={e => updateForm("clinical_indication", e.target.value)} placeholder="Indicação clínica / evidência terapêutica" className="min-h-[120px] bg-white border-slate-200 shadow-sm" />
+                </div>
+              </div>
+            )}
+
+            {/* --- PARTE 3: AUDITORIA --- */}
 
             {part === 1 && step === 2 && (
               <div className="space-y-4">
