@@ -38,6 +38,15 @@ const STEPS_FATURAMENTO = [
   { id: "faturamento", title: "Codificação", description: "Fechamento e AIH" },
 ];
 
+const ANATOMY_DATA: Record<string, string[]> = {
+  "Cabeça/Pescoço": ["Crânio", "Face", "Pescoço", "Mandíbula", "Órbita"],
+  "Tórax": ["Coração", "Pulmão", "Mama", "Arcabouço Costal", "Mediastino"],
+  "Abdome": ["Parede Abdominal", "Fígado/Vias Biliares", "Rim/Ureter", "Intestino", "Estômago"],
+  "Membro Superior": ["Ombro", "Braço", "Cotovelo", "Antebraço", "Punho", "Mão"],
+  "Membro Inferior": ["Quadril", "Coxa", "Joelho", "Perna", "Tornozelo", "Pé"],
+  "Coluna": ["Cervical", "Torácica", "Lombar", "Sacro-Coccígea"]
+};
+
 export default function OpmeApp() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -173,7 +182,7 @@ export default function OpmeApp() {
   useEffect(() => {
     if (part === null) {
       (async () => {
-        const { data: counts, error } = await supabase.from("opme_requests").select("status, procedure_side_cadastro, procedure_side_requisicao, procedure_region_cadastro, procedure_region_requisicao, procedure_segment_cadastro, procedure_segment_requisicao");
+        const { data: counts, error } = await supabase.from("opme_requests").select("status, procedure_side_cadastro, procedure_side_requisicao, procedure_region_cadastro, procedure_region_requisicao, procedure_segment_cadastro, procedure_segment_requisicao, procedure_position_cadastro, procedure_position_requisicao");
         if (counts && !error) {
           const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0, divergencias: 0 };
           counts.forEach((c: any) => {
@@ -185,8 +194,9 @@ export default function OpmeApp() {
             const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
             const regionDiv = c.procedure_region_cadastro && c.procedure_region_requisicao && c.procedure_region_cadastro !== c.procedure_region_requisicao;
             const segmentDiv = c.procedure_segment_cadastro && c.procedure_segment_requisicao && c.procedure_segment_cadastro !== c.procedure_segment_requisicao;
+            const positionDiv = c.procedure_position_cadastro && c.procedure_position_requisicao && c.procedure_position_cadastro !== c.procedure_position_requisicao;
             
-            if (sideDiv || regionDiv || segmentDiv) {
+            if (sideDiv || regionDiv || segmentDiv || positionDiv) {
               s.divergencias++;
             }
           });
@@ -501,11 +511,11 @@ export default function OpmeApp() {
                     <Input value={form.procedure_room} onChange={e => updateForm("procedure_room", e.target.value)} placeholder="Ex: Sala 01" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade (Cadastro)</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-slate-400">Lateralidade</Label>
                     <Select value={form.procedure_side_cadastro} onValueChange={(v) => updateForm("procedure_side_cadastro", v)}>
-                      <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                      <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
                         <SelectValue placeholder="Lado" />
                       </SelectTrigger>
                       <SelectContent>
@@ -517,34 +527,49 @@ export default function OpmeApp() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Região (Cadastro)</Label>
-                    <Select value={form.procedure_region_cadastro} onValueChange={(v) => updateForm("procedure_region_cadastro", v)}>
-                      <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-slate-400">Região</Label>
+                    <Select value={form.procedure_region_cadastro} onValueChange={(v) => {
+                      updateForm("procedure_region_cadastro", v);
+                      updateForm("procedure_segment_cadastro", "");
+                    }}>
+                      <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
                         <SelectValue placeholder="Região" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Cabeça/Pescoço">Cabeça e Pescoço</SelectItem>
-                        <SelectItem value="Tórax">Tórax</SelectItem>
-                        <SelectItem value="Abdome">Abdome</SelectItem>
-                        <SelectItem value="Membro Superior">Membro Superior</SelectItem>
-                        <SelectItem value="Membro Inferior">Membro Inferior</SelectItem>
-                        <SelectItem value="Coluna">Coluna Vertebral</SelectItem>
+                        {Object.keys(ANATOMY_DATA).map(reg => (
+                          <SelectItem key={reg} value={reg}>{reg}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Segmento/Nível (Cadastro)</Label>
-                    <Select value={form.procedure_segment_cadastro} onValueChange={(v) => updateForm("procedure_segment_cadastro", v)}>
-                      <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
-                        <SelectValue placeholder="Nível" />
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-slate-400">Segmento</Label>
+                    <Select 
+                      value={form.procedure_segment_cadastro} 
+                      onValueChange={(v) => updateForm("procedure_segment_cadastro", v)}
+                      disabled={!form.procedure_region_cadastro}
+                    >
+                      <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
+                        <SelectValue placeholder="Parte/Nível" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {form.procedure_region_cadastro && ANATOMY_DATA[form.procedure_region_cadastro]?.map(seg => (
+                          <SelectItem key={seg} value={seg}>{seg}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-slate-400">Posição</Label>
+                    <Select value={form.procedure_position_cadastro} onValueChange={(v) => updateForm("procedure_position_cadastro", v)}>
+                      <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
+                        <SelectValue placeholder="Posição" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Proximal">Proximal</SelectItem>
+                        <SelectItem value="Médio">Médio</SelectItem>
                         <SelectItem value="Distal">Distal</SelectItem>
-                        <SelectItem value="Cervical">Cervical</SelectItem>
-                        <SelectItem value="Torácica">Torácica</SelectItem>
-                        <SelectItem value="Lombar">Lombar</SelectItem>
                         <SelectItem value="Anterior">Anterior</SelectItem>
                         <SelectItem value="Posterior">Posterior</SelectItem>
                       </SelectContent>
@@ -644,11 +669,11 @@ export default function OpmeApp() {
                   <Input value={form.requester_register} onChange={e => updateForm("requester_register", e.target.value)} placeholder="CRM / CRO / COREN" className="h-12 bg-white shadow-sm border-slate-200" />
                 </div>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade (Médico)</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-400">Lateralidade</Label>
                       <Select value={form.procedure_side_requisicao} onValueChange={(v) => updateForm("procedure_side_requisicao", v)}>
-                        <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
                           <SelectValue placeholder="Lado" />
                         </SelectTrigger>
                         <SelectContent>
@@ -660,34 +685,49 @@ export default function OpmeApp() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase text-slate-500">Região (Médico)</Label>
-                      <Select value={form.procedure_region_requisicao} onValueChange={(v) => updateForm("procedure_region_requisicao", v)}>
-                        <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-400">Região</Label>
+                      <Select value={form.procedure_region_requisicao} onValueChange={(v) => {
+                        updateForm("procedure_region_requisicao", v);
+                        updateForm("procedure_segment_requisicao", "");
+                      }}>
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
                           <SelectValue placeholder="Região" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Cabeça/Pescoço">Cabeça e Pescoço</SelectItem>
-                          <SelectItem value="Tórax">Tórax</SelectItem>
-                          <SelectItem value="Abdome">Abdome</SelectItem>
-                          <SelectItem value="Membro Superior">Membro Superior</SelectItem>
-                          <SelectItem value="Membro Inferior">Membro Inferior</SelectItem>
-                          <SelectItem value="Coluna">Coluna Vertebral</SelectItem>
+                          {Object.keys(ANATOMY_DATA).map(reg => (
+                            <SelectItem key={reg} value={reg}>{reg}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase text-slate-500">Segmento (Médico)</Label>
-                      <Select value={form.procedure_segment_requisicao} onValueChange={(v) => updateForm("procedure_segment_requisicao", v)}>
-                        <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
-                          <SelectValue placeholder="Nível" />
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-400">Segmento</Label>
+                      <Select 
+                        value={form.procedure_segment_requisicao} 
+                        onValueChange={(v) => updateForm("procedure_segment_requisicao", v)}
+                        disabled={!form.procedure_region_requisicao}
+                      >
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
+                          <SelectValue placeholder="Parte/Nível" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {form.procedure_region_requisicao && ANATOMY_DATA[form.procedure_region_requisicao]?.map(seg => (
+                            <SelectItem key={seg} value={seg}>{seg}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-400">Posição</Label>
+                      <Select value={form.procedure_position_requisicao} onValueChange={(v) => updateForm("procedure_position_requisicao", v)}>
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
+                          <SelectValue placeholder="Posição" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Proximal">Proximal</SelectItem>
+                          <SelectItem value="Médio">Médio</SelectItem>
                           <SelectItem value="Distal">Distal</SelectItem>
-                          <SelectItem value="Cervical">Cervical</SelectItem>
-                          <SelectItem value="Torácica">Torácica</SelectItem>
-                          <SelectItem value="Lombar">Lombar</SelectItem>
                           <SelectItem value="Anterior">Anterior</SelectItem>
                           <SelectItem value="Posterior">Posterior</SelectItem>
                         </SelectContent>
@@ -697,7 +737,8 @@ export default function OpmeApp() {
 
                   {(form.procedure_side_cadastro !== form.procedure_side_requisicao || 
                     form.procedure_region_cadastro !== form.procedure_region_requisicao || 
-                    form.procedure_segment_cadastro !== form.procedure_segment_requisicao) && 
+                    form.procedure_segment_cadastro !== form.procedure_segment_requisicao ||
+                    form.procedure_position_cadastro !== form.procedure_position_requisicao) && 
                     form.procedure_side_requisicao && (
                     <div className="p-3 rounded-lg bg-red-50 border border-red-100 flex flex-col gap-1 mt-2">
                       <div className="flex items-center gap-2">
@@ -708,6 +749,7 @@ export default function OpmeApp() {
                         {form.procedure_side_cadastro !== form.procedure_side_requisicao && <p>• Lado: {form.procedure_side_cadastro || 'Não inf.'} vs {form.procedure_side_requisicao}</p>}
                         {form.procedure_region_cadastro !== form.procedure_region_requisicao && <p>• Região: {form.procedure_region_cadastro || 'Não inf.'} vs {form.procedure_region_requisicao}</p>}
                         {form.procedure_segment_cadastro !== form.procedure_segment_requisicao && <p>• Segmento: {form.procedure_segment_cadastro || 'Não inf.'} vs {form.procedure_segment_requisicao}</p>}
+                        {form.procedure_position_cadastro !== form.procedure_position_requisicao && <p>• Posição: {form.procedure_position_cadastro || 'Não inf.'} vs {form.procedure_position_requisicao}</p>}
                       </div>
                     </div>
                   )}
