@@ -769,34 +769,67 @@ export default function OpmeApp() {
             )}
 
             {part === 2 && step === 3 && (
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold uppercase text-primary">Consumo Cirúrgico</h3>
-                {form.opme_used.map((item: any, idx: number) => (
-                  <Card key={idx}>
-                    <CardContent className="p-4 space-y-3">
-                      <Input value={item.description} onChange={e => {
-                        const arr = [...form.opme_used];
-                        arr[idx].description = e.target.value;
-                        updateForm("opme_used", arr);
-                      }} placeholder="Descrição OPME" className="h-10 text-sm" />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input value={item.batch} onChange={e => {
-                          const arr = [...form.opme_used];
-                          arr[idx].batch = e.target.value;
-                          updateForm("opme_used", arr);
-                        }} placeholder="Lote" className="h-10 text-sm" />
-                        <Input value={item.expiry} onChange={e => {
-                          const arr = [...form.opme_used];
-                          arr[idx].expiry = e.target.value;
-                          updateForm("opme_used", arr);
-                        }} placeholder="Validade" className="h-10 text-sm" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                <Button variant="outline" className="w-full h-10 text-xs" onClick={() => updateForm("opme_used", [...form.opme_used, { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim" }])}>
-                  + Adicionar Item de Consumo
-                </Button>
+              <div className="space-y-6">
+                <h3 className="text-sm font-bold uppercase text-slate-800">Registro de Consumo</h3>
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-bold uppercase text-primary">OPME Utilizada</Label>
+                  {form.opme_used.map((item: any, idx: number) => (
+                    <Card key={idx} className="border-slate-200">
+                      <CardContent className="p-4 space-y-3">
+                        <Input value={item.description} onChange={e => {
+                          const arr = [...form.opme_used]; arr[idx].description = e.target.value; updateForm("opme_used", arr);
+                        }} placeholder="Material Utilizado" className="h-10 text-sm" />
+                        <div className="grid grid-cols-3 gap-2">
+                          <Input value={item.quantity} type="number" onChange={e => {
+                            const arr = [...form.opme_used]; arr[idx].quantity = e.target.value; updateForm("opme_used", arr);
+                          }} placeholder="Qtd" className="h-10 text-sm" />
+                          <Input value={item.batch} onChange={e => {
+                            const arr = [...form.opme_used]; arr[idx].batch = e.target.value; updateForm("opme_used", arr);
+                          }} placeholder="Lote" className="h-10 text-sm" />
+                          <Input value={item.expiry} onChange={e => {
+                            const arr = [...form.opme_used]; arr[idx].expiry = e.target.value; updateForm("opme_used", arr);
+                          }} placeholder="Val" className="h-10 text-sm" />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id={`label_${idx}`} checked={item.label_fixed === "sim"} onCheckedChange={v => {
+                            const arr = [...form.opme_used]; arr[idx].label_fixed = v ? "sim" : "nao"; updateForm("opme_used", arr);
+                          }} />
+                          <Label htmlFor={`label_${idx}`} className="text-xs">Etiqueta fixada?</Label>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  <Button variant="outline" className="w-full h-10 text-xs border-dashed" onClick={() => updateForm("opme_used", [...form.opme_used, { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim" }])}>
+                    + Adicionar Material Utilizado
+                  </Button>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t">
+                  <Label className="text-[10px] font-bold uppercase text-amber-600">OPME Devolvida</Label>
+                  {form.opme_returned.map((item: any, idx: number) => (
+                    <Card key={idx} className="border-slate-100 bg-slate-50">
+                      <CardContent className="p-4 space-y-3">
+                        <Input value={item.description} onChange={e => {
+                          const arr = [...form.opme_returned]; arr[idx].description = e.target.value; updateForm("opme_returned", arr);
+                        }} placeholder="Material Devolvido" className="h-10 text-sm bg-white" />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input value={item.quantity} type="number" onChange={e => {
+                            const arr = [...form.opme_returned]; arr[idx].quantity = e.target.value; updateForm("opme_returned", arr);
+                          }} placeholder="Qtd" className="h-10 text-sm bg-white" />
+                          <Input value={item.responsible} onChange={e => {
+                            const arr = [...form.opme_returned]; arr[idx].responsible = e.target.value; updateForm("opme_returned", arr);
+                          }} placeholder="Responsável" className="h-10 text-sm bg-white" />
+                        </div>
+                        <Input value={item.reason} onChange={e => {
+                          const arr = [...form.opme_returned]; arr[idx].reason = e.target.value; updateForm("opme_returned", arr);
+                        }} placeholder="Motivo da devolução" className="h-10 text-sm bg-white" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                  <Button variant="outline" className="w-full h-10 text-xs border-dashed" onClick={() => updateForm("opme_returned", [...form.opme_returned, { description: "", quantity: "0", reason: "", responsible: "" }])}>
+                    + Registrar Devolução
+                  </Button>
+                </div>
               </div>
             )}
 
