@@ -497,6 +497,20 @@ export default function OpmeApp() {
                     <Input value={form.procedure_room} onChange={e => updateForm("procedure_room", e.target.value)} placeholder="Ex: Sala 01" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade / Local (Cadastro)</Label>
+                  <Select value={form.procedure_side_cadastro} onValueChange={(v) => updateForm("procedure_side_cadastro", v)}>
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                      <SelectValue placeholder="Selecione o lado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Direita">Direita</SelectItem>
+                      <SelectItem value="Esquerda">Esquerda</SelectItem>
+                      <SelectItem value="Bilateral">Bilateral</SelectItem>
+                      <SelectItem value="N/A">Não se aplica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
 
