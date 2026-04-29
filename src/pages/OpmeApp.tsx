@@ -643,23 +643,72 @@ export default function OpmeApp() {
                   <Label className="text-xs font-semibold uppercase text-slate-500">Registro Profissional</Label>
                   <Input value={form.requester_register} onChange={e => updateForm("requester_register", e.target.value)} placeholder="CRM / CRO / COREN" className="h-12 bg-white shadow-sm border-slate-200" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade / Local (Requisição Médica)</Label>
-                  <Select value={form.procedure_side_requisicao} onValueChange={(v) => updateForm("procedure_side_requisicao", v)}>
-                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
-                      <SelectValue placeholder="Selecione o lado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Direita">Direita</SelectItem>
-                      <SelectItem value="Esquerda">Esquerda</SelectItem>
-                      <SelectItem value="Bilateral">Bilateral</SelectItem>
-                      <SelectItem value="N/A">Não se aplica</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {form.procedure_side_cadastro && form.procedure_side_requisicao && form.procedure_side_cadastro !== form.procedure_side_requisicao && (
-                    <div className="p-3 rounded-lg bg-red-50 border border-red-100 flex items-center gap-2 mt-2">
-                      <span className="text-red-500 font-bold">⚠️</span>
-                      <p className="text-[10px] font-black text-red-600 uppercase">Divergência: Cadastro indica {form.procedure_side_cadastro}</p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade (Médico)</Label>
+                      <Select value={form.procedure_side_requisicao} onValueChange={(v) => updateForm("procedure_side_requisicao", v)}>
+                        <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                          <SelectValue placeholder="Lado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Direita">Direita</SelectItem>
+                          <SelectItem value="Esquerda">Esquerda</SelectItem>
+                          <SelectItem value="Bilateral">Bilateral</SelectItem>
+                          <SelectItem value="Central">Central</SelectItem>
+                          <SelectItem value="N/A">N/A</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Região (Médico)</Label>
+                      <Select value={form.procedure_region_requisicao} onValueChange={(v) => updateForm("procedure_region_requisicao", v)}>
+                        <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                          <SelectValue placeholder="Região" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Cabeça/Pescoço">Cabeça e Pescoço</SelectItem>
+                          <SelectItem value="Tórax">Tórax</SelectItem>
+                          <SelectItem value="Abdome">Abdome</SelectItem>
+                          <SelectItem value="Membro Superior">Membro Superior</SelectItem>
+                          <SelectItem value="Membro Inferior">Membro Inferior</SelectItem>
+                          <SelectItem value="Coluna">Coluna Vertebral</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Segmento (Médico)</Label>
+                      <Select value={form.procedure_segment_requisicao} onValueChange={(v) => updateForm("procedure_segment_requisicao", v)}>
+                        <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                          <SelectValue placeholder="Nível" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Proximal">Proximal</SelectItem>
+                          <SelectItem value="Distal">Distal</SelectItem>
+                          <SelectItem value="Cervical">Cervical</SelectItem>
+                          <SelectItem value="Torácica">Torácica</SelectItem>
+                          <SelectItem value="Lombar">Lombar</SelectItem>
+                          <SelectItem value="Anterior">Anterior</SelectItem>
+                          <SelectItem value="Posterior">Posterior</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {(form.procedure_side_cadastro !== form.procedure_side_requisicao || 
+                    form.procedure_region_cadastro !== form.procedure_region_requisicao || 
+                    form.procedure_segment_cadastro !== form.procedure_segment_requisicao) && 
+                    form.procedure_side_requisicao && (
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-100 flex flex-col gap-1 mt-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-red-500 font-bold">⚠️</span>
+                        <p className="text-[10px] font-black text-red-600 uppercase">Divergência Detectada entre Cadastro e Requisição:</p>
+                      </div>
+                      <div className="pl-6 text-[9px] text-red-500 font-bold uppercase">
+                        {form.procedure_side_cadastro !== form.procedure_side_requisicao && <p>• Lado: {form.procedure_side_cadastro || 'Não inf.'} vs {form.procedure_side_requisicao}</p>}
+                        {form.procedure_region_cadastro !== form.procedure_region_requisicao && <p>• Região: {form.procedure_region_cadastro || 'Não inf.'} vs {form.procedure_region_requisicao}</p>}
+                        {form.procedure_segment_cadastro !== form.procedure_segment_requisicao && <p>• Segmento: {form.procedure_segment_cadastro || 'Não inf.'} vs {form.procedure_segment_requisicao}</p>}
+                      </div>
                     </div>
                   )}
                 </div>
