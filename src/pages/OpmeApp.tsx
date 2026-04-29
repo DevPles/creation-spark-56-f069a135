@@ -640,6 +640,147 @@ export default function OpmeApp() {
                 </div>
               </div>
             )}
+
+            {/* --- PARTE 2 --- */}
+            {part === 2 && step === 0 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Médico Auditor</Label>
+                  <Input 
+                    value={form.auditor_pre_name} 
+                    onChange={e => updateForm("auditor_pre_name", e.target.value)}
+                    placeholder="Identificação do Auditor"
+                    className="h-12 bg-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Registro (CRM)</Label>
+                  <Input 
+                    value={form.auditor_pre_crm} 
+                    onChange={e => updateForm("auditor_pre_crm", e.target.value)}
+                    placeholder="Nº do Registro"
+                    className="h-12 bg-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Análise da Indicação</Label>
+                  <Select value={form.auditor_pre_analysis} onValueChange={v => updateForm("auditor_pre_analysis", v)}>
+                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="adequada">Adequada</SelectItem>
+                      <SelectItem value="inadequada">Inadequada</SelectItem>
+                      <SelectItem value="complementacao">Necessita complementação</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Compatibilidade SIGTAP</Label>
+                  <Select value={form.auditor_pre_sigtap_compat} onValueChange={v => updateForm("auditor_pre_sigtap_compat", v)}>
+                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                      <SelectItem value="parcial">Parcial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {part === 2 && step === 1 && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Data Solicitação</Label>
+                    <Input type="date" value={form.request_date} onChange={e => updateForm("request_date", e.target.value)} className="h-12 bg-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Horário</Label>
+                    <Input type="time" value={form.request_time} onChange={e => updateForm("request_time", e.target.value)} className="h-12 bg-white" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Recebido por</Label>
+                  <Input value={form.warehouse_received_by} onChange={e => updateForm("warehouse_received_by", e.target.value)} placeholder="Responsável Almoxarifado" className="h-12 bg-white" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Disponível em Estoque?</Label>
+                  <Select value={form.stock_available} onValueChange={v => updateForm("stock_available", v)}>
+                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                      <SelectItem value="parcial">Parcial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {part === 2 && step === 2 && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 bg-white p-4 rounded-lg border">
+                  <Checkbox id="sent_cme" checked={form.sent_to_cme} onCheckedChange={v => updateForm("sent_to_cme", v)} />
+                  <Label htmlFor="sent_cme">Enviado para CME</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Data Processamento</Label>
+                  <Input type="date" value={form.cme_processing_date} onChange={e => updateForm("cme_processing_date", e.target.value)} className="h-12 bg-white" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Responsável CME</Label>
+                  <Input value={form.cme_responsible} onChange={e => updateForm("cme_responsible", e.target.value)} className="h-12 bg-white" />
+                </div>
+              </div>
+            )}
+
+            {part === 2 && step === 3 && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase text-primary">Consumo Cirúrgico</h3>
+                {form.opme_used.map((item: any, idx: number) => (
+                  <Card key={idx}>
+                    <CardContent className="p-4 space-y-3">
+                      <Input value={item.description} onChange={e => {
+                        const arr = [...form.opme_used];
+                        arr[idx].description = e.target.value;
+                        updateForm("opme_used", arr);
+                      }} placeholder="Descrição OPME" className="h-10 text-sm" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input value={item.batch} onChange={e => {
+                          const arr = [...form.opme_used];
+                          arr[idx].batch = e.target.value;
+                          updateForm("opme_used", arr);
+                        }} placeholder="Lote" className="h-10 text-sm" />
+                        <Input value={item.expiry} onChange={e => {
+                          const arr = [...form.opme_used];
+                          arr[idx].expiry = e.target.value;
+                          updateForm("opme_used", arr);
+                        }} placeholder="Validade" className="h-10 text-sm" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                <Button variant="outline" className="w-full h-10 text-xs" onClick={() => updateForm("opme_used", [...form.opme_used, { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim" }])}>
+                  + Adicionar Item de Consumo
+                </Button>
+              </div>
+            )}
+
+            {part === 2 && step === 4 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Comprovação Pós-Cirúrgica</Label>
+                  <Textarea value={form.postop_result_description} onChange={e => updateForm("postop_result_description", e.target.value)} placeholder="Descrição do resultado / posicionamento da OPME" className="min-h-[100px] bg-white" />
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full h-20 border-dashed border-2 flex flex-col gap-1 bg-slate-50"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <span className="text-xs font-medium text-slate-500">Anexar Imagem Pós-Operatória</span>
+                </Button>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
