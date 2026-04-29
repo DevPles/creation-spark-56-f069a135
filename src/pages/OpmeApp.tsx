@@ -266,15 +266,50 @@ export default function OpmeApp() {
     );
   }
 
+  if (part === null) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <header className="bg-white border-b px-4 py-6 flex items-center justify-between sticky top-0 z-20">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="text-center">
+            <h1 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Menu OPME</h1>
+            <p className="text-xs text-slate-500">Selecione a etapa desejada</p>
+          </div>
+          <div className="w-10" />
+        </header>
+
+        <main className="flex-1 p-6 grid grid-cols-1 gap-4 overflow-y-auto pb-10">
+          {[
+            { id: 1, title: "CADASTRO", desc: "Equipe de Enfermagem: Dados do paciente e exames", color: "border-blue-500 bg-blue-50" },
+            { id: 2, title: "REQUISIÇÃO", desc: "Médico Solicitante: Materiais e justificativa", color: "border-emerald-500 bg-emerald-50" },
+            { id: 3, title: "AUDITORIA", desc: "Médico Auditor e Administrativo: Validação e Consumo", color: "border-amber-500 bg-amber-50" },
+            { id: 4, title: "FATURAMENTO", desc: "Setor de Faturamento: Codificação e fechamento AIH", color: "border-slate-500 bg-slate-50" },
+          ].map((card) => (
+            <button
+              key={card.id}
+              onClick={() => setPart(card.id)}
+              className={`w-full p-6 rounded-2xl border-2 text-left shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] ${card.color}`}
+            >
+              <h3 className="text-xl font-black text-slate-800 mb-1">{card.title}</h3>
+              <p className="text-sm text-slate-600 font-medium leading-tight">{card.desc}</p>
+            </button>
+          ))}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+        <Button variant="ghost" size="icon" onClick={() => setPart(null)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="text-center">
           <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h1>
-          <p className="text-[10px] text-slate-500 uppercase">{STEPS[step].description}</p>
+          <p className="text-[10px] text-slate-500 uppercase">{STEPS[step]?.description}</p>
         </div>
         <div className="w-10" />
       </header>
@@ -291,15 +326,15 @@ export default function OpmeApp() {
       <main className="flex-1 p-4 pb-24">
         <AnimatePresence mode="wait">
           <motion.div
-            key={step}
+            key={`${part}-${step}`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
             <div className="mb-6">
-              <h2 className="font-bold text-slate-800">{STEPS[step].title}</h2>
-              <p className="text-xs text-slate-500">{STEPS[step].description}</p>
+              <h2 className="font-bold text-slate-800">{STEPS[step]?.title}</h2>
+              <p className="text-xs text-slate-500">{STEPS[step]?.description}</p>
             </div>
 
             {part === 1 && step === 0 && (
