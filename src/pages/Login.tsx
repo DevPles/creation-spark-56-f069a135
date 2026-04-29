@@ -136,16 +136,27 @@ const Login = () => {
   const [name, setName] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isOpmeMode, setIsOpmeMode] = useState(() => {
+    return new URLSearchParams(window.location.search).get("mode") === "opme";
+  });
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
 
-  useEffect(() => { if (session) navigate("/dashboard"); }, [session, navigate]);
+  useEffect(() => { 
+    if (session) {
+      navigate(isOpmeMode ? "/opme-app" : "/dashboard");
+    }
+  }, [session, navigate, isOpmeMode]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) toast.error(error.message); else navigate("/dashboard");
+    if (error) {
+      toast.error(error.message);
+    } else {
+      navigate(isOpmeMode ? "/opme-app" : "/dashboard");
+    }
     setLoading(false);
   };
 
@@ -238,7 +249,28 @@ const Login = () => {
                   </div>
                   <button type="submit" disabled={loading} className={`${neumorphBtn} w-full bg-[hsl(220_15%_94%)] text-foreground`}>{loading ? "Entrando..." : "Entrar"}</button>
                 </form>
-                <button onClick={() => setShowReset(true)} className="w-full text-sm text-muted-foreground hover:text-primary transition-colors text-center">Esqueci minha senha</button>
+                <div className="flex flex-col items-center gap-3 w-full">
+                  <div className="flex items-center justify-center gap-4 w-full">
+                    <button type="button" onClick={() => setShowReset(true)} className="text-xs text-muted-foreground hover:text-primary transition-colors">Esqueci minha senha</button>
+                    <span className="text-muted-foreground/30">|</span>
+                    <button 
+                      type="button"
+                      onClick={() => setIsOpmeMode(!isOpmeMode)} 
+                      className={`text-xs font-semibold transition-colors uppercase tracking-wider ${isOpmeMode ? "text-emerald-600" : "text-primary hover:text-primary/80"}`}
+                    >
+                      {isOpmeMode ? "Modo Padrão" : "Acesso OPME"}
+                    </button>
+                  </div>
+                  {isOpmeMode && (
+                    <motion.p 
+                      initial={{ opacity: 0, y: -5 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      className="text-[10px] text-emerald-600 font-medium uppercase tracking-tighter"
+                    >
+                      Você será redirecionado para o App OPME após o login
+                    </motion.p>
+                  )}
+                </div>
               </motion.div>
             ) : (
               <motion.div key="register-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full max-w-xs space-y-5">

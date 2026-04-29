@@ -22,6 +22,7 @@ import ControleRubricaPage from "./pages/ControleRubricaPage";
 import TreinamentoPage from "./pages/TreinamentoPage";
 import AssistentePage from "./pages/AssistentePage";
 import OpmePage from "./pages/OpmePage";
+import OpmeApp from "./pages/OpmeApp";
 import ComprasPage from "./pages/ComprasPage";
 import PublicQuotationPage from "./pages/PublicQuotationPage";
 import PublicOrderApprovalPage from "./pages/PublicOrderApprovalPage";
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/treinamento" element={<ProtectedRoute><TreinamentoPage /></ProtectedRoute>} />
             <Route path="/assistente" element={<ProtectedRoute><AssistentePage /></ProtectedRoute>} />
             <Route path="/opme" element={<ProtectedRoute><OpmePage /></ProtectedRoute>} />
+            <Route path="/opme-app" element={<ProtectedRoute><OpmeApp /></ProtectedRoute>} />
             <Route path="/compras" element={<ProtectedRoute><ComprasPage /></ProtectedRoute>} />
             <Route path="/cotacao-publica/:token" element={<PublicQuotationPage />} />
             <Route path="/aprovar-oc/:token" element={<PublicOrderApprovalPage />} />
