@@ -1155,7 +1155,7 @@ export default function OpmeApp() {
                 Salvando...
               </div>
             ) : (
-              part === 1 ? "Finalizar Parte 1" : part === 2 ? "Finalizar Parte 2" : "Concluir Solicitação"
+              part === 1 ? "Finalizar Cadastro" : part === 2 ? "Finalizar Requisição" : part === 3 ? "Finalizar Auditoria" : "Concluir Faturamento"
             )}
           </Button>
         )}
