@@ -11,11 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  CheckCircle2
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const STEPS = [
   { id: "paciente", title: "Paciente", description: "Identificação" },
@@ -533,7 +529,7 @@ export default function OpmeApp() {
         
         {step < STEPS.length - 1 ? (
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
-            Próximo <ArrowRight className="ml-2 w-4 h-4" />
+            Próximo
           </Button>
         ) : (
           <Button 
@@ -547,9 +543,7 @@ export default function OpmeApp() {
                 Salvando...
               </div>
             ) : (
-              <span className="flex items-center gap-2">
-                Finalizar Parte 1 <CheckCircle2 className="w-4 h-4" />
-              </span>
+              "Finalizar Parte 1"
             )}
           </Button>
         )}
