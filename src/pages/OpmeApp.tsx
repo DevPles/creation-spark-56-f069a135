@@ -562,7 +562,7 @@ export default function OpmeApp() {
                           <div className="space-y-1">
                             <Label className="text-[10px] uppercase text-slate-400 font-bold">Documento</Label>
                             {exam.url ? (
-                              <Button variant="outline" className="w-full h-9 text-[10px] font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700" onClick={() => window.open(exam.url, "_blank")}>👁️ Ver Arquivo</Button>
+                              <Button variant="outline" className="w-full h-9 text-[10px] font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700" onClick={() => window.open(exam.url, "_blank")}>Ver Arquivo</Button>
                             ) : (
                               <div className="relative">
                                 <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
