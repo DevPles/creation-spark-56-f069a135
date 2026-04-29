@@ -155,6 +155,14 @@ export default function OpmeApp() {
 
   const CurrentIcon = STEPS[step].icon;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
