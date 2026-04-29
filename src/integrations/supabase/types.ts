@@ -1892,6 +1892,27 @@ export type Database = {
         }
         Relationships: []
       }
+      sigtap_procedures: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       supplier_documents: {
         Row: {
           created_at: string

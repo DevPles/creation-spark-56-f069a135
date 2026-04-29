@@ -31,6 +31,7 @@ export default function OpmeApp() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<string[]>([]);
+  const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<any>({
@@ -99,7 +100,23 @@ export default function OpmeApp() {
     })();
   }, []);
 
-  const updateForm = (k: string, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
+  const updateForm = (k: string, v: any) => {
+    setForm((p: any) => ({ ...p, [k]: v }));
+    
+    // Sugestão SIGTAP ao digitar nome do procedimento
+    if (k === "procedure_name") {
+      if (v.length > 2) {
+        supabase
+          .from("sigtap_procedures")
+          .select("code, name")
+          .ilike("name", `%${v}%`)
+          .limit(5)
+          .then(({ data }) => setSigtapSuggestions(data || []));
+      } else {
+        setSigtapSuggestions([]);
+      }
+    }
+  };
 
   const updateItem = (idx: number, field: string, value: any) => {
     setForm((p: any) => {
@@ -271,7 +288,7 @@ export default function OpmeApp() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Procedimento</Label>
                   <Input 
                     value={form.procedure_name} 
@@ -279,6 +296,28 @@ export default function OpmeApp() {
                     placeholder="Nome conforme SIGTAP"
                     className="h-12 bg-white shadow-sm border-slate-200"
                   />
+                  {sigtapSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-auto">
+                      {sigtapSuggestions.map((item) => (
+                        <button
+                          key={item.code}
+                          type="button"
+                          className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                          onClick={() => {
+                            setForm((p: any) => ({ 
+                              ...p, 
+                              procedure_name: item.name, 
+                              procedure_sigtap_code: item.code 
+                            }));
+                            setSigtapSuggestions([]);
+                          }}
+                        >
+                          <p className="text-xs font-bold text-slate-800">{item.name}</p>
+                          <p className="text-[10px] text-slate-500 uppercase">Cód: {item.code}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
