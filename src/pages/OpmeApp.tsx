@@ -350,6 +350,7 @@ export default function OpmeApp() {
                 { id: 3, label: "Pendentes Auditoria", value: stats.auditoria, sub: "Aguardando validação técnica" },
                 { id: 4, label: "Pendentes Faturamento", value: stats.faturamento, sub: "Aguardando codificação final" },
                 { id: 1, label: "Novos Cadastros", value: stats.cadastro, sub: "Iniciados recentemente" },
+                { id: 3, label: "Divergências Local", value: stats.divergencias, sub: "Lado cirúrgico divergente", color: "text-red-600" },
               ].map((item, i) => (
                 <button 
                   key={i} 
