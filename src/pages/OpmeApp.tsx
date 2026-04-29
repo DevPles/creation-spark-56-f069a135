@@ -20,9 +20,10 @@ const STEPS_CADASTRO = [
 ];
 
 const STEPS_REQUISICAO = [
+  { id: "dados_iniciais", title: "Dados Gerais", description: "Paciente e Procedimento" },
   { id: "solicitante", title: "Solicitante", description: "Profissional Responsável" },
   { id: "materiais", title: "Materiais", description: "Solicitação de OPME" },
-  { id: "justificativa", title: "Justificativa", description: "Indicação e Instrumentais" },
+  { id: "justificativa_imagem", title: "Justificativa", description: "Indicação e Exames" },
 ];
 
 const STEPS_AUDITORIA = [
