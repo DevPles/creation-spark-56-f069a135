@@ -1,44 +1,103 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Save, User, Activity, Package, CheckCircle2 } from "lucide-react";
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  User, 
+  Activity, 
+  Package, 
+  CheckCircle2, 
+  Stethoscope, 
+  ClipboardList, 
+  Image as ImageIcon,
+  Plus,
+  Trash2,
+  Camera
+} from "lucide-react";
 
 const STEPS = [
-  { id: "paciente", title: "Paciente", icon: User },
-  { id: "procedimento", title: "Procedimento", icon: Activity },
-  { id: "materiais", title: "Materiais", icon: Package },
+  { id: "paciente", title: "Paciente", icon: User, description: "Identificação" },
+  { id: "procedimento", title: "Procedimento", icon: Activity, description: "Dados Cirúrgicos" },
+  { id: "solicitante", title: "Solicitante", icon: Stethoscope, description: "Profissional" },
+  { id: "materiais", title: "Materiais", icon: Package, description: "OPME Solicitada" },
+  { id: "justificativa", title: "Justificativa", icon: ClipboardList, description: "Instrumentais" },
+  { id: "imagem", title: "Imagem", icon: ImageIcon, description: "Pré-Operatório" },
 ];
 
 export default function OpmeApp() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const recordId = searchParams.get("id");
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
     status: "rascunho",
     patient_name: "",
     patient_record: "",
+    patient_birthdate: "",
+    patient_mother_name: "",
+    patient_sus: "",
     procedure_date: new Date().toISOString().split("T")[0],
     procedure_type: "eletivo",
     procedure_name: "",
+    procedure_sigtap_code: "",
+    procedure_room: "",
+    requester_name: profile?.name || "",
+    requester_register: "",
     opme_requested: [{ description: "", quantity: "1", size_model: "", sigtap: "" }],
+    instruments_specific: false,
+    instruments_loan: false,
+    instruments_na: true,
+    instruments_specify: "",
+    clinical_indication: "",
+    preop_image_types: [],
+    preop_image_other: "",
+    preop_exam_date: "",
+    preop_exam_number: "",
+    preop_finding_description: "",
+    preop_image_attached: false,
+    preop_image_count: 0
   });
 
   useEffect(() => {
-    if (profile?.facility_unit && !form.facility_unit) {
-      setForm(p => ({ ...p, facility_unit: profile.facility_unit }));
+    if (profile) {
+      setForm(p => ({ 
+        ...p, 
+        facility_unit: p.facility_unit || profile.facility_unit || "Hospital Geral",
+        requester_name: p.requester_name || profile.name || ""
+      }));
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (recordId) {
+      (async () => {
+        setLoading(true);
+        const { data, error } = await supabase.from("opme_requests").select("*").eq("id", recordId).single();
+        if (data && !error) {
+          setForm(data);
+        }
+        setLoading(false);
+      })();
+    }
+  }, [recordId]);
 
   useEffect(() => {
     (async () => {
@@ -73,12 +132,17 @@ export default function OpmeApp() {
     
     setSaving(true);
     try {
-      const payload = { ...form, created_by: user.id };
-      const { error } = await supabase.from("opme_requests").insert(payload);
-      if (error) throw error;
+      const payload = { ...form, created_by: user.id, updated_at: new Date().toISOString() };
+      
+      if (recordId) {
+        const { error } = await supabase.from("opme_requests").update(payload).eq("id", recordId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("opme_requests").insert(payload);
+        if (error) throw error;
+      }
       
       toast.success("Pedido enviado com sucesso!");
-      navigate("/opme");
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar");
     } finally {
@@ -91,6 +155,14 @@ export default function OpmeApp() {
 
   const CurrentIcon = STEPS[step].icon;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
@@ -99,7 +171,7 @@ export default function OpmeApp() {
         </Button>
         <div className="text-center">
           <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h1>
-          <p className="text-[10px] text-slate-500 uppercase">{STEPS[step].title}</p>
+          <p className="text-[10px] text-slate-500 uppercase">{STEPS[step].description}</p>
         </div>
         <div className="w-10" />
       </header>
@@ -128,7 +200,7 @@ export default function OpmeApp() {
               </div>
               <div>
                 <h2 className="font-bold text-slate-800">{STEPS[step].title}</h2>
-                <p className="text-xs text-slate-500">Preencha os dados do {STEPS[step].id}</p>
+                <p className="text-xs text-slate-500">{STEPS[step].description}</p>
               </div>
             </div>
 
@@ -137,28 +209,59 @@ export default function OpmeApp() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Unidade de Saúde</Label>
                   <Select value={form.facility_unit} onValueChange={(v) => updateForm("facility_unit", v)}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                      <SelectValue placeholder="Selecione a unidade" />
+                    </SelectTrigger>
                     <SelectContent>
                       {facilities.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Paciente</Label>
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome Completo</Label>
                   <Input 
                     value={form.patient_name} 
                     onChange={e => updateForm("patient_name", e.target.value)}
-                    placeholder="Ex: João da Silva"
-                    className="h-12 bg-white"
+                    placeholder="Nome do paciente"
+                    className="h-12 bg-white shadow-sm border-slate-200"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Nascimento</Label>
+                    <Input 
+                      type="date"
+                      value={form.patient_birthdate} 
+                      onChange={e => updateForm("patient_birthdate", e.target.value)}
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Prontuário</Label>
+                    <Input 
+                      value={form.patient_record} 
+                      onChange={e => updateForm("patient_record", e.target.value)}
+                      placeholder="Nº Registro"
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome da Mãe</Label>
+                  <Input 
+                    value={form.patient_mother_name} 
+                    onChange={e => updateForm("patient_mother_name", e.target.value)}
+                    placeholder="Nome completo da mãe"
+                    className="h-12 bg-white shadow-sm border-slate-200"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Prontuário</Label>
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Cartão SUS</Label>
                   <Input 
-                    value={form.patient_record} 
-                    onChange={e => updateForm("patient_record", e.target.value)}
-                    placeholder="Número do registro"
-                    className="h-12 bg-white"
+                    value={form.patient_sus} 
+                    onChange={e => updateForm("patient_sus", e.target.value)}
+                    placeholder="Número do CNS"
+                    className="h-12 bg-white shadow-sm border-slate-200"
                   />
                 </div>
               </div>
@@ -172,13 +275,15 @@ export default function OpmeApp() {
                     type="date"
                     value={form.procedure_date} 
                     onChange={e => updateForm("procedure_date", e.target.value)}
-                    className="h-12 bg-white"
+                    className="h-12 bg-white shadow-sm border-slate-200"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Tipo</Label>
                   <Select value={form.procedure_type} onValueChange={(v) => updateForm("procedure_type", v)}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="eletivo">Eletivo</SelectItem>
                       <SelectItem value="urgencia">Urgência</SelectItem>
@@ -191,14 +296,57 @@ export default function OpmeApp() {
                   <Input 
                     value={form.procedure_name} 
                     onChange={e => updateForm("procedure_name", e.target.value)}
-                    placeholder="Ex: Artroplastia"
-                    className="h-12 bg-white"
+                    placeholder="Nome conforme SIGTAP"
+                    className="h-12 bg-white shadow-sm border-slate-200"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Cód. SIGTAP</Label>
+                    <Input 
+                      value={form.procedure_sigtap_code} 
+                      onChange={e => updateForm("procedure_sigtap_code", e.target.value)}
+                      placeholder="00.00.00.00"
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Sala / Setor</Label>
+                    <Input 
+                      value={form.procedure_room} 
+                      onChange={e => updateForm("procedure_room", e.target.value)}
+                      placeholder="Ex: Sala 01"
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
                 </div>
               </div>
             )}
 
             {step === 2 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Profissional</Label>
+                  <Input 
+                    value={form.requester_name} 
+                    onChange={e => updateForm("requester_name", e.target.value)}
+                    placeholder="Carimbo ou Identificação"
+                    className="h-12 bg-white shadow-sm border-slate-200"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Registro Profissional</Label>
+                  <Input 
+                    value={form.requester_register} 
+                    onChange={e => updateForm("requester_register", e.target.value)}
+                    placeholder="CRM / CRO / COREN"
+                    className="h-12 bg-white shadow-sm border-slate-200"
+                  />
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
               <div className="space-y-4">
                 {form.opme_requested.map((item: any, idx: number) => (
                   <Card key={idx} className="border-slate-200">
@@ -240,10 +388,19 @@ export default function OpmeApp() {
                           <Input 
                             value={item.size_model} 
                             onChange={e => updateItem(idx, "size_model", e.target.value)}
-                            placeholder="M, G, 40..."
+                            placeholder="Tamanho"
                             className="h-10 text-sm bg-slate-50/50"
                           />
                         </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] uppercase text-slate-400">Cód. SIGTAP</Label>
+                        <Input 
+                          value={item.sigtap} 
+                          onChange={e => updateItem(idx, "sigtap", e.target.value)}
+                          placeholder="00.00.00.00"
+                          className="h-10 text-sm bg-slate-50/50"
+                        />
                       </div>
                     </CardContent>
                   </Card>
@@ -253,8 +410,127 @@ export default function OpmeApp() {
                   className="w-full border-dashed border-2 h-12 text-slate-500"
                   onClick={addItem}
                 >
-                  + Adicionar outro material
+                  <Plus className="w-4 h-4 mr-2" /> Adicionar outro material
                 </Button>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-6">
+                <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                  <h3 className="text-xs font-bold uppercase text-slate-400">Instrumentais / Acessórios</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="instr_spec" 
+                        checked={form.instruments_specific} 
+                        onCheckedChange={v => updateForm("instruments_specific", v)} 
+                      />
+                      <Label htmlFor="instr_spec" className="text-sm">Necessita instrumental específico</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="instr_loan" 
+                        checked={form.instruments_loan} 
+                        onCheckedChange={v => updateForm("instruments_loan", v)} 
+                      />
+                      <Label htmlFor="instr_loan" className="text-sm">Necessita comodato</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="instr_na" 
+                        checked={form.instruments_na} 
+                        onCheckedChange={v => updateForm("instruments_na", v)} 
+                      />
+                      <Label htmlFor="instr_na" className="text-sm">Não se aplica</Label>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Especificar Instrumentais</Label>
+                    <Textarea 
+                      value={form.instruments_specify} 
+                      onChange={e => updateForm("instruments_specify", e.target.value)}
+                      placeholder="Descreva os instrumentais necessários..."
+                      className="min-h-[80px] bg-white border-slate-200"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Justificativa Clínica</Label>
+                  <Textarea 
+                    value={form.clinical_indication} 
+                    onChange={e => updateForm("clinical_indication", e.target.value)}
+                    placeholder="Indicação clínica / evidência terapêutica"
+                    className="min-h-[120px] bg-white border-slate-200 shadow-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Exame de Imagem</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {["Radiografia", "Tomografia", "Ressonância", "Ultrassonografia"].map(type => (
+                      <div key={type} className="flex items-center space-x-2 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                        <Checkbox 
+                          id={`img_${type}`} 
+                          checked={form.preop_image_types?.includes(type)}
+                          onCheckedChange={(v) => {
+                            const current = form.preop_image_types || [];
+                            updateForm("preop_image_types", v ? [...current, type] : current.filter((t: string) => t !== type));
+                          }}
+                        />
+                        <Label htmlFor={`img_${type}`} className="text-xs">{type}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Data do Exame</Label>
+                    <Input 
+                      type="date"
+                      value={form.preop_exam_date} 
+                      onChange={e => updateForm("preop_exam_date", e.target.value)}
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Nº do Laudo</Label>
+                    <Input 
+                      value={form.preop_exam_number} 
+                      onChange={e => updateForm("preop_exam_number", e.target.value)}
+                      placeholder="Nº Exame"
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Achados / Descrição</Label>
+                  <Textarea 
+                    value={form.preop_finding_description} 
+                    onChange={e => updateForm("preop_finding_description", e.target.value)}
+                    placeholder="Descrição da indicação..."
+                    className="min-h-[100px] bg-white border-slate-200"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple />
+                  <Button 
+                    variant="outline" 
+                    className="w-full h-24 border-dashed border-2 flex flex-col gap-2 bg-slate-50"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera className="w-8 h-8 text-primary/40" />
+                    <span className="text-xs font-medium text-slate-500">Anexar Imagem Pré-Operatória</span>
+                  </Button>
+                </div>
               </div>
             )}
           </motion.div>
@@ -282,9 +558,14 @@ export default function OpmeApp() {
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? "Enviando..." : (
+            {saving ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Salvando...
+              </div>
+            ) : (
               <span className="flex items-center gap-2">
-                Finalizar Pedido <CheckCircle2 className="w-4 h-4" />
+                Finalizar Parte 1 <CheckCircle2 className="w-4 h-4" />
               </span>
             )}
           </Button>
