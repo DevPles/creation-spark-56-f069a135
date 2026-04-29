@@ -318,23 +318,20 @@ export default function OpmeApp() {
         <main className="flex-1 p-6 overflow-y-auto pb-10 space-y-8">
           <div className="grid grid-cols-2 gap-4">
             {[
-              { id: 1, title: "CADASTRO", subtitle: "Enfermagem", color: "text-blue-600", bg: "bg-blue-50" },
-              { id: 2, title: "REQUISIÇÃO", subtitle: "Médico", color: "text-emerald-600", bg: "bg-emerald-50" },
-              { id: 3, title: "AUDITORIA", subtitle: "Técnica", color: "text-amber-600", bg: "bg-amber-50" },
-              { id: 4, title: "FATURAMENTO", subtitle: "Adm", color: "text-slate-600", bg: "bg-slate-100" },
+              { id: 1, title: "CADASTRO", icon: "📋" },
+              { id: 2, title: "REQUISIÇÃO", icon: "🩺" },
+              { id: 3, title: "AUDITORIA", icon: "⚖️" },
+              { id: 4, title: "FATURAMENTO", icon: "💰" },
             ].map((card) => (
               <button
                 key={card.id}
                 onClick={() => setPart(card.id)}
-                className="bg-white p-5 rounded-[24px] shadow-sm border border-slate-100 text-left transition-all active:scale-95 flex flex-col items-start gap-3 hover:shadow-md group"
+                className="bg-white p-6 rounded-[24px] shadow-sm border border-slate-100 text-center transition-all active:scale-95 flex flex-col items-center justify-center gap-3 hover:shadow-md group aspect-square"
               >
-                <div className={`w-12 h-12 rounded-2xl ${card.bg} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                  <div className={`w-6 h-6 rounded-lg border-2 ${card.color.replace('text', 'border')} opacity-70`} />
+                <div className="w-14 h-14 rounded-full bg-slate-50 flex items-center justify-center text-2xl shadow-inner border border-slate-100/50">
+                  {card.icon}
                 </div>
-                <div>
-                  <h3 className={`text-[13px] font-black uppercase tracking-tight ${card.color}`}>{card.title}</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-0.5">{card.subtitle}</p>
-                </div>
+                <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.1em]">{card.title}</h3>
               </button>
             ))}
           </div>
