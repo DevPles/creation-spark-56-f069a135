@@ -132,12 +132,17 @@ export default function OpmeApp() {
     
     setSaving(true);
     try {
-      const payload = { ...form, created_by: user.id };
-      const { error } = await supabase.from("opme_requests").insert(payload);
-      if (error) throw error;
+      const payload = { ...form, created_by: user.id, updated_at: new Date().toISOString() };
+      
+      if (recordId) {
+        const { error } = await supabase.from("opme_requests").update(payload).eq("id", recordId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("opme_requests").insert(payload);
+        if (error) throw error;
+      }
       
       toast.success("Pedido enviado com sucesso!");
-      navigate("/opme");
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar");
     } finally {
