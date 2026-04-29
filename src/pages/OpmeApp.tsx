@@ -558,9 +558,14 @@ export default function OpmeApp() {
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? "Enviando..." : (
+            {saving ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Salvando...
+              </div>
+            ) : (
               <span className="flex items-center gap-2">
-                Finalizar Pedido <CheckCircle2 className="w-4 h-4" />
+                Finalizar Parte 1 <CheckCircle2 className="w-4 h-4" />
               </span>
             )}
           </Button>
