@@ -925,8 +925,30 @@ export default function OpmeApp() {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">7. Comprovação por Imagem</h3>
-                  <div className="space-y-4 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                  <div className="flex items-center justify-between border-b pb-1">
+                    <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">7. Comprovação por Imagem</h3>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase">PRÉ-OPERATÓRIO</span>
+                  </div>
+
+                  {preopExams.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {preopExams.map((exam) => (
+                        <Card key={exam.id} className="border-slate-100 shadow-sm overflow-hidden bg-white">
+                          <div className="p-2 flex flex-col gap-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-primary font-black text-[8px]">IMG</div>
+                              <span className="text-[10px] font-bold text-slate-700 truncate">{exam.type}</span>
+                            </div>
+                            {exam.url && (
+                              <Button variant="outline" className="h-7 text-[9px] font-bold uppercase w-full bg-slate-50 border-slate-200" onClick={() => window.open(exam.url, "_blank")}>Ver Exame</Button>
+                            )}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="space-y-4 bg-white p-3 rounded-lg border border-slate-100 shadow-sm mt-2">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-[9px] uppercase text-slate-400 font-bold">Data do Exame</Label>
