@@ -501,19 +501,55 @@ export default function OpmeApp() {
                     <Input value={form.procedure_room} onChange={e => updateForm("procedure_room", e.target.value)} placeholder="Ex: Sala 01" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade / Local (Cadastro)</Label>
-                  <Select value={form.procedure_side_cadastro} onValueChange={(v) => updateForm("procedure_side_cadastro", v)}>
-                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
-                      <SelectValue placeholder="Selecione o lado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Direita">Direita</SelectItem>
-                      <SelectItem value="Esquerda">Esquerda</SelectItem>
-                      <SelectItem value="Bilateral">Bilateral</SelectItem>
-                      <SelectItem value="N/A">Não se aplica</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade (Cadastro)</Label>
+                    <Select value={form.procedure_side_cadastro} onValueChange={(v) => updateForm("procedure_side_cadastro", v)}>
+                      <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                        <SelectValue placeholder="Lado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Direita">Direita</SelectItem>
+                        <SelectItem value="Esquerda">Esquerda</SelectItem>
+                        <SelectItem value="Bilateral">Bilateral</SelectItem>
+                        <SelectItem value="Central">Central</SelectItem>
+                        <SelectItem value="N/A">N/A</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Região (Cadastro)</Label>
+                    <Select value={form.procedure_region_cadastro} onValueChange={(v) => updateForm("procedure_region_cadastro", v)}>
+                      <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                        <SelectValue placeholder="Região" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cabeça/Pescoço">Cabeça e Pescoço</SelectItem>
+                        <SelectItem value="Tórax">Tórax</SelectItem>
+                        <SelectItem value="Abdome">Abdome</SelectItem>
+                        <SelectItem value="Membro Superior">Membro Superior</SelectItem>
+                        <SelectItem value="Membro Inferior">Membro Inferior</SelectItem>
+                        <SelectItem value="Coluna">Coluna Vertebral</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Segmento/Nível (Cadastro)</Label>
+                    <Select value={form.procedure_segment_cadastro} onValueChange={(v) => updateForm("procedure_segment_cadastro", v)}>
+                      <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                        <SelectValue placeholder="Nível" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Proximal">Proximal</SelectItem>
+                        <SelectItem value="Distal">Distal</SelectItem>
+                        <SelectItem value="Cervical">Cervical</SelectItem>
+                        <SelectItem value="Torácica">Torácica</SelectItem>
+                        <SelectItem value="Lombar">Lombar</SelectItem>
+                        <SelectItem value="Anterior">Anterior</SelectItem>
+                        <SelectItem value="Posterior">Posterior</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             )}
