@@ -650,7 +650,7 @@ export default function OpmeApp() {
                     value={form.auditor_pre_name} 
                     onChange={e => updateForm("auditor_pre_name", e.target.value)}
                     placeholder="Identificação do Auditor"
-                    className="h-12 bg-white"
+                    className="h-12 bg-white shadow-sm"
                   />
                 </div>
                 <div className="space-y-2">
@@ -659,13 +659,13 @@ export default function OpmeApp() {
                     value={form.auditor_pre_crm} 
                     onChange={e => updateForm("auditor_pre_crm", e.target.value)}
                     placeholder="Nº do Registro"
-                    className="h-12 bg-white"
+                    className="h-12 bg-white shadow-sm"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Análise da Indicação</Label>
                   <Select value={form.auditor_pre_analysis} onValueChange={v => updateForm("auditor_pre_analysis", v)}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="adequada">Adequada</SelectItem>
                       <SelectItem value="inadequada">Inadequada</SelectItem>
@@ -676,13 +676,22 @@ export default function OpmeApp() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Compatibilidade SIGTAP</Label>
                   <Select value={form.auditor_pre_sigtap_compat} onValueChange={v => updateForm("auditor_pre_sigtap_compat", v)}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sim">Sim</SelectItem>
                       <SelectItem value="nao">Não</SelectItem>
                       <SelectItem value="parcial">Parcial</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Parecer Técnico</Label>
+                  <Textarea 
+                    value={form.auditor_pre_opinion} 
+                    onChange={e => updateForm("auditor_pre_opinion", e.target.value)}
+                    placeholder="Descreva a avaliação..."
+                    className="min-h-[100px] bg-white shadow-sm"
+                  />
                 </div>
               </div>
             )}
