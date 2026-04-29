@@ -250,15 +250,15 @@ const Login = () => {
                   <button type="submit" disabled={loading} className={`${neumorphBtn} w-full bg-[hsl(220_15%_94%)] text-foreground`}>{loading ? "Entrando..." : "Entrar"}</button>
                 </form>
                 <div className="flex flex-col items-center gap-3 w-full">
-                  <div className="flex items-center justify-center gap-4 w-full">
+                  <div className="flex items-center justify-center gap-2 w-full">
                     <button type="button" onClick={() => setShowReset(true)} className="text-xs text-muted-foreground hover:text-primary transition-colors">Esqueci minha senha</button>
-                    <span className="text-muted-foreground/30">|</span>
+                    <span className="text-muted-foreground/30">•</span>
                     <button 
                       type="button"
                       onClick={() => setIsOpmeMode(!isOpmeMode)} 
-                      className={`text-xs font-semibold transition-colors uppercase tracking-wider ${isOpmeMode ? "text-emerald-600" : "text-primary hover:text-primary/80"}`}
+                      className="text-xs text-muted-foreground hover:text-primary transition-colors"
                     >
-                      {isOpmeMode ? "Modo Padrão" : "Acesso OPME"}
+                      {isOpmeMode ? "Voltar ao padrão" : "Entrar como OPME"}
                     </button>
                   </div>
                   {isOpmeMode && (
