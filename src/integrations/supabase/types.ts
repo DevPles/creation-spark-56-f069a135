@@ -555,7 +555,11 @@ export type Database = {
           preop_validation_responsible: string | null
           procedure_date: string | null
           procedure_name: string | null
+          procedure_region_cadastro: string | null
+          procedure_region_requisicao: string | null
           procedure_room: string | null
+          procedure_segment_cadastro: string | null
+          procedure_segment_requisicao: string | null
           procedure_side_cadastro: string | null
           procedure_side_requisicao: string | null
           procedure_sigtap_code: string | null
@@ -639,7 +643,11 @@ export type Database = {
           preop_validation_responsible?: string | null
           procedure_date?: string | null
           procedure_name?: string | null
+          procedure_region_cadastro?: string | null
+          procedure_region_requisicao?: string | null
           procedure_room?: string | null
+          procedure_segment_cadastro?: string | null
+          procedure_segment_requisicao?: string | null
           procedure_side_cadastro?: string | null
           procedure_side_requisicao?: string | null
           procedure_sigtap_code?: string | null
@@ -723,7 +731,11 @@ export type Database = {
           preop_validation_responsible?: string | null
           procedure_date?: string | null
           procedure_name?: string | null
+          procedure_region_cadastro?: string | null
+          procedure_region_requisicao?: string | null
           procedure_room?: string | null
+          procedure_segment_cadastro?: string | null
+          procedure_segment_requisicao?: string | null
           procedure_side_cadastro?: string | null
           procedure_side_requisicao?: string | null
           procedure_sigtap_code?: string | null
