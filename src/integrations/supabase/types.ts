@@ -491,6 +491,8 @@ export type Database = {
       }
       opme_requests: {
         Row: {
+          attending_doctor_crm: string | null
+          attending_doctor_name: string | null
           auditor_post_crm: string | null
           auditor_post_date: string | null
           auditor_post_final_opinion: string | null
@@ -579,6 +581,8 @@ export type Database = {
           warehouse_time: string | null
         }
         Insert: {
+          attending_doctor_crm?: string | null
+          attending_doctor_name?: string | null
           auditor_post_crm?: string | null
           auditor_post_date?: string | null
           auditor_post_final_opinion?: string | null
@@ -667,6 +671,8 @@ export type Database = {
           warehouse_time?: string | null
         }
         Update: {
+          attending_doctor_crm?: string | null
+          attending_doctor_name?: string | null
           auditor_post_crm?: string | null
           auditor_post_date?: string | null
           auditor_post_final_opinion?: string | null
