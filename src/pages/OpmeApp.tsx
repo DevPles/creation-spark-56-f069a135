@@ -880,6 +880,100 @@ export default function OpmeApp() {
                 </Button>
               </div>
             )}
+
+            {/* --- PARTE 3 --- */}
+            {part === 3 && step === 0 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Médico Auditor (Pós)</Label>
+                  <Input value={form.auditor_post_name} onChange={e => updateForm("auditor_post_name", e.target.value)} placeholder="Identificação" className="h-12 bg-white shadow-sm" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Compatibilidade OPME x Procedimento</Label>
+                  <Select value={form.auditor_post_procedure_compat} onValueChange={v => updateForm("auditor_post_procedure_compat", v)}>
+                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                      <SelectItem value="parcial">Parcial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Conformidade com Imagem Pós</Label>
+                  <Select value={form.auditor_post_image_conformity} onValueChange={v => updateForm("auditor_post_image_conformity", v)}>
+                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                      <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Parecer Técnico Final</Label>
+                  <Textarea value={form.auditor_post_final_opinion} onChange={e => updateForm("auditor_post_final_opinion", e.target.value)} placeholder="Conclusão da auditoria..." className="min-h-[100px] bg-white shadow-sm" />
+                </div>
+              </div>
+            )}
+
+            {part === 3 && step === 1 && (
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase text-slate-400">Justificativa do Cirurgião</h3>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Data do Ocorrido</Label>
+                  <Input type="date" value={form.incident_date} onChange={e => updateForm("incident_date", e.target.value)} className="h-12 bg-white shadow-sm" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Descrição (Perda / Dano / Violação)</Label>
+                  <Textarea value={form.incident_description} onChange={e => updateForm("incident_description", e.target.value)} placeholder="Descreva o ocorrido, se aplicável..." className="min-h-[120px] bg-white shadow-sm" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Assinatura Profissional</Label>
+                  <Input value={form.incident_responsible} onChange={e => updateForm("incident_responsible", e.target.value)} placeholder="Nome do Cirurgião" className="h-12 bg-white shadow-sm" />
+                </div>
+              </div>
+            )}
+
+            {part === 3 && step === 2 && (
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase text-slate-400">Dados do Faturamento</h3>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Número da AIH</Label>
+                  <Input value={form.billing_aih_number} onChange={e => updateForm("billing_aih_number", e.target.value)} placeholder="000.000.000-0" className="h-12 bg-white shadow-sm" />
+                </div>
+                <div className="space-y-4 bg-slate-50 p-4 rounded-xl border">
+                  <Label className="text-[10px] font-bold uppercase text-slate-400">Documentação Anexada</Label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { id: "nf", label: "Nota Fiscal da OPME" },
+                      { id: "rastreabilidade", label: "Rastreabilidade (Lote/Etiqueta)" },
+                      { id: "laudo", label: "Laudo Cirúrgico" },
+                      { id: "consumo", label: "Registro de Consumo" },
+                      { id: "exames", label: "Exames de Imagem (Pré/Pós)" },
+                    ].map(doc => (
+                      <div key={doc.id} className="flex items-center space-x-2 bg-white p-3 rounded border">
+                        <Checkbox id={`doc_${doc.id}`} checked={form.billing_docs?.[doc.id]} onCheckedChange={v => {
+                          updateForm("billing_docs", { ...form.billing_docs, [doc.id]: v });
+                        }} />
+                        <Label htmlFor={`doc_${doc.id}`} className="text-xs">{doc.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Compatibilidade Utilizada x Faturada</Label>
+                  <Select value={form.billing_opme_compatibility} onValueChange={v => updateForm("billing_opme_compatibility", v)}>
+                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                      <SelectItem value="parcial">Parcial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
