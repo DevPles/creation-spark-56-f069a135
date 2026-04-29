@@ -326,10 +326,10 @@ export default function OpmeApp() {
               <button
                 key={card.id}
                 onClick={() => setPart(card.id)}
-                className="bg-white p-6 rounded-[20px] shadow-sm border border-slate-100 text-left transition-all active:scale-95 flex flex-col items-start justify-center gap-1 hover:shadow-md group min-h-[120px]"
+                className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 text-center transition-all active:scale-95 flex flex-col items-center justify-center gap-1 hover:shadow-md group aspect-square"
               >
-                <h3 className="text-[15px] font-black text-slate-900 uppercase tracking-tight leading-none">{card.title}</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter leading-none">{card.subtitle}</p>
+                <h3 className="text-[14px] font-black text-slate-900 uppercase tracking-[0.15em] leading-none mb-1">{card.title}</h3>
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.1em] leading-none">{card.subtitle}</p>
               </button>
             ))}
           </div>
