@@ -173,14 +173,18 @@ export default function OpmeApp() {
   useEffect(() => {
     if (part === null) {
       (async () => {
-        const { data: counts, error } = await supabase.from("opme_requests").select("status");
+        const { data: counts, error } = await supabase.from("opme_requests").select("status, procedure_side_cadastro, procedure_side_requisicao");
         if (counts && !error) {
-          const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0 };
+          const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0, divergencias: 0 };
           counts.forEach((c: any) => {
             if (c.status === "rascunho") s.cadastro++;
             if (c.status === "pendente_requisicao") s.requisicao++;
             if (c.status === "pendente_auditoria") s.auditoria++;
             if (c.status === "pendente_faturamento") s.faturamento++;
+            
+            if (c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao) {
+              s.divergencias++;
+            }
           });
           setStats(s);
         }
