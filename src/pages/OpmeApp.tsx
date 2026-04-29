@@ -1029,6 +1029,7 @@ export default function OpmeApp() {
               </div>
             )}
 
+            {/* --- PARTE 4: FATURAMENTO (Auditoria Pós) --- */}
             {part === 4 && step === 0 && (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -1038,7 +1039,7 @@ export default function OpmeApp() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Compatibilidade OPME x Procedimento</Label>
                   <Select value={form.auditor_post_procedure_compat} onValueChange={v => updateForm("auditor_post_procedure_compat", v)}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sim">Sim</SelectItem>
                       <SelectItem value="nao">Não</SelectItem>
@@ -1049,7 +1050,7 @@ export default function OpmeApp() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Conformidade com Imagem Pós</Label>
                   <Select value={form.auditor_post_image_conformity} onValueChange={v => updateForm("auditor_post_image_conformity", v)}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sim">Sim</SelectItem>
                       <SelectItem value="nao">Não</SelectItem>
