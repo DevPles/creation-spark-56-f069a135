@@ -812,7 +812,7 @@ export default function OpmeApp() {
                 Salvando...
               </div>
             ) : (
-              "Finalizar Parte 1"
+              part === 1 ? "Finalizar Parte 1" : part === 2 ? "Finalizar Parte 2" : "Concluir Solicitação"
             )}
           </Button>
         )}
