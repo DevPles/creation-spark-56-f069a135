@@ -252,11 +252,9 @@ export default function OpmeApp() {
   const prev = () => {
     if (step > 0) {
       setStep(step - 1);
-    } else if (part > 1) {
-      const prevPart = part - 1;
-      const prevSteps = prevPart === 1 ? STEPS_P1 : STEPS_P2;
-      setPart(prevPart);
-      setStep(prevSteps.length - 1);
+    } else {
+      setPart(null);
+      setStep(0);
     }
   };
 
