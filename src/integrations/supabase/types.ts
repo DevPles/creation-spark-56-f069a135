@@ -556,6 +556,8 @@ export type Database = {
           procedure_date: string | null
           procedure_name: string | null
           procedure_room: string | null
+          procedure_side_cadastro: string | null
+          procedure_side_requisicao: string | null
           procedure_sigtap_code: string | null
           procedure_type: string | null
           request_date: string | null
@@ -638,6 +640,8 @@ export type Database = {
           procedure_date?: string | null
           procedure_name?: string | null
           procedure_room?: string | null
+          procedure_side_cadastro?: string | null
+          procedure_side_requisicao?: string | null
           procedure_sigtap_code?: string | null
           procedure_type?: string | null
           request_date?: string | null
@@ -720,6 +724,8 @@ export type Database = {
           procedure_date?: string | null
           procedure_name?: string | null
           procedure_room?: string | null
+          procedure_side_cadastro?: string | null
+          procedure_side_requisicao?: string | null
           procedure_sigtap_code?: string | null
           procedure_type?: string | null
           request_date?: string | null
