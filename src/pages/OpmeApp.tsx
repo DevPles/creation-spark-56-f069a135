@@ -316,20 +316,24 @@ export default function OpmeApp() {
         </header>
 
         <main className="flex-1 p-6 overflow-y-auto pb-10 space-y-8">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
             {[
-              { id: 1, title: "CADASTRO", subtitle: "Cadastro de Paciente" },
-              { id: 2, title: "REQUISIÇÃO", subtitle: "Solicitação de OPME" },
-              { id: 3, title: "AUDITORIA", subtitle: "Auditoria Técnica" },
-              { id: 4, title: "FATURAMENTO", subtitle: "Faturamento e AIH" },
+              { id: 1, title: "CADASTRO", description: "Cadastro de Paciente" },
+              { id: 2, title: "REQUISIÇÃO", description: "Solicitação de OPME" },
+              { id: 3, title: "AUDITORIA", description: "Auditoria Técnica" },
+              { id: 4, title: "FATURAMENTO", description: "Faturamento e AIH" },
             ].map((card) => (
               <button
                 key={card.id}
                 onClick={() => setPart(card.id)}
-                className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 text-center transition-all active:scale-95 flex flex-col items-center justify-center gap-1 hover:shadow-md group aspect-square"
+                className="kpi-card group w-full cursor-pointer text-left min-h-[70px] sm:min-h-0 bg-white border border-slate-100 shadow-sm rounded-xl p-4 transition-all active:scale-95 hover:shadow-md"
               >
-                <h3 className="text-[14px] font-black text-slate-900 uppercase tracking-[0.15em] leading-none mb-1">{card.title}</h3>
-                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.1em] leading-none">{card.subtitle}</p>
+                <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors text-sm sm:text-base leading-tight">
+                  {card.title}
+                </h3>
+                <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted-foreground leading-tight">
+                  {card.description}
+                </p>
               </button>
             ))}
           </div>
