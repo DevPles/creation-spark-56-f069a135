@@ -38,6 +38,15 @@ const STEPS_FATURAMENTO = [
   { id: "faturamento", title: "Codificação", description: "Fechamento e AIH" },
 ];
 
+const ANATOMY_DATA: Record<string, string[]> = {
+  "Cabeça/Pescoço": ["Crânio", "Face", "Pescoço", "Mandíbula", "Órbita"],
+  "Tórax": ["Coração", "Pulmão", "Mama", "Arcabouço Costal", "Mediastino"],
+  "Abdome": ["Parede Abdominal", "Fígado/Vias Biliares", "Rim/Ureter", "Intestino", "Estômago"],
+  "Membro Superior": ["Ombro", "Braço", "Cotovelo", "Antebraço", "Punho", "Mão"],
+  "Membro Inferior": ["Quadril", "Coxa", "Joelho", "Perna", "Tornozelo", "Pé"],
+  "Coluna": ["Cervical", "Torácica", "Lombar", "Sacro-Coccígea"]
+};
+
 export default function OpmeApp() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
