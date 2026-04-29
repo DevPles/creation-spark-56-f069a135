@@ -980,57 +980,6 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {/* --- PARTE 3: AUDITORIA --- */}
-
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="instr_spec" 
-                        checked={form.instruments_specific} 
-                        onCheckedChange={v => updateForm("instruments_specific", v)} 
-                      />
-                      <Label htmlFor="instr_spec" className="text-sm">Necessita instrumental específico</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="instr_loan" 
-                        checked={form.instruments_loan} 
-                        onCheckedChange={v => updateForm("instruments_loan", v)} 
-                      />
-                      <Label htmlFor="instr_loan" className="text-sm">Necessita comodato</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="instr_na" 
-                        checked={form.instruments_na} 
-                        onCheckedChange={v => updateForm("instruments_na", v)} 
-                      />
-                      <Label htmlFor="instr_na" className="text-sm">Não se aplica</Label>
-                    </div>
-                  </div>
-                  <div className="space-y-2 mt-4">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Especificar Instrumentais</Label>
-                    <Textarea 
-                      value={form.instruments_specify} 
-                      onChange={e => updateForm("instruments_specify", e.target.value)}
-                      placeholder="Descreva os instrumentais necessários..."
-                      className="min-h-[80px] bg-white border-slate-200"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Justificativa Clínica</Label>
-                  <Textarea 
-                    value={form.clinical_indication} 
-                    onChange={e => updateForm("clinical_indication", e.target.value)}
-                    placeholder="Indicação clínica / evidência terapêutica"
-                    className="min-h-[120px] bg-white border-slate-200 shadow-sm"
-                  />
-                </div>
-              </div>
-            )}
-
 
 
             {/* --- PARTE 3: AUDITORIA (Médico Auditor) --- */}
