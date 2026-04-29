@@ -491,8 +491,6 @@ export type Database = {
       }
       opme_requests: {
         Row: {
-          attending_doctor_crm: string | null
-          attending_doctor_name: string | null
           auditor_post_crm: string | null
           auditor_post_date: string | null
           auditor_post_final_opinion: string | null
@@ -570,6 +568,8 @@ export type Database = {
           request_time: string | null
           requester_name: string | null
           requester_register: string | null
+          responsible_name: string | null
+          responsible_register: string | null
           sent_to_cme: boolean | null
           status: Database["public"]["Enums"]["opme_status"]
           stock_available: string | null
@@ -581,8 +581,6 @@ export type Database = {
           warehouse_time: string | null
         }
         Insert: {
-          attending_doctor_crm?: string | null
-          attending_doctor_name?: string | null
           auditor_post_crm?: string | null
           auditor_post_date?: string | null
           auditor_post_final_opinion?: string | null
@@ -660,6 +658,8 @@ export type Database = {
           request_time?: string | null
           requester_name?: string | null
           requester_register?: string | null
+          responsible_name?: string | null
+          responsible_register?: string | null
           sent_to_cme?: boolean | null
           status?: Database["public"]["Enums"]["opme_status"]
           stock_available?: string | null
@@ -671,8 +671,6 @@ export type Database = {
           warehouse_time?: string | null
         }
         Update: {
-          attending_doctor_crm?: string | null
-          attending_doctor_name?: string | null
           auditor_post_crm?: string | null
           auditor_post_date?: string | null
           auditor_post_final_opinion?: string | null
@@ -750,6 +748,8 @@ export type Database = {
           request_time?: string | null
           requester_name?: string | null
           requester_register?: string | null
+          responsible_name?: string | null
+          responsible_register?: string | null
           sent_to_cme?: boolean | null
           status?: Database["public"]["Enums"]["opme_status"]
           stock_available?: string | null

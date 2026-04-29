@@ -80,8 +80,8 @@ export default function OpmeApp() {
     patient_birthdate: "",
     patient_mother_name: "",
     patient_sus: "",
-    attending_doctor_name: "",
-    attending_doctor_crm: "",
+    responsible_name: "",
+    responsible_register: "",
     procedure_date: new Date().toISOString().split("T")[0],
     procedure_type: "eletivo",
     procedure_name: "",
@@ -300,12 +300,12 @@ export default function OpmeApp() {
   };
 
   const next = () => {
-    // Sincronizar dados do médico ao avançar da Parte 1 para a Parte 2
+    // Sincronizar dados do responsável ao avançar da Parte 1 para a Parte 2
     if (part === 1 && step === STEPS.length - 1) {
       setForm((p: any) => ({
         ...p,
-        requester_name: p.requester_name || p.attending_doctor_name,
-        requester_register: p.requester_register || p.attending_doctor_crm
+        requester_name: p.requester_name || p.responsible_name,
+        requester_register: p.requester_register || p.responsible_register
       }));
     }
 
@@ -477,12 +477,12 @@ export default function OpmeApp() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Médico Assistente</Label>
-                    <Input value={form.attending_doctor_name} onChange={e => updateForm("attending_doctor_name", e.target.value)} placeholder="Nome do médico" className="h-12 bg-white shadow-sm border-slate-200" />
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Responsável pelo Procedimento</Label>
+                    <Input value={form.responsible_name} onChange={e => updateForm("responsible_name", e.target.value)} placeholder="Nome do profissional" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">CRM</Label>
-                    <Input value={form.attending_doctor_crm} onChange={e => updateForm("attending_doctor_crm", e.target.value)} placeholder="000000-UF" className="h-12 bg-white shadow-sm border-slate-200" />
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Conselho (CRM/COREN)</Label>
+                    <Input value={form.responsible_register} onChange={e => updateForm("responsible_register", e.target.value)} placeholder="Nº Registro" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
                 </div>
               </div>
@@ -710,12 +710,12 @@ export default function OpmeApp() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Médico Assistente</Label>
-                        <p className="text-sm font-semibold text-slate-800">{form.attending_doctor_name || "---"}</p>
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Responsável</Label>
+                        <p className="text-sm font-semibold text-slate-800">{form.responsible_name || "---"}</p>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">CRM</Label>
-                        <p className="text-sm font-semibold text-slate-800">{form.attending_doctor_crm || "---"}</p>
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Conselho</Label>
+                        <p className="text-sm font-semibold text-slate-800">{form.responsible_register || "---"}</p>
                       </div>
                     </div>
                   </div>
