@@ -661,21 +661,85 @@ export default function OpmeApp() {
 
             {/* --- PARTE 2: REQUISIÇÃO --- */}
             {part === 2 && step === 0 && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Profissional</Label>
-                  <Input value={form.requester_name} onChange={e => updateForm("requester_name", e.target.value)} placeholder="Carimbo ou Identificação" className="h-12 bg-white shadow-sm border-slate-200" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Registro Profissional</Label>
-                  <Input value={form.requester_register} onChange={e => updateForm("requester_register", e.target.value)} placeholder="CRM / CRO / COREN" className="h-12 bg-white shadow-sm border-slate-200" />
-                </div>
+              <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">1. Identificação do Paciente</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Nome Completo</Label>
+                      <p className="text-sm font-semibold text-slate-800">{form.patient_name || "Não informado"}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Prontuário</Label>
+                        <p className="text-sm font-semibold text-slate-800">{form.patient_record || "---"}</p>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Nascimento</Label>
+                        <p className="text-sm font-semibold text-slate-800">{form.patient_birthdate ? new Date(form.patient_birthdate).toLocaleDateString('pt-BR') : "---"}</p>
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Nome da Mãe</Label>
+                      <p className="text-sm font-semibold text-slate-800">{form.patient_mother_name || "---"}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Cartão SUS</Label>
+                      <p className="text-sm font-semibold text-slate-800">{form.patient_sus || "---"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">2. Dados do Procedimento</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Data Prevista</Label>
+                        <p className="text-sm font-semibold text-slate-800">{form.procedure_date ? new Date(form.procedure_date).toLocaleDateString('pt-BR') : "---"}</p>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Tipo</Label>
+                        <p className="text-sm font-semibold text-slate-800 uppercase">{form.procedure_type}</p>
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Procedimento (SIGTAP)</Label>
+                      <p className="text-sm font-semibold text-slate-800">{form.procedure_name || "Não informado"}</p>
+                      <p className="text-[10px] text-slate-500 font-mono mt-1">CÓD: {form.procedure_sigtap_code || "---"}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Sala / Setor</Label>
+                      <p className="text-sm font-semibold text-slate-800">{form.procedure_room || "---"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {part === 2 && step === 1 && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">3. Profissional Solicitante</h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Profissional</Label>
+                      <Input value={form.requester_name} onChange={e => updateForm("requester_name", e.target.value)} placeholder="Carimbo ou Identificação" className="h-12 bg-white shadow-sm border-slate-200" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Registro Profissional (CRM/CRO)</Label>
+                      <Input value={form.requester_register} onChange={e => updateForm("requester_register", e.target.value)} placeholder="Ex: 12345-UF" className="h-12 bg-white shadow-sm border-slate-200" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Localização Cirúrgica</h3>
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase text-slate-400">Lateralidade</Label>
                       <Select value={form.procedure_side_requisicao} onValueChange={(v) => updateForm("procedure_side_requisicao", v)}>
-                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs font-semibold">
                           <SelectValue placeholder="Lado" />
                         </SelectTrigger>
                         <SelectContent>
@@ -693,7 +757,7 @@ export default function OpmeApp() {
                         updateForm("procedure_region_requisicao", v);
                         updateForm("procedure_segment_requisicao", "");
                       }}>
-                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs font-semibold">
                           <SelectValue placeholder="Região" />
                         </SelectTrigger>
                         <SelectContent>
@@ -710,7 +774,7 @@ export default function OpmeApp() {
                         onValueChange={(v) => updateForm("procedure_segment_requisicao", v)}
                         disabled={!form.procedure_region_requisicao}
                       >
-                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs font-semibold">
                           <SelectValue placeholder="Parte/Nível" />
                         </SelectTrigger>
                         <SelectContent>
@@ -723,7 +787,7 @@ export default function OpmeApp() {
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase text-slate-400">Posição</Label>
                       <Select value={form.procedure_position_requisicao} onValueChange={(v) => updateForm("procedure_position_requisicao", v)}>
-                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs">
+                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs font-semibold">
                           <SelectValue placeholder="Posição" />
                         </SelectTrigger>
                         <SelectContent>
@@ -745,7 +809,7 @@ export default function OpmeApp() {
                     <div className="p-3 rounded-lg bg-red-50 border border-red-100 flex flex-col gap-1 mt-2">
                       <div className="flex items-center gap-2">
                         <span className="text-red-500 font-bold">⚠️</span>
-                        <p className="text-[10px] font-black text-red-600 uppercase">Divergência Detectada entre Cadastro e Requisição:</p>
+                        <p className="text-[10px] font-black text-red-600 uppercase">Divergência Detectada:</p>
                       </div>
                       <div className="pl-6 text-[9px] text-red-500 font-bold uppercase">
                         {form.procedure_side_cadastro !== form.procedure_side_requisicao && <p>• Lado: {form.procedure_side_cadastro || 'Não inf.'} vs {form.procedure_side_requisicao}</p>}
