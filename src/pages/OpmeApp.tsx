@@ -1,44 +1,103 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Save, User, Activity, Package, CheckCircle2 } from "lucide-react";
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  User, 
+  Activity, 
+  Package, 
+  CheckCircle2, 
+  Stethoscope, 
+  ClipboardList, 
+  Image as ImageIcon,
+  Plus,
+  Trash2,
+  Camera
+} from "lucide-react";
 
 const STEPS = [
-  { id: "paciente", title: "Paciente", icon: User },
-  { id: "procedimento", title: "Procedimento", icon: Activity },
-  { id: "materiais", title: "Materiais", icon: Package },
+  { id: "paciente", title: "Paciente", icon: User, description: "Identificação" },
+  { id: "procedimento", title: "Procedimento", icon: Activity, description: "Dados Cirúrgicos" },
+  { id: "solicitante", title: "Solicitante", icon: Stethoscope, description: "Profissional" },
+  { id: "materiais", title: "Materiais", icon: Package, description: "OPME Solicitada" },
+  { id: "justificativa", title: "Justificativa", icon: ClipboardList, description: "Instrumentais" },
+  { id: "imagem", title: "Imagem", icon: ImageIcon, description: "Pré-Operatório" },
 ];
 
 export default function OpmeApp() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const recordId = searchParams.get("id");
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
     status: "rascunho",
     patient_name: "",
     patient_record: "",
+    patient_birthdate: "",
+    patient_mother_name: "",
+    patient_sus: "",
     procedure_date: new Date().toISOString().split("T")[0],
     procedure_type: "eletivo",
     procedure_name: "",
+    procedure_sigtap_code: "",
+    procedure_room: "",
+    requester_name: profile?.name || "",
+    requester_register: "",
     opme_requested: [{ description: "", quantity: "1", size_model: "", sigtap: "" }],
+    instruments_specific: false,
+    instruments_loan: false,
+    instruments_na: true,
+    instruments_specify: "",
+    clinical_indication: "",
+    preop_image_types: [],
+    preop_image_other: "",
+    preop_exam_date: "",
+    preop_exam_number: "",
+    preop_finding_description: "",
+    preop_image_attached: false,
+    preop_image_count: 0
   });
 
   useEffect(() => {
-    if (profile?.facility_unit && !form.facility_unit) {
-      setForm(p => ({ ...p, facility_unit: profile.facility_unit }));
+    if (profile) {
+      setForm(p => ({ 
+        ...p, 
+        facility_unit: p.facility_unit || profile.facility_unit || "Hospital Geral",
+        requester_name: p.requester_name || profile.name || ""
+      }));
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (recordId) {
+      (async () => {
+        setLoading(true);
+        const { data, error } = await supabase.from("opme_requests").select("*").eq("id", recordId).single();
+        if (data && !error) {
+          setForm(data);
+        }
+        setLoading(false);
+      })();
+    }
+  }, [recordId]);
 
   useEffect(() => {
     (async () => {
