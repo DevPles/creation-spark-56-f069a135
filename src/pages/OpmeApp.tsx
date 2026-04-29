@@ -173,7 +173,7 @@ export default function OpmeApp() {
   useEffect(() => {
     if (part === null) {
       (async () => {
-        const { data: counts, error } = await supabase.from("opme_requests").select("status, procedure_side_cadastro, procedure_side_requisicao");
+        const { data: counts, error } = await supabase.from("opme_requests").select("status, procedure_side_cadastro, procedure_side_requisicao, procedure_region_cadastro, procedure_region_requisicao, procedure_segment_cadastro, procedure_segment_requisicao");
         if (counts && !error) {
           const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0, divergencias: 0 };
           counts.forEach((c: any) => {
@@ -182,7 +182,11 @@ export default function OpmeApp() {
             if (c.status === "pendente_auditoria") s.auditoria++;
             if (c.status === "pendente_faturamento") s.faturamento++;
             
-            if (c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao) {
+            const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
+            const regionDiv = c.procedure_region_cadastro && c.procedure_region_requisicao && c.procedure_region_cadastro !== c.procedure_region_requisicao;
+            const segmentDiv = c.procedure_segment_cadastro && c.procedure_segment_requisicao && c.procedure_segment_cadastro !== c.procedure_segment_requisicao;
+            
+            if (sideDiv || regionDiv || segmentDiv) {
               s.divergencias++;
             }
           });
