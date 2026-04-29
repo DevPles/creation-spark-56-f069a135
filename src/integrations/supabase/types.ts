@@ -2230,6 +2230,9 @@ export type Database = {
         | "concluido"
         | "cancelado"
         | "reprovado"
+        | "pendente_requisicao"
+        | "pendente_auditoria"
+        | "pendente_faturamento"
       problem_type:
         | "processo"
         | "equipamento"
@@ -2401,6 +2404,9 @@ export const Constants = {
         "concluido",
         "cancelado",
         "reprovado",
+        "pendente_requisicao",
+        "pendente_auditoria",
+        "pendente_faturamento",
       ],
       problem_type: [
         "processo",
