@@ -200,7 +200,7 @@ export default function OpmeApp() {
               </div>
               <div>
                 <h2 className="font-bold text-slate-800">{STEPS[step].title}</h2>
-                <p className="text-xs text-slate-500">Preencha os dados do {STEPS[step].id}</p>
+                <p className="text-xs text-slate-500">{STEPS[step].description}</p>
               </div>
             </div>
 
@@ -209,28 +209,59 @@ export default function OpmeApp() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Unidade de Saúde</Label>
                   <Select value={form.facility_unit} onValueChange={(v) => updateForm("facility_unit", v)}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                      <SelectValue placeholder="Selecione a unidade" />
+                    </SelectTrigger>
                     <SelectContent>
                       {facilities.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Paciente</Label>
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome Completo</Label>
                   <Input 
                     value={form.patient_name} 
                     onChange={e => updateForm("patient_name", e.target.value)}
-                    placeholder="Ex: João da Silva"
-                    className="h-12 bg-white"
+                    placeholder="Nome do paciente"
+                    className="h-12 bg-white shadow-sm border-slate-200"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Nascimento</Label>
+                    <Input 
+                      type="date"
+                      value={form.patient_birthdate} 
+                      onChange={e => updateForm("patient_birthdate", e.target.value)}
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Prontuário</Label>
+                    <Input 
+                      value={form.patient_record} 
+                      onChange={e => updateForm("patient_record", e.target.value)}
+                      placeholder="Nº Registro"
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome da Mãe</Label>
+                  <Input 
+                    value={form.patient_mother_name} 
+                    onChange={e => updateForm("patient_mother_name", e.target.value)}
+                    placeholder="Nome completo da mãe"
+                    className="h-12 bg-white shadow-sm border-slate-200"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Prontuário</Label>
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Cartão SUS</Label>
                   <Input 
-                    value={form.patient_record} 
-                    onChange={e => updateForm("patient_record", e.target.value)}
-                    placeholder="Número do registro"
-                    className="h-12 bg-white"
+                    value={form.patient_sus} 
+                    onChange={e => updateForm("patient_sus", e.target.value)}
+                    placeholder="Número do CNS"
+                    className="h-12 bg-white shadow-sm border-slate-200"
                   />
                 </div>
               </div>
@@ -244,13 +275,15 @@ export default function OpmeApp() {
                     type="date"
                     value={form.procedure_date} 
                     onChange={e => updateForm("procedure_date", e.target.value)}
-                    className="h-12 bg-white"
+                    className="h-12 bg-white shadow-sm border-slate-200"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Tipo</Label>
                   <Select value={form.procedure_type} onValueChange={(v) => updateForm("procedure_type", v)}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="eletivo">Eletivo</SelectItem>
                       <SelectItem value="urgencia">Urgência</SelectItem>
@@ -263,14 +296,57 @@ export default function OpmeApp() {
                   <Input 
                     value={form.procedure_name} 
                     onChange={e => updateForm("procedure_name", e.target.value)}
-                    placeholder="Ex: Artroplastia"
-                    className="h-12 bg-white"
+                    placeholder="Nome conforme SIGTAP"
+                    className="h-12 bg-white shadow-sm border-slate-200"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Cód. SIGTAP</Label>
+                    <Input 
+                      value={form.procedure_sigtap_code} 
+                      onChange={e => updateForm("procedure_sigtap_code", e.target.value)}
+                      placeholder="00.00.00.00"
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Sala / Setor</Label>
+                    <Input 
+                      value={form.procedure_room} 
+                      onChange={e => updateForm("procedure_room", e.target.value)}
+                      placeholder="Ex: Sala 01"
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
                 </div>
               </div>
             )}
 
             {step === 2 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Profissional</Label>
+                  <Input 
+                    value={form.requester_name} 
+                    onChange={e => updateForm("requester_name", e.target.value)}
+                    placeholder="Carimbo ou Identificação"
+                    className="h-12 bg-white shadow-sm border-slate-200"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Registro Profissional</Label>
+                  <Input 
+                    value={form.requester_register} 
+                    onChange={e => updateForm("requester_register", e.target.value)}
+                    placeholder="CRM / CRO / COREN"
+                    className="h-12 bg-white shadow-sm border-slate-200"
+                  />
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
               <div className="space-y-4">
                 {form.opme_requested.map((item: any, idx: number) => (
                   <Card key={idx} className="border-slate-200">
