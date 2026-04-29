@@ -698,6 +698,7 @@ export default function OpmeApp() {
 
             {part === 2 && step === 1 && (
               <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase text-slate-400">Controle Administrativo</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Data Solicitação</Label>
@@ -708,20 +709,29 @@ export default function OpmeApp() {
                     <Input type="time" value={form.request_time} onChange={e => updateForm("request_time", e.target.value)} className="h-12 bg-white" />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Recebido por</Label>
-                  <Input value={form.warehouse_received_by} onChange={e => updateForm("warehouse_received_by", e.target.value)} placeholder="Responsável Almoxarifado" className="h-12 bg-white" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Disponível em Estoque?</Label>
-                  <Select value={form.stock_available} onValueChange={v => updateForm("stock_available", v)}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sim">Sim</SelectItem>
-                      <SelectItem value="nao">Não</SelectItem>
-                      <SelectItem value="parcial">Parcial</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-4 bg-slate-50 p-4 rounded-xl border">
+                  <h4 className="text-[10px] font-bold uppercase text-slate-400">Uso do Almoxarifado</h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Recebido por</Label>
+                      <Input value={form.warehouse_received_by} onChange={e => updateForm("warehouse_received_by", e.target.value)} placeholder="Identificação" className="h-12 bg-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">OPME em Estoque?</Label>
+                      <Select value={form.stock_available} onValueChange={v => updateForm("stock_available", v)}>
+                        <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sim">Sim</SelectItem>
+                          <SelectItem value="nao">Não</SelectItem>
+                          <SelectItem value="parcial">Parcial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="sent_cme" checked={form.sent_to_cme} onCheckedChange={v => updateForm("sent_to_cme", v)} />
+                      <Label htmlFor="sent_cme" className="text-xs">Enviada para CME (se aplicável)</Label>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
