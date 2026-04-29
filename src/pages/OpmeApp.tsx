@@ -363,10 +363,10 @@ export default function OpmeApp() {
                   className="flex items-center gap-4 p-6 bg-white rounded-xl border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all active:scale-[0.99] text-left group w-full"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 group-hover:text-primary transition-colors">{item.label}</p>
+                    <p className={`text-sm font-semibold ${(item as any).color || 'text-slate-900'} group-hover:text-primary transition-colors`}>{item.label}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
                   </div>
-                  <div className="text-3xl font-bold text-slate-900 tabular-nums tracking-tight">{item.value}</div>
+                  <div className={`text-3xl font-bold ${(item as any).color || 'text-slate-900'} tabular-nums tracking-tight`}>{item.value}</div>
                 </button>
               ))}
             </div>
