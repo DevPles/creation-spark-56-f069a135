@@ -388,10 +388,19 @@ export default function OpmeApp() {
                           <Input 
                             value={item.size_model} 
                             onChange={e => updateItem(idx, "size_model", e.target.value)}
-                            placeholder="M, G, 40..."
+                            placeholder="Tamanho"
                             className="h-10 text-sm bg-slate-50/50"
                           />
                         </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] uppercase text-slate-400">Cód. SIGTAP</Label>
+                        <Input 
+                          value={item.sigtap} 
+                          onChange={e => updateItem(idx, "sigtap", e.target.value)}
+                          placeholder="00.00.00.00"
+                          className="h-10 text-sm bg-slate-50/50"
+                        />
                       </div>
                     </CardContent>
                   </Card>
@@ -401,8 +410,127 @@ export default function OpmeApp() {
                   className="w-full border-dashed border-2 h-12 text-slate-500"
                   onClick={addItem}
                 >
-                  + Adicionar outro material
+                  <Plus className="w-4 h-4 mr-2" /> Adicionar outro material
                 </Button>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-6">
+                <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                  <h3 className="text-xs font-bold uppercase text-slate-400">Instrumentais / Acessórios</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="instr_spec" 
+                        checked={form.instruments_specific} 
+                        onCheckedChange={v => updateForm("instruments_specific", v)} 
+                      />
+                      <Label htmlFor="instr_spec" className="text-sm">Necessita instrumental específico</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="instr_loan" 
+                        checked={form.instruments_loan} 
+                        onCheckedChange={v => updateForm("instruments_loan", v)} 
+                      />
+                      <Label htmlFor="instr_loan" className="text-sm">Necessita comodato</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="instr_na" 
+                        checked={form.instruments_na} 
+                        onCheckedChange={v => updateForm("instruments_na", v)} 
+                      />
+                      <Label htmlFor="instr_na" className="text-sm">Não se aplica</Label>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Especificar Instrumentais</Label>
+                    <Textarea 
+                      value={form.instruments_specify} 
+                      onChange={e => updateForm("instruments_specify", e.target.value)}
+                      placeholder="Descreva os instrumentais necessários..."
+                      className="min-h-[80px] bg-white border-slate-200"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Justificativa Clínica</Label>
+                  <Textarea 
+                    value={form.clinical_indication} 
+                    onChange={e => updateForm("clinical_indication", e.target.value)}
+                    placeholder="Indicação clínica / evidência terapêutica"
+                    className="min-h-[120px] bg-white border-slate-200 shadow-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Exame de Imagem</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {["Radiografia", "Tomografia", "Ressonância", "Ultrassonografia"].map(type => (
+                      <div key={type} className="flex items-center space-x-2 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                        <Checkbox 
+                          id={`img_${type}`} 
+                          checked={form.preop_image_types?.includes(type)}
+                          onCheckedChange={(v) => {
+                            const current = form.preop_image_types || [];
+                            updateForm("preop_image_types", v ? [...current, type] : current.filter((t: string) => t !== type));
+                          }}
+                        />
+                        <Label htmlFor={`img_${type}`} className="text-xs">{type}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Data do Exame</Label>
+                    <Input 
+                      type="date"
+                      value={form.preop_exam_date} 
+                      onChange={e => updateForm("preop_exam_date", e.target.value)}
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Nº do Laudo</Label>
+                    <Input 
+                      value={form.preop_exam_number} 
+                      onChange={e => updateForm("preop_exam_number", e.target.value)}
+                      placeholder="Nº Exame"
+                      className="h-12 bg-white shadow-sm border-slate-200"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Achados / Descrição</Label>
+                  <Textarea 
+                    value={form.preop_finding_description} 
+                    onChange={e => updateForm("preop_finding_description", e.target.value)}
+                    placeholder="Descrição da indicação..."
+                    className="min-h-[100px] bg-white border-slate-200"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple />
+                  <Button 
+                    variant="outline" 
+                    className="w-full h-24 border-dashed border-2 flex flex-col gap-2 bg-slate-50"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera className="w-8 h-8 text-primary/40" />
+                    <span className="text-xs font-medium text-slate-500">Anexar Imagem Pré-Operatória</span>
+                  </Button>
+                </div>
               </div>
             )}
           </motion.div>
