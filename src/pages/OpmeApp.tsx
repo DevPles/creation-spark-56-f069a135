@@ -710,12 +710,12 @@ export default function OpmeApp() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Médico Assistente</Label>
-                        <p className="text-sm font-semibold text-slate-800">{form.attending_doctor_name || "---"}</p>
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Responsável</Label>
+                        <p className="text-sm font-semibold text-slate-800">{form.responsible_name || "---"}</p>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">CRM</Label>
-                        <p className="text-sm font-semibold text-slate-800">{form.attending_doctor_crm || "---"}</p>
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Conselho</Label>
+                        <p className="text-sm font-semibold text-slate-800">{form.responsible_register || "---"}</p>
                       </div>
                     </div>
                   </div>
