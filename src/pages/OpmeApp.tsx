@@ -11,28 +11,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  User, 
-  Activity, 
-  Package, 
-  CheckCircle2, 
-  Stethoscope, 
-  ClipboardList, 
-  Image as ImageIcon,
-  Plus,
-  Trash2,
-  Camera
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const STEPS = [
-  { id: "paciente", title: "Paciente", icon: User, description: "Identificação" },
-  { id: "procedimento", title: "Procedimento", icon: Activity, description: "Dados Cirúrgicos" },
-  { id: "solicitante", title: "Solicitante", icon: Stethoscope, description: "Profissional" },
-  { id: "materiais", title: "Materiais", icon: Package, description: "OPME Solicitada" },
-  { id: "justificativa", title: "Justificativa", icon: ClipboardList, description: "Instrumentais" },
-  { id: "imagem", title: "Imagem", icon: ImageIcon, description: "Pré-Operatório" },
+  { id: "paciente", title: "Paciente", description: "Identificação" },
+  { id: "procedimento", title: "Procedimento", description: "Dados Cirúrgicos" },
+  { id: "solicitante", title: "Solicitante", description: "Profissional" },
+  { id: "materiais", title: "Materiais", description: "OPME Solicitada" },
+  { id: "justificativa", title: "Justificativa", description: "Instrumentais" },
+  { id: "imagem", title: "Imagem", description: "Pré-Operatório" },
 ];
 
 export default function OpmeApp() {
@@ -153,8 +140,6 @@ export default function OpmeApp() {
   const next = () => step < STEPS.length - 1 && setStep(step + 1);
   const prev = () => step > 0 && setStep(step - 1);
 
-  const CurrentIcon = STEPS[step].icon;
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -194,14 +179,9 @@ export default function OpmeApp() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <CurrentIcon className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-800">{STEPS[step].title}</h2>
-                <p className="text-xs text-slate-500">{STEPS[step].description}</p>
-              </div>
+            <div className="mb-6">
+              <h2 className="font-bold text-slate-800">{STEPS[step].title}</h2>
+              <p className="text-xs text-slate-500">{STEPS[step].description}</p>
             </div>
 
             {step === 0 && (
@@ -410,7 +390,7 @@ export default function OpmeApp() {
                   className="w-full border-dashed border-2 h-12 text-slate-500"
                   onClick={addItem}
                 >
-                  <Plus className="w-4 h-4 mr-2" /> Adicionar outro material
+                  Adicionar outro material
                 </Button>
               </div>
             )}
@@ -527,7 +507,6 @@ export default function OpmeApp() {
                     className="w-full h-24 border-dashed border-2 flex flex-col gap-2 bg-slate-50"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Camera className="w-8 h-8 text-primary/40" />
                     <span className="text-xs font-medium text-slate-500">Anexar Imagem Pré-Operatória</span>
                   </Button>
                 </div>
@@ -550,7 +529,7 @@ export default function OpmeApp() {
         
         {step < STEPS.length - 1 ? (
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
-            Próximo <ArrowRight className="ml-2 w-4 h-4" />
+            Próximo
           </Button>
         ) : (
           <Button 
@@ -564,9 +543,7 @@ export default function OpmeApp() {
                 Salvando...
               </div>
             ) : (
-              <span className="flex items-center gap-2">
-                Finalizar Parte 1 <CheckCircle2 className="w-4 h-4" />
-              </span>
+              "Finalizar Parte 1"
             )}
           </Button>
         )}
