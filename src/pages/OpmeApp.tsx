@@ -171,7 +171,7 @@ export default function OpmeApp() {
         </Button>
         <div className="text-center">
           <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h1>
-          <p className="text-[10px] text-slate-500 uppercase">{STEPS[step].title}</p>
+          <p className="text-[10px] text-slate-500 uppercase">{STEPS[step].description}</p>
         </div>
         <div className="w-10" />
       </header>
