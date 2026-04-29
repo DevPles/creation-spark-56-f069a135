@@ -256,9 +256,10 @@ const Login = () => {
                     <button 
                       type="button"
                       onClick={() => setIsOpmeMode(!isOpmeMode)} 
-                      className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                      className={`text-xs transition-colors flex items-center gap-1.5 ${isOpmeMode ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"}`}
                     >
-                      {isOpmeMode ? "Voltar ao padrão" : "Entrar como OPME"}
+                      <div className={`w-2.5 h-2.5 rounded-full border ${isOpmeMode ? "bg-primary border-primary shadow-[0_0_5px_rgba(59,130,246,0.5)]" : "border-muted-foreground/50"}`} />
+                      OPME
                     </button>
                   </div>
                   {isOpmeMode && (
