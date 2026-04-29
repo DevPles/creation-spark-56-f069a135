@@ -304,53 +304,71 @@ export default function OpmeApp() {
   if (part === null) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
-        <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
+        <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-20">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="text-center">
-            <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Módulos OPME</h1>
-            <p className="text-[10px] text-slate-500 uppercase">Gestão Hospitalar</p>
+            <h1 className="text-base font-bold text-slate-900 uppercase tracking-wider">Módulos OPME</h1>
+            <p className="text-xs text-slate-500 uppercase">Gestão Hospitalar</p>
           </div>
           <div className="w-10" />
         </header>
 
-        <main className="flex-1 p-4 overflow-y-auto pb-10 space-y-6">
-          <div className="grid grid-cols-2 gap-3">
+        <main className="flex-1 p-6 overflow-y-auto pb-10 space-y-8">
+          <div className="grid grid-cols-2 gap-4">
             {[
-              { id: 1, title: "CADASTRO", color: "border-blue-500 bg-blue-50" },
-              { id: 2, title: "REQUISIÇÃO", color: "border-emerald-500 bg-emerald-50" },
-              { id: 3, title: "AUDITORIA", color: "border-amber-500 bg-amber-50" },
-              { id: 4, title: "FATURAMENTO", color: "border-slate-500 bg-slate-50" },
+              { id: 1, title: "CADASTRO", color: "border-primary/20 bg-white hover:bg-slate-50" },
+              { id: 2, title: "REQUISIÇÃO", color: "border-primary/20 bg-white hover:bg-slate-50" },
+              { id: 3, title: "AUDITORIA", color: "border-primary/20 bg-white hover:bg-slate-50" },
+              { id: 4, title: "FATURAMENTO", color: "border-primary/20 bg-white hover:bg-slate-50" },
             ].map((card) => (
               <button
                 key={card.id}
                 onClick={() => setPart(card.id)}
-                className={`p-4 rounded-xl border-2 text-left shadow-sm transition-all active:scale-95 ${card.color}`}
+                className={`p-6 rounded-2xl border shadow-md text-left transition-all active:scale-95 flex flex-col items-center justify-center gap-2 group ${card.color}`}
               >
-                <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-tighter">{card.title}</h3>
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <div className="w-5 h-5 rounded-full border-2 border-primary" />
+                </div>
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">{card.title}</h3>
               </button>
             ))}
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Mini Dashboard</h3>
-            <div className="grid grid-cols-1 gap-2">
-              <Card className="border-none shadow-sm bg-white overflow-hidden">
-                <CardContent className="p-0">
-                  {[
-                    { label: "Prontos para Requisição", value: stats.requisicao, sub: "Equipe médica pode iniciar etapa 2", color: "bg-blue-500" },
-                    { label: "Aguardando Auditoria", value: stats.auditoria, sub: "Prontos para validação médica", color: "bg-emerald-500" },
-                    { label: "Prontos para Faturamento", value: stats.faturamento, sub: "Finalizados aguardando fechamento", color: "bg-amber-500" },
-                    { label: "Total Finalizados", value: stats.cadastro, sub: "Processos concluídos no mês", color: "bg-slate-500" },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4 border-b last:border-0 border-slate-50">
-                      <div className={`w-1 h-8 rounded-full ${item.color}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase">{item.label}</p>
-                        <p className="text-[9px] text-slate-400 truncate">{item.sub}</p>
-                      </div>
-                      <div className="text-xl font-black text-slate-800">{item.value}</div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Acompanhamento</h3>
+              <div className="h-px flex-1 bg-slate-200 ml-4" />
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                { id: 2, label: "Pendentes Requisição", value: stats.requisicao, sub: "Equipe médica precisa preencher", color: "bg-blue-500" },
+                { id: 3, label: "Pendentes Auditoria", value: stats.auditoria, sub: "Aguardando validação técnica", color: "bg-emerald-500" },
+                { id: 4, label: "Pendentes Faturamento", value: stats.faturamento, sub: "Aguardando codificação final", color: "bg-amber-500" },
+                { id: 1, label: "Novos Cadastros", value: stats.cadastro, sub: "Iniciados recentemente", color: "bg-slate-500" },
+              ].map((item, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => setPart(item.id)}
+                  className="flex items-center gap-4 p-5 bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-left group w-full"
+                >
+                  <div className={`w-1.5 h-10 rounded-full ${item.color} shadow-sm`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-black text-slate-800 uppercase tracking-tighter group-hover:text-primary transition-colors">{item.label}</p>
+                    <p className="text-[10px] text-slate-400 font-medium truncate">{item.sub}</p>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <div className="text-2xl font-black text-slate-900 tabular-nums">{item.value}</div>
+                    <div className="text-[9px] font-bold text-primary uppercase">Abrir →</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
                     </div>
                   ))}
                 </CardContent>
