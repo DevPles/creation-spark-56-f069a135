@@ -44,6 +44,7 @@ export default function OpmeApp() {
   const [searchParams] = useSearchParams();
   const recordId = searchParams.get("id");
   const [part, setPart] = useState<number | null>(null);
+  const [preopExams, setPreopExams] = useState<any[]>([]);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
