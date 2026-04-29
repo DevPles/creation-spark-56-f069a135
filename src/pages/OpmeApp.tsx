@@ -603,6 +603,26 @@ export default function OpmeApp() {
                   <Label className="text-xs font-semibold uppercase text-slate-500">Registro Profissional</Label>
                   <Input value={form.requester_register} onChange={e => updateForm("requester_register", e.target.value)} placeholder="CRM / CRO / COREN" className="h-12 bg-white shadow-sm border-slate-200" />
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade / Local (Requisição Médica)</Label>
+                  <Select value={form.procedure_side_requisicao} onValueChange={(v) => updateForm("procedure_side_requisicao", v)}>
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                      <SelectValue placeholder="Selecione o lado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Direita">Direita</SelectItem>
+                      <SelectItem value="Esquerda">Esquerda</SelectItem>
+                      <SelectItem value="Bilateral">Bilateral</SelectItem>
+                      <SelectItem value="N/A">Não se aplica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {form.procedure_side_cadastro && form.procedure_side_requisicao && form.procedure_side_cadastro !== form.procedure_side_requisicao && (
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-100 flex items-center gap-2 mt-2">
+                      <span className="text-red-500 font-bold">⚠️</span>
+                      <p className="text-[10px] font-black text-red-600 uppercase">Divergência: Cadastro indica {form.procedure_side_cadastro}</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
