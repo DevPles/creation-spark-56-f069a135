@@ -497,45 +497,77 @@ export default function OpmeApp() {
             {part === 1 && step === 2 && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Exame de Imagem</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {["Radiografia", "Tomografia", "Ressonância", "Ultrassonografia"].map(type => (
-                      <div key={type} className="flex items-center space-x-2 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-                        <Checkbox 
-                          id={`img_${type}`} 
-                          checked={form.preop_image_types?.includes(type)}
-                          onCheckedChange={(v) => {
-                            const current = form.preop_image_types || [];
-                            updateForm("preop_image_types", v ? [...current, type] : current.filter((t: string) => t !== type));
-                          }}
-                        />
-                        <Label htmlFor={`img_${type}`} className="text-xs">{type}</Label>
-                      </div>
-                    ))}
-                  </div>
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Adicionar Exame de Imagem</Label>
+                  <Select onValueChange={(v) => {
+                    if (!v) return;
+                    const newExam = { id: Math.random().toString(36), type: v, date: "", file: null, url: "" };
+                    setPreopExams(prev => [...prev, newExam]);
+                  }}>
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200 text-sm">
+                      <SelectValue placeholder="Selecione o exame para anexar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Radiografia">Radiografia</SelectItem>
+                      <SelectItem value="Tomografia">Tomografia</SelectItem>
+                      <SelectItem value="Ressonância">Ressonância</SelectItem>
+                      <SelectItem value="Ultrassonografia">Ultrassonografia</SelectItem>
+                      <SelectItem value="Ecocardiograma">Ecocardiograma</SelectItem>
+                      <SelectItem value="Cintilografia">Cintilografia</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Data do Exame</Label>
-                    <Input type="date" value={form.preop_exam_date} onChange={e => updateForm("preop_exam_date", e.target.value)} className="h-12 bg-white shadow-sm border-slate-200" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Nº do Laudo</Label>
-                    <Input value={form.preop_exam_number} onChange={e => updateForm("preop_exam_number", e.target.value)} placeholder="Nº Exame" className="h-12 bg-white shadow-sm border-slate-200" />
-                  </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {preopExams.map((exam, idx) => (
+                    <Card key={exam.id} className="border-slate-100 shadow-md overflow-hidden bg-white">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-[10px]">IMG</div>
+                            <span className="text-sm font-bold text-slate-900">{exam.type}</span>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => {
+                            setPreopExams(prev => prev.filter(e => e.id !== exam.id));
+                          }}>×</Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase text-slate-400 font-bold">Data do Exame</Label>
+                            <Input type="date" className="h-9 text-xs" value={exam.date} onChange={(e) => {
+                              const newExams = [...preopExams];
+                              newExams[idx].date = e.target.value;
+                              setPreopExams(newExams);
+                            }} />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase text-slate-400 font-bold">Documento</Label>
+                            {exam.url ? (
+                              <Button variant="outline" className="w-full h-9 text-[10px] font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700" onClick={() => window.open(exam.url, "_blank")}>👁️ Ver Arquivo</Button>
+                            ) : (
+                              <div className="relative">
+                                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const url = URL.createObjectURL(file);
+                                    const newExams = [...preopExams];
+                                    newExams[idx].file = file;
+                                    newExams[idx].url = url;
+                                    setPreopExams(newExams);
+                                  }
+                                }} />
+                                <Button variant="outline" className="w-full h-9 text-[10px] font-bold uppercase border-dashed">+ Upload</Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Achados / Descrição</Label>
-                  <Textarea value={form.preop_finding_description} onChange={e => updateForm("preop_finding_description", e.target.value)} placeholder="Descrição da indicação..." className="min-h-[100px] bg-white border-slate-200" />
-                </div>
-
-                <div className="space-y-4">
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple />
-                  <Button variant="outline" className="w-full h-24 border-dashed border-2 flex flex-col gap-2 bg-slate-50" onClick={() => fileInputRef.current?.click()}>
-                    <span className="text-xs font-medium text-slate-500">Anexar Imagem Pré-Operatória</span>
-                  </Button>
+                <div className="space-y-2 pt-4">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Achados / Descrição Clínica</Label>
+                  <Textarea value={form.preop_finding_description} onChange={e => updateForm("preop_finding_description", e.target.value)} placeholder="Descreva brevemente os achados..." className="min-h-[100px] bg-white border-slate-200" />
                 </div>
               </div>
             )}
