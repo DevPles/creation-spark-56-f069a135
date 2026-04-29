@@ -136,7 +136,9 @@ const Login = () => {
   const [name, setName] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isOpmeMode, setIsOpmeMode] = useState(false);
+  const [isOpmeMode, setIsOpmeMode] = useState(() => {
+    return new URLSearchParams(window.location.search).get("mode") === "opme";
+  });
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
