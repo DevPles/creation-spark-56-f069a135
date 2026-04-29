@@ -300,6 +300,15 @@ export default function OpmeApp() {
   };
 
   const next = () => {
+    // Sincronizar dados do médico ao avançar da Parte 1 para a Parte 2
+    if (part === 1 && step === STEPS.length - 1) {
+      setForm((p: any) => ({
+        ...p,
+        requester_name: p.requester_name || p.attending_doctor_name,
+        requester_register: p.requester_register || p.attending_doctor_crm
+      }));
+    }
+
     if (step < STEPS.length - 1) {
       setStep(step + 1);
     } else if (part < 3) {
