@@ -47,6 +47,7 @@ export default function OpmeApp() {
   const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<string[]>([]);
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
+  const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[] }>({ idx: -1, items: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const STEPS = part === 1 ? STEPS_P1 : part === 2 ? STEPS_P2 : STEPS_P3;
@@ -196,6 +197,17 @@ export default function OpmeApp() {
       arr[idx] = { ...arr[idx], [field]: value };
       return { ...p, opme_requested: arr };
     });
+
+    if (field === "description" && value.length > 2) {
+      supabase
+        .from("opme_materials")
+        .select("code, name")
+        .ilike("name", `%${value}%`)
+        .limit(5)
+        .then(({ data }) => setMaterialSuggestions({ idx, items: data || [] }));
+    } else if (field === "description") {
+      setMaterialSuggestions({ idx: -1, items: [] });
+    }
   };
 
   const addItem = () => {
@@ -472,7 +484,7 @@ export default function OpmeApp() {
                           </Button>
                         )}
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 relative">
                         <Label className="text-[10px] uppercase text-slate-400">Descrição</Label>
                         <Input 
                           value={item.description} 
@@ -480,6 +492,26 @@ export default function OpmeApp() {
                           placeholder="Nome do material"
                           className="h-10 text-sm bg-slate-50/50"
                         />
+                        {materialSuggestions.idx === idx && materialSuggestions.items.length > 0 && (
+                          <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-40 overflow-auto">
+                            {materialSuggestions.items.map((m) => (
+                              <button
+                                key={m.code}
+                                type="button"
+                                className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                                onClick={() => {
+                                  const arr = [...form.opme_requested];
+                                  arr[idx] = { ...arr[idx], description: m.name, sigtap: m.code };
+                                  setForm((p: any) => ({ ...p, opme_requested: arr }));
+                                  setMaterialSuggestions({ idx: -1, items: [] });
+                                }}
+                              >
+                                <p className="text-[10px] font-bold text-slate-800">{m.name}</p>
+                                <p className="text-[9px] text-slate-500">Cód: {m.code}</p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
