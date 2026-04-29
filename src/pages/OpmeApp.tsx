@@ -343,27 +343,23 @@ export default function OpmeApp() {
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Acompanhamento</h3>
               <div className="h-px flex-1 bg-slate-200 ml-4" />
             </div>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-4">
               {[
-                { id: 2, label: "Pendentes Requisição", value: stats.requisicao, sub: "Equipe médica precisa preencher", color: "bg-blue-500" },
-                { id: 3, label: "Pendentes Auditoria", value: stats.auditoria, sub: "Aguardando validação técnica", color: "bg-emerald-500" },
-                { id: 4, label: "Pendentes Faturamento", value: stats.faturamento, sub: "Aguardando codificação final", color: "bg-amber-500" },
-                { id: 1, label: "Novos Cadastros", value: stats.cadastro, sub: "Iniciados recentemente", color: "bg-slate-500" },
+                { id: 2, label: "Pendentes Requisição", value: stats.requisicao, sub: "Equipe médica precisa preencher" },
+                { id: 3, label: "Pendentes Auditoria", value: stats.auditoria, sub: "Aguardando validação técnica" },
+                { id: 4, label: "Pendentes Faturamento", value: stats.faturamento, sub: "Aguardando codificação final" },
+                { id: 1, label: "Novos Cadastros", value: stats.cadastro, sub: "Iniciados recentemente" },
               ].map((item, i) => (
                 <button 
                   key={i} 
                   onClick={() => setPart(item.id)}
-                  className="flex items-center gap-4 p-5 bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-left group w-full"
+                  className="flex items-center gap-4 p-6 bg-white rounded-xl border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all active:scale-[0.99] text-left group w-full"
                 >
-                  <div className={`w-1.5 h-10 rounded-full ${item.color} shadow-sm`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-black text-slate-800 uppercase tracking-tighter group-hover:text-primary transition-colors">{item.label}</p>
-                    <p className="text-[10px] text-slate-400 font-medium truncate">{item.sub}</p>
+                    <p className="text-sm font-semibold text-slate-900 group-hover:text-primary transition-colors">{item.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <div className="text-2xl font-black text-slate-900 tabular-nums">{item.value}</div>
-                    <div className="text-[9px] font-bold text-primary uppercase">Abrir →</div>
-                  </div>
+                  <div className="text-3xl font-bold text-slate-900 tabular-nums tracking-tight">{item.value}</div>
                 </button>
               ))}
             </div>
