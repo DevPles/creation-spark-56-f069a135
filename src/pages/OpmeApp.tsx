@@ -35,6 +35,12 @@ export default function OpmeApp() {
   });
 
   useEffect(() => {
+    if (profile?.facility_unit && !form.facility_unit) {
+      setForm(p => ({ ...p, facility_unit: profile.facility_unit }));
+    }
+  }, [profile]);
+
+  useEffect(() => {
     (async () => {
       const [{ data: profs }, { data: ctrs }] = await Promise.all([
         supabase.from("profiles").select("facility_unit"),
@@ -45,7 +51,7 @@ export default function OpmeApp() {
       (ctrs || []).forEach((c: any) => c.unit && set.add(c.unit));
       setFacilities(Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR")));
     })();
-  }, [profile?.facility_unit]);
+  }, []);
 
   const updateForm = (k: string, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
 
