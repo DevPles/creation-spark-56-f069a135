@@ -80,6 +80,8 @@ export default function OpmeApp() {
     patient_birthdate: "",
     patient_mother_name: "",
     patient_sus: "",
+    attending_doctor_name: "",
+    attending_doctor_crm: "",
     procedure_date: new Date().toISOString().split("T")[0],
     procedure_type: "eletivo",
     procedure_name: "",
@@ -463,6 +465,16 @@ export default function OpmeApp() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Cartão SUS</Label>
                   <Input value={form.patient_sus} onChange={e => updateForm("patient_sus", e.target.value)} placeholder="Número do CNS" className="h-12 bg-white shadow-sm border-slate-200" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Médico Assistente</Label>
+                    <Input value={form.attending_doctor_name} onChange={e => updateForm("attending_doctor_name", e.target.value)} placeholder="Nome do médico" className="h-12 bg-white shadow-sm border-slate-200" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">CRM</Label>
+                    <Input value={form.attending_doctor_crm} onChange={e => updateForm("attending_doctor_crm", e.target.value)} placeholder="000000-UF" className="h-12 bg-white shadow-sm border-slate-200" />
+                  </div>
                 </div>
               </div>
             )}
