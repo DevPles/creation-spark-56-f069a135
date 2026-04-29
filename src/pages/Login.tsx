@@ -238,7 +238,11 @@ const Login = () => {
                   </div>
                   <button type="submit" disabled={loading} className={`${neumorphBtn} w-full bg-[hsl(220_15%_94%)] text-foreground`}>{loading ? "Entrando..." : "Entrar"}</button>
                 </form>
-                <button onClick={() => setShowReset(true)} className="w-full text-sm text-muted-foreground hover:text-primary transition-colors text-center">Esqueci minha senha</button>
+                <div className="flex items-center justify-center gap-4 w-full">
+                  <button onClick={() => setShowReset(true)} className="text-xs text-muted-foreground hover:text-primary transition-colors">Esqueci minha senha</button>
+                  <span className="text-muted-foreground/30">|</span>
+                  <button onClick={() => navigate("/opme-app")} className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">Acesso OPME</button>
+                </div>
               </motion.div>
             ) : (
               <motion.div key="register-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full max-w-xs space-y-5">
