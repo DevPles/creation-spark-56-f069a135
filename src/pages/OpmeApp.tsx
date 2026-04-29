@@ -1065,6 +1065,7 @@ export default function OpmeApp() {
               </div>
             )}
 
+            {/* --- PARTE 4: FATURAMENTO (Justificativa Cirurgião) --- */}
             {part === 4 && step === 1 && (
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase text-slate-400">Justificativa do Cirurgião</h3>
@@ -1083,6 +1084,7 @@ export default function OpmeApp() {
               </div>
             )}
 
+            {/* --- PARTE 4: FATURAMENTO (Dados Faturamento) --- */}
             {part === 4 && step === 2 && (
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase text-slate-400">Dados do Faturamento</h3>
@@ -1112,7 +1114,7 @@ export default function OpmeApp() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Compatibilidade Utilizada x Faturada</Label>
                   <Select value={form.billing_opme_compatibility} onValueChange={v => updateForm("billing_opme_compatibility", v)}>
-                    <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sim">Sim</SelectItem>
                       <SelectItem value="nao">Não</SelectItem>
