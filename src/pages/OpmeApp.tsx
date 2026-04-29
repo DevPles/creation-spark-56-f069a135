@@ -290,7 +290,7 @@ export default function OpmeApp() {
               <p className="text-xs text-slate-500">{STEPS[step].description}</p>
             </div>
 
-            {step === 0 && (
+            {part === 1 && step === 0 && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Unidade de Saúde</Label>
@@ -353,7 +353,7 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {step === 1 && (
+            {part === 1 && step === 1 && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Data do Procedimento</Label>
@@ -431,7 +431,7 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {step === 2 && (
+            {part === 1 && step === 2 && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Profissional</Label>
@@ -454,7 +454,7 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {step === 3 && (
+            {part === 1 && step === 3 && (
               <div className="space-y-4">
                 {form.opme_requested.map((item: any, idx: number) => (
                   <Card key={idx} className="border-slate-200">
@@ -523,7 +523,7 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {step === 4 && (
+            {part === 1 && step === 4 && (
               <div className="space-y-6">
                 <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                   <h3 className="text-xs font-bold uppercase text-slate-400">Instrumentais / Acessórios</h3>
@@ -576,7 +576,7 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {step === 5 && (
+            {part === 1 && step === 5 && (
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Exame de Imagem</Label>
