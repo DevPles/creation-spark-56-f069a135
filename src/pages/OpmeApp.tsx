@@ -699,6 +699,16 @@ export default function OpmeApp() {
                       <Label className="text-[9px] uppercase text-slate-400 font-bold">Cartão SUS</Label>
                       <p className="text-sm font-semibold text-slate-800">{form.patient_sus || "---"}</p>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Médico Assistente</Label>
+                        <p className="text-sm font-semibold text-slate-800">{form.attending_doctor_name || "---"}</p>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <Label className="text-[9px] uppercase text-slate-400 font-bold">CRM</Label>
+                        <p className="text-sm font-semibold text-slate-800">{form.attending_doctor_crm || "---"}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
