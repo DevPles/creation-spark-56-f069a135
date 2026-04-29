@@ -100,6 +100,7 @@ export default function OpmeApp() {
     preop_finding_description: "",
     preop_image_attached: false,
     preop_image_count: 0,
+    preop_validation_responsible: "",
     // Campos Parte 2
     auditor_pre_name: "",
     auditor_pre_crm: "",
