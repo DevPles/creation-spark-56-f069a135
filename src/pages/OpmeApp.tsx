@@ -53,7 +53,8 @@ export default function OpmeApp() {
     cadastro: 0,
     requisicao: 0,
     auditoria: 0,
-    faturamento: 0
+    faturamento: 0,
+    divergencias: 0
   });
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[] }>({ idx: -1, items: [] });
@@ -172,14 +173,18 @@ export default function OpmeApp() {
   useEffect(() => {
     if (part === null) {
       (async () => {
-        const { data: counts, error } = await supabase.from("opme_requests").select("status");
+        const { data: counts, error } = await supabase.from("opme_requests").select("status, procedure_side_cadastro, procedure_side_requisicao");
         if (counts && !error) {
-          const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0 };
+          const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0, divergencias: 0 };
           counts.forEach((c: any) => {
             if (c.status === "rascunho") s.cadastro++;
             if (c.status === "pendente_requisicao") s.requisicao++;
             if (c.status === "pendente_auditoria") s.auditoria++;
             if (c.status === "pendente_faturamento") s.faturamento++;
+            
+            if (c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao) {
+              s.divergencias++;
+            }
           });
           setStats(s);
         }
@@ -350,6 +355,7 @@ export default function OpmeApp() {
                 { id: 3, label: "Pendentes Auditoria", value: stats.auditoria, sub: "Aguardando validação técnica" },
                 { id: 4, label: "Pendentes Faturamento", value: stats.faturamento, sub: "Aguardando codificação final" },
                 { id: 1, label: "Novos Cadastros", value: stats.cadastro, sub: "Iniciados recentemente" },
+                { id: 3, label: "Divergências Local", value: stats.divergencias, sub: "Lado cirúrgico divergente", color: "text-red-600" },
               ].map((item, i) => (
                 <button 
                   key={i} 
@@ -357,10 +363,10 @@ export default function OpmeApp() {
                   className="flex items-center gap-4 p-6 bg-white rounded-xl border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all active:scale-[0.99] text-left group w-full"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 group-hover:text-primary transition-colors">{item.label}</p>
+                    <p className={`text-sm font-semibold ${(item as any).color || 'text-slate-900'} group-hover:text-primary transition-colors`}>{item.label}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
                   </div>
-                  <div className="text-3xl font-bold text-slate-900 tabular-nums tracking-tight">{item.value}</div>
+                  <div className={`text-3xl font-bold ${(item as any).color || 'text-slate-900'} tabular-nums tracking-tight`}>{item.value}</div>
                 </button>
               ))}
             </div>
@@ -491,6 +497,20 @@ export default function OpmeApp() {
                     <Input value={form.procedure_room} onChange={e => updateForm("procedure_room", e.target.value)} placeholder="Ex: Sala 01" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade / Local (Cadastro)</Label>
+                  <Select value={form.procedure_side_cadastro} onValueChange={(v) => updateForm("procedure_side_cadastro", v)}>
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                      <SelectValue placeholder="Selecione o lado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Direita">Direita</SelectItem>
+                      <SelectItem value="Esquerda">Esquerda</SelectItem>
+                      <SelectItem value="Bilateral">Bilateral</SelectItem>
+                      <SelectItem value="N/A">Não se aplica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
 
@@ -582,6 +602,26 @@ export default function OpmeApp() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Registro Profissional</Label>
                   <Input value={form.requester_register} onChange={e => updateForm("requester_register", e.target.value)} placeholder="CRM / CRO / COREN" className="h-12 bg-white shadow-sm border-slate-200" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade / Local (Requisição Médica)</Label>
+                  <Select value={form.procedure_side_requisicao} onValueChange={(v) => updateForm("procedure_side_requisicao", v)}>
+                    <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
+                      <SelectValue placeholder="Selecione o lado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Direita">Direita</SelectItem>
+                      <SelectItem value="Esquerda">Esquerda</SelectItem>
+                      <SelectItem value="Bilateral">Bilateral</SelectItem>
+                      <SelectItem value="N/A">Não se aplica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {form.procedure_side_cadastro && form.procedure_side_requisicao && form.procedure_side_cadastro !== form.procedure_side_requisicao && (
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-100 flex items-center gap-2 mt-2">
+                      <span className="text-red-500 font-bold">⚠️</span>
+                      <p className="text-[10px] font-black text-red-600 uppercase">Divergência: Cadastro indica {form.procedure_side_cadastro}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
