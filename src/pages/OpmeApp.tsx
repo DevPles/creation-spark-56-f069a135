@@ -392,10 +392,11 @@ export default function OpmeApp() {
       let nextStatus = form.status;
       if (part === 1) nextStatus = "pendente_requisicao";
       else if (part === 2) nextStatus = "pendente_auditoria";
-      else if (part === 3) nextStatus = "pendente_controle";
+      else if (part === 3) {
+        nextStatus = step === 0 ? "pendente_controle" : "pendente_faturamento";
+      }
       else if (part === 5) nextStatus = "pendente_consumo";
       else if (part === 6) nextStatus = "pendente_auditoria_post";
-      else if (part === 7) nextStatus = "pendente_faturamento";
       else if (part === 4) nextStatus = "concluido";
 
       // Sincronizar dados do responsável e exames se necessário
