@@ -628,6 +628,107 @@ export default function OpmeApp() {
     setTimeout(() => handleSave(false), 100);
   };
 
+  const toList = (value: any) => Array.isArray(value) ? value : [];
+  const formatDateBR = (value?: string | null) => value ? new Date(value).toLocaleDateString("pt-BR") : "---";
+  const normalizeMaterial = (value?: string) => (value || "").trim().toLowerCase();
+
+  const getPostAuditDivergences = () => {
+    const requested = toList(form.opme_requested).filter((item: any) => item?.description?.trim());
+    const used = toList(form.opme_used).filter((item: any) => item?.description?.trim() && item?.launched);
+    const divergences: string[] = [];
+
+    requested.forEach((req: any) => {
+      const relatedUsed = used.filter((item: any) => normalizeMaterial(item.description) === normalizeMaterial(req.description));
+      const requestedQty = Number(req.quantity || 0);
+      const usedQty = relatedUsed.reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0);
+
+      if (relatedUsed.length === 0) {
+        divergences.push(`Material autorizado não lançado no consumo: ${req.description} (${req.quantity || 0} un.)`);
+      } else if (requestedQty > 0 && usedQty > requestedQty) {
+        divergences.push(`Consumo acima do autorizado: ${req.description} autorizado ${requestedQty} un., consumido ${usedQty} un.`);
+      } else if (requestedQty > 0 && usedQty < requestedQty) {
+        divergences.push(`Consumo abaixo do autorizado: ${req.description} autorizado ${requestedQty} un., consumido ${usedQty} un.`);
+      }
+    });
+
+    used.forEach((item: any) => {
+      const wasRequested = requested.some((req: any) => normalizeMaterial(req.description) === normalizeMaterial(item.description));
+      if (!wasRequested) divergences.push(`Material consumido sem solicitação prévia: ${item.description} (${item.quantity || 0} un.)`);
+      if (!item.batch?.trim()) divergences.push(`Rastreabilidade incompleta: ${item.description} sem lote informado.`);
+      if (!item.expiry?.trim()) divergences.push(`Rastreabilidade incompleta: ${item.description} sem validade informada.`);
+      if (item.label_fixed !== "sim") divergences.push(`Etiqueta não confirmada no prontuário: ${item.description}.`);
+    });
+
+    if (postopExams.filter((exam: any) => exam?.url).length === 0) {
+      divergences.push("Nenhuma imagem pós-operatória anexada para conferência técnica.");
+    }
+
+    return divergences;
+  };
+
+  const getTimelineEvidence = () => [
+    ...preopExams.filter((exam: any) => exam?.url).map((exam: any) => ({ ...exam, stage: "Pré-OP", date: form.preop_exam_date || form.procedure_date })),
+    ...consumptionExams.filter((exam: any) => exam?.url).map((exam: any) => ({ ...exam, stage: "Intra-OP", date: exam.date || form.procedure_date })),
+    ...toList(form.opme_used).filter((item: any) => item?.photo_url).map((item: any) => ({
+      url: item.photo_url,
+      type: item.description || "Material utilizado",
+      stage: "Consumo",
+      date: item.launched_at || form.procedure_date
+    })),
+    ...postopExams.filter((exam: any) => exam?.url).map((exam: any) => ({ ...exam, stage: "Pós-OP", date: form.postop_exam_date || form.procedure_date }))
+  ].sort((a: any, b: any) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
+
+  const buildPostAuditJustification = () => {
+    const divergences = getPostAuditDivergences();
+    if (divergences.length === 0) return "Solicito justificativa complementar do cirurgião para conferência final do dossiê pós-operatório.";
+    return `Solicito justificativa complementar para os seguintes pontos de divergência:\n- ${divergences.join("\n- ")}`;
+  };
+
+  const generateAuditDossierPdf = async () => {
+    const { jsPDF } = await import("jspdf");
+    const autoTableModule = await import("jspdf-autotable");
+    const autoTable = autoTableModule.default;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const requested = toList(form.opme_requested).filter((item: any) => item?.description?.trim());
+    const used = toList(form.opme_used).filter((item: any) => item?.description?.trim() && item?.launched);
+    const divergences = getPostAuditDivergences();
+    const evidence = getTimelineEvidence();
+    const margin = 14;
+    let y = margin;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Dossiê Auditoria Pós-OP", margin, y);
+    y += 8;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(`Paciente: ${form.patient_name || "Não informado"}`, margin, y); y += 5;
+    doc.text(`Unidade: ${form.facility_unit || "Não informada"} | Data cirurgia: ${formatDateBR(form.procedure_date)}`, margin, y); y += 5;
+    doc.text(`Procedimento: ${form.procedure_name || "Não informado"}`, margin, y); y += 5;
+    doc.text(`SIGTAP: ${form.procedure_sigtap_code || "---"} | AIH: ${form.billing_aih_number || "---"}`, margin, y); y += 8;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Indicação clínica", margin, y); y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.text(doc.splitTextToSize(form.clinical_indication || "Sem indicação clínica registrada.", 182), margin, y);
+    y += 14;
+
+    autoTable(doc, { startY: y, head: [["Material solicitado", "Qtd", "Modelo", "SIGTAP"]], body: requested.map((item: any) => [item.description || "---", item.quantity || "0", item.size_model || "---", item.sigtap || "---"]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
+    y = (doc as any).lastAutoTable.finalY + 6;
+    autoTable(doc, { startY: y, head: [["Material consumido", "Qtd", "Lote", "Validade", "Etiqueta"]], body: used.map((item: any) => [item.description || "---", item.quantity || "0", item.batch || "---", item.expiry || "---", item.label_fixed === "sim" ? "Sim" : "Não"]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
+    y = (doc as any).lastAutoTable.finalY + 6;
+    autoTable(doc, { startY: y, head: [["Validações de consumo"]], body: (divergences.length ? divergences : ["Sem divergências automáticas identificadas."]).map((text: string) => [text]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
+    y = (doc as any).lastAutoTable.finalY + 6;
+    autoTable(doc, { startY: y, head: [["Etapa", "Data", "Evidência"]], body: evidence.map((item: any) => [item.stage, formatDateBR(item.date), item.type || "Evidência"]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Parecer final", margin, y); y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.text(doc.splitTextToSize(form.auditor_post_final_opinion || "Parecer ainda não preenchido.", 182), margin, y);
+    doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
+  };
+
   const handleSave = async (isAuthValidated = false) => {
     if (!user) { toast.error("Não autenticado"); return; }
     if (!form.patient_name?.trim()) { toast.error("Informe o nome do paciente"); setStep(0); return; }
