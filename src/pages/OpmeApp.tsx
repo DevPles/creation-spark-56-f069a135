@@ -609,6 +609,9 @@ export default function OpmeApp() {
                                req.status === 'rascunho' ? 'bg-slate-100 text-slate-600 border-slate-200' :
                                req.status === 'pendente_requisicao' ? 'bg-blue-50 text-blue-600 border-blue-100' :
                                req.status === 'pendente_auditoria' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                               req.status === 'pendente_controle' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                               req.status === 'pendente_consumo' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                               req.status === 'pendente_auditoria_post' ? 'bg-rose-50 text-rose-600 border-rose-100' :
                                'bg-emerald-50 text-emerald-600 border-emerald-100'
                              }`}>
                                {req.status?.replace('_', ' ')}
