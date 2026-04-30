@@ -11,7 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, CalendarIcon, Eye, EyeOff } from "lucide-react";
+ import { ArrowLeft, CalendarIcon, Eye, EyeOff, X, Trash2 } from "lucide-react";
+ import {
+   AlertDialog,
+   AlertDialogAction,
+   AlertDialogCancel,
+   AlertDialogContent,
+   AlertDialogDescription,
+   AlertDialogFooter,
+   AlertDialogHeader,
+   AlertDialogTitle,
+   AlertDialogTrigger,
+ } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -336,6 +347,34 @@ export default function OpmeApp() {
       setFilteredRequests(requests);
     };
  
+   const handleDeleteRequest = async (id: string) => {
+     try {
+       const { error } = await supabase.from("opme_requests").delete().eq("id", id);
+       if (error) throw error;
+       
+       toast.success("Processo excluído com sucesso.");
+       setRequests(prev => prev.filter(r => r.id !== id));
+       setFilteredRequests(prev => prev.filter(r => r.id !== id));
+       
+       setStats(prev => {
+         const s = { ...prev };
+         const req = requests.find(r => r.id === id);
+         if (req) {
+           if (req.status === "rascunho") s.cadastro--;
+           if (req.status === "pendente_requisicao") s.requisicao--;
+           if (req.status === "pendente_auditoria") s.auditoria_pre--;
+           if (req.status === "pendente_auditoria_post") s.auditoria_post--;
+           if (req.status === "pendente_controle") s.controle--;
+           if (req.status === "pendente_consumo") s.consumo--;
+           if (req.status === "pendente_faturamento") s.faturamento--;
+         }
+         return s;
+       });
+     } catch (err: any) {
+       toast.error("Erro ao excluir: " + err.message);
+     }
+   };
+ 
    const loadRequest = (req: any) => {
      setForm(req);
      if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
@@ -659,7 +698,44 @@ export default function OpmeApp() {
                               <span className="truncate">{req.requester_name || req.responsible_name || 'Não inf.'}</span>
                             </div>
                          </div>
-                         <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase">Abrir</Button>
+                          <div className="flex items-center gap-2">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-slate-300 hover:text-destructive hover:bg-destructive/5 transition-colors"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <X size={18} />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-destructive flex items-center gap-2 font-bold uppercase tracking-tight">
+                                    <Trash2 size={20} />
+                                    Excluir Processo?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="text-slate-600 font-medium text-sm">
+                                    Atenção: Ao excluir, você perderá TODO o processo e progresso permanentemente. Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteRequest(req.id);
+                                    }}
+                                    className="bg-destructive text-white hover:bg-destructive/90 font-bold uppercase text-xs"
+                                  >
+                                    Sim, Excluir Tudo
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase">Abrir</Button>
+                          </div>
                        </div>
                      </CardContent>
                    </Card>
