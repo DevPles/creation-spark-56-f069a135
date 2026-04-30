@@ -1854,9 +1854,6 @@ export default function OpmeApp() {
               className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100"
             >
               <div className="text-center mb-6">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-xl">🔐</span>
-                </div>
                 <h3 className="text-lg font-bold text-slate-900 uppercase">Confirmar Validação</h3>
                 <p className="text-xs text-slate-500 mt-1 uppercase font-semibold">
                   Médico Auditor: {step === 0 ? "PRÉ-OPERATÓRIO" : "PÓS-OPERATÓRIO"}
