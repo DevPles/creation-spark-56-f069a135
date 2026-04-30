@@ -540,12 +540,21 @@ export default function OpmeApp() {
         updated_at: new Date().toISOString() 
       };
       
+      let result;
       if (recordId) {
-        const { error } = await supabase.from("opme_requests").update(payload).eq("id", recordId);
-        if (error) throw error;
+        result = await supabase.from("opme_requests").update(payload).eq("id", recordId).select().single();
       } else {
-        const { error } = await supabase.from("opme_requests").insert(payload);
-        if (error) throw error;
+        result = await supabase.from("opme_requests").insert(payload).select().single();
+      }
+
+      if (result.error) throw result.error;
+
+      // Se foi um novo registro, atualizar URL para permitir edições subsequentes
+      if (!recordId && result.data) {
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set("id", result.data.id);
+        window.history.pushState({}, '', newUrl);
+        setForm(result.data);
       }
       
       toast.success("Pedido enviado com sucesso!");
