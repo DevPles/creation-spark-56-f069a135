@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, CalendarIcon } from "lucide-react";
+import { ArrowLeft, CalendarIcon, Eye, EyeOff } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -69,6 +69,7 @@ export default function OpmeApp() {
   const [saving, setSaving] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authPassword, setAuthPassword] = useState("");
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const handleAuditAuth = async () => {
@@ -1871,15 +1872,24 @@ export default function OpmeApp() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-bold uppercase text-slate-500">Confirme sua senha de acesso</Label>
-                  <Input 
-                    type="password" 
-                    value={authPassword} 
-                    onChange={(e) => setAuthPassword(e.target.value)} 
-                    placeholder="••••••••"
-                    className="h-12 bg-slate-50 border-slate-200 text-center text-lg tracking-widest"
-                    autoFocus
-                    onKeyDown={(e) => e.key === "Enter" && handleAuditAuth()}
-                  />
+                  <div className="relative">
+                    <Input 
+                      type={showAuthPassword ? "text" : "password"} 
+                      value={authPassword} 
+                      onChange={(e) => setAuthPassword(e.target.value)} 
+                      placeholder="••••••••"
+                      className="h-12 bg-slate-50 border-slate-200 text-center text-lg tracking-widest pr-12"
+                      autoFocus
+                      onKeyDown={(e) => e.key === "Enter" && handleAuditAuth()}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAuthPassword(!showAuthPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-2"
+                    >
+                      {showAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-2">
