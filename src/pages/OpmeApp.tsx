@@ -651,15 +651,24 @@ export default function OpmeApp() {
       const requester_name = form.requester_name || form.responsible_name;
       const requester_register = form.requester_register || form.responsible_register;
 
-      const preop_image_types = preopExams.length > 0 ? preopExams.map(e => e.type) : (form.preop_image_types || []);
-      const preop_image_count = preopExams.length > 0 ? preopExams.length : (form.preop_image_count || 0);
-      const preop_image_attached = preopExams.length > 0 ? true : (form.preop_image_attached || false);
-       const preop_exams_details = preopExams.length > 0 ? preopExams : (form.preop_exams_details || []);
-       const consumption_exams_details = consumptionExams.length > 0 ? consumptionExams : (form.consumption_exams_details || []);
-       const postop_exams_details = postopExams.length > 0 ? postopExams : (form.postop_exams_details || []);
-       const postop_image_types = postopExams.length > 0 ? postopExams.map(e => e.type) : (form.postop_image_types || []);
-       const postop_image_count = postopExams.length > 0 ? postopExams.length : (form.postop_image_count || 0);
-       const postop_image_attached = postopExams.length > 0 ? true : (form.postop_image_attached || false);
+      // Upload de arquivos se houver novos
+      const [uploadedPreop, uploadedConsumption, uploadedPostop] = await Promise.all([
+        uploadExamFiles(preopExams),
+        uploadExamFiles(consumptionExams),
+        uploadExamFiles(postopExams)
+      ]);
+
+      const preop_image_types = uploadedPreop.length > 0 ? uploadedPreop.map(e => e.type) : (form.preop_image_types || []);
+      const preop_image_count = uploadedPreop.length > 0 ? uploadedPreop.length : (form.preop_image_count || 0);
+      const preop_image_attached = uploadedPreop.length > 0 ? true : (form.preop_image_attached || false);
+      const preop_exams_details = uploadedPreop.length > 0 ? uploadedPreop : (form.preop_exams_details || []);
+      
+      const consumption_exams_details = uploadedConsumption.length > 0 ? uploadedConsumption : (form.consumption_exams_details || []);
+      
+      const postop_exams_details = uploadedPostop.length > 0 ? uploadedPostop : (form.postop_exams_details || []);
+      const postop_image_types = uploadedPostop.length > 0 ? uploadedPostop.map(e => e.type) : (form.postop_image_types || []);
+      const postop_image_count = uploadedPostop.length > 0 ? uploadedPostop.length : (form.postop_image_count || 0);
+      const postop_image_attached = uploadedPostop.length > 0 ? true : (form.postop_image_attached || false);
 
       const dateFields = [
         "patient_birthdate", "procedure_date", "preop_exam_date", 
