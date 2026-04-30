@@ -882,9 +882,8 @@ export default function OpmeApp() {
                     <Label className="text-xs font-semibold uppercase text-slate-500">Conselho (CRM/COREN)</Label>
                     <Input value={form.responsible_register} onChange={e => updateForm("responsible_register", e.target.value)} placeholder="Nº Registro" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
-                </div>
-              </div>
-            )}
+                  </div>
+                )}
 
             {part === 1 && step === 1 && (
               <div className="space-y-4">
