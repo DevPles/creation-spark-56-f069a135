@@ -30,11 +30,8 @@ const STEPS_REQUISICAO = [
   { id: "justificativa_imagem", title: "Justificativa", description: "Indicação e Exames" },
 ];
 
-const STEPS_AUDITORIA_PRE = [
+const STEPS_AUDITORIA = [
   { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Pré-OP" },
-];
-
-const STEPS_AUDITORIA_POST = [
   { id: "auditoria_post", title: "Médico Auditor", description: "Validação Pós-OP" },
 ];
 
@@ -92,10 +89,9 @@ export default function OpmeApp() {
 
   const STEPS = part === 1 ? STEPS_CADASTRO : 
                 part === 2 ? STEPS_REQUISICAO : 
-                part === 3 ? STEPS_AUDITORIA_PRE : 
+                part === 3 ? STEPS_AUDITORIA : 
                 part === 5 ? STEPS_CONTROLE :
                 part === 6 ? STEPS_CONSUMO :
-                part === 7 ? STEPS_AUDITORIA_POST :
                 STEPS_FATURAMENTO;
 
    const [form, setForm] = useState<any>({
