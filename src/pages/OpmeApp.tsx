@@ -461,6 +461,33 @@ export default function OpmeApp() {
     }
   };
 
+  const uploadFile = async (file: File, bucket: string = "opme-attachments"): Promise<string | null> => {
+    const ext = file.name.split(".").pop();
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from(bucket).upload(path, file);
+    if (error) {
+      console.error("Erro no upload:", error);
+      return null;
+    }
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const uploadExamFiles = async (exams: any[]): Promise<any[]> => {
+    const results = [...exams];
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].file && !results[i].url.startsWith("http")) {
+        const url = await uploadFile(results[i].file);
+        if (url) {
+          results[i].url = url;
+          // Não deletamos o file da memória ainda para evitar problemas de re-render, 
+          // mas no banco ele não será salvo de qualquer forma.
+        }
+      }
+    }
+    return results.map(({ file, ...rest }) => rest);
+  };
+
   const updateItem = (idx: number, field: string, value: any, listName: string = "opme_requested") => {
     setForm((p: any) => {
       const arr = [...(p[listName] || [])];
