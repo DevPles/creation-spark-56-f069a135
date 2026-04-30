@@ -480,6 +480,100 @@ export default function OpmeApp() {
     setForm((p: any) => ({ ...p, [listName]: [...(p[listName] || []), newItem] }));
   };
 
+  const resetForm = () => {
+    setForm({
+      facility_unit: profile?.facility_unit || "Hospital Geral",
+      status: "rascunho",
+      patient_name: "",
+      patient_record: "",
+      patient_birthdate: "",
+      patient_mother_name: "",
+      patient_sus: "",
+      responsible_name: "",
+      responsible_register: "",
+      procedure_date: new Date().toISOString().split("T")[0],
+      procedure_type: "eletivo",
+      procedure_name: "",
+      procedure_sigtap_code: "",
+      procedure_room: "",
+      requester_name: profile?.name || "",
+      requester_register: "",
+      opme_requested: [{ description: "", quantity: "1", size_model: "", sigtap: "" }],
+      instruments_specific: false,
+      instruments_loan: false,
+      instruments_na: true,
+      instruments_specify: "",
+      clinical_indication: "",
+      preop_image_types: [],
+      preop_image_other: "",
+      preop_exam_date: "",
+      preop_exam_number: "",
+      preop_finding_description: "",
+      preop_image_attached: false,
+      preop_image_count: 0,
+      preop_validation_responsible: profile?.name || "",
+      auditor_pre_name: "",
+      auditor_pre_crm: "",
+      auditor_pre_analysis: "adequada",
+      auditor_pre_sigtap_compat: "sim",
+      auditor_pre_opinion: "",
+      auditor_pre_date: "",
+      request_date: "",
+      request_time: "",
+      warehouse_received_by: "",
+      warehouse_date: "",
+      warehouse_time: "",
+      stock_available: "sim",
+      sent_to_cme: false,
+      cme_processing_date: "",
+      cme_responsible: "",
+      surgery_dispatch_date: "",
+      surgery_dispatch_responsible: "",
+      opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false }],
+      opme_returned: [{ description: "", quantity: "0", batch: "", reason: "", responsible: "" }],
+      postop_image_types: [],
+      postop_image_other: "",
+      postop_exam_date: "",
+      postop_exam_number: "",
+      postop_result_description: "",
+      postop_image_attached: false,
+      postop_image_count: 0,
+      postop_validation_responsible: "",
+      auditor_post_name: "",
+      auditor_post_crm: "",
+      auditor_post_procedure_compat: "sim",
+      auditor_post_sigtap_compat: "sim",
+      auditor_post_image_conformity: "sim",
+      auditor_post_final_opinion: "",
+      auditor_post_date: "",
+      incident_date: "",
+      incident_description: "",
+      incident_responsible: "",
+      billing_aih_number: "",
+      billing_procedure_name: "",
+      billing_sigtap_code: "",
+      billing_prior_authorization: "nao_se_aplica",
+      billing_aih_generated: false,
+      billing_aih_file_url: "",
+      billing_opme_compatibility: "sim",
+      billing_divergence: false,
+      billing_divergence_description: "",
+      billing_docs: {
+        nf: false,
+        rastreabilidade: false,
+        laudo: false,
+        consumo: false,
+        autorizacao: false,
+        exames: false
+      }
+    });
+    setPreopExams([]);
+    setConsumptionExams([]);
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete("id");
+    window.history.pushState({}, '', newUrl);
+  };
+
   const handleSave = async (isAuthValidated = false) => {
     if (!user) { toast.error("Não autenticado"); return; }
     if (!form.patient_name?.trim()) { toast.error("Informe o nome do paciente"); setStep(0); return; }
