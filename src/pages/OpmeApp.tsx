@@ -574,6 +574,20 @@ export default function OpmeApp() {
     window.history.pushState({}, '', newUrl);
   };
 
+  const handleLaunchItem = (idx: number) => {
+    setForm((p: any) => {
+      const arr = [...(p.opme_used || [])];
+      arr[idx] = { 
+        ...arr[idx], 
+        launched: true, 
+        launched_by: user?.email || user?.id || "Usuário", 
+        launched_at: new Date().toISOString() 
+      };
+      return { ...p, opme_used: arr };
+    });
+    setTimeout(() => handleSave(false), 100);
+  };
+
   const handleSave = async (isAuthValidated = false) => {
     if (!user) { toast.error("Não autenticado"); return; }
     if (!form.patient_name?.trim()) { toast.error("Informe o nome do paciente"); setStep(0); return; }
