@@ -1027,36 +1027,54 @@ export default function OpmeApp() {
                   <Label className="text-xs font-semibold uppercase text-slate-500">Nome da Mãe</Label>
                   <Input value={form.patient_mother_name} onChange={e => updateForm("patient_mother_name", e.target.value)} placeholder="Nome completo da mãe" className="h-12 bg-white shadow-sm border-slate-200" />
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                     <Label className="text-xs font-semibold uppercase text-slate-500">Cartão SUS</Label>
-                     <Input value={form.patient_sus} onChange={e => updateForm("patient_sus", e.target.value)} placeholder="Número do CNS" className="h-12 bg-white shadow-sm border-slate-200" />
-                   </div>
-                   <div className="space-y-2">
-                     <Label className="text-xs font-semibold uppercase text-slate-500">Anexar AIH (Opcional)</Label>
-                     <div className="relative">
-                       <input 
-                         type="file" 
-                         className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-                         onChange={(e) => {
-                           const file = e.target.files?.[0];
-                            if (file) {
-                              const url = URL.createObjectURL(file);
-                              setAihFile(file);
-                              updateForm("billing_aih_file_url", url);
-                              toast.success("AIH anexada!");
-                            }
-                         }} 
-                       />
-                       <Button 
-                         variant="outline" 
-                         className={`w-full h-12 text-xs font-bold uppercase border-dashed border-2 flex gap-2 ${form.billing_aih_file_url ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'text-slate-400'}`}
-                       >
-                         {form.billing_aih_file_url ? <><FileText size={16} /> AIH Anexada</> : <><Upload size={16} /> Subir AIH</>}
-                       </Button>
-                     </div>
-                   </div>
-                 </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Cartão SUS</Label>
+                      <Input value={form.patient_sus} onChange={e => updateForm("patient_sus", e.target.value)} placeholder="Número do CNS" className="h-12 bg-white shadow-sm border-slate-200" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Nº AIH (Opcional)</Label>
+                      <Input value={form.billing_aih_number} onChange={e => updateForm("billing_aih_number", e.target.value)} placeholder="000.000.000-0" className="h-12 bg-white shadow-sm border-slate-200" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Anexar AIH</Label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input 
+                            type="file" 
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                               if (file) {
+                                 const url = URL.createObjectURL(file);
+                                 setAihFile(file);
+                                 updateForm("billing_aih_file_url", url);
+                                 toast.success("AIH anexada!");
+                               }
+                            }} 
+                          />
+                          <Button 
+                            variant="outline" 
+                            type="button"
+                            className={`w-full h-12 text-[10px] font-bold uppercase border-dashed border-2 flex gap-2 px-2 ${form.billing_aih_file_url ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'text-slate-400'}`}
+                          >
+                            {form.billing_aih_file_url ? <><FileText size={14} /> Anexada</> : <><Upload size={14} /> Subir</>}
+                          </Button>
+                        </div>
+                        {form.billing_aih_file_url && (
+                          <Button
+                            variant="outline"
+                            type="button"
+                            className="h-12 px-3 border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                            onClick={() => window.open(form.billing_aih_file_url, "_blank")}
+                            title="Visualizar AIH"
+                          >
+                            <Eye size={18} />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Responsável pelo Procedimento</Label>
