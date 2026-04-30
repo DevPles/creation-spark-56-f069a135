@@ -1766,6 +1766,9 @@ export default function OpmeApp() {
                                         <div className="flex gap-3 mt-1">
                                           <p className="text-[9px] text-slate-500 font-bold uppercase">Qtd: <span className="text-primary">{item.quantity}</span></p>
                                           <p className="text-[9px] text-slate-500 font-bold uppercase">Lote: <span className="text-primary">{item.batch || '---'}</span></p>
+                                          {item.launched_by && (
+                                            <p className="text-[9px] text-slate-500 font-bold uppercase">Lançado por: <span className="text-primary">{item.launched_by.split('@')[0]}</span></p>
+                                          )}
                                         </div>
                                       </div>
                                       {item.photo_url && (
