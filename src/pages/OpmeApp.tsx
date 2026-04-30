@@ -276,14 +276,21 @@ export default function OpmeApp() {
       else if (part === 3) nextStatus = "pendente_faturamento";
       else if (part === 4) nextStatus = "concluido";
 
-      // Sincronizar dados do responsável se necessário
+      // Sincronizar dados do responsável e exames se necessário
       const requester_name = form.requester_name || form.responsible_name;
       const requester_register = form.requester_register || form.responsible_register;
+
+      const preop_image_types = preopExams.length > 0 ? preopExams.map(e => e.type) : form.preop_image_types;
+      const preop_image_count = preopExams.length > 0 ? preopExams.length : form.preop_image_count;
+      const preop_image_attached = preopExams.length > 0 ? true : form.preop_image_attached;
 
       const payload = { 
         ...form,
         requester_name,
         requester_register,
+        preop_image_types,
+        preop_image_count,
+        preop_image_attached,
         status: nextStatus,
         created_by: user.id, 
         updated_at: new Date().toISOString() 
