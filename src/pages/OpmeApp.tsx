@@ -915,37 +915,37 @@ export default function OpmeApp() {
             {part === 2 && step === 3 && (
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">5. Instrumentais / Acessórios</h3>
-                  <div className="grid grid-cols-1 gap-3 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                  <h3 className="text-xs font-bold uppercase text-primary tracking-widest border-b pb-1">5. Instrumentais / Acessórios</h3>
+                  <div className="grid grid-cols-1 gap-4 bg-white p-4 rounded-lg border border-slate-100 shadow-sm">
                     <div className="flex items-center space-x-2">
                       <Checkbox id="instr_spec" checked={form.instruments_specific} onCheckedChange={v => updateForm("instruments_specific", v)} />
-                      <Label htmlFor="instr_spec" className="text-xs font-bold text-slate-600">Necessita instrumental específico</Label>
+                      <Label htmlFor="instr_spec" className="text-sm font-semibold text-slate-700">Necessita instrumental específico</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox id="instr_loan" checked={form.instruments_loan} onCheckedChange={v => updateForm("instruments_loan", v)} />
-                      <Label htmlFor="instr_loan" className="text-xs font-bold text-slate-600">Necessita comodato</Label>
+                      <Label htmlFor="instr_loan" className="text-sm font-semibold text-slate-700">Necessita comodato</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox id="instr_na" checked={form.instruments_na} onCheckedChange={v => updateForm("instruments_na", v)} />
-                      <Label htmlFor="instr_na" className="text-xs font-bold text-slate-600">Não se aplica</Label>
+                      <Label htmlFor="instr_na" className="text-sm font-semibold text-slate-700">Não se aplica</Label>
                     </div>
-                    <div className="space-y-1.5 mt-2">
-                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Especificar Instrumentais</Label>
-                      <Textarea value={form.instruments_specify} onChange={e => updateForm("instruments_specify", e.target.value)} placeholder="Descreva os itens..." className="min-h-[60px] text-xs" />
+                    <div className="space-y-2 mt-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Especificar Instrumentais</Label>
+                      <Textarea value={form.instruments_specify} onChange={e => updateForm("instruments_specify", e.target.value)} placeholder="Descreva os itens..." className="min-h-[80px] text-sm bg-white border-slate-200" />
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">6. Justificativa OPME</h3>
+                  <h3 className="text-xs font-bold uppercase text-primary tracking-widest border-b pb-1">6. Justificativa OPME</h3>
                   <div className="space-y-2">
-                    <Label className="text-[9px] uppercase text-slate-400 font-bold">Indicação Clínica / Evidência</Label>
-                    <Textarea value={form.clinical_indication} onChange={e => updateForm("clinical_indication", e.target.value)} placeholder="Justificativa para uso de OPME..." className="min-h-[80px] text-xs shadow-sm" />
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Indicação Clínica / Evidência</Label>
+                    <Textarea value={form.clinical_indication} onChange={e => updateForm("clinical_indication", e.target.value)} placeholder="Justificativa para uso de OPME..." className="min-h-[100px] text-sm bg-white border-slate-200 shadow-sm" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[9px] uppercase text-slate-400 font-bold">Parecer da Comissão</Label>
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Parecer da Comissão</Label>
                     <Select value={form.auditor_pre_analysis} onValueChange={(v) => updateForm("auditor_pre_analysis", v)}>
-                      <SelectTrigger className="h-10 text-xs font-bold">
+                      <SelectTrigger className="h-12 text-sm bg-white border-slate-200 shadow-sm">
                         <SelectValue placeholder="Status da análise" />
                       </SelectTrigger>
                       <SelectContent>
