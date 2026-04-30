@@ -1138,7 +1138,6 @@ export default function OpmeApp() {
                     <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={() => addItem("opme_requested")}>+ Adicionar Material (Até 10)</Button>
                   )}
                 </div>
-                </div>
               </div>
             )}
 
@@ -1316,7 +1315,6 @@ export default function OpmeApp() {
                     </div>
                   </div>
                 </div>
-              </div>
             )}
 
 
