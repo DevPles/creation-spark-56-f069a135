@@ -1765,14 +1765,15 @@ export default function OpmeApp() {
                       <Textarea value={form.auditor_post_final_opinion} onChange={e => updateForm("auditor_post_final_opinion", e.target.value)} placeholder="Conclusão da auditoria..." className="min-h-[100px] text-xs bg-white" />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="space-y-1">
-                        <Label className="text-[10px] font-bold uppercase text-slate-500">Data Validação</Label>
-                        <Input type="date" value={form.auditor_post_date} onChange={e => updateForm("auditor_post_date", e.target.value)} className="h-10 text-xs bg-white" />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                     <div className="grid grid-cols-2 gap-4 pt-2">
+                       <div className="space-y-1">
+                         <Label className="text-[10px] font-bold uppercase text-slate-500">Data Validação</Label>
+                         <Input type="date" value={form.auditor_post_date} onChange={e => updateForm("auditor_post_date", e.target.value)} className="h-10 text-xs bg-white" />
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+                 )}
               </div>
             )}
 
