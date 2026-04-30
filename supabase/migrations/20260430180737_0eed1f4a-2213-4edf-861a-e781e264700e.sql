@@ -1,0 +1,1 @@
+ALTER TABLE public.opme_requests ADD COLUMN IF NOT EXISTS postop_exams_details JSONB;

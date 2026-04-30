@@ -76,7 +76,9 @@ export default function OpmeApp() {
   const recordId = searchParams.get("id");
   const [part, setPart] = useState<number | null>(null);
    const [preopExams, setPreopExams] = useState<any[]>([]);
-   const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
+    const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
+    const [postopExams, setPostopExams] = useState<any[]>([]);
+    const [aihFile, setAihFile] = useState<File | null>(null);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -256,6 +258,12 @@ export default function OpmeApp() {
           if (data.preop_exams_details && Array.isArray(data.preop_exams_details)) {
             setPreopExams(data.preop_exams_details as any[]);
           }
+          if (data.postop_exams_details && Array.isArray(data.postop_exams_details)) {
+            setPostopExams(data.postop_exams_details as any[]);
+          }
+          if (data.consumption_exams_details && Array.isArray(data.consumption_exams_details)) {
+            setConsumptionExams(data.consumption_exams_details as any[]);
+          }
         }
         setLoading(false);
       })();
@@ -379,12 +387,15 @@ export default function OpmeApp() {
  
    const loadRequest = (req: any) => {
      setForm(req);
-     if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
-       setPreopExams(req.preop_exams_details as any[]);
-     }
-     if (req.consumption_exams_details && Array.isArray(req.consumption_exams_details)) {
-       setConsumptionExams(req.consumption_exams_details as any[]);
-     }
+      if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
+        setPreopExams(req.preop_exams_details as any[]);
+      }
+      if (req.consumption_exams_details && Array.isArray(req.consumption_exams_details)) {
+        setConsumptionExams(req.consumption_exams_details as any[]);
+      }
+      if (req.postop_exams_details && Array.isArray(req.postop_exams_details)) {
+        setPostopExams(req.postop_exams_details as any[]);
+      }
      
       // Determinar qual parte e passo abrir baseado no status
       if (req.status === "rascunho") { setPart(1); setStep(0); }
@@ -449,6 +460,33 @@ export default function OpmeApp() {
         setSigtapSuggestions([]);
       }
     }
+  };
+
+  const uploadFile = async (file: File, bucket: string = "opme-attachments"): Promise<string | null> => {
+    const ext = file.name.split(".").pop();
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from(bucket).upload(path, file);
+    if (error) {
+      console.error("Erro no upload:", error);
+      return null;
+    }
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const uploadExamFiles = async (exams: any[]): Promise<any[]> => {
+    const results = [...exams];
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].file && !results[i].url.startsWith("http")) {
+        const url = await uploadFile(results[i].file);
+        if (url) {
+          results[i].url = url;
+          // Não deletamos o file da memória ainda para evitar problemas de re-render, 
+          // mas no banco ele não será salvo de qualquer forma.
+        }
+      }
+    }
+    return results.map(({ file, ...rest }) => rest);
   };
 
   const updateItem = (idx: number, field: string, value: any, listName: string = "opme_requested") => {
@@ -614,11 +652,31 @@ export default function OpmeApp() {
       const requester_name = form.requester_name || form.responsible_name;
       const requester_register = form.requester_register || form.responsible_register;
 
-      const preop_image_types = preopExams.length > 0 ? preopExams.map(e => e.type) : (form.preop_image_types || []);
-      const preop_image_count = preopExams.length > 0 ? preopExams.length : (form.preop_image_count || 0);
-      const preop_image_attached = preopExams.length > 0 ? true : (form.preop_image_attached || false);
-       const preop_exams_details = preopExams.length > 0 ? preopExams : (form.preop_exams_details || []);
-       const consumption_exams_details = consumptionExams.length > 0 ? consumptionExams : (form.consumption_exams_details || []);
+      // Upload de arquivos se houver novos
+      const [uploadedPreop, uploadedConsumption, uploadedPostop] = await Promise.all([
+        uploadExamFiles(preopExams),
+        uploadExamFiles(consumptionExams),
+        uploadExamFiles(postopExams)
+      ]);
+
+      const preop_image_types = uploadedPreop.length > 0 ? uploadedPreop.map(e => e.type) : (form.preop_image_types || []);
+      const preop_image_count = uploadedPreop.length > 0 ? uploadedPreop.length : (form.preop_image_count || 0);
+      const preop_image_attached = uploadedPreop.length > 0 ? true : (form.preop_image_attached || false);
+      const preop_exams_details = uploadedPreop.length > 0 ? uploadedPreop : (form.preop_exams_details || []);
+      
+      const consumption_exams_details = uploadedConsumption.length > 0 ? uploadedConsumption : (form.consumption_exams_details || []);
+      
+      const postop_exams_details = uploadedPostop.length > 0 ? uploadedPostop : (form.postop_exams_details || []);
+      const postop_image_types = uploadedPostop.length > 0 ? uploadedPostop.map(e => e.type) : (form.postop_image_types || []);
+      const postop_image_count = uploadedPostop.length > 0 ? uploadedPostop.length : (form.postop_image_count || 0);
+      const postop_image_attached = uploadedPostop.length > 0 ? true : (form.postop_image_attached || false);
+
+      // Upload da AIH se houver um novo arquivo
+      let billing_aih_file_url = form.billing_aih_file_url;
+      if (aihFile) {
+        const url = await uploadFile(aihFile);
+        if (url) billing_aih_file_url = url;
+      }
 
       const dateFields = [
         "patient_birthdate", "procedure_date", "preop_exam_date", 
@@ -642,7 +700,12 @@ export default function OpmeApp() {
         preop_image_count,
         preop_image_attached,
          preop_exams_details,
-         consumption_exams_details,
+          consumption_exams_details,
+          postop_exams_details,
+          postop_image_types,
+          postop_image_count,
+          postop_image_attached,
+          billing_aih_file_url,
          status: nextStatus,
         created_by: user.id, 
         updated_at: new Date().toISOString() 
@@ -977,11 +1040,12 @@ export default function OpmeApp() {
                          className="absolute inset-0 opacity-0 cursor-pointer z-10" 
                          onChange={(e) => {
                            const file = e.target.files?.[0];
-                           if (file) {
-                             const url = URL.createObjectURL(file);
-                             updateForm("billing_aih_file_url", url);
-                             toast.success("AIH anexada!");
-                           }
+                            if (file) {
+                              const url = URL.createObjectURL(file);
+                              setAihFile(file);
+                              updateForm("billing_aih_file_url", url);
+                              toast.success("AIH anexada!");
+                            }
                          }} 
                        />
                        <Button 
@@ -1814,6 +1878,28 @@ export default function OpmeApp() {
                           </div>
                         )}
 
+                        {postopExams.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Imagens Pós-Operatórias</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {postopExams.map((exam, i) => (
+                                <button 
+                                  key={i} 
+                                  onClick={() => exam.url && window.open(exam.url, "_blank")}
+                                  className="bg-white p-2 rounded-lg border border-slate-100 flex items-center gap-2 text-left hover:border-primary/30 transition-colors"
+                                >
+                                  <div className="w-7 h-7 rounded bg-primary/5 flex items-center justify-center text-primary">
+                                    <Eye size={14} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-bold text-slate-800 truncate uppercase">{exam.type}</p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="space-y-2 pt-2 border-t border-primary/5">
                           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Dados do Faturamento (AIH)</p>
                           <div className="bg-white p-3 rounded-lg border border-slate-100 grid grid-cols-2 gap-3">
@@ -2242,9 +2328,67 @@ export default function OpmeApp() {
                       <Textarea value={form.postop_result_description} onChange={e => updateForm("postop_result_description", e.target.value)} placeholder="Descreva brevemente a evolução..." className="min-h-[100px] text-xs bg-white" />
                     </div>
 
-                    <div className="flex items-center space-x-2 bg-white p-3 rounded-lg border">
-                      <Checkbox id="postop_att" checked={form.postop_image_attached} onCheckedChange={v => updateForm("postop_image_attached", v)} />
-                      <Label htmlFor="postop_att" className="text-xs font-semibold">Imagem anexada ao sistema</Label>
+                    <div className="space-y-4 pt-2">
+                      <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-2">
+                        <Upload size={12} /> Registro Fotográfico / Laudos
+                      </h4>
+                      
+                      <Select onValueChange={(v) => {
+                        if (!v) return;
+                        const newExam = { id: Math.random().toString(36), type: v, date: new Date().toISOString().split('T')[0], file: null, url: "" };
+                        setPostopExams(prev => [...prev, newExam]);
+                      }}>
+                        <SelectTrigger className="h-10 bg-white border-slate-200 text-xs font-bold uppercase">
+                          <SelectValue placeholder="+ Adicionar Imagem/Laudo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="RX Pós-Operatório">RX Pós-Operatório</SelectItem>
+                          <SelectItem value="TC Pós-Operatório">TC Pós-Operatório</SelectItem>
+                          <SelectItem value="Foto do Local Cirúrgico">Foto do Local Cirúrgico</SelectItem>
+                          <SelectItem value="Laudo de Imagem">Laudo de Imagem</SelectItem>
+                          <SelectItem value="Outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        {postopExams.map((exam, idx) => (
+                          <Card key={exam.id} className="border-slate-100 bg-white shadow-sm overflow-hidden">
+                            <CardContent className="p-3 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">PÓS</div>
+                                  <span className="text-xs font-bold text-slate-700">{exam.type}</span>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400" onClick={() => setPostopExams(prev => prev.filter(e => e.id !== exam.id))}>×</Button>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                {exam.url ? (
+                                  <div className="col-span-2 relative group">
+                                    <img src={exam.url} alt="Evidência Pós" className="w-full h-32 object-cover rounded-md border" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
+                                      <Button variant="secondary" size="sm" className="h-8 text-[10px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Ver Ampliado</Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="col-span-2 relative">
+                                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        const newExams = [...postopExams];
+                                        newExams[idx].file = file;
+                                        newExams[idx].url = url;
+                                        setPostopExams(newExams);
+                                      }
+                                    }} />
+                                    <Button variant="outline" className="w-full h-10 text-[10px] font-bold uppercase border-dashed border-2 text-slate-400">+ Upload Imagem Real</Button>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
