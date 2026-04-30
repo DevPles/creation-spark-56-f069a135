@@ -1878,6 +1878,28 @@ export default function OpmeApp() {
                           </div>
                         )}
 
+                        {postopExams.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Imagens Pós-Operatórias</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {postopExams.map((exam, i) => (
+                                <button 
+                                  key={i} 
+                                  onClick={() => exam.url && window.open(exam.url, "_blank")}
+                                  className="bg-white p-2 rounded-lg border border-slate-100 flex items-center gap-2 text-left hover:border-primary/30 transition-colors"
+                                >
+                                  <div className="w-7 h-7 rounded bg-primary/5 flex items-center justify-center text-primary">
+                                    <Eye size={14} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-bold text-slate-800 truncate uppercase">{exam.type}</p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="space-y-2 pt-2 border-t border-primary/5">
                           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Dados do Faturamento (AIH)</p>
                           <div className="bg-white p-3 rounded-lg border border-slate-100 grid grid-cols-2 gap-3">
