@@ -792,10 +792,7 @@ export default function OpmeApp() {
             <h1 className="text-base font-bold text-slate-900 uppercase tracking-wider">Módulos OPME</h1>
             <p className="text-xs text-slate-500 uppercase">Gestão Hospitalar</p>
           </div>
-          <Button variant="ghost" size="sm" className="text-primary font-bold uppercase text-xs" onClick={resetForm}>
-            <Plus className="h-4 w-4 mr-1" />
-            Novo
-          </Button>
+          <div className="w-10" />
         </header>
 
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-10 space-y-6">
@@ -905,6 +902,7 @@ export default function OpmeApp() {
                             <div className="flex items-center gap-4 text-[11px] text-slate-500 font-medium">
                               <span>{req.procedure_date ? new Date(req.procedure_date).toLocaleDateString('pt-BR') : '---'}</span>
                               <span className="truncate">{req.requester_name || req.responsible_name || 'Não inf.'}</span>
+                              {req.billing_aih_number && <span className="text-[10px] bg-slate-100 px-1 rounded border border-slate-200">AIH: {req.billing_aih_number}</span>}
                             </div>
                          </div>
                             <div className="flex items-center gap-2">
@@ -1729,6 +1727,17 @@ export default function OpmeApp() {
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Sala da Cirurgia</p>
                         <p className="text-xs font-bold text-slate-700">{form.procedure_room || 'Não informada'}</p>
                       </div>
+                      <div className="space-y-0.5">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">AIH</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-slate-700">{form.billing_aih_number || 'Não inf.'}</p>
+                          {form.billing_aih_file_url && (
+                            <Button variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(form.billing_aih_file_url, "_blank")}>
+                              <FileText size={12} />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="space-y-2 mt-2">
@@ -2037,7 +2046,14 @@ export default function OpmeApp() {
                           <div className="bg-white p-3 rounded-lg border border-slate-100 grid grid-cols-2 gap-3">
                             <div className="space-y-0.5">
                               <p className="text-[8px] font-bold text-slate-400 uppercase">Número AIH</p>
-                              <p className="text-[11px] font-bold text-slate-700">{form.billing_aih_number || 'Não informado'}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-[11px] font-bold text-slate-700">{form.billing_aih_number || 'Não informado'}</p>
+                                {form.billing_aih_file_url && (
+                                  <Button variant="ghost" size="icon" className="h-5 w-5 text-primary p-0" onClick={() => window.open(form.billing_aih_file_url, "_blank")}>
+                                    <FileText size={12} />
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                             <div className="space-y-0.5">
                               <p className="text-[8px] font-bold text-slate-400 uppercase">Status Faturamento</p>
