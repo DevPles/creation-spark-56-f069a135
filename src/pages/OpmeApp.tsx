@@ -1950,173 +1950,118 @@ export default function OpmeApp() {
                 {step === 1 && (
                   <div className="space-y-6">
                     <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
-                      <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
-                        <div className="w-2 h-4 bg-primary rounded-full"></div>
-                        <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resumo de Consumo para Auditoria Pós</h3>
+                      <div className="flex items-center justify-between gap-3 border-b border-primary/10 pb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-4 bg-primary rounded-full"></div>
+                          <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Dossiê Consolidado Pós-OP</h3>
+                        </div>
+                        <Button variant="outline" size="sm" className="h-8 rounded-full text-[10px] font-bold uppercase" onClick={generateAuditDossierPdf}>Gerar PDF</Button>
                       </div>
 
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Materiais Lançados no Consumo</p>
-                          <div className="space-y-2">
-                            {form.opme_used?.filter((item: any) => item.launched).length > 0 ? (
-                              form.opme_used.filter((item: any) => item.launched).map((item: any, i: number) => (
-                                <Card key={i} className="border-slate-100 shadow-sm bg-white overflow-hidden">
-                                  <CardContent className="p-3">
-                                    <div className="flex justify-between items-start gap-4">
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-[11px] font-bold text-slate-800 uppercase leading-tight">{item.description}</p>
-                                        <div className="flex gap-3 mt-1">
-                                          <p className="text-[9px] text-slate-500 font-bold uppercase">Qtd: <span className="text-primary">{item.quantity}</span></p>
-                                          <p className="text-[9px] text-slate-500 font-bold uppercase">Lote: <span className="text-primary">{item.batch || '---'}</span></p>
-                                          {item.launched_by && (
-                                            <p className="text-[9px] text-slate-500 font-bold uppercase">Lançado por: <span className="text-primary">{item.launched_by.split('@')[0]}</span></p>
-                                          )}
-                                        </div>
-                                      </div>
-                                      {item.photo_url && (
-                                        <button 
-                                          onClick={() => window.open(item.photo_url, "_blank")}
-                                          className="w-12 h-12 rounded border border-slate-100 overflow-hidden shrink-0 group relative"
-                                        >
-                                          <img src={item.photo_url} alt="Evidência" className="w-full h-full object-cover" />
-                                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                            <Eye size={12} className="text-white" />
-                                          </div>
-                                        </button>
-                                      )}
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))
-                            ) : (
-                              <p className="text-[10px] text-slate-400 italic bg-white p-3 rounded-lg border border-dashed text-center">Nenhum material lançado no consumo.</p>
-                            )}
+                      <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                        <div className="space-y-0.5">
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Paciente</p>
+                          <p className="text-xs font-bold text-foreground truncate">{form.patient_name || 'Não informado'}</p>
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Unidade</p>
+                          <p className="text-xs font-bold text-foreground truncate">{form.facility_unit || 'Não informada'}</p>
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Registro / SUS</p>
+                          <p className="text-xs font-bold text-foreground">{form.patient_record || '---'} / {form.patient_sus || '---'}</p>
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Nascimento</p>
+                          <p className="text-xs font-bold text-foreground">{formatDateBR(form.patient_birthdate)}</p>
+                        </div>
+                        <div className="col-span-2 space-y-0.5">
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Procedimento</p>
+                          <p className="text-xs font-bold text-foreground">{form.procedure_name || 'Não informado'}</p>
+                          <p className="text-[10px] text-muted-foreground font-medium">SIGTAP: {form.procedure_sigtap_code || '---'} | Data: {formatDateBR(form.procedure_date)} | Sala: {form.procedure_room || '---'}</p>
+                        </div>
+                        <div className="col-span-2 space-y-0.5">
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Indicação Clínica</p>
+                          <div className="bg-background p-3 rounded-lg border border-border text-[11px] text-foreground font-medium leading-relaxed">
+                            {form.clinical_indication || 'Sem indicação clínica registrada.'}
                           </div>
                         </div>
-
-                         {consumptionExams.filter(e => e.url).length > 0 && (
-                          <div className="space-y-3">
-                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Evidências / Imagens do Procedimento ({consumptionExams.filter(e => e.url).length})</p>
-                            <div className="grid grid-cols-2 gap-3">
-                               {consumptionExams.filter(e => e.url).map((exam, i) => (
-                                 <div key={i} className="bg-white p-1 rounded-lg border border-slate-100 space-y-2 relative group flex flex-col h-full">
-                                   <div className="flex-1">
-                                      <div className="relative aspect-video rounded-md overflow-hidden border border-slate-50">
-                                        <img src={exam.url} alt={exam.type} className="w-full h-full object-cover" />
-                                        <button 
-                                          onClick={() => window.open(exam.url, "_blank")}
-                                          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[8px] font-bold uppercase"
-                                        >
-                                          Ampliar
-                                        </button>
-                                      </div>
-                                   </div>
-                                   <p className="text-[9px] font-black text-slate-700 uppercase px-1 py-1 truncate bg-slate-50/50 rounded-b-md">{exam.type}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                         {postopExams.filter(e => e.url).length > 0 && (
-                          <div className="space-y-3">
-                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Imagens Pós-Operatórias ({postopExams.filter(e => e.url).length})</p>
-                            <div className="grid grid-cols-2 gap-3">
-                               {postopExams.filter(e => e.url).map((exam, i) => (
-                                 <div key={i} className="bg-white p-1 rounded-lg border border-slate-100 space-y-2 relative group flex flex-col h-full">
-                                   <div className="flex-1">
-                                    <div className="relative aspect-video rounded-md overflow-hidden border border-slate-50">
-                                      <img src={exam.url} alt={exam.type} className="w-full h-full object-cover" />
-                                      <button 
-                                        onClick={() => window.open(exam.url, "_blank")}
-                                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[8px] font-bold uppercase"
-                                      >
-                                        Ampliar
-                                      </button>
-                                    </div>
-                                   </div>
-                                   <p className="text-[9px] font-black text-slate-700 uppercase px-1 py-1 truncate bg-slate-50/50 rounded-b-md">{exam.type}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                         {preopExams.filter(e => e.url).length > 0 && (
-                          <div className="space-y-3">
-                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Exames Pré-Operatórios ({preopExams.filter(e => e.url).length})</p>
-                            <div className="grid grid-cols-2 gap-3">
-                               {preopExams.filter(e => e.url).map((exam, i) => (
-                                 <div key={i} className="bg-white p-1 rounded-lg border border-slate-100 space-y-2 relative group flex flex-col h-full">
-                                   <div className="flex-1">
-                                    <div className="relative aspect-video rounded-md overflow-hidden border border-slate-50">
-                                      <img src={exam.url} alt={exam.type} className="w-full h-full object-cover" />
-                                      <button 
-                                        onClick={() => window.open(exam.url, "_blank")}
-                                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[8px] font-bold uppercase"
-                                      >
-                                        Ampliar
-                                      </button>
-                                    </div>
-                                   </div>
-                                   <p className="text-[9px] font-black text-slate-700 uppercase px-1 py-1 truncate bg-slate-50/50 rounded-b-md">{exam.type}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="space-y-4 pt-4 border-t border-slate-200">
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                              id="req_justification" 
-                              checked={form.auditor_post_justification_requested} 
-                              onCheckedChange={(v) => updateForm("auditor_post_justification_requested", v)} 
-                            />
-                            <Label htmlFor="req_justification" className="text-xs font-bold text-slate-600 uppercase">Solicitar Justificativa ao Cirurgião</Label>
-                          </div>
-                          {form.auditor_post_justification_requested && (
-                            <div className="space-y-2">
-                              <Label className="text-[10px] font-bold uppercase text-slate-500">Motivo da Solicitação</Label>
-                              <Textarea 
-                                value={form.auditor_post_justification_reason} 
-                                onChange={e => updateForm("auditor_post_justification_reason", e.target.value)} 
-                                placeholder="Descreva o que precisa ser justificado..." 
-                                className="min-h-[80px] text-xs bg-white" 
-                              />
-                            </div>
-                          )}
+                        <div className="space-y-0.5">
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Auditoria Pré-OP</p>
+                          <p className="text-xs font-bold text-foreground">{form.auditor_pre_analysis || '---'} | SIGTAP {form.auditor_pre_sigtap_compat || '---'}</p>
                         </div>
-
-                        <div className="space-y-2 pt-2 border-t border-primary/5">
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Dados do Faturamento (AIH)</p>
-                          <div className="bg-white p-3 rounded-lg border border-slate-100 grid grid-cols-2 gap-3">
-                            <div className="space-y-0.5">
-                              <p className="text-[8px] font-bold text-slate-400 uppercase">Número AIH</p>
-                              <div className="flex items-center gap-2">
-                                <p className="text-[11px] font-bold text-slate-700">{form.billing_aih_number || 'Não informado'}</p>
-                                {form.billing_aih_file_url && (
-                                  <Button variant="ghost" size="icon" className="h-5 w-5 text-primary p-0" onClick={() => window.open(form.billing_aih_file_url, "_blank")}>
-                                    <FileText size={12} />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                            <div className="space-y-0.5">
-                              <p className="text-[8px] font-bold text-slate-400 uppercase">Status Faturamento</p>
-                              <div className="flex items-center gap-1">
-                                <div className={`w-1.5 h-1.5 rounded-full ${form.billing_aih_generated ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                                <p className="text-[10px] font-bold text-slate-600 uppercase">{form.billing_aih_generated ? 'AIH Gerada' : 'Pendente'}</p>
-                              </div>
-                            </div>
-                          </div>
+                        <div className="space-y-0.5">
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">AIH / Faturamento</p>
+                          <p className="text-xs font-bold text-foreground">{form.billing_aih_number || 'Não informado'} | {form.billing_aih_generated ? 'Gerada' : 'Pendente'}</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-                      <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Validação Auditor Pós-OP</h3>
+                    <div className="bg-muted/30 p-4 rounded-xl border border-border space-y-4">
+                      <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Comparativo Autorizado x Consumido</h3>
+                      <div className="space-y-2">
+                        {toList(form.opme_requested).filter((item: any) => item?.description?.trim()).map((item: any, i: number) => {
+                          const usedItems = toList(form.opme_used).filter((used: any) => used?.launched && normalizeMaterial(used.description) === normalizeMaterial(item.description));
+                          const usedQty = usedItems.reduce((sum: number, used: any) => sum + Number(used.quantity || 0), 0);
+                          const requestedQty = Number(item.quantity || 0);
+                          const status = usedItems.length === 0 ? 'Não consumido' : usedQty === requestedQty ? 'Conforme' : usedQty > requestedQty ? 'Acima' : 'Abaixo';
+                          return (
+                            <div key={i} className="bg-background p-3 rounded-lg border border-border grid grid-cols-[1fr_auto] gap-3">
+                              <div className="min-w-0">
+                                <p className="text-[11px] font-bold text-foreground uppercase leading-tight">{item.description}</p>
+                                <p className="text-[9px] text-muted-foreground font-bold uppercase">Autorizado: {item.quantity || 0} | Consumido: {usedQty} | Modelo: {item.size_model || '---'}</p>
+                                {usedItems.map((used: any, idx: number) => (
+                                  <p key={idx} className="text-[9px] text-muted-foreground font-medium">Lote {used.batch || '---'} | Validade {used.expiry || '---'} | Etiqueta {used.label_fixed === 'sim' ? 'sim' : 'não'}</p>
+                                ))}
+                              </div>
+                              <span className={`self-start rounded-full px-2 py-1 text-[9px] font-black uppercase ${status === 'Conforme' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>{status}</span>
+                            </div>
+                          );
+                        })}
+                        {toList(form.opme_used).filter((used: any) => used?.launched && used?.description?.trim() && !toList(form.opme_requested).some((req: any) => normalizeMaterial(req.description) === normalizeMaterial(used.description))).map((item: any, i: number) => (
+                          <div key={`extra-${i}`} className="bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+                            <p className="text-[11px] font-bold text-destructive uppercase leading-tight">Consumido sem autorização: {item.description}</p>
+                            <p className="text-[9px] text-destructive font-bold uppercase">Qtd: {item.quantity || 0} | Lote: {item.batch || '---'}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-background p-4 rounded-xl border border-border space-y-4">
+                      <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Linha do Tempo de Evidências</h3>
+                      {getTimelineEvidence().length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {getTimelineEvidence().map((exam: any, i: number) => (
+                            <div key={`${exam.stage}-${i}`} className="p-1 rounded-lg border border-border space-y-2 relative group flex flex-col h-full">
+                              <div className="relative aspect-video rounded-md overflow-hidden border border-border">
+                                <img src={exam.url} alt={exam.type || exam.stage} className="w-full h-full object-cover" />
+                                <button onClick={() => window.open(exam.url, "_blank")} className="absolute inset-0 bg-foreground/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-background text-[8px] font-bold uppercase">Ampliar</button>
+                              </div>
+                              <div className="px-1 pb-1">
+                                <p className="text-[9px] font-black text-foreground uppercase truncate">{exam.stage} — {exam.type || 'Evidência'}</p>
+                                <p className="text-[8px] text-muted-foreground font-bold uppercase">{formatDateBR(exam.date)}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-dashed text-center">Nenhuma evidência anexada ao dossiê.</p>
+                      )}
+                    </div>
+
+                    <div className="bg-background p-4 rounded-xl border border-border space-y-4">
+                      <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Validações Automáticas de Consumo</h3>
+                      <div className="space-y-2">
+                        {getPostAuditDivergences().length > 0 ? getPostAuditDivergences().map((item, i) => (
+                          <p key={i} className="text-[10px] font-bold text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2">{item}</p>
+                        )) : (
+                          <p className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-lg p-2">Sem divergências automáticas entre materiais autorizados, consumo e evidências.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-muted/30 p-4 rounded-xl border border-border space-y-4">
+                      <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Validação Auditor Pós-OP</h3>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
