@@ -190,7 +190,7 @@ export default function OpmeApp() {
     cme_responsible: "",
     surgery_dispatch_date: "",
     surgery_dispatch_responsible: "",
-    opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "" }],
+    opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false }],
     opme_returned: [{ description: "", quantity: "0", batch: "", reason: "", responsible: "" }],
     postop_image_types: [],
     postop_image_other: "",
@@ -404,7 +404,8 @@ export default function OpmeApp() {
               quantity: item.quantity,
               batch: "",
               expiry: "",
-              label_fixed: "sim"
+              label_fixed: "sim",
+              launched: false
             }));
             setForm((p: any) => ({ ...p, opme_used: initialUsed }));
           }
@@ -470,8 +471,8 @@ export default function OpmeApp() {
   };
 
   const addItem = (listName: string = "opme_requested") => {
-    const newItem = listName === "opme_used" 
-      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "" }
+    const newItem = listName === "opme_used"
+      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false }
       : listName === "opme_returned"
       ? { description: "", quantity: "0", batch: "", reason: "", responsible: "" }
       : { description: "", quantity: "1", size_model: "", sigtap: "" };
@@ -1788,69 +1789,120 @@ export default function OpmeApp() {
             {part === 6 && step === 0 && (
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Materiais Utilizados</h3>
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Materiais a Lançar</h3>
                   <div className="space-y-3">
-                    {form.opme_used?.map((item: any, idx: number) => (
-                      <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
-                        <CardContent className="p-4 space-y-4">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Item #{String(idx + 1).padStart(2, '0')}</span>
-                            {form.opme_used.length > 1 && (
-                              <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px] font-bold uppercase" onClick={() => setForm((p: any) => ({ ...p, opme_used: p.opme_used.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
-                            )}
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-[10px] font-bold uppercase text-slate-500">Descrição Material</Label>
-                            <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value, "opme_used")} className="h-10 text-xs bg-white" />
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-bold uppercase text-slate-500">Qtd</Label>
-                              <Input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value, "opme_used")} className="h-10 text-xs" />
+                    {form.opme_used?.filter((item: any) => !item.launched).map((item: any) => {
+                      const idx = form.opme_used.findIndex((i: any) => i === item);
+                      return (
+                        <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
+                          <CardContent className="p-4 space-y-4">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Item #{String(idx + 1).padStart(2, '0')}</span>
+                              <div className="flex gap-2">
+                                <Button variant="ghost" size="sm" className="h-6 px-2 text-primary text-[10px] font-bold uppercase bg-primary/5 hover:bg-primary/10" 
+                                  onClick={async () => {
+                                    if (!item.batch) { toast.error("Preencha o lote antes de lançar"); return; }
+                                    updateItem(idx, "launched", true, "opme_used");
+                                    setTimeout(() => handleSave(false), 100);
+                                  }}
+                                >
+                                  Lançar Item
+                                </Button>
+                                {form.opme_used.length > 1 && (
+                                  <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px] font-bold uppercase" onClick={() => setForm((p: any) => ({ ...p, opme_used: p.opme_used.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
+                                )}
+                              </div>
                             </div>
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-bold uppercase text-slate-500">Lote</Label>
-                              <Input value={item.batch} onChange={e => updateItem(idx, "batch", e.target.value, "opme_used")} className="h-10 text-xs" />
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-bold uppercase text-slate-500">Descrição Material</Label>
+                              <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value, "opme_used")} className="h-10 text-xs bg-white" />
                             </div>
-                          </div>
-                          <div className="space-y-1.5 pt-1">
-                            <Label className="text-[10px] font-bold uppercase text-slate-500">Comprovação (Etiqueta/Lote)</Label>
-                            <div className="relative group">
-                              {item.photo_url ? (
-                                <div className="relative aspect-video rounded-md overflow-hidden border border-slate-200">
-                                  <img src={item.photo_url} alt="Comprovação" className="w-full h-full object-cover" />
-                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <Button variant="secondary" size="sm" className="h-7 text-[9px] font-bold uppercase" onClick={() => window.open(item.photo_url, "_blank")}>Ver</Button>
-                                    <Button variant="destructive" size="sm" className="h-7 text-[9px] font-bold uppercase" onClick={() => updateItem(idx, "photo_url", "", "opme_used")}>Remover</Button>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-bold uppercase text-slate-500">Qtd</Label>
+                                <Input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value, "opme_used")} className="h-10 text-xs" />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-bold uppercase text-slate-500">Lote</Label>
+                                <Input value={item.batch} onChange={e => updateItem(idx, "batch", e.target.value, "opme_used")} className="h-10 text-xs" />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5 pt-1">
+                              <Label className="text-[10px] font-bold uppercase text-slate-500">Comprovação (Etiqueta/Lote)</Label>
+                              <div className="relative group">
+                                {item.photo_url ? (
+                                  <div className="relative aspect-video rounded-md overflow-hidden border border-slate-200">
+                                    <img src={item.photo_url} alt="Comprovação" className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                      <Button variant="secondary" size="sm" className="h-7 text-[9px] font-bold uppercase" onClick={() => window.open(item.photo_url, "_blank")}>Ver</Button>
+                                      <Button variant="destructive" size="sm" className="h-7 text-[9px] font-bold uppercase" onClick={() => updateItem(idx, "photo_url", "", "opme_used")}>Remover</Button>
+                                    </div>
                                   </div>
-                                </div>
-                              ) : (
-                                <div className="relative">
-                                  <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) {
-                                        const url = URL.createObjectURL(file);
-                                        updateItem(idx, "photo_url", url, "opme_used");
-                                      }
-                                    }} 
-                                  />
-                                  <Button variant="outline" className="w-full h-10 border-dashed text-[10px] font-bold uppercase text-slate-400 flex gap-2">
-                                    <Upload size={14} /> Anexar Foto do Material
-                                  </Button>
-                                </div>
-                              )}
+                                ) : (
+                                  <div className="relative">
+                                    <input 
+                                      type="file" 
+                                      accept="image/*" 
+                                      className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          const url = URL.createObjectURL(file);
+                                          updateItem(idx, "photo_url", url, "opme_used");
+                                        }
+                                      }} 
+                                    />
+                                    <Button variant="outline" className="w-full h-10 border-dashed text-[10px] font-bold uppercase text-slate-400 flex gap-2">
+                                      <Upload size={14} /> Anexar Foto do Material
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                    <Button variant="outline" className="w-full border-dashed h-10 text-[10px] font-bold uppercase" onClick={() => addItem("opme_used")}>+ Material Utilizado</Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                    <Button variant="outline" className="w-full border-dashed h-10 text-[10px] font-bold uppercase" onClick={() => addItem("opme_used")}>+ Novo Material para Lançar</Button>
+                    
+                    {/* Botão Salvar Rascunho integrado à lista */}
+                    <Button 
+                      variant="secondary" 
+                      className="w-full h-10 text-[10px] font-bold uppercase bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      onClick={() => handleSave(false)}
+                      disabled={saving}
+                    >
+                      {saving ? "Salvando..." : "Salvar Rascunho / Pausar"}
+                    </Button>
                   </div>
                 </div>
+
+                {form.opme_used?.some((item: any) => item.launched) && (
+                  <div className="space-y-4">
+                    <h3 className="text-[10px] font-black uppercase text-emerald-600 tracking-widest border-b pb-1">Materiais Lançados</h3>
+                    <div className="space-y-2">
+                      {form.opme_used?.filter((item: any) => item.launched).map((item: any) => {
+                        const idx = form.opme_used.findIndex((i: any) => i === item);
+                        return (
+                          <Card key={idx} className="border-emerald-100 bg-emerald-50/30 overflow-hidden">
+                            <CardContent className="p-3 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                  <FileText size={14} />
+                                </div>
+                                <div>
+                                  <p className="text-[11px] font-bold text-slate-700 uppercase">{item.description}</p>
+                                  <p className="text-[9px] text-slate-500 uppercase font-medium">Qtd: {item.quantity} | Lote: {item.batch}</p>
+                                </div>
+                              </div>
+                              <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold uppercase text-slate-400 hover:text-primary" onClick={() => updateItem(idx, "launched", false, "opme_used")}>Editar</Button>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Devoluções / Sobras</h3>
