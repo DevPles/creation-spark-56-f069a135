@@ -714,7 +714,10 @@ export default function OpmeApp() {
             <h1 className="text-base font-bold text-slate-900 uppercase tracking-wider">Módulos OPME</h1>
             <p className="text-xs text-slate-500 uppercase">Gestão Hospitalar</p>
           </div>
-          <div className="w-10" />
+          <Button variant="ghost" size="sm" className="text-primary font-bold uppercase text-xs" onClick={resetForm}>
+            <Plus className="h-4 w-4 mr-1" />
+            Novo
+          </Button>
         </header>
 
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-10 space-y-6">
