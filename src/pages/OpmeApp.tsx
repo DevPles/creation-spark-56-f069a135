@@ -958,22 +958,22 @@ export default function OpmeApp() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between border-b pb-1">
-                    <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">7. Comprovação por Imagem</h3>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase">PRÉ-OPERATÓRIO</span>
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <h3 className="text-xs font-bold uppercase text-primary tracking-widest">7. Comprovação por Imagem</h3>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">PRÉ-OPERATÓRIO</span>
                   </div>
 
                   {preopExams.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       {preopExams.map((exam) => (
                         <Card key={exam.id} className="border-slate-100 shadow-sm overflow-hidden bg-white">
-                          <div className="p-2 flex flex-col gap-1.5">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-primary font-black text-[8px]">IMG</div>
-                              <span className="text-[10px] font-bold text-slate-700 truncate">{exam.type}</span>
+                          <div className="p-3 flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-primary font-black text-[10px]">IMG</div>
+                              <span className="text-xs font-bold text-slate-700 truncate">{exam.type}</span>
                             </div>
                             {exam.url && (
-                              <Button variant="outline" className="h-7 text-[9px] font-bold uppercase w-full bg-slate-50 border-slate-200" onClick={() => window.open(exam.url, "_blank")}>Ver Exame</Button>
+                              <Button variant="outline" className="h-9 text-xs font-bold uppercase w-full bg-slate-50 border-slate-200" onClick={() => window.open(exam.url, "_blank")}>Ver Exame</Button>
                             )}
                           </div>
                         </Card>
@@ -981,20 +981,20 @@ export default function OpmeApp() {
                     </div>
                   )}
 
-                  <div className="space-y-4 bg-white p-3 rounded-lg border border-slate-100 shadow-sm mt-2">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Data do Exame</Label>
-                        <Input type="date" value={form.preop_exam_date} onChange={e => updateForm("preop_exam_date", e.target.value)} className="h-9 text-xs" />
+                  <div className="space-y-4 bg-white p-4 rounded-lg border border-slate-100 shadow-sm mt-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-semibold uppercase text-slate-500">Data do Exame</Label>
+                        <Input type="date" value={form.preop_exam_date} onChange={e => updateForm("preop_exam_date", e.target.value)} className="h-12 bg-white" />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Nº do Exame / Laudo</Label>
-                        <Input value={form.preop_exam_number} onChange={e => updateForm("preop_exam_number", e.target.value)} className="h-9 text-xs" />
+                      <div className="space-y-2">
+                        <Label className="text-xs font-semibold uppercase text-slate-500">Nº do Exame / Laudo</Label>
+                        <Input value={form.preop_exam_number} onChange={e => updateForm("preop_exam_number", e.target.value)} className="h-12 bg-white" />
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Tipo de Exame Realizado</Label>
-                      <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Exame Realizado</Label>
+                      <div className="grid grid-cols-2 gap-3 mt-1">
                         {["Radiografia", "Tomografia", "Ressonância", "Ultrassonografia"].map(type => (
                           <div key={type} className="flex items-center space-x-2">
                             <Checkbox 
@@ -1007,28 +1007,28 @@ export default function OpmeApp() {
                                 updateForm("preop_image_types", types);
                               }} 
                             />
-                            <Label htmlFor={`pre_${type}`} className="text-[10px]">{type}</Label>
+                            <Label htmlFor={`pre_${type}`} className="text-sm">{type}</Label>
                           </div>
                         ))}
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Descrição dos Achados</Label>
-                      <Textarea value={form.preop_finding_description} onChange={e => updateForm("preop_finding_description", e.target.value)} placeholder="Descrição da indicação..." className="min-h-[60px] text-xs" />
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Descrição dos Achados</Label>
+                      <Textarea value={form.preop_finding_description} onChange={e => updateForm("preop_finding_description", e.target.value)} placeholder="Descrição da indicação..." className="min-h-[100px] text-sm bg-white" />
                     </div>
-                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-50">
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
                       <div className="flex items-center space-x-2">
                         <Checkbox id="img_att" checked={form.preop_image_attached} onCheckedChange={v => updateForm("preop_image_attached", v)} />
-                        <Label htmlFor="img_att" className="text-[10px] font-bold">Imagem Anexada</Label>
+                        <Label htmlFor="img_att" className="text-sm font-semibold">Imagem Anexada</Label>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Label className="text-[9px] font-bold text-slate-400">Nº Anexos:</Label>
-                        <Input type="number" value={form.preop_image_count} onChange={e => updateForm("preop_image_count", parseInt(e.target.value))} className="h-7 w-12 text-xs p-1" />
+                      <div className="flex items-center space-x-3">
+                        <Label className="text-xs font-semibold uppercase text-slate-500">Nº Anexos:</Label>
+                        <Input type="number" value={form.preop_image_count} onChange={e => updateForm("preop_image_count", parseInt(e.target.value))} className="h-10 w-16 text-center" />
                       </div>
                     </div>
-                    <div className="space-y-1 pt-2 border-t border-slate-50">
-                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Responsável Validação</Label>
-                      <Input value={form.preop_validation_responsible} onChange={e => updateForm("preop_validation_responsible", e.target.value)} placeholder="Assinatura / Carimbo" className="h-9 text-xs" />
+                    <div className="space-y-2 pt-4 border-t border-slate-50">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Responsável Validação</Label>
+                      <Input value={form.preop_validation_responsible} onChange={e => updateForm("preop_validation_responsible", e.target.value)} placeholder="Assinatura / Carimbo" className="h-12 bg-white" />
                     </div>
                   </div>
                 </div>
