@@ -59,13 +59,16 @@ export default function OpmeApp() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<string[]>([]);
-  const [stats, setStats] = useState({
-    cadastro: 0,
-    requisicao: 0,
-    auditoria: 0,
-    faturamento: 0,
-    divergencias: 0
-  });
+   const [stats, setStats] = useState({
+     cadastro: 0,
+     requisicao: 0,
+     auditoria: 0,
+     faturamento: 0,
+     divergencias: 0
+   });
+   const [requests, setRequests] = useState<any[]>([]);
+   const [filteredRequests, setFilteredRequests] = useState<any[]>([]);
+   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[] }>({ idx: -1, items: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -192,32 +195,74 @@ export default function OpmeApp() {
     }
   }, [recordId]);
 
-  useEffect(() => {
-    if (part === null) {
-      (async () => {
-        const { data: counts, error } = await supabase.from("opme_requests").select("status, procedure_side_cadastro, procedure_side_requisicao, procedure_region_cadastro, procedure_region_requisicao, procedure_segment_cadastro, procedure_segment_requisicao, procedure_position_cadastro, procedure_position_requisicao");
-        if (counts && !error) {
-          const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0, divergencias: 0 };
-          counts.forEach((c: any) => {
-            if (c.status === "rascunho") s.cadastro++;
-            if (c.status === "pendente_requisicao") s.requisicao++;
-            if (c.status === "pendente_auditoria") s.auditoria++;
-            if (c.status === "pendente_faturamento") s.faturamento++;
-            
-            const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
-            const regionDiv = c.procedure_region_cadastro && c.procedure_region_requisicao && c.procedure_region_cadastro !== c.procedure_region_requisicao;
-            const segmentDiv = c.procedure_segment_cadastro && c.procedure_segment_requisicao && c.procedure_segment_cadastro !== c.procedure_segment_requisicao;
-            const positionDiv = c.procedure_position_cadastro && c.procedure_position_requisicao && c.procedure_position_cadastro !== c.procedure_position_requisicao;
-            
-            if (sideDiv || regionDiv || segmentDiv || positionDiv) {
-              s.divergencias++;
-            }
-          });
-          setStats(s);
-        }
-      })();
-    }
-  }, [part]);
+   useEffect(() => {
+     if (part === null) {
+       (async () => {
+         const { data, error } = await supabase
+           .from("opme_requests")
+           .select("*")
+           .order("created_at", { ascending: false });
+         
+         if (data && !error) {
+           setRequests(data);
+           setFilteredRequests(data);
+           const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0, divergencias: 0 };
+           data.forEach((c: any) => {
+             if (c.status === "rascunho") s.cadastro++;
+             if (c.status === "pendente_requisicao") s.requisicao++;
+             if (c.status === "pendente_auditoria") s.auditoria++;
+             if (c.status === "pendente_faturamento") s.faturamento++;
+             
+             const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
+             const regionDiv = c.procedure_region_cadastro && c.procedure_region_requisicao && c.procedure_region_cadastro !== c.procedure_region_requisicao;
+             const segmentDiv = c.procedure_segment_cadastro && c.procedure_segment_requisicao && c.procedure_segment_cadastro !== c.procedure_segment_requisicao;
+             const positionDiv = c.procedure_position_cadastro && c.procedure_position_requisicao && c.procedure_position_cadastro !== c.procedure_position_requisicao;
+             
+             if (sideDiv || regionDiv || segmentDiv || positionDiv) {
+               s.divergencias++;
+             }
+           });
+           setStats(s);
+         }
+       })();
+     }
+   }, [part]);
+ 
+   const applyFilter = (status: string | null) => {
+     setFilterStatus(status);
+     if (!status) {
+       setFilteredRequests(requests);
+     } else if (status === "divergencias") {
+       setFilteredRequests(requests.filter((c: any) => {
+         const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
+         const regionDiv = c.procedure_region_cadastro && c.procedure_region_requisicao && c.procedure_region_cadastro !== c.procedure_region_requisicao;
+         const segmentDiv = c.procedure_segment_cadastro && c.procedure_segment_requisicao && c.procedure_segment_cadastro !== c.procedure_segment_requisicao;
+         const positionDiv = c.procedure_position_cadastro && c.procedure_position_requisicao && c.procedure_position_cadastro !== c.procedure_position_requisicao;
+         return sideDiv || regionDiv || segmentDiv || positionDiv;
+       }));
+     } else {
+       setFilteredRequests(requests.filter((r: any) => r.status === status));
+     }
+   };
+ 
+   const loadRequest = (req: any) => {
+     setForm(req);
+     if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
+       setPreopExams(req.preop_exams_details as any[]);
+     }
+     
+     // Determinar qual parte e passo abrir baseado no status
+     if (req.status === "rascunho") { setPart(1); setStep(0); }
+     else if (req.status === "pendente_requisicao") { setPart(2); setStep(0); }
+     else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
+     else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
+     else { setPart(1); setStep(0); } // Fallback
+     
+     // Adicionar ID na URL sem recarregar para manter consistência
+     const newUrl = new URL(window.location.href);
+     newUrl.searchParams.set("id", req.id);
+     window.history.pushState({}, '', newUrl);
+   };
 
   useEffect(() => {
     (async () => {
@@ -417,25 +462,71 @@ export default function OpmeApp() {
               <div className="h-px flex-1 bg-slate-200 ml-4" />
             </div>
             <div className="grid grid-cols-1 gap-4">
-              {[
-                { id: 2, label: "Pendentes Requisição", value: stats.requisicao, sub: "Equipe médica precisa preencher" },
-                { id: 3, label: "Pendentes Auditoria", value: stats.auditoria, sub: "Aguardando validação técnica" },
-                { id: 4, label: "Pendentes Faturamento", value: stats.faturamento, sub: "Aguardando codificação final" },
-                { id: 1, label: "Novos Cadastros", value: stats.cadastro, sub: "Iniciados recentemente" },
-                { id: 3, label: "Divergências Local", value: stats.divergencias, sub: "Lado cirúrgico divergente", color: "text-red-600" },
-              ].map((item, i) => (
-                <button 
-                  key={i} 
-                  onClick={() => setPart(item.id)}
-                  className="flex items-center gap-4 p-6 bg-white rounded-xl border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all active:scale-[0.99] text-left group w-full"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold ${(item as any).color || 'text-slate-900'} group-hover:text-primary transition-colors`}>{item.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
-                  </div>
-                  <div className={`text-3xl font-bold ${(item as any).color || 'text-slate-900'} tabular-nums tracking-tight`}>{item.value}</div>
-                </button>
-              ))}
+               {[
+                 { status: "pendente_requisicao", label: "Pendentes Requisição", value: stats.requisicao, sub: "Equipe médica precisa preencher" },
+                 { status: "pendente_auditoria", label: "Pendentes Auditoria", value: stats.auditoria, sub: "Aguardando validação técnica" },
+                 { status: "pendente_faturamento", label: "Pendentes Faturamento", value: stats.faturamento, sub: "Aguardando codificação final" },
+                 { status: "rascunho", label: "Novos Cadastros", value: stats.cadastro, sub: "Iniciados recentemente" },
+                 { status: "divergencias", label: "Divergências Local", value: stats.divergencias, sub: "Lado cirúrgico divergente", color: "text-red-600" },
+               ].map((item, i) => (
+                 <button 
+                   key={i} 
+                   onClick={() => applyFilter(filterStatus === item.status ? null : item.status)}
+                   className={`flex items-center gap-4 p-6 bg-white rounded-xl border transition-all active:scale-[0.99] text-left group w-full ${filterStatus === item.status ? "border-primary ring-2 ring-primary/10 shadow-md" : "border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]"}`}
+                 >
+                   <div className="flex-1 min-w-0">
+                     <p className={`text-sm font-semibold ${(item as any).color || 'text-slate-900'} group-hover:text-primary transition-colors`}>{item.label}</p>
+                     <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
+                   </div>
+                   <div className={`text-3xl font-bold ${(item as any).color || 'text-slate-900'} tabular-nums tracking-tight`}>{item.value}</div>
+                 </button>
+               ))}
+             </div>
+           </div>
+ 
+           <div className="space-y-4">
+             <div className="flex items-center justify-between px-1">
+               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                 {filterStatus ? `Filtrando por: ${filterStatus.replace('_', ' ').toUpperCase()}` : "Lista de Trabalho"}
+               </h3>
+               {filterStatus && (
+                 <Button variant="ghost" size="sm" className="h-6 text-[10px] uppercase font-bold text-primary" onClick={() => applyFilter(null)}>Limpar Filtro</Button>
+               )}
+             </div>
+             
+             <div className="space-y-3">
+               {filteredRequests.length > 0 ? (
+                 filteredRequests.map((req) => (
+                   <Card key={req.id} className="border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden" onClick={() => loadRequest(req)}>
+                     <CardContent className="p-0">
+                       <div className="p-4 flex items-center justify-between">
+                         <div className="flex-1 min-w-0">
+                           <div className="flex items-center gap-2 mb-1">
+                             <h4 className="font-bold text-slate-900 truncate uppercase text-sm">{req.patient_name}</h4>
+                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${
+                               req.status === 'rascunho' ? 'bg-slate-100 text-slate-600 border-slate-200' :
+                               req.status === 'pendente_requisicao' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                               req.status === 'pendente_auditoria' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                               'bg-emerald-50 text-emerald-600 border-emerald-100'
+                             }`}>
+                               {req.status?.replace('_', ' ')}
+                             </span>
+                           </div>
+                           <div className="flex items-center gap-3 text-xs text-slate-500">
+                             <span className="flex items-center gap-1 font-medium">📅 {req.procedure_date ? new Date(req.procedure_date).toLocaleDateString('pt-BR') : '---'}</span>
+                             <span className="truncate">👤 {req.requester_name || req.responsible_name || 'Não inf.'}</span>
+                           </div>
+                         </div>
+                         <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase">Abrir</Button>
+                       </div>
+                     </CardContent>
+                   </Card>
+                 ))
+               ) : (
+                 <div className="bg-white border border-dashed border-slate-200 rounded-xl p-10 text-center">
+                   <p className="text-sm text-slate-400 font-medium">Nenhum pedido encontrado nesta categoria.</p>
+                 </div>
+               )}
             </div>
           </div>
         </main>
