@@ -511,10 +511,9 @@ export default function OpmeApp() {
             {[
               { id: 1, title: "CADASTRO", description: "Paciente" },
               { id: 2, title: "REQUISIÇÃO", description: "Pedido" },
-              { id: 3, title: "AUDITORIA PRÉ", description: "Técnica" },
+              { id: 3, title: "AUDITORIA", description: "Pré e Pós" },
               { id: 5, title: "CONTROLE ADM", description: "Logística" },
               { id: 6, title: "CONSUMO", description: "Cirúrgico" },
-              { id: 7, title: "AUDITORIA PÓS", description: "Técnica" },
               { id: 4, title: "FATURAMENTO", description: "AIH" },
             ].map((card) => (
               <button
