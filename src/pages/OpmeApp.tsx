@@ -1448,6 +1448,7 @@ export default function OpmeApp() {
                     <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
                     <Textarea value={form.auditor_pre_opinion} onChange={e => updateForm("auditor_pre_opinion", e.target.value)} placeholder="Descreva sua avaliação técnica aqui..." className="min-h-[100px] text-xs bg-white" />
                   </div>
+                </div>
                 )}
 
                 {step === 1 && (
