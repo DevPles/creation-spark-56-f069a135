@@ -509,10 +509,12 @@ export default function OpmeApp() {
       // Lógica de transição de partes
       if (part === 1) { setPart(2); setStep(0); }
       else if (part === 2) { setPart(3); setStep(0); }
-      else if (part === 3) { setPart(5); setStep(0); }
+      else if (part === 3) {
+        if (step === 0) { setPart(5); setStep(0); }
+        else { setPart(4); setStep(0); }
+      }
       else if (part === 5) { setPart(6); setStep(0); }
-      else if (part === 6) { setPart(7); setStep(0); }
-      else if (part === 7) { setPart(4); setStep(0); }
+      else if (part === 6) { setPart(3); setStep(1); } // Após consumo vai para Auditoria Pós (part 3, step 1)
     }
   };
 
