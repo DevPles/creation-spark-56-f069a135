@@ -68,7 +68,8 @@ export default function OpmeApp() {
    });
    const [requests, setRequests] = useState<any[]>([]);
    const [filteredRequests, setFilteredRequests] = useState<any[]>([]);
-   const [filterStatus, setFilterStatus] = useState<string | null>(null);
+    const [filterStatus, setFilterStatus] = useState<string | null>(null);
+    const [filterDate, setFilterDate] = useState<string>("");
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[] }>({ idx: -1, items: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -228,22 +229,46 @@ export default function OpmeApp() {
      }
    }, [part]);
  
-   const applyFilter = (status: string | null) => {
-     setFilterStatus(status);
-     if (!status) {
-       setFilteredRequests(requests);
-     } else if (status === "divergencias") {
-       setFilteredRequests(requests.filter((c: any) => {
-         const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
-         const regionDiv = c.procedure_region_cadastro && c.procedure_region_requisicao && c.procedure_region_cadastro !== c.procedure_region_requisicao;
-         const segmentDiv = c.procedure_segment_cadastro && c.procedure_segment_requisicao && c.procedure_segment_cadastro !== c.procedure_segment_requisicao;
-         const positionDiv = c.procedure_position_cadastro && c.procedure_position_requisicao && c.procedure_position_cadastro !== c.procedure_position_requisicao;
-         return sideDiv || regionDiv || segmentDiv || positionDiv;
-       }));
-     } else {
-       setFilteredRequests(requests.filter((r: any) => r.status === status));
-     }
-   };
+    const applyFilters = (status: string | null, date: string) => {
+      let filtered = [...requests];
+      
+      if (status) {
+        if (status === "divergencias") {
+          filtered = filtered.filter((c: any) => {
+            const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
+            const regionDiv = c.procedure_region_cadastro && c.procedure_region_requisicao && c.procedure_region_cadastro !== c.procedure_region_requisicao;
+            const segmentDiv = c.procedure_segment_cadastro && c.procedure_segment_requisicao && c.procedure_segment_cadastro !== c.procedure_segment_requisicao;
+            const positionDiv = c.procedure_position_cadastro && c.procedure_position_requisicao && c.procedure_position_cadastro !== c.procedure_position_requisicao;
+            return sideDiv || regionDiv || segmentDiv || positionDiv;
+          });
+        } else {
+          filtered = filtered.filter((r: any) => r.status === status);
+        }
+      }
+      
+      if (date) {
+        filtered = filtered.filter((r: any) => r.procedure_date === date);
+      }
+      
+      setFilteredRequests(filtered);
+    };
+
+    const handleStatusFilter = (status: string | null) => {
+      const newStatus = filterStatus === status ? null : status;
+      setFilterStatus(newStatus);
+      applyFilters(newStatus, filterDate);
+    };
+
+    const handleDateFilter = (date: string) => {
+      setFilterDate(date);
+      applyFilters(filterStatus, date);
+    };
+
+    const clearFilters = () => {
+      setFilterStatus(null);
+      setFilterDate("");
+      setFilteredRequests(requests);
+    };
  
    const loadRequest = (req: any) => {
      setForm(req);
@@ -456,38 +481,47 @@ export default function OpmeApp() {
             ))}
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filtros de Status</h3>
-              {filterStatus && (
-                <Button variant="ghost" size="sm" className="h-5 px-2 text-[10px] uppercase font-bold text-primary" onClick={() => applyFilter(null)}>Limpar Filtros</Button>
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filtros Avançados</h3>
+              {(filterStatus || filterDate) && (
+                <Button variant="ghost" size="sm" className="h-5 px-2 text-[10px] uppercase font-bold text-primary" onClick={clearFilters}>Limpar</Button>
               )}
             </div>
-            <div className="flex overflow-x-auto gap-2 pb-2 -mx-1 px-1 scrollbar-hide">
-              {[
-                { status: "pendente_requisicao", label: "Requisição", value: stats.requisicao },
-                { status: "pendente_auditoria", label: "Auditoria", value: stats.auditoria },
-                { status: "pendente_faturamento", label: "Faturamento", value: stats.faturamento },
-                { status: "rascunho", label: "Cadastros", value: stats.cadastro },
-                { status: "divergencias", label: "Divergências", value: stats.divergencias },
-              ].map((item, i) => (
-                <button 
-                  key={i} 
-                  onClick={() => applyFilter(filterStatus === item.status ? null : item.status)}
-                  className={`flex-none flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-[11px] font-bold uppercase whitespace-nowrap ${
-                    filterStatus === item.status 
-                      ? "bg-primary text-white border-primary shadow-md" 
-                      : "bg-white text-slate-600 border-slate-200 hover:border-primary/50"
-                  }`}
-                >
-                  {item.label}
-                  <span className={`px-2 py-0.5 rounded bg-black/10 text-[10px] ${
-                    filterStatus === item.status ? "text-white" : "text-slate-500"
-                  }`}>
-                    {item.value}
-                  </span>
-                </button>
-              ))}
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase text-slate-500">Filtrar por Status</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { status: "pendente_requisicao", label: "Requisição" },
+                    { status: "pendente_auditoria", label: "Auditoria" },
+                    { status: "pendente_faturamento", label: "Faturamento" },
+                  ].map((item, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => handleStatusFilter(item.status)}
+                      className={`flex flex-col items-center justify-center py-2 rounded-lg border transition-all text-[10px] font-bold uppercase ${
+                        filterStatus === item.status 
+                          ? "bg-primary text-white border-primary shadow-sm" 
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:border-primary/30"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase text-slate-500">Filtrar por Data</Label>
+                <Input 
+                  type="date" 
+                  value={filterDate} 
+                  onChange={(e) => handleDateFilter(e.target.value)}
+                  className="h-10 text-xs font-medium bg-slate-50 border-slate-200"
+                />
+              </div>
             </div>
           </div>
  
