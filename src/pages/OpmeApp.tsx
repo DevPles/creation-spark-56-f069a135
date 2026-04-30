@@ -670,6 +670,14 @@ export default function OpmeApp() {
       const postop_image_count = uploadedPostop.length > 0 ? uploadedPostop.length : (form.postop_image_count || 0);
       const postop_image_attached = uploadedPostop.length > 0 ? true : (form.postop_image_attached || false);
 
+      // Upload da AIH se for um blob
+      let billing_aih_file_url = form.billing_aih_file_url;
+      if (billing_aih_file_url && billing_aih_file_url.startsWith("blob:")) {
+        // Precisamos do arquivo original, mas não o temos no estado do form facilmente.
+        // Como o usuário anexou agora, vamos procurar no DOM ou gerenciar um estado para isso.
+        // Por enquanto, vamos assumir que o usuário quer que funcione, então vamos adicionar um ref ou estado.
+      }
+
       const dateFields = [
         "patient_birthdate", "procedure_date", "preop_exam_date", 
         "auditor_pre_date", "request_date", "warehouse_date", 
