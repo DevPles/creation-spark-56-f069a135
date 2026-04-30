@@ -705,44 +705,43 @@ export default function OpmeApp() {
                               <span className="truncate">{req.requester_name || req.responsible_name || 'Não inf.'}</span>
                             </div>
                          </div>
-                           <div className="flex items-center gap-2">
-                             <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase">Abrir</Button>
-                             <AlertDialog>
-                               <AlertDialogTrigger asChild>
-                                 <Button 
-                                   variant="ghost" 
-                                   size="icon" 
-                                   className="h-8 w-8 text-slate-300 hover:text-destructive hover:bg-destructive/5 transition-colors"
-                                   onClick={(e) => e.stopPropagation()}
-                                 >
-                                   <X size={18} />
-                                 </Button>
-                               </AlertDialogTrigger>
-                               <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                 <AlertDialogHeader>
-                                   <AlertDialogTitle className="text-destructive flex items-center gap-2 font-bold uppercase tracking-tight">
-                                     <Trash2 size={20} />
-                                     Excluir Processo?
-                                   </AlertDialogTitle>
-                                   <AlertDialogDescription className="text-slate-600 font-medium text-sm">
-                                     Atenção: Ao excluir, você perderá TODO o processo e progresso permanentemente. Esta ação não pode ser desfeita.
-                                   </AlertDialogDescription>
-                                 </AlertDialogHeader>
-                                 <AlertDialogFooter>
-                                   <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
-                                   <AlertDialogAction 
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       handleDeleteRequest(req.id);
-                                     }}
-                                     className="bg-destructive text-white hover:bg-destructive/90 font-bold uppercase text-xs"
-                                   >
-                                     Sim, Excluir Tudo
-                                   </AlertDialogAction>
-                                 </AlertDialogFooter>
-                               </AlertDialogContent>
-                             </AlertDialog>
-                           </div>
+                            <div className="flex items-center gap-2">
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-slate-300 hover:text-destructive hover:bg-destructive/5 transition-colors"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <X size={18} />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle className="text-destructive flex items-center gap-2 font-bold uppercase tracking-tight">
+                                      <Trash2 size={20} />
+                                      Excluir Processo?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription className="text-slate-600 font-medium text-sm">
+                                      Atenção: Ao excluir, você perderá TODO o processo e progresso permanentemente. Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteRequest(req.id);
+                                      }}
+                                      className="bg-destructive text-white hover:bg-destructive/90 font-bold uppercase text-xs"
+                                    >
+                                      Sim, Excluir Tudo
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                        </div>
                      </CardContent>
                    </Card>
