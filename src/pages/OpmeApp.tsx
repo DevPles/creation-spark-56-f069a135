@@ -48,7 +48,6 @@ const STEPS_CONSUMO = [
 ];
 
 const STEPS_FATURAMENTO = [
-  { id: "auditoria_pos", title: "Auditoria Pós", description: "Validação Final" },
   { id: "cirurgiao_just", title: "Justificativa", description: "Descrição de Intercorrências" },
   { id: "faturamento", title: "Codificação", description: "Fechamento e AIH" },
 ];
@@ -1685,7 +1684,7 @@ export default function OpmeApp() {
             )}
 
             {/* --- PARTE 4: FATURAMENTO (Justificativa Cirurgião) --- */}
-            {part === 4 && step === 1 && (
+            {part === 4 && step === 0 && (
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase text-slate-400">Justificativa do Cirurgião</h3>
                 <div className="space-y-2">
@@ -1704,7 +1703,7 @@ export default function OpmeApp() {
             )}
 
             {/* --- PARTE 4: FATURAMENTO (Dados Faturamento) --- */}
-            {part === 4 && step === 2 && (
+            {part === 4 && step === 1 && (
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase text-slate-400">Dados do Faturamento</h3>
                 <div className="space-y-2">
