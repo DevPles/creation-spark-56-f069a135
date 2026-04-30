@@ -177,8 +177,8 @@ export default function OpmeApp() {
         const { data, error } = await supabase.from("opme_requests").select("*").eq("id", recordId).single();
         if (data && !error) {
           setForm(data);
-          if (data.preop_exams_details) {
-            setPreopExams(data.preop_exams_details);
+          if (data.preop_exams_details && Array.isArray(data.preop_exams_details)) {
+            setPreopExams(data.preop_exams_details as any[]);
           }
         }
         setLoading(false);
