@@ -1428,8 +1428,8 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {/* --- PARTE 3: AUDITORIA (Controle / Administrativo) --- */}
-            {part === 3 && step === 1 && (
+            {/* --- PARTE 5: CONTROLE ADM --- */}
+            {part === 5 && step === 0 && (
               <div className="space-y-6">
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase text-slate-400">Controle Administrativo</h3>
