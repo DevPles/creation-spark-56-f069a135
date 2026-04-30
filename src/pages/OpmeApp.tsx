@@ -530,9 +530,9 @@ export default function OpmeApp() {
                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                  {filterStatus ? `Filtrando por: ${filterStatus.replace('_', ' ').toUpperCase()}` : "Lista de Trabalho"}
                </h3>
-               {filterStatus && (
-                 <Button variant="ghost" size="sm" className="h-6 text-[10px] uppercase font-bold text-primary" onClick={() => applyFilter(null)}>Limpar Filtro</Button>
-               )}
+                {(filterStatus || filterDate) && (
+                  <Button variant="ghost" size="sm" className="h-6 text-[10px] uppercase font-bold text-primary" onClick={clearFilters}>Limpar Filtros</Button>
+                )}
              </div>
              
              <div className="space-y-3">
