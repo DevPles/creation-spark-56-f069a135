@@ -573,6 +573,7 @@ export type Database = {
           patient_sus: string | null
           postop_exam_date: string | null
           postop_exam_number: string | null
+          postop_exams_details: Json | null
           postop_image_attached: boolean | null
           postop_image_count: number | null
           postop_image_other: string | null
@@ -668,6 +669,7 @@ export type Database = {
           patient_sus?: string | null
           postop_exam_date?: string | null
           postop_exam_number?: string | null
+          postop_exams_details?: Json | null
           postop_image_attached?: boolean | null
           postop_image_count?: number | null
           postop_image_other?: string | null
@@ -763,6 +765,7 @@ export type Database = {
           patient_sus?: string | null
           postop_exam_date?: string | null
           postop_exam_number?: string | null
+          postop_exams_details?: Json | null
           postop_image_attached?: boolean | null
           postop_image_count?: number | null
           postop_image_other?: string | null
