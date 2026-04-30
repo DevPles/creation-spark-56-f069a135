@@ -1356,8 +1356,7 @@ export default function OpmeApp() {
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {part === 3 && (
               <div className="space-y-6 pb-6">
