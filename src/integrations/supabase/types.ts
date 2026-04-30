@@ -2298,6 +2298,8 @@ export type Database = {
         | "pendente_requisicao"
         | "pendente_auditoria"
         | "pendente_faturamento"
+        | "pendente_controle"
+        | "em_controle"
       problem_type:
         | "processo"
         | "equipamento"
@@ -2472,6 +2474,8 @@ export const Constants = {
         "pendente_requisicao",
         "pendente_auditoria",
         "pendente_faturamento",
+        "pendente_controle",
+        "em_controle",
       ],
       problem_type: [
         "processo",
