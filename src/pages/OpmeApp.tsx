@@ -878,12 +878,13 @@ export default function OpmeApp() {
                     <Label className="text-xs font-semibold uppercase text-slate-500">Responsável pelo Procedimento</Label>
                     <Input value={form.responsible_name} onChange={e => updateForm("responsible_name", e.target.value)} placeholder="Nome do profissional" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Conselho (CRM/COREN)</Label>
-                    <Input value={form.responsible_register} onChange={e => updateForm("responsible_register", e.target.value)} placeholder="Nº Registro" className="h-12 bg-white shadow-sm border-slate-200" />
-                  </div>
-                </div>
-              )}
+                   <div className="space-y-2">
+                     <Label className="text-xs font-semibold uppercase text-slate-500">Conselho (CRM/COREN)</Label>
+                     <Input value={form.responsible_register} onChange={e => updateForm("responsible_register", e.target.value)} placeholder="Nº Registro" className="h-12 bg-white shadow-sm border-slate-200" />
+                   </div>
+                 </div>
+               </div>
+               )}
 
             {part === 1 && step === 1 && (
               <div className="space-y-4">
@@ -1764,14 +1765,15 @@ export default function OpmeApp() {
                       <Textarea value={form.auditor_post_final_opinion} onChange={e => updateForm("auditor_post_final_opinion", e.target.value)} placeholder="Conclusão da auditoria..." className="min-h-[100px] text-xs bg-white" />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="space-y-1">
-                        <Label className="text-[10px] font-bold uppercase text-slate-500">Data Validação</Label>
-                        <Input type="date" value={form.auditor_post_date} onChange={e => updateForm("auditor_post_date", e.target.value)} className="h-10 text-xs bg-white" />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                     <div className="grid grid-cols-2 gap-4 pt-2">
+                       <div className="space-y-1">
+                         <Label className="text-[10px] font-bold uppercase text-slate-500">Data Validação</Label>
+                         <Input type="date" value={form.auditor_post_date} onChange={e => updateForm("auditor_post_date", e.target.value)} className="h-10 text-xs bg-white" />
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+                 )}
               </div>
             )}
 
