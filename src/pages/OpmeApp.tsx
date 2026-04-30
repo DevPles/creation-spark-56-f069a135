@@ -1772,39 +1772,13 @@ export default function OpmeApp() {
                     </div>
 
                     <div className="space-y-3 mt-4">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Exames Anexados ({preopExams.length})</p>
-                        <Select onValueChange={(v) => {
-                          if (!v) return;
-                          const newExam = { id: Math.random().toString(36), type: v, date: new Date().toISOString().split('T')[0], file: null, url: "" };
-                          setPreopExams(prev => [...prev, newExam]);
-                        }}>
-                          <SelectTrigger className="h-6 w-32 bg-white border-primary/20 text-[8px] font-black uppercase">
-                            <SelectValue placeholder="+ Adicionar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Radiografia">Radiografia</SelectItem>
-                            <SelectItem value="Tomografia">Tomografia</SelectItem>
-                            <SelectItem value="Ressonância">Ressonância</SelectItem>
-                            <SelectItem value="Outros">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mb-1">Exames Anexados ({preopExams.filter(e => e.url).length})</p>
                       
-                      {preopExams.length > 0 ? (
+                       {preopExams.filter(e => e.url).length > 0 ? (
                         <div className="grid grid-cols-2 gap-3">
-                          {preopExams.map((exam, i) => (
-                            <div key={i} className="bg-white p-1 rounded-lg border border-slate-100 space-y-2 relative group">
-                              <Button 
-                                variant="destructive" 
-                                size="icon" 
-                                className="absolute -top-1 -right-1 h-5 w-5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-opacity" 
-                                onClick={() => setPreopExams(prev => prev.filter((_, idx) => idx !== i))}
-                              >
-                                <X size={10} />
-                              </Button>
-                              
-                              {exam.url ? (
+                           {preopExams.filter(e => e.url).map((exam, i) => (
+                             <div key={i} className="bg-white p-1 rounded-lg border border-slate-100 space-y-2 relative group flex flex-col h-full">
+                               <div className="flex-1">
                                 <div className="relative aspect-video rounded-md overflow-hidden border border-slate-50">
                                   <img src={exam.url} alt={exam.type} className="w-full h-full object-cover" />
                                   <button 
@@ -1814,28 +1788,8 @@ export default function OpmeApp() {
                                     Ampliar
                                   </button>
                                 </div>
-                              ) : (
-                                <div className="aspect-video bg-slate-50 rounded-md border border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 relative">
-                                  <Upload size={14} className="text-slate-300" />
-                                  <p className="text-[7px] font-bold text-slate-400 uppercase">Upload Imagem</p>
-                                  <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    className="absolute inset-0 opacity-0 cursor-pointer" 
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) {
-                                        const url = URL.createObjectURL(file);
-                                        const newExams = [...preopExams];
-                                        newExams[i].file = file;
-                                        newExams[i].url = url;
-                                        setPreopExams(newExams);
-                                      }
-                                    }} 
-                                  />
-                                </div>
-                              )}
-                              <p className="text-[9px] font-black text-slate-700 uppercase px-1 truncate">{exam.type}</p>
+                               </div>
+                               <p className="text-[9px] font-black text-slate-700 uppercase px-1 py-1 truncate bg-slate-50/50 rounded-b-md">{exam.type}</p>
                             </div>
                           ))}
                         </div>
