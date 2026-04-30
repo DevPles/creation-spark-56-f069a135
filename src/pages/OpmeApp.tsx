@@ -177,6 +177,9 @@ export default function OpmeApp() {
         const { data, error } = await supabase.from("opme_requests").select("*").eq("id", recordId).single();
         if (data && !error) {
           setForm(data);
+          if (data.preop_exams_details && Array.isArray(data.preop_exams_details)) {
+            setPreopExams(data.preop_exams_details as any[]);
+          }
         }
         setLoading(false);
       })();
@@ -276,8 +279,23 @@ export default function OpmeApp() {
       else if (part === 3) nextStatus = "pendente_faturamento";
       else if (part === 4) nextStatus = "concluido";
 
+      // Sincronizar dados do responsável e exames se necessário
+      const requester_name = form.requester_name || form.responsible_name;
+      const requester_register = form.requester_register || form.responsible_register;
+
+      const preop_image_types = preopExams.length > 0 ? preopExams.map(e => e.type) : (form.preop_image_types || []);
+      const preop_image_count = preopExams.length > 0 ? preopExams.length : (form.preop_image_count || 0);
+      const preop_image_attached = preopExams.length > 0 ? true : (form.preop_image_attached || false);
+      const preop_exams_details = preopExams.length > 0 ? preopExams : (form.preop_exams_details || []);
+
       const payload = { 
-        ...form, 
+        ...form,
+        requester_name,
+        requester_register,
+        preop_image_types,
+        preop_image_count,
+        preop_image_attached,
+        preop_exams_details,
         status: nextStatus,
         created_by: user.id, 
         updated_at: new Date().toISOString() 
@@ -292,6 +310,8 @@ export default function OpmeApp() {
       }
       
       toast.success("Pedido enviado com sucesso!");
+      setPart(null);
+      setStep(0);
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar");
     } finally {

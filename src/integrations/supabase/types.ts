@@ -547,6 +547,7 @@ export type Database = {
           postop_validation_responsible: string | null
           preop_exam_date: string | null
           preop_exam_number: string | null
+          preop_exams_details: Json | null
           preop_finding_description: string | null
           preop_image_attached: boolean | null
           preop_image_count: number | null
@@ -555,6 +556,8 @@ export type Database = {
           preop_validation_responsible: string | null
           procedure_date: string | null
           procedure_name: string | null
+          procedure_position_cadastro: string | null
+          procedure_position_requisicao: string | null
           procedure_region_cadastro: string | null
           procedure_region_requisicao: string | null
           procedure_room: string | null
@@ -637,6 +640,7 @@ export type Database = {
           postop_validation_responsible?: string | null
           preop_exam_date?: string | null
           preop_exam_number?: string | null
+          preop_exams_details?: Json | null
           preop_finding_description?: string | null
           preop_image_attached?: boolean | null
           preop_image_count?: number | null
@@ -645,6 +649,8 @@ export type Database = {
           preop_validation_responsible?: string | null
           procedure_date?: string | null
           procedure_name?: string | null
+          procedure_position_cadastro?: string | null
+          procedure_position_requisicao?: string | null
           procedure_region_cadastro?: string | null
           procedure_region_requisicao?: string | null
           procedure_room?: string | null
@@ -727,6 +733,7 @@ export type Database = {
           postop_validation_responsible?: string | null
           preop_exam_date?: string | null
           preop_exam_number?: string | null
+          preop_exams_details?: Json | null
           preop_finding_description?: string | null
           preop_image_attached?: boolean | null
           preop_image_count?: number | null
@@ -735,6 +742,8 @@ export type Database = {
           preop_validation_responsible?: string | null
           procedure_date?: string | null
           procedure_name?: string | null
+          procedure_position_cadastro?: string | null
+          procedure_position_requisicao?: string | null
           procedure_region_cadastro?: string | null
           procedure_region_requisicao?: string | null
           procedure_room?: string | null
