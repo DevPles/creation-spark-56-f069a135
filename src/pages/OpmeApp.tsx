@@ -72,7 +72,7 @@ export default function OpmeApp() {
 
   const STEPS = part === 1 ? STEPS_CADASTRO : part === 2 ? STEPS_REQUISICAO : part === 3 ? STEPS_AUDITORIA : STEPS_FATURAMENTO;
 
-  const [form, setForm] = useState<any>({
+   const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
     status: "rascunho",
     patient_name: "",
@@ -101,8 +101,14 @@ export default function OpmeApp() {
     preop_exam_number: "",
     preop_finding_description: "",
     preop_image_attached: false,
-    preop_image_count: 0,
-    preop_validation_responsible: "",
+     preop_image_count: 0,
+     preop_validation_responsible: profile?.name || "",
+   useEffect(() => {
+     if (part === 2 && step === 3 && !form.preop_validation_responsible && form.requester_name) {
+       setForm((p: any) => ({ ...p, preop_validation_responsible: p.requester_name }));
+     }
+   }, [part, step, form.requester_name]);
+ 
     // Campos Parte 2
     auditor_pre_name: "",
     auditor_pre_crm: "",
@@ -997,23 +1003,76 @@ export default function OpmeApp() {
                     <span className="text-[10px] font-bold text-slate-400 uppercase">PRÉ-OPERATÓRIO</span>
                   </div>
 
-                  {preopExams.length > 0 && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {preopExams.map((exam) => (
-                        <Card key={exam.id} className="border-slate-100 shadow-sm overflow-hidden bg-white">
-                          <div className="p-3 flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-primary font-black text-[10px]">IMG</div>
-                              <span className="text-xs font-bold text-slate-700 truncate">{exam.type}</span>
-                            </div>
-                            {exam.url && (
-                              <Button variant="outline" className="h-9 text-xs font-bold uppercase w-full bg-slate-50 border-slate-200" onClick={() => window.open(exam.url, "_blank")}>Ver Exame</Button>
-                            )}
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
+                   <div className="space-y-4">
+                     <div className="space-y-2">
+                       <Label className="text-xs font-semibold uppercase text-slate-500">Adicionar Exame de Imagem</Label>
+                       <Select onValueChange={(v) => {
+                         if (!v) return;
+                         const newExam = { id: Math.random().toString(36), type: v, date: "", file: null, url: "" };
+                         setPreopExams(prev => [...prev, newExam]);
+                       }}>
+                         <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200 text-sm">
+                           <SelectValue placeholder="Selecione o exame para anexar" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="Radiografia">Radiografia</SelectItem>
+                           <SelectItem value="Tomografia">Tomografia</SelectItem>
+                           <SelectItem value="Ressonância">Ressonância</SelectItem>
+                           <SelectItem value="Ultrassonografia">Ultrassonografia</SelectItem>
+                           <SelectItem value="Ecocardiograma">Ecocardiograma</SelectItem>
+                           <SelectItem value="Cintilografia">Cintilografia</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+ 
+                     <div className="grid grid-cols-1 gap-4">
+                       {preopExams.map((exam, idx) => (
+                         <Card key={exam.id} className="border-slate-100 shadow-md overflow-hidden bg-white">
+                           <CardContent className="p-4 space-y-3">
+                             <div className="flex items-center justify-between">
+                               <div className="flex items-center gap-2">
+                                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-[10px]">IMG</div>
+                                 <span className="text-sm font-bold text-slate-900">{exam.type}</span>
+                               </div>
+                               <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => {
+                                 setPreopExams(prev => prev.filter(e => e.id !== exam.id));
+                               }}>×</Button>
+                             </div>
+                             <div className="grid grid-cols-2 gap-3">
+                               <div className="space-y-1">
+                                 <Label className="text-[10px] uppercase text-slate-400 font-bold">Data do Exame</Label>
+                                 <Input type="date" className="h-9 text-xs" value={exam.date} onChange={(e) => {
+                                   const newExams = [...preopExams];
+                                   newExams[idx].date = e.target.value;
+                                   setPreopExams(newExams);
+                                 }} />
+                               </div>
+                               <div className="space-y-1">
+                                 <Label className="text-[10px] uppercase text-slate-400 font-bold">Documento</Label>
+                                 {exam.url ? (
+                                   <Button variant="outline" className="w-full h-9 text-[10px] font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700" onClick={() => window.open(exam.url, "_blank")}>Ver Arquivo</Button>
+                                 ) : (
+                                   <div className="relative">
+                                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
+                                       const file = e.target.files?.[0];
+                                       if (file) {
+                                         const url = URL.createObjectURL(file);
+                                         const newExams = [...preopExams];
+                                         newExams[idx].file = file;
+                                         newExams[idx].url = url;
+                                         setPreopExams(newExams);
+                                       }
+                                     }} />
+                                     <Button variant="outline" className="w-full h-9 text-[10px] font-bold uppercase border-dashed">+ Upload</Button>
+                                   </div>
+                                 )}
+                               </div>
+                             </div>
+                           </CardContent>
+                         </Card>
+                       ))}
+                     </div>
+                   </div>
 
                   <div className="space-y-4 bg-white p-4 rounded-lg border border-slate-100 shadow-sm mt-2">
                     <div className="grid grid-cols-2 gap-4">
