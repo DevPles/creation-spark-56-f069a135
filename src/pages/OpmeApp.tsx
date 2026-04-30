@@ -36,7 +36,7 @@ const STEPS_AUDITORIA = [
 ];
 
 const STEPS_CONTROLE = [
-  { id: "administrativo", title: "Logística", description: "Almoxarifado e CME" },
+  { id: "administrativo", title: "Controle Administrativo", description: "Logística e CME" },
 ];
 
 const STEPS_CONSUMO = [
@@ -553,7 +553,7 @@ export default function OpmeApp() {
               { id: 1, title: "CADASTRO", description: "Paciente" },
               { id: 2, title: "REQUISIÇÃO", description: "Pedido" },
               { id: 3, title: "AUDITORIA", description: "Pré e Pós" },
-              { id: 5, title: "CONTROLE ADM", description: "Logística" },
+              { id: 5, title: "CONTROLE ADM", description: "Logística e CME" },
               { id: 6, title: "CONSUMO", description: "Cirúrgico" },
               { id: 4, title: "FATURAMENTO", description: "AIH" },
             ].map((card) => (
