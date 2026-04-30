@@ -529,7 +529,7 @@ export default function OpmeApp() {
       cme_responsible: "",
       surgery_dispatch_date: "",
       surgery_dispatch_responsible: "",
-      opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false }],
+      opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false, launched_by: null, launched_at: null }],
       opme_returned: [{ description: "", quantity: "0", batch: "", reason: "", responsible: "" }],
       postop_image_types: [],
       postop_image_other: "",
