@@ -101,15 +101,9 @@ export default function OpmeApp() {
     preop_exam_number: "",
     preop_finding_description: "",
     preop_image_attached: false,
-     preop_image_count: 0,
-     preop_validation_responsible: profile?.name || "",
-   useEffect(() => {
-     if (part === 2 && step === 3 && !form.preop_validation_responsible && form.requester_name) {
-       setForm((p: any) => ({ ...p, preop_validation_responsible: p.requester_name }));
-     }
-   }, [part, step, form.requester_name]);
- 
-    // Campos Parte 2
+      preop_image_count: 0,
+      preop_validation_responsible: profile?.name || "",
+      // Campos Parte 2
     auditor_pre_name: "",
     auditor_pre_crm: "",
     auditor_pre_analysis: "adequada",
@@ -166,15 +160,21 @@ export default function OpmeApp() {
     }
   });
 
-  useEffect(() => {
-    if (profile) {
-      setForm(p => ({ 
-        ...p, 
-        facility_unit: p.facility_unit || profile.facility_unit || "Hospital Geral",
-        requester_name: p.requester_name || profile.name || ""
-      }));
-    }
-  }, [profile]);
+   useEffect(() => {
+     if (part === 2 && step === 3 && !form.preop_validation_responsible && form.requester_name) {
+       setForm((p: any) => ({ ...p, preop_validation_responsible: p.requester_name }));
+     }
+   }, [part, step, form.requester_name]);
+ 
+   useEffect(() => {
+     if (profile) {
+       setForm(p => ({ 
+         ...p, 
+         facility_unit: p.facility_unit || profile.facility_unit || "Hospital Geral",
+         requester_name: p.requester_name || profile.name || ""
+       }));
+     }
+   }, [profile]);
 
   useEffect(() => {
     if (recordId) {
