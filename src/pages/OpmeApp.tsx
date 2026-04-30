@@ -519,10 +519,10 @@ export default function OpmeApp() {
                                {req.status?.replace('_', ' ')}
                              </span>
                            </div>
-                           <div className="flex items-center gap-3 text-xs text-slate-500">
-                             <span className="flex items-center gap-1 font-medium">📅 {req.procedure_date ? new Date(req.procedure_date).toLocaleDateString('pt-BR') : '---'}</span>
-                             <span className="truncate">👤 {req.requester_name || req.responsible_name || 'Não inf.'}</span>
-                           </div>
+                            <div className="flex items-center gap-4 text-[11px] text-slate-500 font-medium">
+                              <span>{req.procedure_date ? new Date(req.procedure_date).toLocaleDateString('pt-BR') : '---'}</span>
+                              <span className="truncate">{req.requester_name || req.responsible_name || 'Não inf.'}</span>
+                            </div>
                          </div>
                          <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase">Abrir</Button>
                        </div>
