@@ -2007,7 +2007,7 @@ export default function OpmeApp() {
                           const requestedQty = Number(item.quantity || 0);
                           const status = usedItems.length === 0 ? 'Não consumido' : usedQty === requestedQty ? 'Conforme' : usedQty > requestedQty ? 'Acima' : 'Abaixo';
                           return (
-                            <div key={i} className="bg-background p-3 rounded-lg border border-border grid grid-cols-[1fr_auto] gap-3">
+                            <div key={i} className="bg-background p-3 rounded-lg border border-border grid grid-cols-[minmax(0,1fr)_auto] gap-3">
                               <div className="min-w-0">
                                 <p className="text-[11px] font-bold text-foreground uppercase leading-tight">{item.description}</p>
                                 <p className="text-[9px] text-muted-foreground font-bold uppercase">Autorizado: {item.quantity || 0} | Consumido: {usedQty} | Modelo: {item.size_model || '---'}</p>
