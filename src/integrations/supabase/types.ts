@@ -527,6 +527,8 @@ export type Database = {
           auditor_post_date: string | null
           auditor_post_final_opinion: string | null
           auditor_post_image_conformity: string | null
+          auditor_post_justification_reason: string | null
+          auditor_post_justification_requested: boolean | null
           auditor_post_name: string | null
           auditor_post_procedure_compat: string | null
           auditor_post_sigtap_compat: string | null
@@ -623,6 +625,8 @@ export type Database = {
           auditor_post_date?: string | null
           auditor_post_final_opinion?: string | null
           auditor_post_image_conformity?: string | null
+          auditor_post_justification_reason?: string | null
+          auditor_post_justification_requested?: boolean | null
           auditor_post_name?: string | null
           auditor_post_procedure_compat?: string | null
           auditor_post_sigtap_compat?: string | null
@@ -719,6 +723,8 @@ export type Database = {
           auditor_post_date?: string | null
           auditor_post_final_opinion?: string | null
           auditor_post_image_conformity?: string | null
+          auditor_post_justification_reason?: string | null
+          auditor_post_justification_requested?: boolean | null
           auditor_post_name?: string | null
           auditor_post_procedure_compat?: string | null
           auditor_post_sigtap_compat?: string | null
