@@ -463,26 +463,26 @@ export default function OpmeApp() {
                 <Button variant="ghost" size="sm" className="h-5 px-2 text-[10px] uppercase font-bold text-primary" onClick={() => applyFilter(null)}>Limpar Filtros</Button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex overflow-x-auto gap-2 pb-2 -mx-1 px-1 scrollbar-hide">
               {[
-                { status: "pendente_requisicao", label: "Requisição", value: stats.requisicao, color: "blue" },
-                { status: "pendente_auditoria", label: "Auditoria", value: stats.auditoria, color: "amber" },
-                { status: "pendente_faturamento", label: "Faturamento", value: stats.faturamento, color: "emerald" },
-                { status: "rascunho", label: "Cadastros", value: stats.cadastro, color: "slate" },
-                { status: "divergencias", label: "Divergências", value: stats.divergencias, color: "red" },
+                { status: "pendente_requisicao", label: "Requisição", value: stats.requisicao },
+                { status: "pendente_auditoria", label: "Auditoria", value: stats.auditoria },
+                { status: "pendente_faturamento", label: "Faturamento", value: stats.faturamento },
+                { status: "rascunho", label: "Cadastros", value: stats.cadastro },
+                { status: "divergencias", label: "Divergências", value: stats.divergencias },
               ].map((item, i) => (
                 <button 
                   key={i} 
                   onClick={() => applyFilter(filterStatus === item.status ? null : item.status)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-[10px] font-bold uppercase ${
+                  className={`flex-none flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-[11px] font-bold uppercase whitespace-nowrap ${
                     filterStatus === item.status 
-                      ? "bg-primary text-white border-primary shadow-sm" 
+                      ? "bg-primary text-white border-primary shadow-md" 
                       : "bg-white text-slate-600 border-slate-200 hover:border-primary/50"
                   }`}
                 >
-                  <span>{item.label}</span>
-                  <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${
-                    filterStatus === item.status ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                  {item.label}
+                  <span className={`px-2 py-0.5 rounded bg-black/10 text-[10px] ${
+                    filterStatus === item.status ? "text-white" : "text-slate-500"
                   }`}>
                     {item.value}
                   </span>
