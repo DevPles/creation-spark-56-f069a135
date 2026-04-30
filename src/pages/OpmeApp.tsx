@@ -386,15 +386,32 @@ export default function OpmeApp() {
        setConsumptionExams(req.consumption_exams_details as any[]);
      }
      
-     // Determinar qual parte e passo abrir baseado no status
-     if (req.status === "rascunho") { setPart(1); setStep(0); }
-     else if (req.status === "pendente_requisicao") { setPart(2); setStep(0); }
+      // Determinar qual parte e passo abrir baseado no status
+      if (req.status === "rascunho") { setPart(1); setStep(0); }
+      else if (req.status === "pendente_requisicao") { setPart(2); setStep(0); }
       else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
       else if (req.status === "pendente_auditoria_post") { setPart(3); setStep(1); }
       else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
-      else if (req.status === "pendente_consumo") { setPart(6); setStep(0); }
-     else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
-     else { setPart(1); setStep(0); } // Fallback
+      else if (req.status === "pendente_consumo") { 
+        setPart(6); 
+        setStep(0); 
+        
+        // Sincronizar itens solicitados para o consumo se estiver vazio
+        if (!req.opme_used || req.opme_used.length === 0 || (req.opme_used.length === 1 && !req.opme_used[0].description)) {
+          if (req.opme_requested && req.opme_requested.length > 0) {
+            const initialUsed = req.opme_requested.map((item: any) => ({
+              description: item.description,
+              quantity: item.quantity,
+              batch: "",
+              expiry: "",
+              label_fixed: "sim"
+            }));
+            setForm((p: any) => ({ ...p, opme_used: initialUsed }));
+          }
+        }
+      }
+      else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
+      else { setPart(1); setStep(0); } // Fallback
      
      // Adicionar ID na URL sem recarregar para manter consistência
      const newUrl = new URL(window.location.href);
