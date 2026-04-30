@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
- import { ArrowLeft, CalendarIcon, Eye, EyeOff, X, Trash2 } from "lucide-react";
+  import { ArrowLeft, CalendarIcon, Eye, EyeOff, X, Trash2, Upload, FileText } from "lucide-react";
  import {
    AlertDialog,
    AlertDialogAction,
@@ -215,7 +215,8 @@ export default function OpmeApp() {
     billing_procedure_name: "",
     billing_sigtap_code: "",
     billing_prior_authorization: "nao_se_aplica",
-    billing_aih_generated: false,
+     billing_aih_generated: false,
+     billing_aih_file_url: "",
     billing_opme_compatibility: "sim",
     billing_divergence: false,
     billing_divergence_description: "",
@@ -826,10 +827,35 @@ export default function OpmeApp() {
                   <Label className="text-xs font-semibold uppercase text-slate-500">Nome da Mãe</Label>
                   <Input value={form.patient_mother_name} onChange={e => updateForm("patient_mother_name", e.target.value)} placeholder="Nome completo da mãe" className="h-12 bg-white shadow-sm border-slate-200" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Cartão SUS</Label>
-                  <Input value={form.patient_sus} onChange={e => updateForm("patient_sus", e.target.value)} placeholder="Número do CNS" className="h-12 bg-white shadow-sm border-slate-200" />
-                </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                     <Label className="text-xs font-semibold uppercase text-slate-500">Cartão SUS</Label>
+                     <Input value={form.patient_sus} onChange={e => updateForm("patient_sus", e.target.value)} placeholder="Número do CNS" className="h-12 bg-white shadow-sm border-slate-200" />
+                   </div>
+                   <div className="space-y-2">
+                     <Label className="text-xs font-semibold uppercase text-slate-500">Anexar AIH (Opcional)</Label>
+                     <div className="relative">
+                       <input 
+                         type="file" 
+                         className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                         onChange={(e) => {
+                           const file = e.target.files?.[0];
+                           if (file) {
+                             const url = URL.createObjectURL(file);
+                             updateForm("billing_aih_file_url", url);
+                             toast.success("AIH anexada!");
+                           }
+                         }} 
+                       />
+                       <Button 
+                         variant="outline" 
+                         className={`w-full h-12 text-xs font-bold uppercase border-dashed border-2 flex gap-2 ${form.billing_aih_file_url ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'text-slate-400'}`}
+                       >
+                         {form.billing_aih_file_url ? <><FileText size={16} /> AIH Anexada</> : <><Upload size={16} /> Subir AIH</>}
+                       </Button>
+                     </div>
+                   </div>
+                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Responsável pelo Procedimento</Label>
@@ -1917,10 +1943,28 @@ export default function OpmeApp() {
             {part === 4 && step === 1 && (
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase text-slate-400">Dados do Faturamento</h3>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Número da AIH</Label>
-                  <Input value={form.billing_aih_number} onChange={e => updateForm("billing_aih_number", e.target.value)} placeholder="000.000.000-0" className="h-12 bg-white shadow-sm" />
-                </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                     <Label className="text-xs font-semibold uppercase text-slate-500">Número da AIH</Label>
+                     <Input value={form.billing_aih_number} onChange={e => updateForm("billing_aih_number", e.target.value)} placeholder="000.000.000-0" className="h-12 bg-white shadow-sm" />
+                   </div>
+                   <div className="space-y-2">
+                     <Label className="text-xs font-semibold uppercase text-slate-500">AIH Carregada no Cadastro</Label>
+                     {form.billing_aih_file_url ? (
+                       <Button 
+                         variant="outline" 
+                         className="w-full h-12 text-xs font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700 flex gap-2"
+                         onClick={() => window.open(form.billing_aih_file_url, "_blank")}
+                       >
+                         <FileText size={16} /> Ver AIH Anexada
+                       </Button>
+                     ) : (
+                       <div className="h-12 flex items-center justify-center border rounded-md border-slate-100 bg-slate-50 text-slate-400 text-xs font-medium uppercase">
+                         Nenhuma AIH anexada
+                       </div>
+                     )}
+                   </div>
+                 </div>
                 <div className="space-y-4 bg-slate-50 p-4 rounded-xl border">
                   <Label className="text-[10px] font-bold uppercase text-slate-400">Documentação Anexada</Label>
                   <div className="grid grid-cols-1 gap-2">

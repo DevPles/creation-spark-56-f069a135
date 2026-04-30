@@ -536,6 +536,7 @@ export type Database = {
           auditor_pre_name: string | null
           auditor_pre_opinion: string | null
           auditor_pre_sigtap_compat: string | null
+          billing_aih_file_url: string | null
           billing_aih_generated: boolean | null
           billing_aih_number: string | null
           billing_divergence: boolean | null
@@ -630,6 +631,7 @@ export type Database = {
           auditor_pre_name?: string | null
           auditor_pre_opinion?: string | null
           auditor_pre_sigtap_compat?: string | null
+          billing_aih_file_url?: string | null
           billing_aih_generated?: boolean | null
           billing_aih_number?: string | null
           billing_divergence?: boolean | null
@@ -724,6 +726,7 @@ export type Database = {
           auditor_pre_name?: string | null
           auditor_pre_opinion?: string | null
           auditor_pre_sigtap_compat?: string | null
+          billing_aih_file_url?: string | null
           billing_aih_generated?: boolean | null
           billing_aih_number?: string | null
           billing_divergence?: boolean | null
