@@ -59,13 +59,16 @@ export default function OpmeApp() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<string[]>([]);
-  const [stats, setStats] = useState({
-    cadastro: 0,
-    requisicao: 0,
-    auditoria: 0,
-    faturamento: 0,
-    divergencias: 0
-  });
+   const [stats, setStats] = useState({
+     cadastro: 0,
+     requisicao: 0,
+     auditoria: 0,
+     faturamento: 0,
+     divergencias: 0
+   });
+   const [requests, setRequests] = useState<any[]>([]);
+   const [filteredRequests, setFilteredRequests] = useState<any[]>([]);
+   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[] }>({ idx: -1, items: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -192,32 +195,74 @@ export default function OpmeApp() {
     }
   }, [recordId]);
 
-  useEffect(() => {
-    if (part === null) {
-      (async () => {
-        const { data: counts, error } = await supabase.from("opme_requests").select("status, procedure_side_cadastro, procedure_side_requisicao, procedure_region_cadastro, procedure_region_requisicao, procedure_segment_cadastro, procedure_segment_requisicao, procedure_position_cadastro, procedure_position_requisicao");
-        if (counts && !error) {
-          const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0, divergencias: 0 };
-          counts.forEach((c: any) => {
-            if (c.status === "rascunho") s.cadastro++;
-            if (c.status === "pendente_requisicao") s.requisicao++;
-            if (c.status === "pendente_auditoria") s.auditoria++;
-            if (c.status === "pendente_faturamento") s.faturamento++;
-            
-            const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
-            const regionDiv = c.procedure_region_cadastro && c.procedure_region_requisicao && c.procedure_region_cadastro !== c.procedure_region_requisicao;
-            const segmentDiv = c.procedure_segment_cadastro && c.procedure_segment_requisicao && c.procedure_segment_cadastro !== c.procedure_segment_requisicao;
-            const positionDiv = c.procedure_position_cadastro && c.procedure_position_requisicao && c.procedure_position_cadastro !== c.procedure_position_requisicao;
-            
-            if (sideDiv || regionDiv || segmentDiv || positionDiv) {
-              s.divergencias++;
-            }
-          });
-          setStats(s);
-        }
-      })();
-    }
-  }, [part]);
+   useEffect(() => {
+     if (part === null) {
+       (async () => {
+         const { data, error } = await supabase
+           .from("opme_requests")
+           .select("*")
+           .order("created_at", { ascending: false });
+         
+         if (data && !error) {
+           setRequests(data);
+           setFilteredRequests(data);
+           const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0, divergencias: 0 };
+           data.forEach((c: any) => {
+             if (c.status === "rascunho") s.cadastro++;
+             if (c.status === "pendente_requisicao") s.requisicao++;
+             if (c.status === "pendente_auditoria") s.auditoria++;
+             if (c.status === "pendente_faturamento") s.faturamento++;
+             
+             const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
+             const regionDiv = c.procedure_region_cadastro && c.procedure_region_requisicao && c.procedure_region_cadastro !== c.procedure_region_requisicao;
+             const segmentDiv = c.procedure_segment_cadastro && c.procedure_segment_requisicao && c.procedure_segment_cadastro !== c.procedure_segment_requisicao;
+             const positionDiv = c.procedure_position_cadastro && c.procedure_position_requisicao && c.procedure_position_cadastro !== c.procedure_position_requisicao;
+             
+             if (sideDiv || regionDiv || segmentDiv || positionDiv) {
+               s.divergencias++;
+             }
+           });
+           setStats(s);
+         }
+       })();
+     }
+   }, [part]);
+ 
+   const applyFilter = (status: string | null) => {
+     setFilterStatus(status);
+     if (!status) {
+       setFilteredRequests(requests);
+     } else if (status === "divergencias") {
+       setFilteredRequests(requests.filter((c: any) => {
+         const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
+         const regionDiv = c.procedure_region_cadastro && c.procedure_region_requisicao && c.procedure_region_cadastro !== c.procedure_region_requisicao;
+         const segmentDiv = c.procedure_segment_cadastro && c.procedure_segment_requisicao && c.procedure_segment_cadastro !== c.procedure_segment_requisicao;
+         const positionDiv = c.procedure_position_cadastro && c.procedure_position_requisicao && c.procedure_position_cadastro !== c.procedure_position_requisicao;
+         return sideDiv || regionDiv || segmentDiv || positionDiv;
+       }));
+     } else {
+       setFilteredRequests(requests.filter((r: any) => r.status === status));
+     }
+   };
+ 
+   const loadRequest = (req: any) => {
+     setForm(req);
+     if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
+       setPreopExams(req.preop_exams_details as any[]);
+     }
+     
+     // Determinar qual parte e passo abrir baseado no status
+     if (req.status === "rascunho") { setPart(1); setStep(0); }
+     else if (req.status === "pendente_requisicao") { setPart(2); setStep(0); }
+     else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
+     else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
+     else { setPart(1); setStep(0); } // Fallback
+     
+     // Adicionar ID na URL sem recarregar para manter consistência
+     const newUrl = new URL(window.location.href);
+     newUrl.searchParams.set("id", req.id);
+     window.history.pushState({}, '', newUrl);
+   };
 
   useEffect(() => {
     (async () => {
