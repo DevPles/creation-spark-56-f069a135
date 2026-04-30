@@ -1493,7 +1493,7 @@ export default function OpmeApp() {
                         <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resumo para Auditoria</h3>
                       </div>
 
-                  <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
                     <div className="space-y-0.5">
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Paciente</p>
                       <p className="text-xs font-bold text-slate-700 truncate">{form.patient_name || 'Não informado'}</p>
