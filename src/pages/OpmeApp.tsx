@@ -310,10 +310,10 @@ export default function OpmeApp() {
      // Determinar qual parte e passo abrir baseado no status
      if (req.status === "rascunho") { setPart(1); setStep(0); }
      else if (req.status === "pendente_requisicao") { setPart(2); setStep(0); }
-     else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
-     else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
-     else if (req.status === "pendente_consumo") { setPart(6); setStep(0); }
-     else if (req.status === "pendente_auditoria_post") { setPart(7); setStep(0); }
+      else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
+      else if (req.status === "pendente_auditoria_post") { setPart(3); setStep(1); }
+      else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
+      else if (req.status === "pendente_consumo") { setPart(6); setStep(0); }
      else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
      else { setPart(1); setStep(0); } // Fallback
      
