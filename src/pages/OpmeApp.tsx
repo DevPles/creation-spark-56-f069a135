@@ -190,7 +190,7 @@ export default function OpmeApp() {
     cme_responsible: "",
     surgery_dispatch_date: "",
     surgery_dispatch_responsible: "",
-    opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "" }],
+    opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false }],
     opme_returned: [{ description: "", quantity: "0", batch: "", reason: "", responsible: "" }],
     postop_image_types: [],
     postop_image_other: "",
@@ -404,7 +404,8 @@ export default function OpmeApp() {
               quantity: item.quantity,
               batch: "",
               expiry: "",
-              label_fixed: "sim"
+              label_fixed: "sim",
+              launched: false
             }));
             setForm((p: any) => ({ ...p, opme_used: initialUsed }));
           }
@@ -470,8 +471,8 @@ export default function OpmeApp() {
   };
 
   const addItem = (listName: string = "opme_requested") => {
-    const newItem = listName === "opme_used" 
-      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "" }
+    const newItem = listName === "opme_used"
+      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false }
       : listName === "opme_returned"
       ? { description: "", quantity: "0", batch: "", reason: "", responsible: "" }
       : { description: "", quantity: "1", size_model: "", sigtap: "" };
