@@ -1118,7 +1118,7 @@ export default function OpmeApp() {
                     </Card>
                   ))}
                   {form.opme_requested.length < 10 && (
-                    <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={addItem}>+ Adicionar Material (Até 10)</Button>
+                    <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={() => addItem("opme_requested")}>+ Adicionar Material (Até 10)</Button>
                   )}
                 </div>
                 </div>
