@@ -659,17 +659,18 @@ export default function OpmeApp() {
         uploadExamFiles(postopExams)
       ]);
 
-      const preop_image_types = uploadedPreop.length > 0 ? uploadedPreop.map(e => e.type) : (form.preop_image_types || []);
-      const preop_image_count = uploadedPreop.length > 0 ? uploadedPreop.length : (form.preop_image_count || 0);
-      const preop_image_attached = uploadedPreop.length > 0 ? true : (form.preop_image_attached || false);
-      const preop_exams_details = uploadedPreop.length > 0 ? uploadedPreop : (form.preop_exams_details || []);
+      // Always use current state for exams to allow deletions
+      const preop_exams_details = uploadedPreop;
+      const preop_image_types = uploadedPreop.map(e => e.type);
+      const preop_image_count = uploadedPreop.length;
+      const preop_image_attached = uploadedPreop.length > 0;
       
-      const consumption_exams_details = uploadedConsumption.length > 0 ? uploadedConsumption : (form.consumption_exams_details || []);
+      const consumption_exams_details = uploadedConsumption;
       
-      const postop_exams_details = uploadedPostop.length > 0 ? uploadedPostop : (form.postop_exams_details || []);
-      const postop_image_types = uploadedPostop.length > 0 ? uploadedPostop.map(e => e.type) : (form.postop_image_types || []);
-      const postop_image_count = uploadedPostop.length > 0 ? uploadedPostop.length : (form.postop_image_count || 0);
-      const postop_image_attached = uploadedPostop.length > 0 ? true : (form.postop_image_attached || false);
+      const postop_exams_details = uploadedPostop;
+      const postop_image_types = uploadedPostop.map(e => e.type);
+      const postop_image_count = uploadedPostop.length;
+      const postop_image_attached = uploadedPostop.length > 0;
 
       // Upload da AIH se houver um novo arquivo
       let billing_aih_file_url = form.billing_aih_file_url;
