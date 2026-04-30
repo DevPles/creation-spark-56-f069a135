@@ -30,8 +30,12 @@ const STEPS_REQUISICAO = [
   { id: "justificativa_imagem", title: "Justificativa", description: "Indicação e Exames" },
 ];
 
-const STEPS_AUDITORIA = [
-  { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Técnica" },
+const STEPS_AUDITORIA_PRE = [
+  { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Pré-OP" },
+];
+
+const STEPS_AUDITORIA_POST = [
+  { id: "auditoria_post", title: "Médico Auditor", description: "Validação Pós-OP" },
 ];
 
 const STEPS_CONTROLE = [
@@ -44,7 +48,6 @@ const STEPS_CONSUMO = [
 ];
 
 const STEPS_FATURAMENTO = [
-  { id: "auditoria_pos", title: "Auditoria Pós", description: "Validação Final" },
   { id: "cirurgiao_just", title: "Justificativa", description: "Descrição de Intercorrências" },
   { id: "faturamento", title: "Codificação", description: "Fechamento e AIH" },
 ];
@@ -72,9 +75,10 @@ export default function OpmeApp() {
    const [stats, setStats] = useState({
      cadastro: 0,
      requisicao: 0,
-     auditoria: 0,
+     auditoria_pre: 0,
      controle: 0,
      consumo: 0,
+     auditoria_post: 0,
      faturamento: 0,
      divergencias: 0
    });
@@ -88,9 +92,10 @@ export default function OpmeApp() {
 
   const STEPS = part === 1 ? STEPS_CADASTRO : 
                 part === 2 ? STEPS_REQUISICAO : 
-                part === 3 ? STEPS_AUDITORIA : 
+                part === 3 ? STEPS_AUDITORIA_PRE : 
                 part === 5 ? STEPS_CONTROLE :
                 part === 6 ? STEPS_CONSUMO :
+                part === 7 ? STEPS_AUDITORIA_POST :
                 STEPS_FATURAMENTO;
 
    const [form, setForm] = useState<any>({
@@ -224,11 +229,21 @@ export default function OpmeApp() {
          if (data && !error) {
            setRequests(data);
            setFilteredRequests(data);
-           const s = { cadastro: 0, requisicao: 0, auditoria: 0, controle: 0, consumo: 0, faturamento: 0, divergencias: 0 };
+           const s = { 
+             cadastro: 0, 
+             requisicao: 0, 
+             auditoria_pre: 0, 
+             controle: 0, 
+             consumo: 0, 
+             auditoria_post: 0, 
+             faturamento: 0, 
+             divergencias: 0 
+           };
            data.forEach((c: any) => {
              if (c.status === "rascunho") s.cadastro++;
              if (c.status === "pendente_requisicao") s.requisicao++;
-             if (c.status === "pendente_auditoria") s.auditoria++;
+             if (c.status === "pendente_auditoria") s.auditoria_pre++;
+             if (c.status === "pendente_auditoria_post") s.auditoria_post++;
              if (c.status === "pendente_controle") s.controle++;
              if (c.status === "pendente_consumo") s.consumo++;
              if (c.status === "pendente_faturamento") s.faturamento++;
@@ -302,6 +317,7 @@ export default function OpmeApp() {
      else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
      else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
      else if (req.status === "pendente_consumo") { setPart(6); setStep(0); }
+     else if (req.status === "pendente_auditoria_post") { setPart(7); setStep(0); }
      else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
      else { setPart(1); setStep(0); } // Fallback
      
@@ -382,7 +398,8 @@ export default function OpmeApp() {
       else if (part === 2) nextStatus = "pendente_auditoria";
       else if (part === 3) nextStatus = "pendente_controle";
       else if (part === 5) nextStatus = "pendente_consumo";
-      else if (part === 6) nextStatus = "pendente_faturamento";
+      else if (part === 6) nextStatus = "pendente_auditoria_post";
+      else if (part === 7) nextStatus = "pendente_faturamento";
       else if (part === 4) nextStatus = "concluido";
 
       // Sincronizar dados do responsável e exames se necessário
@@ -457,7 +474,8 @@ export default function OpmeApp() {
       else if (part === 2) { setPart(3); setStep(0); }
       else if (part === 3) { setPart(5); setStep(0); }
       else if (part === 5) { setPart(6); setStep(0); }
-      else if (part === 6) { setPart(4); setStep(0); }
+      else if (part === 6) { setPart(7); setStep(0); }
+      else if (part === 7) { setPart(4); setStep(0); }
     }
   };
 
@@ -497,9 +515,10 @@ export default function OpmeApp() {
             {[
               { id: 1, title: "CADASTRO", description: "Paciente" },
               { id: 2, title: "REQUISIÇÃO", description: "Pedido" },
-              { id: 3, title: "AUDITORIA", description: "Técnica" },
+              { id: 3, title: "AUDITORIA PRÉ", description: "Técnica" },
               { id: 5, title: "CONTROLE ADM", description: "Logística" },
-              { id: 6, title: "CONSUMO CIRURGICO", description: "Uso" },
+              { id: 6, title: "CONSUMO", description: "Cirúrgico" },
+              { id: 7, title: "AUDITORIA PÓS", description: "Técnica" },
               { id: 4, title: "FATURAMENTO", description: "AIH" },
             ].map((card) => (
               <button
@@ -518,12 +537,13 @@ export default function OpmeApp() {
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
               {[
-                { status: "pendente_requisicao", label: "Requisição" },
-                { status: "pendente_auditoria", label: "Auditoria" },
+                { status: "pendente_requisicao", label: "Pedido" },
+                { status: "pendente_auditoria", label: "Aud. Pré" },
                 { status: "pendente_controle", label: "Controle" },
                 { status: "pendente_consumo", label: "Consumo" },
+                { status: "pendente_auditoria_post", label: "Aud. Pós" },
                 { status: "pendente_faturamento", label: "Faturamento" },
               ].map((item, i) => (
                 <button 
@@ -589,6 +609,9 @@ export default function OpmeApp() {
                                req.status === 'rascunho' ? 'bg-slate-100 text-slate-600 border-slate-200' :
                                req.status === 'pendente_requisicao' ? 'bg-blue-50 text-blue-600 border-blue-100' :
                                req.status === 'pendente_auditoria' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                               req.status === 'pendente_controle' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                               req.status === 'pendente_consumo' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                               req.status === 'pendente_auditoria_post' ? 'bg-rose-50 text-rose-600 border-rose-100' :
                                'bg-emerald-50 text-emerald-600 border-emerald-100'
                              }`}>
                                {req.status?.replace('_', ' ')}
@@ -1595,44 +1618,76 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {/* --- PARTE 4: FATURAMENTO (Auditoria Pós) --- */}
-            {part === 4 && step === 0 && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Médico Auditor (Pós)</Label>
-                  <Input value={form.auditor_post_name} onChange={e => updateForm("auditor_post_name", e.target.value)} placeholder="Identificação" className="h-12 bg-white shadow-sm" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Compatibilidade OPME x Procedimento</Label>
-                  <Select value={form.auditor_post_procedure_compat} onValueChange={v => updateForm("auditor_post_procedure_compat", v)}>
-                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sim">Sim</SelectItem>
-                      <SelectItem value="nao">Não</SelectItem>
-                      <SelectItem value="parcial">Parcial</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Conformidade com Imagem Pós</Label>
-                  <Select value={form.auditor_post_image_conformity} onValueChange={v => updateForm("auditor_post_image_conformity", v)}>
-                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sim">Sim</SelectItem>
-                      <SelectItem value="nao">Não</SelectItem>
-                      <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Parecer Técnico Final</Label>
-                  <Textarea value={form.auditor_post_final_opinion} onChange={e => updateForm("auditor_post_final_opinion", e.target.value)} placeholder="Conclusão da auditoria..." className="min-h-[100px] bg-white shadow-sm" />
+            {/* --- PARTE 7: AUDITORIA PÓS --- */}
+            {part === 7 && step === 0 && (
+              <div className="space-y-6">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Validação Auditor Pós-OP</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Nome Auditor</Label>
+                      <Input value={form.auditor_post_name} onChange={e => updateForm("auditor_post_name", e.target.value)} className="h-10 text-xs bg-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">CRM</Label>
+                      <Input value={form.auditor_post_crm} onChange={e => updateForm("auditor_post_crm", e.target.value)} className="h-10 text-xs bg-white" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-slate-500">Compatibilidade OPME x Procedimento</Label>
+                    <Select value={form.auditor_post_procedure_compat} onValueChange={v => updateForm("auditor_post_procedure_compat", v)}>
+                      <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sim">Sim</SelectItem>
+                        <SelectItem value="nao">Não</SelectItem>
+                        <SelectItem value="parcial">Parcial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-slate-500">Compatibilidade OPME x SIGTAP</Label>
+                    <Select value={form.auditor_post_sigtap_compat} onValueChange={v => updateForm("auditor_post_sigtap_compat", v)}>
+                      <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sim">Sim</SelectItem>
+                        <SelectItem value="nao">Não</SelectItem>
+                        <SelectItem value="parcial">Parcial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-slate-500">Conformidade com Imagem Pós</Label>
+                    <Select value={form.auditor_post_image_conformity} onValueChange={v => updateForm("auditor_post_image_conformity", v)}>
+                      <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sim">Sim</SelectItem>
+                        <SelectItem value="nao">Não</SelectItem>
+                        <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
+                    <Textarea value={form.auditor_post_final_opinion} onChange={e => updateForm("auditor_post_final_opinion", e.target.value)} placeholder="Conclusão da auditoria..." className="min-h-[100px] text-xs bg-white" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Data Validação</Label>
+                      <Input type="date" value={form.auditor_post_date} onChange={e => updateForm("auditor_post_date", e.target.value)} className="h-10 text-xs bg-white" />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* --- PARTE 4: FATURAMENTO (Justificativa Cirurgião) --- */}
-            {part === 4 && step === 1 && (
+            {part === 4 && step === 0 && (
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase text-slate-400">Justificativa do Cirurgião</h3>
                 <div className="space-y-2">
@@ -1651,7 +1706,7 @@ export default function OpmeApp() {
             )}
 
             {/* --- PARTE 4: FATURAMENTO (Dados Faturamento) --- */}
-            {part === 4 && step === 2 && (
+            {part === 4 && step === 1 && (
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase text-slate-400">Dados do Faturamento</h3>
                 <div className="space-y-2">
