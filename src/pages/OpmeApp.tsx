@@ -1759,26 +1759,80 @@ export default function OpmeApp() {
                       </div>
                     </div>
 
-                    {preopExams.length > 0 && (
-                      <div className="space-y-3 mt-4">
+                    <div className="space-y-3 mt-4">
+                      <div className="flex items-center justify-between">
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Exames Anexados ({preopExams.length})</p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <Select onValueChange={(v) => {
+                          if (!v) return;
+                          const newExam = { id: Math.random().toString(36), type: v, date: new Date().toISOString().split('T')[0], file: null, url: "" };
+                          setPreopExams(prev => [...prev, newExam]);
+                        }}>
+                          <SelectTrigger className="h-6 w-32 bg-white border-primary/20 text-[8px] font-black uppercase">
+                            <SelectValue placeholder="+ Adicionar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Radiografia">Radiografia</SelectItem>
+                            <SelectItem value="Tomografia">Tomografia</SelectItem>
+                            <SelectItem value="Ressonância">Ressonância</SelectItem>
+                            <SelectItem value="Outros">Outros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {preopExams.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3">
                           {preopExams.map((exam, i) => (
-                            <button 
-                              key={i} 
-                              onClick={() => exam.url && window.open(exam.url, "_blank")}
-                              className="bg-white p-2 rounded-lg border border-slate-100 flex items-center gap-2 text-left hover:border-primary/30 transition-colors"
-                            >
-                              <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-primary font-black text-[8px]">IMG</div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[10px] font-bold text-slate-800 truncate uppercase">{exam.type}</p>
-                                <p className="text-[8px] text-slate-400 font-bold">{exam.date ? new Date(exam.date).toLocaleDateString('pt-BR') : '---'}</p>
-                              </div>
-                            </button>
+                            <div key={i} className="bg-white p-1 rounded-lg border border-slate-100 space-y-2 relative group">
+                              <Button 
+                                variant="destructive" 
+                                size="icon" 
+                                className="absolute -top-1 -right-1 h-5 w-5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-opacity" 
+                                onClick={() => setPreopExams(prev => prev.filter((_, idx) => idx !== i))}
+                              >
+                                <X size={10} />
+                              </Button>
+                              
+                              {exam.url ? (
+                                <div className="relative aspect-video rounded-md overflow-hidden border border-slate-50">
+                                  <img src={exam.url} alt={exam.type} className="w-full h-full object-cover" />
+                                  <button 
+                                    onClick={() => window.open(exam.url, "_blank")}
+                                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[8px] font-bold uppercase"
+                                  >
+                                    Ampliar
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="aspect-video bg-slate-50 rounded-md border border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 relative">
+                                  <Upload size={14} className="text-slate-300" />
+                                  <p className="text-[7px] font-bold text-slate-400 uppercase">Upload Imagem</p>
+                                  <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        const newExams = [...preopExams];
+                                        newExams[i].file = file;
+                                        newExams[i].url = url;
+                                        setPreopExams(newExams);
+                                      }
+                                    }} 
+                                  />
+                                </div>
+                              )}
+                              <p className="text-[9px] font-black text-slate-700 uppercase px-1 truncate">{exam.type}</p>
+                            </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="bg-white/50 border border-dashed border-slate-200 rounded-lg p-4 text-center">
+                          <p className="text-[10px] text-slate-400 italic uppercase font-bold tracking-tighter">Nenhum exame pré-operatório anexado.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                 <div className="space-y-4 pt-4 border-t border-slate-100">
