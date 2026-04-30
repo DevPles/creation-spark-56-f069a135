@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-  import { ArrowLeft, CalendarIcon, Eye, EyeOff, X, Trash2, Upload, FileText } from "lucide-react";
+  import { ArrowLeft, CalendarIcon, Eye, EyeOff, X, Trash2, Upload, FileText, Plus } from "lucide-react";
  import {
    AlertDialog,
    AlertDialogAction,
