@@ -536,25 +536,23 @@ export default function OpmeApp() {
             ))}
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
+          <div className="bg-white rounded-lg border border-slate-100 p-2 shadow-sm">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
               {[
                 { status: "pendente_requisicao", label: "Pedido" },
-                { status: "pendente_auditoria", label: "Aud. Pré" },
-                { status: "pendente_controle", label: "Controle" },
-                { status: "pendente_consumo", label: "Consumo" },
-                { status: "pendente_auditoria_post", label: "Aud. Pós" },
-                { status: "pendente_faturamento", label: "Faturamento" },
+                { status: "pendente_auditoria", label: "Pré" },
+                { status: "pendente_controle", label: "Adm" },
+                { status: "pendente_consumo", label: "Uso" },
+                { status: "pendente_auditoria_post", label: "Pós" },
+                { status: "pendente_faturamento", label: "Fat" },
               ].map((item, i) => (
                 <button 
                    key={i} 
                    onClick={() => handleStatusFilter(item.status)}
-                   className={`flex items-center justify-center py-2.5 rounded-lg border transition-all font-bold uppercase ${
-                     item.label === "Faturamento" ? "text-[7px]" : "text-[9px]"
-                   } ${
+                   className={`flex items-center justify-center py-1.5 rounded-md border transition-all font-bold uppercase text-[8px] ${
                     filterStatus === item.status 
                       ? "bg-primary text-white border-primary shadow-sm" 
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:border-primary/30"
+                       : "bg-white text-slate-400 border-slate-100 hover:border-primary/20"
                   }`}
                 >
                   {item.label}
@@ -564,13 +562,13 @@ export default function OpmeApp() {
               <Popover>
                 <PopoverTrigger asChild>
                   <button 
-                    className={`flex items-center justify-center py-2.5 rounded-lg border transition-all ${
+                     className={`flex items-center justify-center py-1.5 rounded-md border transition-all ${
                       filterDate 
                         ? "bg-primary text-white border-primary shadow-sm" 
-                        : "bg-slate-50 text-slate-600 border-slate-200 hover:border-primary/30"
+                         : "bg-white text-slate-400 border-slate-100 hover:border-primary/20"
                     }`}
                   >
-                    <CalendarIcon className="h-4 w-4" />
+                    <CalendarIcon className="h-3.5 w-3.5" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
