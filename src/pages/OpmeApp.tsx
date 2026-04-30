@@ -76,7 +76,8 @@ export default function OpmeApp() {
   const recordId = searchParams.get("id");
   const [part, setPart] = useState<number | null>(null);
    const [preopExams, setPreopExams] = useState<any[]>([]);
-   const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
+    const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
+    const [postopExams, setPostopExams] = useState<any[]>([]);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -256,6 +257,12 @@ export default function OpmeApp() {
           if (data.preop_exams_details && Array.isArray(data.preop_exams_details)) {
             setPreopExams(data.preop_exams_details as any[]);
           }
+          if (data.postop_exams_details && Array.isArray(data.postop_exams_details)) {
+            setPostopExams(data.postop_exams_details as any[]);
+          }
+          if (data.consumption_exams_details && Array.isArray(data.consumption_exams_details)) {
+            setConsumptionExams(data.consumption_exams_details as any[]);
+          }
         }
         setLoading(false);
       })();
@@ -379,12 +386,15 @@ export default function OpmeApp() {
  
    const loadRequest = (req: any) => {
      setForm(req);
-     if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
-       setPreopExams(req.preop_exams_details as any[]);
-     }
-     if (req.consumption_exams_details && Array.isArray(req.consumption_exams_details)) {
-       setConsumptionExams(req.consumption_exams_details as any[]);
-     }
+      if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
+        setPreopExams(req.preop_exams_details as any[]);
+      }
+      if (req.consumption_exams_details && Array.isArray(req.consumption_exams_details)) {
+        setConsumptionExams(req.consumption_exams_details as any[]);
+      }
+      if (req.postop_exams_details && Array.isArray(req.postop_exams_details)) {
+        setPostopExams(req.postop_exams_details as any[]);
+      }
      
       // Determinar qual parte e passo abrir baseado no status
       if (req.status === "rascunho") { setPart(1); setStep(0); }
