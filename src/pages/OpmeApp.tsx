@@ -263,9 +263,10 @@ export default function OpmeApp() {
       applyFilters(newStatus, filterDate);
     };
 
-    const handleDateFilter = (date: string) => {
-      setFilterDate(date);
-      applyFilters(filterStatus, date);
+    const handleDateFilter = (date: Date | undefined) => {
+      const dateStr = date ? format(date, "yyyy-MM-dd") : "";
+      setFilterDate(dateStr);
+      applyFilters(filterStatus, dateStr);
     };
 
     const clearFilters = () => {
