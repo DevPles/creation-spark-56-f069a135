@@ -1622,7 +1622,6 @@ export default function OpmeApp() {
                       </div>
                     </div>
                   </div>
-                </div>
                 )}
 
                 {step === 1 && (
