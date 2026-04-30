@@ -1392,6 +1392,14 @@ export default function OpmeApp() {
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Data Cirurgia</p>
                       <p className="text-xs font-bold text-slate-700">{form.procedure_date ? new Date(form.procedure_date).toLocaleDateString('pt-BR') : '---'}</p>
                     </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Médico Solicitante</p>
+                      <p className="text-xs font-bold text-slate-700 truncate">{form.requester_name || 'Não informado'}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Sala da Cirurgia</p>
+                      <p className="text-xs font-bold text-slate-700">{form.procedure_room || 'Não informada'}</p>
+                    </div>
                   </div>
 
                   <div className="space-y-2 mt-2">
