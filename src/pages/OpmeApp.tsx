@@ -1803,7 +1803,7 @@ export default function OpmeApp() {
                                   onClick={async () => {
                                     if (!item.batch) { toast.error("Preencha o lote antes de lançar"); return; }
                                     updateItem(idx, "launched", true, "opme_used");
-                                    setTimeout(() => handleSave(false, true), 100);
+                                    setTimeout(() => handleSave(false), 100);
                                   }}
                                 >
                                   Lançar Item
