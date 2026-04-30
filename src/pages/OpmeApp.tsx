@@ -1493,7 +1493,7 @@ export default function OpmeApp() {
                         <div className="w-2 h-4 bg-primary rounded-full"></div>
                         <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resumo para Auditoria</h3>
                       </div>
-                  
+
                   <div className="grid grid-cols-2 gap-y-3 gap-x-4">
                     <div className="space-y-0.5">
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Paciente</p>
