@@ -288,8 +288,22 @@ export default function OpmeApp() {
       const preop_image_attached = preopExams.length > 0 ? true : (form.preop_image_attached || false);
       const preop_exams_details = preopExams.length > 0 ? preopExams : (form.preop_exams_details || []);
 
+      const dateFields = [
+        "patient_birthdate", "procedure_date", "preop_exam_date", 
+        "auditor_pre_date", "request_date", "warehouse_date", 
+        "cme_processing_date", "surgery_dispatch_date", "postop_exam_date", 
+        "auditor_post_date", "incident_date"
+      ];
+
+      const sanitizedForm = { ...form };
+      dateFields.forEach(field => {
+        if (sanitizedForm[field] === "") {
+          sanitizedForm[field] = null;
+        }
+      });
+
       const payload = { 
-        ...form,
+        ...sanitizedForm,
         requester_name,
         requester_register,
         preop_image_types,
