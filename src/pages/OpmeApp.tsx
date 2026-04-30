@@ -67,6 +67,9 @@ export default function OpmeApp() {
   const [preopExams, setPreopExams] = useState<any[]>([]);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authPassword, setAuthPassword] = useState("");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<string[]>([]);
    const [stats, setStats] = useState({
@@ -383,9 +386,15 @@ export default function OpmeApp() {
     setForm((p: any) => ({ ...p, [listName]: [...(p[listName] || []), newItem] }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (isAuthValidated = false) => {
     if (!user) { toast.error("Não autenticado"); return; }
     if (!form.patient_name?.trim()) { toast.error("Informe o nome do paciente"); setStep(0); return; }
+
+    // Se for parte de auditoria (3) e ainda não foi validado por senha
+    if (part === 3 && !isAuthValidated) {
+      setShowAuthModal(true);
+      return;
+    }
     
     setSaving(true);
     try {
