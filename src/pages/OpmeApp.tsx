@@ -1357,11 +1357,6 @@ export default function OpmeApp() {
                   </div>
                 </div>
               </div>
-            )}
-
-
-
-            {/* --- PARTE 3: AUDITORIA (Médico Auditor) --- */}
             {part === 3 && (
               <div className="space-y-6 pb-6">
                 <div className="space-y-6">
@@ -1493,9 +1488,7 @@ export default function OpmeApp() {
                       </div>
                     </div>
                   )}
-                </div>
-
-                {step === 1 && (
+                  {step === 1 && (
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Validação Auditor Pós-OP</h3>
                     
@@ -1558,7 +1551,8 @@ export default function OpmeApp() {
                       </div>
                     </div>
                   </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 
