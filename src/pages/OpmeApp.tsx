@@ -2260,9 +2260,67 @@ export default function OpmeApp() {
                       <Textarea value={form.postop_result_description} onChange={e => updateForm("postop_result_description", e.target.value)} placeholder="Descreva brevemente a evolução..." className="min-h-[100px] text-xs bg-white" />
                     </div>
 
-                    <div className="flex items-center space-x-2 bg-white p-3 rounded-lg border">
-                      <Checkbox id="postop_att" checked={form.postop_image_attached} onCheckedChange={v => updateForm("postop_image_attached", v)} />
-                      <Label htmlFor="postop_att" className="text-xs font-semibold">Imagem anexada ao sistema</Label>
+                    <div className="space-y-4 pt-2">
+                      <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-2">
+                        <Upload size={12} /> Registro Fotográfico / Laudos
+                      </h4>
+                      
+                      <Select onValueChange={(v) => {
+                        if (!v) return;
+                        const newExam = { id: Math.random().toString(36), type: v, date: new Date().toISOString().split('T')[0], file: null, url: "" };
+                        setPostopExams(prev => [...prev, newExam]);
+                      }}>
+                        <SelectTrigger className="h-10 bg-white border-slate-200 text-xs font-bold uppercase">
+                          <SelectValue placeholder="+ Adicionar Imagem/Laudo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="RX Pós-Operatório">RX Pós-Operatório</SelectItem>
+                          <SelectItem value="TC Pós-Operatório">TC Pós-Operatório</SelectItem>
+                          <SelectItem value="Foto do Local Cirúrgico">Foto do Local Cirúrgico</SelectItem>
+                          <SelectItem value="Laudo de Imagem">Laudo de Imagem</SelectItem>
+                          <SelectItem value="Outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        {postopExams.map((exam, idx) => (
+                          <Card key={exam.id} className="border-slate-100 bg-white shadow-sm overflow-hidden">
+                            <CardContent className="p-3 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">PÓS</div>
+                                  <span className="text-xs font-bold text-slate-700">{exam.type}</span>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400" onClick={() => setPostopExams(prev => prev.filter(e => e.id !== exam.id))}>×</Button>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                {exam.url ? (
+                                  <div className="col-span-2 relative group">
+                                    <img src={exam.url} alt="Evidência Pós" className="w-full h-32 object-cover rounded-md border" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
+                                      <Button variant="secondary" size="sm" className="h-8 text-[10px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Ver Ampliado</Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="col-span-2 relative">
+                                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        const newExams = [...postopExams];
+                                        newExams[idx].file = file;
+                                        newExams[idx].url = url;
+                                        setPostopExams(newExams);
+                                      }
+                                    }} />
+                                    <Button variant="outline" className="w-full h-10 text-[10px] font-bold uppercase border-dashed border-2 text-slate-400">+ Upload Imagem Real</Button>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
