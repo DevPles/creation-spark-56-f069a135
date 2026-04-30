@@ -190,7 +190,7 @@ export default function OpmeApp() {
     cme_responsible: "",
     surgery_dispatch_date: "",
     surgery_dispatch_responsible: "",
-    opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim" }],
+    opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "" }],
     opme_returned: [{ description: "", quantity: "0", batch: "", reason: "", responsible: "" }],
     postop_image_types: [],
     postop_image_other: "",
@@ -471,7 +471,7 @@ export default function OpmeApp() {
 
   const addItem = (listName: string = "opme_requested") => {
     const newItem = listName === "opme_used" 
-      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim" }
+      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "" }
       : listName === "opme_returned"
       ? { description: "", quantity: "0", batch: "", reason: "", responsible: "" }
       : { description: "", quantity: "1", size_model: "", sigtap: "" };
@@ -1811,6 +1811,38 @@ export default function OpmeApp() {
                             <div className="space-y-1">
                               <Label className="text-[10px] font-bold uppercase text-slate-500">Lote</Label>
                               <Input value={item.batch} onChange={e => updateItem(idx, "batch", e.target.value, "opme_used")} className="h-10 text-xs" />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5 pt-1">
+                            <Label className="text-[10px] font-bold uppercase text-slate-500">Comprovação (Etiqueta/Lote)</Label>
+                            <div className="relative group">
+                              {item.photo_url ? (
+                                <div className="relative aspect-video rounded-md overflow-hidden border border-slate-200">
+                                  <img src={item.photo_url} alt="Comprovação" className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <Button variant="secondary" size="sm" className="h-7 text-[9px] font-bold uppercase" onClick={() => window.open(item.photo_url, "_blank")}>Ver</Button>
+                                    <Button variant="destructive" size="sm" className="h-7 text-[9px] font-bold uppercase" onClick={() => updateItem(idx, "photo_url", "", "opme_used")}>Remover</Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="relative">
+                                  <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const url = URL.createObjectURL(file);
+                                        updateItem(idx, "photo_url", url, "opme_used");
+                                      }
+                                    }} 
+                                  />
+                                  <Button variant="outline" className="w-full h-10 border-dashed text-[10px] font-bold uppercase text-slate-400 flex gap-2">
+                                    <Upload size={14} /> Anexar Foto do Material
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </CardContent>
