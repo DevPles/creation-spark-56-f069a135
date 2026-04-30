@@ -489,10 +489,12 @@ export default function OpmeApp() {
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-10 space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
             {[
-              { id: 1, title: "CADASTRO", description: "Cadastro de Paciente" },
-              { id: 2, title: "REQUISIÇÃO", description: "Solicitação de OPME" },
-              { id: 3, title: "AUDITORIA", description: "Auditoria Técnica" },
-              { id: 4, title: "FATURAMENTO", description: "Faturamento e AIH" },
+              { id: 1, title: "CADASTRO", description: "Paciente" },
+              { id: 2, title: "REQUISIÇÃO", description: "Pedido" },
+              { id: 3, title: "AUDITORIA", description: "Técnica" },
+              { id: 5, title: "CONTROLE ADM", description: "Logística" },
+              { id: 6, title: "CONSUMO CIRURGICO", description: "Uso" },
+              { id: 4, title: "FATURAMENTO", description: "AIH" },
             ].map((card) => (
               <button
                 key={card.id}
@@ -510,18 +512,20 @@ export default function OpmeApp() {
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {[
                 { status: "pendente_requisicao", label: "Requisição" },
                 { status: "pendente_auditoria", label: "Auditoria" },
+                { status: "pendente_controle", label: "Controle" },
+                { status: "pendente_consumo", label: "Consumo" },
                 { status: "pendente_faturamento", label: "Faturamento" },
               ].map((item, i) => (
                 <button 
-                  key={i} 
-                  onClick={() => handleStatusFilter(item.status)}
-                  className={`flex items-center justify-center py-2.5 rounded-lg border transition-all font-bold uppercase ${
-                    item.label === "Faturamento" ? "text-[8px]" : "text-[10px]"
-                  } ${
+                   key={i} 
+                   onClick={() => handleStatusFilter(item.status)}
+                   className={`flex items-center justify-center py-2.5 rounded-lg border transition-all font-bold uppercase ${
+                     item.label === "Faturamento" ? "text-[7px]" : "text-[9px]"
+                   } ${
                     filterStatus === item.status 
                       ? "bg-primary text-white border-primary shadow-sm" 
                       : "bg-slate-50 text-slate-600 border-slate-200 hover:border-primary/30"
