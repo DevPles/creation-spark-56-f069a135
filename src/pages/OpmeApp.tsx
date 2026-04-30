@@ -342,11 +342,11 @@ export default function OpmeApp() {
     }
   };
 
-  const updateItem = (idx: number, field: string, value: any) => {
+  const updateItem = (idx: number, field: string, value: any, listName: string = "opme_requested") => {
     setForm((p: any) => {
-      const arr = [...p.opme_requested];
+      const arr = [...(p[listName] || [])];
       arr[idx] = { ...arr[idx], [field]: value };
-      return { ...p, opme_requested: arr };
+      return { ...p, [listName]: arr };
     });
 
     if (field === "description" && value.length > 2) {
@@ -361,8 +361,14 @@ export default function OpmeApp() {
     }
   };
 
-  const addItem = () => {
-    setForm((p: any) => ({ ...p, opme_requested: [...p.opme_requested, { description: "", quantity: "1", size_model: "", sigtap: "" }] }));
+  const addItem = (listName: string = "opme_requested") => {
+    const newItem = listName === "opme_used" 
+      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim" }
+      : listName === "opme_returned"
+      ? { description: "", quantity: "1", reason: "", responsible: "" }
+      : { description: "", quantity: "1", size_model: "", sigtap: "" };
+
+    setForm((p: any) => ({ ...p, [listName]: [...(p[listName] || []), newItem] }));
   };
 
   const handleSave = async () => {
