@@ -1819,7 +1819,7 @@ export default function OpmeApp() {
           </Button>
         )}
         
-        {step < STEPS.length - 1 ? (
+        {(step < STEPS.length - 1 && part !== 3) ? (
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
             Próximo
           </Button>
@@ -1837,7 +1837,7 @@ export default function OpmeApp() {
             ) : (
             part === 1 ? "Finalizar Cadastro" : 
             part === 2 ? "Finalizar Requisição" : 
-            part === 3 ? "Finalizar Auditoria" : 
+            part === 3 ? (step === 0 ? "Finalizar Auditoria Pré" : "Finalizar Auditoria Pós") : 
             part === 5 ? "Finalizar Controle" :
             part === 6 ? "Finalizar Consumo" :
             "Concluir Faturamento"
