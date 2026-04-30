@@ -31,9 +31,15 @@ const STEPS_REQUISICAO = [
 ];
 
 const STEPS_AUDITORIA = [
-  { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Pré-OP" },
-  { id: "administrativo", title: "Controle", description: "Logística e Suprimentos" },
-  { id: "consumo", title: "Consumo", description: "Registro de Uso e Devolução" },
+  { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Técnica" },
+];
+
+const STEPS_CONTROLE = [
+  { id: "administrativo", title: "Logística", description: "Almoxarifado e CME" },
+];
+
+const STEPS_CONSUMO = [
+  { id: "consumo", title: "Registro de Uso", description: "Materiais Utilizados" },
   { id: "imagem_pos", title: "Imagem Pós", description: "Controle Pós-OP" },
 ];
 
@@ -67,6 +73,8 @@ export default function OpmeApp() {
      cadastro: 0,
      requisicao: 0,
      auditoria: 0,
+     controle: 0,
+     consumo: 0,
      faturamento: 0,
      divergencias: 0
    });
@@ -78,7 +86,12 @@ export default function OpmeApp() {
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[] }>({ idx: -1, items: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const STEPS = part === 1 ? STEPS_CADASTRO : part === 2 ? STEPS_REQUISICAO : part === 3 ? STEPS_AUDITORIA : STEPS_FATURAMENTO;
+  const STEPS = part === 1 ? STEPS_CADASTRO : 
+                part === 2 ? STEPS_REQUISICAO : 
+                part === 3 ? STEPS_AUDITORIA : 
+                part === 5 ? STEPS_CONTROLE :
+                part === 6 ? STEPS_CONSUMO :
+                STEPS_FATURAMENTO;
 
    const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
@@ -211,11 +224,13 @@ export default function OpmeApp() {
          if (data && !error) {
            setRequests(data);
            setFilteredRequests(data);
-           const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0, divergencias: 0 };
+           const s = { cadastro: 0, requisicao: 0, auditoria: 0, controle: 0, consumo: 0, faturamento: 0, divergencias: 0 };
            data.forEach((c: any) => {
              if (c.status === "rascunho") s.cadastro++;
              if (c.status === "pendente_requisicao") s.requisicao++;
              if (c.status === "pendente_auditoria") s.auditoria++;
+             if (c.status === "pendente_controle") s.controle++;
+             if (c.status === "pendente_consumo") s.consumo++;
              if (c.status === "pendente_faturamento") s.faturamento++;
              
              const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
@@ -285,6 +300,8 @@ export default function OpmeApp() {
      if (req.status === "rascunho") { setPart(1); setStep(0); }
      else if (req.status === "pendente_requisicao") { setPart(2); setStep(0); }
      else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
+     else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
+     else if (req.status === "pendente_consumo") { setPart(6); setStep(0); }
      else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
      else { setPart(1); setStep(0); } // Fallback
      
@@ -357,7 +374,9 @@ export default function OpmeApp() {
       let nextStatus = form.status;
       if (part === 1) nextStatus = "pendente_requisicao";
       else if (part === 2) nextStatus = "pendente_auditoria";
-      else if (part === 3) nextStatus = "pendente_faturamento";
+      else if (part === 3) nextStatus = "pendente_controle";
+      else if (part === 5) nextStatus = "pendente_consumo";
+      else if (part === 6) nextStatus = "pendente_faturamento";
       else if (part === 4) nextStatus = "concluido";
 
       // Sincronizar dados do responsável e exames se necessário
@@ -426,9 +445,13 @@ export default function OpmeApp() {
 
     if (step < STEPS.length - 1) {
       setStep(step + 1);
-    } else if (part < 3) {
-      setPart(part + 1);
-      setStep(0);
+    } else {
+      // Lógica de transição de partes
+      if (part === 1) { setPart(2); setStep(0); }
+      else if (part === 2) { setPart(3); setStep(0); }
+      else if (part === 3) { setPart(5); setStep(0); }
+      else if (part === 5) { setPart(6); setStep(0); }
+      else if (part === 6) { setPart(4); setStep(0); }
     }
   };
 
