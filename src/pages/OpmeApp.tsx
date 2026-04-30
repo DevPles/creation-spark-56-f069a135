@@ -380,6 +380,9 @@ export default function OpmeApp() {
      if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
        setPreopExams(req.preop_exams_details as any[]);
      }
+     if (req.consumption_exams_details && Array.isArray(req.consumption_exams_details)) {
+       setConsumptionExams(req.consumption_exams_details as any[]);
+     }
      
      // Determinar qual parte e passo abrir baseado no status
      if (req.status === "rascunho") { setPart(1); setStep(0); }
@@ -486,7 +489,8 @@ export default function OpmeApp() {
       const preop_image_types = preopExams.length > 0 ? preopExams.map(e => e.type) : (form.preop_image_types || []);
       const preop_image_count = preopExams.length > 0 ? preopExams.length : (form.preop_image_count || 0);
       const preop_image_attached = preopExams.length > 0 ? true : (form.preop_image_attached || false);
-      const preop_exams_details = preopExams.length > 0 ? preopExams : (form.preop_exams_details || []);
+       const preop_exams_details = preopExams.length > 0 ? preopExams : (form.preop_exams_details || []);
+       const consumption_exams_details = consumptionExams.length > 0 ? consumptionExams : (form.consumption_exams_details || []);
 
       const dateFields = [
         "patient_birthdate", "procedure_date", "preop_exam_date", 
@@ -509,8 +513,9 @@ export default function OpmeApp() {
         preop_image_types,
         preop_image_count,
         preop_image_attached,
-        preop_exams_details,
-        status: nextStatus,
+         preop_exams_details,
+         consumption_exams_details,
+         status: nextStatus,
         created_by: user.id, 
         updated_at: new Date().toISOString() 
       };
