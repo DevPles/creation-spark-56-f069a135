@@ -11,7 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, CalendarIcon, Eye, EyeOff } from "lucide-react";
+ import { ArrowLeft, CalendarIcon, Eye, EyeOff, X, Trash2 } from "lucide-react";
+ import {
+   AlertDialog,
+   AlertDialogAction,
+   AlertDialogCancel,
+   AlertDialogContent,
+   AlertDialogDescription,
+   AlertDialogFooter,
+   AlertDialogHeader,
+   AlertDialogTitle,
+   AlertDialogTrigger,
+ } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -64,7 +75,8 @@ export default function OpmeApp() {
   const [searchParams] = useSearchParams();
   const recordId = searchParams.get("id");
   const [part, setPart] = useState<number | null>(null);
-  const [preopExams, setPreopExams] = useState<any[]>([]);
+   const [preopExams, setPreopExams] = useState<any[]>([]);
+   const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -336,10 +348,41 @@ export default function OpmeApp() {
       setFilteredRequests(requests);
     };
  
+   const handleDeleteRequest = async (id: string) => {
+     try {
+       const { error } = await supabase.from("opme_requests").delete().eq("id", id);
+       if (error) throw error;
+       
+       toast.success("Processo excluído com sucesso.");
+       setRequests(prev => prev.filter(r => r.id !== id));
+       setFilteredRequests(prev => prev.filter(r => r.id !== id));
+       
+       setStats(prev => {
+         const s = { ...prev };
+         const req = requests.find(r => r.id === id);
+         if (req) {
+           if (req.status === "rascunho") s.cadastro--;
+           if (req.status === "pendente_requisicao") s.requisicao--;
+           if (req.status === "pendente_auditoria") s.auditoria_pre--;
+           if (req.status === "pendente_auditoria_post") s.auditoria_post--;
+           if (req.status === "pendente_controle") s.controle--;
+           if (req.status === "pendente_consumo") s.consumo--;
+           if (req.status === "pendente_faturamento") s.faturamento--;
+         }
+         return s;
+       });
+     } catch (err: any) {
+       toast.error("Erro ao excluir: " + err.message);
+     }
+   };
+ 
    const loadRequest = (req: any) => {
      setForm(req);
      if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
        setPreopExams(req.preop_exams_details as any[]);
+     }
+     if (req.consumption_exams_details && Array.isArray(req.consumption_exams_details)) {
+       setConsumptionExams(req.consumption_exams_details as any[]);
      }
      
      // Determinar qual parte e passo abrir baseado no status
@@ -447,7 +490,8 @@ export default function OpmeApp() {
       const preop_image_types = preopExams.length > 0 ? preopExams.map(e => e.type) : (form.preop_image_types || []);
       const preop_image_count = preopExams.length > 0 ? preopExams.length : (form.preop_image_count || 0);
       const preop_image_attached = preopExams.length > 0 ? true : (form.preop_image_attached || false);
-      const preop_exams_details = preopExams.length > 0 ? preopExams : (form.preop_exams_details || []);
+       const preop_exams_details = preopExams.length > 0 ? preopExams : (form.preop_exams_details || []);
+       const consumption_exams_details = consumptionExams.length > 0 ? consumptionExams : (form.consumption_exams_details || []);
 
       const dateFields = [
         "patient_birthdate", "procedure_date", "preop_exam_date", 
@@ -470,8 +514,9 @@ export default function OpmeApp() {
         preop_image_types,
         preop_image_count,
         preop_image_attached,
-        preop_exams_details,
-        status: nextStatus,
+         preop_exams_details,
+         consumption_exams_details,
+         status: nextStatus,
         created_by: user.id, 
         updated_at: new Date().toISOString() 
       };
@@ -659,7 +704,44 @@ export default function OpmeApp() {
                               <span className="truncate">{req.requester_name || req.responsible_name || 'Não inf.'}</span>
                             </div>
                          </div>
-                         <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase">Abrir</Button>
+                          <div className="flex items-center gap-2">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-slate-300 hover:text-destructive hover:bg-destructive/5 transition-colors"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <X size={18} />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-destructive flex items-center gap-2 font-bold uppercase tracking-tight">
+                                    <Trash2 size={20} />
+                                    Excluir Processo?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="text-slate-600 font-medium text-sm">
+                                    Atenção: Ao excluir, você perderá TODO o processo e progresso permanentemente. Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteRequest(req.id);
+                                    }}
+                                    className="bg-destructive text-white hover:bg-destructive/90 font-bold uppercase text-xs"
+                                  >
+                                    Sim, Excluir Tudo
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase">Abrir</Button>
+                          </div>
                        </div>
                      </CardContent>
                    </Card>
@@ -1713,10 +1795,71 @@ export default function OpmeApp() {
                         </CardContent>
                       </Card>
                     ))}
-                    <Button variant="outline" className="w-full border-dashed h-10 text-[10px] font-bold uppercase" onClick={() => addItem("opme_returned")}>+ Registrar Devolução</Button>
-                  </div>
-                </div>
-              </div>
+                     <Button variant="outline" className="w-full border-dashed h-10 text-[10px] font-bold uppercase" onClick={() => addItem("opme_returned")}>+ Registrar Devolução</Button>
+                   </div>
+                 </div>
+ 
+                 <div className="space-y-4">
+                   <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Evidências de Uso (Fotos/Rastreabilidade)</h3>
+                   <div className="space-y-4">
+                     <Select onValueChange={(v) => {
+                       if (!v) return;
+                       const newExam = { id: Math.random().toString(36), type: v, date: new Date().toISOString().split('T')[0], file: null, url: "" };
+                       setConsumptionExams(prev => [...prev, newExam]);
+                     }}>
+                       <SelectTrigger className="h-10 bg-white border-slate-200 text-xs font-bold uppercase">
+                         <SelectValue placeholder="+ Adicionar Foto/Evidência" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="Etiqueta/Rastreabilidade">Etiqueta/Rastreabilidade</SelectItem>
+                         <SelectItem value="Foto do Material">Foto do Material</SelectItem>
+                         <SelectItem value="Imagem Intraoperatória">Imagem Intraoperatória</SelectItem>
+                         <SelectItem value="Outro">Outro</SelectItem>
+                       </SelectContent>
+                     </Select>
+ 
+                     <div className="grid grid-cols-1 gap-3">
+                       {consumptionExams.map((exam, idx) => (
+                         <Card key={exam.id} className="border-slate-100 bg-white shadow-sm overflow-hidden">
+                           <CardContent className="p-3 space-y-3">
+                             <div className="flex items-center justify-between">
+                               <div className="flex items-center gap-2">
+                                 <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">EVID</div>
+                                 <span className="text-xs font-bold text-slate-700">{exam.type}</span>
+                               </div>
+                               <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400" onClick={() => setConsumptionExams(prev => prev.filter(e => e.id !== exam.id))}>×</Button>
+                             </div>
+                             <div className="grid grid-cols-2 gap-3">
+                               {exam.url ? (
+                                 <div className="col-span-2 relative group">
+                                   <img src={exam.url} alt="Evidência" className="w-full h-32 object-cover rounded-md border" />
+                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
+                                     <Button variant="secondary" size="sm" className="h-8 text-[10px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Ver Ampliado</Button>
+                                   </div>
+                                 </div>
+                               ) : (
+                                 <div className="col-span-2 relative">
+                                   <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
+                                     const file = e.target.files?.[0];
+                                     if (file) {
+                                       const url = URL.createObjectURL(file);
+                                       const newExams = [...consumptionExams];
+                                       newExams[idx].file = file;
+                                       newExams[idx].url = url;
+                                       setConsumptionExams(newExams);
+                                     }
+                                   }} />
+                                   <Button variant="outline" className="w-full h-10 text-[10px] font-bold uppercase border-dashed border-2 text-slate-400">+ Upload Foto</Button>
+                                 </div>
+                               )}
+                             </div>
+                           </CardContent>
+                         </Card>
+                       ))}
+                     </div>
+                   </div>
+                 </div>
+               </div>
             )}
 
             {part === 6 && step === 1 && (

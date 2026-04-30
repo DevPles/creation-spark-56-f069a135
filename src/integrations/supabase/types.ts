@@ -549,6 +549,7 @@ export type Database = {
           cme_processing_date: string | null
           cme_responsible: string | null
           committee_opinion: string | null
+          consumption_exams_details: Json | null
           created_at: string
           created_by: string
           facility_unit: string
@@ -642,6 +643,7 @@ export type Database = {
           cme_processing_date?: string | null
           cme_responsible?: string | null
           committee_opinion?: string | null
+          consumption_exams_details?: Json | null
           created_at?: string
           created_by: string
           facility_unit: string
@@ -735,6 +737,7 @@ export type Database = {
           cme_processing_date?: string | null
           cme_responsible?: string | null
           committee_opinion?: string | null
+          consumption_exams_details?: Json | null
           created_at?: string
           created_by?: string
           facility_unit?: string
