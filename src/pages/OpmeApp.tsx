@@ -2113,7 +2113,34 @@ export default function OpmeApp() {
 
                     <div className="space-y-1">
                       <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
-                      <Textarea value={form.auditor_post_final_opinion} onChange={e => updateForm("auditor_post_final_opinion", e.target.value)} placeholder="Conclusão da auditoria..." className="min-h-[100px] text-xs bg-white" />
+                      <Textarea value={form.auditor_post_final_opinion} onChange={e => updateForm("auditor_post_final_opinion", e.target.value)} placeholder="Conclusão da auditoria com base no dossiê consolidado..." className="min-h-[150px] text-xs bg-white" />
+                    </div>
+
+                    <div className="space-y-4 pt-2 border-t border-border">
+                      <div className="flex items-center gap-2">
+                        <Checkbox 
+                          id="req_justification" 
+                          checked={form.auditor_post_justification_requested} 
+                          onCheckedChange={(v) => {
+                            updateForm("auditor_post_justification_requested", v);
+                            if (v && !form.auditor_post_justification_reason?.trim()) {
+                              updateForm("auditor_post_justification_reason", buildPostAuditJustification());
+                            }
+                          }} 
+                        />
+                        <Label htmlFor="req_justification" className="text-xs font-bold text-slate-600 uppercase">Solicitar Justificativa ao Cirurgião</Label>
+                      </div>
+                      {form.auditor_post_justification_requested && (
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-slate-500">Motivo da Solicitação</Label>
+                          <Textarea 
+                            value={form.auditor_post_justification_reason} 
+                            onChange={e => updateForm("auditor_post_justification_reason", e.target.value)} 
+                            placeholder="Pontos de divergência identificados no dossiê..." 
+                            className="min-h-[110px] text-xs bg-white" 
+                          />
+                        </div>
+                      )}
                     </div>
 
                      <div className="grid grid-cols-2 gap-4 pt-2">
