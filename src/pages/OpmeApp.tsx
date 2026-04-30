@@ -837,11 +837,6 @@ export default function OpmeApp() {
                     form.procedure_segment_cadastro !== form.procedure_segment_requisicao ||
                     form.procedure_position_cadastro !== form.procedure_position_requisicao) && 
                     form.procedure_side_requisicao && (
-                  {(form.procedure_side_cadastro !== form.procedure_side_requisicao || 
-                    form.procedure_region_cadastro !== form.procedure_region_requisicao || 
-                    form.procedure_segment_cadastro !== form.procedure_segment_requisicao ||
-                    form.procedure_position_cadastro !== form.procedure_position_requisicao) && 
-                    form.procedure_side_requisicao && (
                     <div className="p-4 rounded-lg bg-red-50 border border-red-100 flex flex-col gap-2 mt-4">
                       <div className="flex items-center gap-2">
                         <span className="text-red-500">⚠️</span>
@@ -854,7 +849,6 @@ export default function OpmeApp() {
                         {form.procedure_position_cadastro !== form.procedure_position_requisicao && <p>• Posição: {form.procedure_position_cadastro || 'Não inf.'} → {form.procedure_position_requisicao}</p>}
                       </div>
                     </div>
-                  )}
                   )}
                 </div>
               </div>
