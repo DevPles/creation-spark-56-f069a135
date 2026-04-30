@@ -1352,21 +1352,22 @@ export default function OpmeApp() {
                     </div>
                     <div className="space-y-2 pt-4 border-t border-slate-50">
                       <Label className="text-xs font-semibold uppercase text-slate-500">Responsável Validação</Label>
-                      <Input value={form.preop_validation_responsible} onChange={e => updateForm("preop_validation_responsible", e.target.value)} placeholder="Assinatura / Carimbo" className="h-12 bg-white" />
-                    </div>
-                  </div>
-                </div>
-              </div>
+                       <Input value={form.preop_validation_responsible} onChange={e => updateForm("preop_validation_responsible", e.target.value)} placeholder="Assinatura / Carimbo" className="h-12 bg-white" />
+                     </div>
+                   </div>
+                 </div>
+               </div>
+            )}
+
             {part === 3 && (
               <div className="space-y-6 pb-6">
-                <div className="space-y-6">
-                  {step === 0 && (
-                    <div className="space-y-6">
-                      <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
-                    <div className="flex items-center gap-2 mb-2 border-b border-primary/10 pb-2">
-                    <div className="w-2 h-4 bg-primary rounded-full"></div>
-                    <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resumo para Auditoria</h3>
-                  </div>
+                {step === 0 && (
+                  <div className="space-y-6">
+                    <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
+                      <div className="flex items-center gap-2 mb-2 border-b border-primary/10 pb-2">
+                        <div className="w-2 h-4 bg-primary rounded-full"></div>
+                        <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resumo para Auditoria</h3>
+                      </div>
                   
                   <div className="grid grid-cols-2 gap-y-3 gap-x-4">
                     <div className="space-y-0.5">
@@ -1487,8 +1488,10 @@ export default function OpmeApp() {
                         <Textarea value={form.auditor_pre_opinion} onChange={e => updateForm("auditor_pre_opinion", e.target.value)} placeholder="Descreva sua avaliação técnica aqui..." className="min-h-[100px] text-xs bg-white" />
                       </div>
                     </div>
-                  )}
-                  {step === 1 && (
+                  </div>
+                )}
+
+                {step === 1 && (
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Validação Auditor Pós-OP</h3>
                     
@@ -1551,8 +1554,7 @@ export default function OpmeApp() {
                       </div>
                     </div>
                   </div>
-                  )}
-                </div>
+                )}
               </div>
             )}
 
