@@ -2007,9 +2007,11 @@ export default function OpmeApp() {
                               <div className="flex gap-2">
                                 <Button variant="ghost" size="sm" className="h-6 px-2 text-primary text-[10px] font-bold uppercase bg-primary/5 hover:bg-primary/10" 
                                   onClick={async () => {
-                                    if (!item.batch) { toast.error("Preencha o lote antes de lançar"); return; }
-                                    updateItem(idx, "launched", true, "opme_used");
-                                    setTimeout(() => handleSave(false), 100);
+                                    if (!item.batch) {
+                                      toast.error("Preencha o lote antes de lançar");
+                                      return;
+                                    }
+                                    handleLaunchItem(idx);
                                   }}
                                 >
                                   Lançar Item
