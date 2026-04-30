@@ -629,6 +629,10 @@ export default function OpmeApp() {
       const preop_image_attached = preopExams.length > 0 ? true : (form.preop_image_attached || false);
        const preop_exams_details = preopExams.length > 0 ? preopExams : (form.preop_exams_details || []);
        const consumption_exams_details = consumptionExams.length > 0 ? consumptionExams : (form.consumption_exams_details || []);
+       const postop_exams_details = postopExams.length > 0 ? postopExams : (form.postop_exams_details || []);
+       const postop_image_types = postopExams.length > 0 ? postopExams.map(e => e.type) : (form.postop_image_types || []);
+       const postop_image_count = postopExams.length > 0 ? postopExams.length : (form.postop_image_count || 0);
+       const postop_image_attached = postopExams.length > 0 ? true : (form.postop_image_attached || false);
 
       const dateFields = [
         "patient_birthdate", "procedure_date", "preop_exam_date", 
@@ -652,7 +656,11 @@ export default function OpmeApp() {
         preop_image_count,
         preop_image_attached,
          preop_exams_details,
-         consumption_exams_details,
+          consumption_exams_details,
+          postop_exams_details,
+          postop_image_types,
+          postop_image_count,
+          postop_image_attached,
          status: nextStatus,
         created_by: user.id, 
         updated_at: new Date().toISOString() 
