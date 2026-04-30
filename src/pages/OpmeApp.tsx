@@ -2099,8 +2099,15 @@ export default function OpmeApp() {
                                   <FileText size={14} />
                                 </div>
                                 <div>
-                                  <p className="text-[11px] font-bold text-slate-700 uppercase">{item.description}</p>
-                                  <p className="text-[9px] text-slate-500 uppercase font-medium">Qtd: {item.quantity} | Lote: {item.batch}</p>
+                                  <p className="text-[10px] font-bold text-slate-700 uppercase leading-tight mb-0.5">{item.description}</p>
+                                  <p className="text-[9px] text-slate-500 uppercase font-medium leading-none">
+                                    Qtd: {item.quantity} | Lote: {item.batch}
+                                  </p>
+                                  {item.launched_by && (
+                                    <p className="text-[8px] text-slate-400 font-bold uppercase mt-1">
+                                      Lançado por: {item.launched_by.split('@')[0]} @ {item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                               <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold uppercase text-slate-400 hover:text-primary" onClick={() => updateItem(idx, "launched", false, "opme_used")}>Editar</Button>
