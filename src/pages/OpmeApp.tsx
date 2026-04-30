@@ -1352,11 +1352,11 @@ export default function OpmeApp() {
                     </div>
                     <div className="space-y-2 pt-4 border-t border-slate-50">
                       <Label className="text-xs font-semibold uppercase text-slate-500">Responsável Validação</Label>
-                       <Input value={form.preop_validation_responsible} onChange={e => updateForm("preop_validation_responsible", e.target.value)} placeholder="Assinatura / Carimbo" className="h-12 bg-white" />
-                     </div>
-                   </div>
-                 </div>
-               </div>
+                      <Input value={form.preop_validation_responsible} onChange={e => updateForm("preop_validation_responsible", e.target.value)} placeholder="Assinatura / Carimbo" className="h-12 bg-white" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
             {part === 3 && (
