@@ -31,9 +31,15 @@ const STEPS_REQUISICAO = [
 ];
 
 const STEPS_AUDITORIA = [
-  { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Pré-OP" },
-  { id: "administrativo", title: "Controle", description: "Logística e Suprimentos" },
-  { id: "consumo", title: "Consumo", description: "Registro de Uso e Devolução" },
+  { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Técnica" },
+];
+
+const STEPS_CONTROLE = [
+  { id: "administrativo", title: "Logística", description: "Almoxarifado e CME" },
+];
+
+const STEPS_CONSUMO = [
+  { id: "consumo", title: "Registro de Uso", description: "Materiais Utilizados" },
   { id: "imagem_pos", title: "Imagem Pós", description: "Controle Pós-OP" },
 ];
 
@@ -67,6 +73,8 @@ export default function OpmeApp() {
      cadastro: 0,
      requisicao: 0,
      auditoria: 0,
+     controle: 0,
+     consumo: 0,
      faturamento: 0,
      divergencias: 0
    });
@@ -78,7 +86,12 @@ export default function OpmeApp() {
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[] }>({ idx: -1, items: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const STEPS = part === 1 ? STEPS_CADASTRO : part === 2 ? STEPS_REQUISICAO : part === 3 ? STEPS_AUDITORIA : STEPS_FATURAMENTO;
+  const STEPS = part === 1 ? STEPS_CADASTRO : 
+                part === 2 ? STEPS_REQUISICAO : 
+                part === 3 ? STEPS_AUDITORIA : 
+                part === 5 ? STEPS_CONTROLE :
+                part === 6 ? STEPS_CONSUMO :
+                STEPS_FATURAMENTO;
 
    const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
@@ -211,11 +224,13 @@ export default function OpmeApp() {
          if (data && !error) {
            setRequests(data);
            setFilteredRequests(data);
-           const s = { cadastro: 0, requisicao: 0, auditoria: 0, faturamento: 0, divergencias: 0 };
+           const s = { cadastro: 0, requisicao: 0, auditoria: 0, controle: 0, consumo: 0, faturamento: 0, divergencias: 0 };
            data.forEach((c: any) => {
              if (c.status === "rascunho") s.cadastro++;
              if (c.status === "pendente_requisicao") s.requisicao++;
              if (c.status === "pendente_auditoria") s.auditoria++;
+             if (c.status === "pendente_controle") s.controle++;
+             if (c.status === "pendente_consumo") s.consumo++;
              if (c.status === "pendente_faturamento") s.faturamento++;
              
              const sideDiv = c.procedure_side_cadastro && c.procedure_side_requisicao && c.procedure_side_cadastro !== c.procedure_side_requisicao;
@@ -285,6 +300,8 @@ export default function OpmeApp() {
      if (req.status === "rascunho") { setPart(1); setStep(0); }
      else if (req.status === "pendente_requisicao") { setPart(2); setStep(0); }
      else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
+     else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
+     else if (req.status === "pendente_consumo") { setPart(6); setStep(0); }
      else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
      else { setPart(1); setStep(0); } // Fallback
      
@@ -325,11 +342,11 @@ export default function OpmeApp() {
     }
   };
 
-  const updateItem = (idx: number, field: string, value: any) => {
+  const updateItem = (idx: number, field: string, value: any, listName: string = "opme_requested") => {
     setForm((p: any) => {
-      const arr = [...p.opme_requested];
+      const arr = [...(p[listName] || [])];
       arr[idx] = { ...arr[idx], [field]: value };
-      return { ...p, opme_requested: arr };
+      return { ...p, [listName]: arr };
     });
 
     if (field === "description" && value.length > 2) {
@@ -344,8 +361,14 @@ export default function OpmeApp() {
     }
   };
 
-  const addItem = () => {
-    setForm((p: any) => ({ ...p, opme_requested: [...p.opme_requested, { description: "", quantity: "1", size_model: "", sigtap: "" }] }));
+  const addItem = (listName: string = "opme_requested") => {
+    const newItem = listName === "opme_used" 
+      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim" }
+      : listName === "opme_returned"
+      ? { description: "", quantity: "1", reason: "", responsible: "" }
+      : { description: "", quantity: "1", size_model: "", sigtap: "" };
+
+    setForm((p: any) => ({ ...p, [listName]: [...(p[listName] || []), newItem] }));
   };
 
   const handleSave = async () => {
@@ -357,7 +380,9 @@ export default function OpmeApp() {
       let nextStatus = form.status;
       if (part === 1) nextStatus = "pendente_requisicao";
       else if (part === 2) nextStatus = "pendente_auditoria";
-      else if (part === 3) nextStatus = "pendente_faturamento";
+      else if (part === 3) nextStatus = "pendente_controle";
+      else if (part === 5) nextStatus = "pendente_consumo";
+      else if (part === 6) nextStatus = "pendente_faturamento";
       else if (part === 4) nextStatus = "concluido";
 
       // Sincronizar dados do responsável e exames se necessário
@@ -426,9 +451,13 @@ export default function OpmeApp() {
 
     if (step < STEPS.length - 1) {
       setStep(step + 1);
-    } else if (part < 3) {
-      setPart(part + 1);
-      setStep(0);
+    } else {
+      // Lógica de transição de partes
+      if (part === 1) { setPart(2); setStep(0); }
+      else if (part === 2) { setPart(3); setStep(0); }
+      else if (part === 3) { setPart(5); setStep(0); }
+      else if (part === 5) { setPart(6); setStep(0); }
+      else if (part === 6) { setPart(4); setStep(0); }
     }
   };
 
@@ -466,10 +495,12 @@ export default function OpmeApp() {
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-10 space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
             {[
-              { id: 1, title: "CADASTRO", description: "Cadastro de Paciente" },
-              { id: 2, title: "REQUISIÇÃO", description: "Solicitação de OPME" },
-              { id: 3, title: "AUDITORIA", description: "Auditoria Técnica" },
-              { id: 4, title: "FATURAMENTO", description: "Faturamento e AIH" },
+              { id: 1, title: "CADASTRO", description: "Paciente" },
+              { id: 2, title: "REQUISIÇÃO", description: "Pedido" },
+              { id: 3, title: "AUDITORIA", description: "Técnica" },
+              { id: 5, title: "CONTROLE ADM", description: "Logística" },
+              { id: 6, title: "CONSUMO CIRURGICO", description: "Uso" },
+              { id: 4, title: "FATURAMENTO", description: "AIH" },
             ].map((card) => (
               <button
                 key={card.id}
@@ -487,18 +518,20 @@ export default function OpmeApp() {
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {[
                 { status: "pendente_requisicao", label: "Requisição" },
                 { status: "pendente_auditoria", label: "Auditoria" },
+                { status: "pendente_controle", label: "Controle" },
+                { status: "pendente_consumo", label: "Consumo" },
                 { status: "pendente_faturamento", label: "Faturamento" },
               ].map((item, i) => (
                 <button 
-                  key={i} 
-                  onClick={() => handleStatusFilter(item.status)}
-                  className={`flex items-center justify-center py-2.5 rounded-lg border transition-all font-bold uppercase ${
-                    item.label === "Faturamento" ? "text-[8px]" : "text-[10px]"
-                  } ${
+                   key={i} 
+                   onClick={() => handleStatusFilter(item.status)}
+                   className={`flex items-center justify-center py-2.5 rounded-lg border transition-all font-bold uppercase ${
+                     item.label === "Faturamento" ? "text-[7px]" : "text-[9px]"
+                   } ${
                     filterStatus === item.status 
                       ? "bg-primary text-white border-primary shadow-sm" 
                       : "bg-slate-50 text-slate-600 border-slate-200 hover:border-primary/30"
@@ -1085,7 +1118,7 @@ export default function OpmeApp() {
                     </Card>
                   ))}
                   {form.opme_requested.length < 10 && (
-                    <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={addItem}>+ Adicionar Material (Até 10)</Button>
+                    <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={() => addItem("opme_requested")}>+ Adicionar Material (Até 10)</Button>
                   )}
                 </div>
                 </div>
@@ -1401,8 +1434,8 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {/* --- PARTE 3: AUDITORIA (Controle / Administrativo) --- */}
-            {part === 3 && step === 1 && (
+            {/* --- PARTE 5: CONTROLE ADM --- */}
+            {part === 5 && step === 0 && (
               <div className="space-y-6">
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase text-slate-400">Controle Administrativo</h3>
@@ -1466,6 +1499,96 @@ export default function OpmeApp() {
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase text-slate-400">Responsável</Label>
                       <Input value={form.surgery_dispatch_responsible} onChange={e => updateForm("surgery_dispatch_responsible", e.target.value)} placeholder="ID" className="h-12 bg-white border-slate-200 shadow-sm" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* --- PARTE 6: CONSUMO CIRURGICO --- */}
+            {part === 6 && step === 0 && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Materiais Utilizados</h3>
+                  <div className="space-y-3">
+                    {form.opme_used?.map((item: any, idx: number) => (
+                      <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
+                        <CardContent className="p-4 space-y-4">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Item #{String(idx + 1).padStart(2, '0')}</span>
+                            {form.opme_used.length > 1 && (
+                              <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px] font-bold uppercase" onClick={() => setForm((p: any) => ({ ...p, opme_used: p.opme_used.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase text-slate-500">Descrição Material</Label>
+                            <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value, "opme_used")} className="h-10 text-xs bg-white" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] font-bold uppercase text-slate-500">Qtd</Label>
+                              <Input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value, "opme_used")} className="h-10 text-xs" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] font-bold uppercase text-slate-500">Lote</Label>
+                              <Input value={item.batch} onChange={e => updateItem(idx, "batch", e.target.value, "opme_used")} className="h-10 text-xs" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    <Button variant="outline" className="w-full border-dashed h-10 text-[10px] font-bold uppercase" onClick={() => addItem("opme_used")}>+ Material Utilizado</Button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Devoluções / Sobras</h3>
+                  <div className="space-y-3">
+                    {form.opme_returned?.map((item: any, idx: number) => (
+                      <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden bg-slate-50/50">
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Devolução #{idx + 1}</span>
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px]" onClick={() => setForm((p: any) => ({ ...p, opme_returned: p.opme_returned.filter((_: any, i: number) => i !== idx) }))}>×</Button>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px] font-bold uppercase text-slate-500">Motivo</Label>
+                            <Input value={item.reason} onChange={e => updateItem(idx, "reason", e.target.value, "opme_returned")} className="h-9 text-xs" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    <Button variant="outline" className="w-full border-dashed h-10 text-[10px] font-bold uppercase" onClick={() => addItem("opme_returned")}>+ Registrar Devolução</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {part === 6 && step === 1 && (
+              <div className="space-y-6">
+                <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-primary/10 pb-2">Imagem Pós-Operatória</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Data do Exame</Label>
+                        <Input type="date" value={form.postop_exam_date} onChange={e => updateForm("postop_exam_date", e.target.value)} className="h-10 text-xs bg-white" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Nº Exame / Laudo</Label>
+                        <Input value={form.postop_exam_number} onChange={e => updateForm("postop_exam_number", e.target.value)} className="h-10 text-xs bg-white" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Resultado / Evolução</Label>
+                      <Textarea value={form.postop_result_description} onChange={e => updateForm("postop_result_description", e.target.value)} placeholder="Descreva brevemente a evolução..." className="min-h-[100px] text-xs bg-white" />
+                    </div>
+
+                    <div className="flex items-center space-x-2 bg-white p-3 rounded-lg border">
+                      <Checkbox id="postop_att" checked={form.postop_image_attached} onCheckedChange={v => updateForm("postop_image_attached", v)} />
+                      <Label htmlFor="postop_att" className="text-xs font-semibold">Imagem anexada ao sistema</Label>
                     </div>
                   </div>
                 </div>
@@ -1598,7 +1721,12 @@ export default function OpmeApp() {
                 Salvando...
               </div>
             ) : (
-              part === 1 ? "Finalizar Cadastro" : part === 2 ? "Finalizar Requisição" : part === 3 ? "Finalizar Auditoria" : "Concluir Faturamento"
+            part === 1 ? "Finalizar Cadastro" : 
+            part === 2 ? "Finalizar Requisição" : 
+            part === 3 ? "Finalizar Auditoria" : 
+            part === 5 ? "Finalizar Controle" :
+            part === 6 ? "Finalizar Consumo" :
+            "Concluir Faturamento"
             )}
           </Button>
         )}
