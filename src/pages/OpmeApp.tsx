@@ -462,25 +462,71 @@ export default function OpmeApp() {
               <div className="h-px flex-1 bg-slate-200 ml-4" />
             </div>
             <div className="grid grid-cols-1 gap-4">
-              {[
-                { id: 2, label: "Pendentes Requisição", value: stats.requisicao, sub: "Equipe médica precisa preencher" },
-                { id: 3, label: "Pendentes Auditoria", value: stats.auditoria, sub: "Aguardando validação técnica" },
-                { id: 4, label: "Pendentes Faturamento", value: stats.faturamento, sub: "Aguardando codificação final" },
-                { id: 1, label: "Novos Cadastros", value: stats.cadastro, sub: "Iniciados recentemente" },
-                { id: 3, label: "Divergências Local", value: stats.divergencias, sub: "Lado cirúrgico divergente", color: "text-red-600" },
-              ].map((item, i) => (
-                <button 
-                  key={i} 
-                  onClick={() => setPart(item.id)}
-                  className="flex items-center gap-4 p-6 bg-white rounded-xl border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all active:scale-[0.99] text-left group w-full"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold ${(item as any).color || 'text-slate-900'} group-hover:text-primary transition-colors`}>{item.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
-                  </div>
-                  <div className={`text-3xl font-bold ${(item as any).color || 'text-slate-900'} tabular-nums tracking-tight`}>{item.value}</div>
-                </button>
-              ))}
+               {[
+                 { status: "pendente_requisicao", label: "Pendentes Requisição", value: stats.requisicao, sub: "Equipe médica precisa preencher" },
+                 { status: "pendente_auditoria", label: "Pendentes Auditoria", value: stats.auditoria, sub: "Aguardando validação técnica" },
+                 { status: "pendente_faturamento", label: "Pendentes Faturamento", value: stats.faturamento, sub: "Aguardando codificação final" },
+                 { status: "rascunho", label: "Novos Cadastros", value: stats.cadastro, sub: "Iniciados recentemente" },
+                 { status: "divergencias", label: "Divergências Local", value: stats.divergencias, sub: "Lado cirúrgico divergente", color: "text-red-600" },
+               ].map((item, i) => (
+                 <button 
+                   key={i} 
+                   onClick={() => applyFilter(filterStatus === item.status ? null : item.status)}
+                   className={`flex items-center gap-4 p-6 bg-white rounded-xl border transition-all active:scale-[0.99] text-left group w-full ${filterStatus === item.status ? "border-primary ring-2 ring-primary/10 shadow-md" : "border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]"}`}
+                 >
+                   <div className="flex-1 min-w-0">
+                     <p className={`text-sm font-semibold ${(item as any).color || 'text-slate-900'} group-hover:text-primary transition-colors`}>{item.label}</p>
+                     <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
+                   </div>
+                   <div className={`text-3xl font-bold ${(item as any).color || 'text-slate-900'} tabular-nums tracking-tight`}>{item.value}</div>
+                 </button>
+               ))}
+             </div>
+           </div>
+ 
+           <div className="space-y-4">
+             <div className="flex items-center justify-between px-1">
+               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                 {filterStatus ? `Filtrando por: ${filterStatus.replace('_', ' ').toUpperCase()}` : "Lista de Trabalho"}
+               </h3>
+               {filterStatus && (
+                 <Button variant="ghost" size="sm" className="h-6 text-[10px] uppercase font-bold text-primary" onClick={() => applyFilter(null)}>Limpar Filtro</Button>
+               )}
+             </div>
+             
+             <div className="space-y-3">
+               {filteredRequests.length > 0 ? (
+                 filteredRequests.map((req) => (
+                   <Card key={req.id} className="border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden" onClick={() => loadRequest(req)}>
+                     <CardContent className="p-0">
+                       <div className="p-4 flex items-center justify-between">
+                         <div className="flex-1 min-w-0">
+                           <div className="flex items-center gap-2 mb-1">
+                             <h4 className="font-bold text-slate-900 truncate uppercase text-sm">{req.patient_name}</h4>
+                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${
+                               req.status === 'rascunho' ? 'bg-slate-100 text-slate-600 border-slate-200' :
+                               req.status === 'pendente_requisicao' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                               req.status === 'pendente_auditoria' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                               'bg-emerald-50 text-emerald-600 border-emerald-100'
+                             }`}>
+                               {req.status?.replace('_', ' ')}
+                             </span>
+                           </div>
+                           <div className="flex items-center gap-3 text-xs text-slate-500">
+                             <span className="flex items-center gap-1 font-medium">📅 {req.procedure_date ? new Date(req.procedure_date).toLocaleDateString('pt-BR') : '---'}</span>
+                             <span className="truncate">👤 {req.requester_name || req.responsible_name || 'Não inf.'}</span>
+                           </div>
+                         </div>
+                         <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase">Abrir</Button>
+                       </div>
+                     </CardContent>
+                   </Card>
+                 ))
+               ) : (
+                 <div className="bg-white border border-dashed border-slate-200 rounded-xl p-10 text-center">
+                   <p className="text-sm text-slate-400 font-medium">Nenhum pedido encontrado nesta categoria.</p>
+                 </div>
+               )}
             </div>
           </div>
         </main>
