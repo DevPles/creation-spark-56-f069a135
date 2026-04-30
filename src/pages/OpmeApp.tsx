@@ -1493,6 +1493,7 @@ export default function OpmeApp() {
                       </div>
                     </div>
                   )}
+                </div>
 
                 {step === 1 && (
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
