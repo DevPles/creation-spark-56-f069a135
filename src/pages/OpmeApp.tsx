@@ -30,11 +30,8 @@ const STEPS_REQUISICAO = [
   { id: "justificativa_imagem", title: "Justificativa", description: "Indicação e Exames" },
 ];
 
-const STEPS_AUDITORIA_PRE = [
+const STEPS_AUDITORIA = [
   { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Pré-OP" },
-];
-
-const STEPS_AUDITORIA_POST = [
   { id: "auditoria_post", title: "Médico Auditor", description: "Validação Pós-OP" },
 ];
 
@@ -92,10 +89,9 @@ export default function OpmeApp() {
 
   const STEPS = part === 1 ? STEPS_CADASTRO : 
                 part === 2 ? STEPS_REQUISICAO : 
-                part === 3 ? STEPS_AUDITORIA_PRE : 
+                part === 3 ? STEPS_AUDITORIA : 
                 part === 5 ? STEPS_CONTROLE :
                 part === 6 ? STEPS_CONSUMO :
-                part === 7 ? STEPS_AUDITORIA_POST :
                 STEPS_FATURAMENTO;
 
    const [form, setForm] = useState<any>({
@@ -314,10 +310,10 @@ export default function OpmeApp() {
      // Determinar qual parte e passo abrir baseado no status
      if (req.status === "rascunho") { setPart(1); setStep(0); }
      else if (req.status === "pendente_requisicao") { setPart(2); setStep(0); }
-     else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
-     else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
-     else if (req.status === "pendente_consumo") { setPart(6); setStep(0); }
-     else if (req.status === "pendente_auditoria_post") { setPart(7); setStep(0); }
+      else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
+      else if (req.status === "pendente_auditoria_post") { setPart(3); setStep(1); }
+      else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
+      else if (req.status === "pendente_consumo") { setPart(6); setStep(0); }
      else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
      else { setPart(1); setStep(0); } // Fallback
      
@@ -396,10 +392,11 @@ export default function OpmeApp() {
       let nextStatus = form.status;
       if (part === 1) nextStatus = "pendente_requisicao";
       else if (part === 2) nextStatus = "pendente_auditoria";
-      else if (part === 3) nextStatus = "pendente_controle";
+      else if (part === 3) {
+        nextStatus = step === 0 ? "pendente_controle" : "pendente_faturamento";
+      }
       else if (part === 5) nextStatus = "pendente_consumo";
       else if (part === 6) nextStatus = "pendente_auditoria_post";
-      else if (part === 7) nextStatus = "pendente_faturamento";
       else if (part === 4) nextStatus = "concluido";
 
       // Sincronizar dados do responsável e exames se necessário
@@ -515,10 +512,9 @@ export default function OpmeApp() {
             {[
               { id: 1, title: "CADASTRO", description: "Paciente" },
               { id: 2, title: "REQUISIÇÃO", description: "Pedido" },
-              { id: 3, title: "AUDITORIA PRÉ", description: "Técnica" },
+              { id: 3, title: "AUDITORIA", description: "Pré e Pós" },
               { id: 5, title: "CONTROLE ADM", description: "Logística" },
               { id: 6, title: "CONSUMO", description: "Cirúrgico" },
-              { id: 7, title: "AUDITORIA PÓS", description: "Técnica" },
               { id: 4, title: "FATURAMENTO", description: "AIH" },
             ].map((card) => (
               <button
@@ -1265,10 +1261,11 @@ export default function OpmeApp() {
                            </CardContent>
                          </Card>
                        ))}
-                     </div>
-                   </div>
+                    </div>
+                  </div>
+                </div>
 
-                  <div className="space-y-4 bg-white p-4 rounded-lg border border-slate-100 shadow-sm mt-2">
+                <div className="space-y-4 bg-white p-4 rounded-lg border border-slate-100 shadow-sm mt-2">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-xs font-semibold uppercase text-slate-500">Data do Exame</Label>
@@ -1319,15 +1316,16 @@ export default function OpmeApp() {
                     </div>
                   </div>
                 </div>
-              </div>
             )}
 
 
 
             {/* --- PARTE 3: AUDITORIA (Médico Auditor) --- */}
-            {part === 3 && step === 0 && (
+            {part === 3 && (
               <div className="space-y-6 pb-6">
-                <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
+                {step === 0 && (
+                  <div className="space-y-6">
+                    <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
                   <div className="flex items-center gap-2 mb-2 border-b border-primary/10 pb-2">
                     <div className="w-2 h-4 bg-primary rounded-full"></div>
                     <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resumo para Auditoria</h3>
@@ -1450,8 +1448,75 @@ export default function OpmeApp() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
                     <Textarea value={form.auditor_pre_opinion} onChange={e => updateForm("auditor_pre_opinion", e.target.value)} placeholder="Descreva sua avaliação técnica aqui..." className="min-h-[100px] text-xs bg-white" />
+                    </div>
                   </div>
                 </div>
+                )}
+
+                {step === 1 && (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                    <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Validação Auditor Pós-OP</h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Nome Auditor</Label>
+                        <Input value={form.auditor_post_name} onChange={e => updateForm("auditor_post_name", e.target.value)} className="h-10 text-xs bg-white" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">CRM</Label>
+                        <Input value={form.auditor_post_crm} onChange={e => updateForm("auditor_post_crm", e.target.value)} className="h-10 text-xs bg-white" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Compatibilidade OPME x Procedimento</Label>
+                      <Select value={form.auditor_post_procedure_compat} onValueChange={v => updateForm("auditor_post_procedure_compat", v)}>
+                        <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sim">Sim</SelectItem>
+                          <SelectItem value="nao">Não</SelectItem>
+                          <SelectItem value="parcial">Parcial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Compatibilidade OPME x SIGTAP</Label>
+                      <Select value={form.auditor_post_sigtap_compat} onValueChange={v => updateForm("auditor_post_sigtap_compat", v)}>
+                        <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sim">Sim</SelectItem>
+                          <SelectItem value="nao">Não</SelectItem>
+                          <SelectItem value="parcial">Parcial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Conformidade com Imagem Pós</Label>
+                      <Select value={form.auditor_post_image_conformity} onValueChange={v => updateForm("auditor_post_image_conformity", v)}>
+                        <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sim">Sim</SelectItem>
+                          <SelectItem value="nao">Não</SelectItem>
+                          <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
+                      <Textarea value={form.auditor_post_final_opinion} onChange={e => updateForm("auditor_post_final_opinion", e.target.value)} placeholder="Conclusão da auditoria..." className="min-h-[100px] text-xs bg-white" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Data Validação</Label>
+                        <Input type="date" value={form.auditor_post_date} onChange={e => updateForm("auditor_post_date", e.target.value)} className="h-10 text-xs bg-white" />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1616,73 +1681,6 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {/* --- PARTE 7: AUDITORIA PÓS --- */}
-            {part === 7 && step === 0 && (
-              <div className="space-y-6">
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Validação Auditor Pós-OP</h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-bold uppercase text-slate-500">Nome Auditor</Label>
-                      <Input value={form.auditor_post_name} onChange={e => updateForm("auditor_post_name", e.target.value)} className="h-10 text-xs bg-white" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-bold uppercase text-slate-500">CRM</Label>
-                      <Input value={form.auditor_post_crm} onChange={e => updateForm("auditor_post_crm", e.target.value)} className="h-10 text-xs bg-white" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase text-slate-500">Compatibilidade OPME x Procedimento</Label>
-                    <Select value={form.auditor_post_procedure_compat} onValueChange={v => updateForm("auditor_post_procedure_compat", v)}>
-                      <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sim">Sim</SelectItem>
-                        <SelectItem value="nao">Não</SelectItem>
-                        <SelectItem value="parcial">Parcial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase text-slate-500">Compatibilidade OPME x SIGTAP</Label>
-                    <Select value={form.auditor_post_sigtap_compat} onValueChange={v => updateForm("auditor_post_sigtap_compat", v)}>
-                      <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sim">Sim</SelectItem>
-                        <SelectItem value="nao">Não</SelectItem>
-                        <SelectItem value="parcial">Parcial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase text-slate-500">Conformidade com Imagem Pós</Label>
-                    <Select value={form.auditor_post_image_conformity} onValueChange={v => updateForm("auditor_post_image_conformity", v)}>
-                      <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sim">Sim</SelectItem>
-                        <SelectItem value="nao">Não</SelectItem>
-                        <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
-                    <Textarea value={form.auditor_post_final_opinion} onChange={e => updateForm("auditor_post_final_opinion", e.target.value)} placeholder="Conclusão da auditoria..." className="min-h-[100px] text-xs bg-white" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-bold uppercase text-slate-500">Data Validação</Label>
-                      <Input type="date" value={form.auditor_post_date} onChange={e => updateForm("auditor_post_date", e.target.value)} className="h-10 text-xs bg-white" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* --- PARTE 4: FATURAMENTO (Justificativa Cirurgião) --- */}
             {part === 4 && step === 0 && (
