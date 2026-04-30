@@ -11,7 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const STEPS_CADASTRO = [
   { id: "paciente", title: "Paciente", description: "Identificação do Paciente" },
@@ -259,9 +263,10 @@ export default function OpmeApp() {
       applyFilters(newStatus, filterDate);
     };
 
-    const handleDateFilter = (date: string) => {
-      setFilterDate(date);
-      applyFilters(filterStatus, date);
+    const handleDateFilter = (date: Date | undefined) => {
+      const dateStr = date ? format(date, "yyyy-MM-dd") : "";
+      setFilterDate(dateStr);
+      applyFilters(filterStatus, dateStr);
     };
 
     const clearFilters = () => {
@@ -481,47 +486,48 @@ export default function OpmeApp() {
             ))}
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filtros Avançados</h3>
-              {(filterStatus || filterDate) && (
-                <Button variant="ghost" size="sm" className="h-5 px-2 text-[10px] uppercase font-bold text-primary" onClick={clearFilters}>Limpar</Button>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Filtrar por Status</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { status: "pendente_requisicao", label: "Requisição" },
-                    { status: "pendente_auditoria", label: "Auditoria" },
-                    { status: "pendente_faturamento", label: "Faturamento" },
-                  ].map((item, i) => (
-                    <button 
-                      key={i} 
-                      onClick={() => handleStatusFilter(item.status)}
-                      className={`flex flex-col items-center justify-center py-2 rounded-lg border transition-all text-[10px] font-bold uppercase ${
-                        filterStatus === item.status 
-                          ? "bg-primary text-white border-primary shadow-sm" 
-                          : "bg-slate-50 text-slate-600 border-slate-200 hover:border-primary/30"
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { status: "pendente_requisicao", label: "Requisição" },
+                { status: "pendente_auditoria", label: "Auditoria" },
+                { status: "pendente_faturamento", label: "Faturamento" },
+              ].map((item, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => handleStatusFilter(item.status)}
+                  className={`flex items-center justify-center py-2.5 rounded-lg border transition-all text-[10px] font-bold uppercase ${
+                    filterStatus === item.status 
+                      ? "bg-primary text-white border-primary shadow-sm" 
+                      : "bg-slate-50 text-slate-600 border-slate-200 hover:border-primary/30"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
 
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Filtrar por Data</Label>
-                <Input 
-                  type="date" 
-                  value={filterDate} 
-                  onChange={(e) => handleDateFilter(e.target.value)}
-                  className="h-10 text-xs font-medium bg-slate-50 border-slate-200"
-                />
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button 
+                    className={`flex items-center justify-center py-2.5 rounded-lg border transition-all ${
+                      filterDate 
+                        ? "bg-primary text-white border-primary shadow-sm" 
+                        : "bg-slate-50 text-slate-600 border-slate-200 hover:border-primary/30"
+                    }`}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={filterDate ? new Date(filterDate + 'T00:00:00') : undefined}
+                    onSelect={handleDateFilter}
+                    locale={ptBR}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
  
