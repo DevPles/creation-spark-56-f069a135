@@ -519,7 +519,7 @@ export default function OpmeApp() {
         "auditor_post_date", "incident_date"
       ];
 
-      const sanitizedForm = { ...form };
+      const { id, ...sanitizedForm } = form;
       dateFields.forEach(field => {
         if (sanitizedForm[field] === "") {
           sanitizedForm[field] = null;
