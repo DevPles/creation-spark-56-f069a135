@@ -1272,40 +1272,131 @@ export default function OpmeApp() {
 
             {/* --- PARTE 3: AUDITORIA (Médico Auditor) --- */}
             {part === 3 && step === 0 && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Médico Auditor</Label>
-                  <Input value={form.auditor_pre_name} onChange={e => updateForm("auditor_pre_name", e.target.value)} placeholder="Identificação do Auditor" className="h-12 bg-white shadow-sm" />
+              <div className="space-y-6 pb-6">
+                <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
+                  <div className="flex items-center gap-2 mb-2 border-b border-primary/10 pb-2">
+                    <div className="w-2 h-4 bg-primary rounded-full"></div>
+                    <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resumo para Auditoria</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Paciente</p>
+                      <p className="text-xs font-bold text-slate-700 truncate">{form.patient_name || 'Não informado'}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Nascimento</p>
+                      <p className="text-xs font-bold text-slate-700">{form.patient_birthdate ? new Date(form.patient_birthdate).toLocaleDateString('pt-BR') : '---'}</p>
+                    </div>
+                    <div className="col-span-2 space-y-0.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Procedimento</p>
+                      <p className="text-xs font-bold text-slate-700">{form.procedure_name || 'Não informado'}</p>
+                      <p className="text-[10px] text-slate-500 font-medium">SIGTAP: {form.procedure_sigtap_code || '---'}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Lateralidade/Local</p>
+                      <p className="text-[11px] font-bold text-slate-700">
+                        {form.procedure_side_requisicao || form.procedure_side_cadastro || 'N/A'} - {form.procedure_region_requisicao || form.procedure_region_cadastro || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Data Cirurgia</p>
+                      <p className="text-xs font-bold text-slate-700">{form.procedure_date ? new Date(form.procedure_date).toLocaleDateString('pt-BR') : '---'}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mt-2">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Indicação Clínica</p>
+                    <div className="bg-white p-3 rounded-lg border border-slate-100 text-[11px] text-slate-600 font-medium leading-relaxed italic">
+                      "{form.clinical_indication || 'Sem justificativa informada.'}"
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mt-4">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Materiais Solicitados</p>
+                    <div className="space-y-2">
+                      {form.opme_requested.length > 0 ? (
+                        form.opme_requested.map((item: any, i: number) => (
+                          <div key={i} className="bg-white px-3 py-2 rounded-lg border border-slate-100 flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-bold text-slate-800 truncate uppercase">{item.description}</p>
+                              <p className="text-[9px] text-slate-500 font-medium">SIGTAP: {item.sigtap || '---'}</p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-[10px] font-black text-primary">QTD: {item.quantity}</p>
+                              <p className="text-[9px] text-slate-400 font-bold uppercase">{item.size_model || '---'}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-[10px] text-slate-400 italic">Nenhum material listado.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {preopExams.length > 0 && (
+                    <div className="space-y-3 mt-4">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Exames Anexados ({preopExams.length})</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {preopExams.map((exam, i) => (
+                          <button 
+                            key={i} 
+                            onClick={() => exam.url && window.open(exam.url, "_blank")}
+                            className="bg-white p-2 rounded-lg border border-slate-100 flex items-center gap-2 text-left hover:border-primary/30 transition-colors"
+                          >
+                            <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-primary font-black text-[8px]">IMG</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-slate-800 truncate uppercase">{exam.type}</p>
+                              <p className="text-[8px] text-slate-400 font-bold">{exam.date ? new Date(exam.date).toLocaleDateString('pt-BR') : '---'}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Registro (CRM)</Label>
-                  <Input value={form.auditor_pre_crm} onChange={e => updateForm("auditor_pre_crm", e.target.value)} placeholder="Nº do Registro" className="h-12 bg-white shadow-sm" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Análise da Indicação</Label>
-                  <Select value={form.auditor_pre_analysis} onValueChange={v => updateForm("auditor_pre_analysis", v)}>
-                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="adequada">Adequada</SelectItem>
-                      <SelectItem value="inadequada">Inadequada</SelectItem>
-                      <SelectItem value="complementacao">Necessita complementação</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Compatibilidade SIGTAP</Label>
-                  <Select value={form.auditor_pre_sigtap_compat} onValueChange={v => updateForm("auditor_pre_sigtap_compat", v)}>
-                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sim">Sim</SelectItem>
-                      <SelectItem value="nao">Não</SelectItem>
-                      <SelectItem value="parcial">Parcial</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Parecer Técnico</Label>
-                  <Textarea value={form.auditor_pre_opinion} onChange={e => updateForm("auditor_pre_opinion", e.target.value)} placeholder="Descreva a avaliação..." className="min-h-[100px] bg-white shadow-sm" />
+
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Nome Auditor</Label>
+                      <Input value={form.auditor_pre_name} onChange={e => updateForm("auditor_pre_name", e.target.value)} className="h-10 text-xs bg-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">CRM</Label>
+                      <Input value={form.auditor_pre_crm} onChange={e => updateForm("auditor_pre_crm", e.target.value)} className="h-10 text-xs bg-white" />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Análise</Label>
+                      <Select value={form.auditor_pre_analysis} onValueChange={v => updateForm("auditor_pre_analysis", v)}>
+                        <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="adequada">Adequada</SelectItem>
+                          <SelectItem value="inadequada">Inadequada</SelectItem>
+                          <SelectItem value="complementacao">Complementação</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">SIGTAP Compatível?</Label>
+                      <Select value={form.auditor_pre_sigtap_compat} onValueChange={v => updateForm("auditor_pre_sigtap_compat", v)}>
+                        <SelectTrigger className="h-10 text-xs bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sim">Sim</SelectItem>
+                          <SelectItem value="nao">Não</SelectItem>
+                          <SelectItem value="parcial">Parcial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
+                    <Textarea value={form.auditor_pre_opinion} onChange={e => updateForm("auditor_pre_opinion", e.target.value)} placeholder="Descreva sua avaliação técnica aqui..." className="min-h-[100px] text-xs bg-white" />
+                  </div>
                 </div>
               </div>
             )}
