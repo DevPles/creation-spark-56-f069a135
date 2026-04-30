@@ -1929,22 +1929,29 @@ export default function OpmeApp() {
                         </div>
 
                         {consumptionExams.length > 0 && (
-                          <div className="space-y-2">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Evidências / Imagens do Procedimento</p>
-                            <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-3">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Evidências / Imagens do Procedimento ({consumptionExams.length})</p>
+                            <div className="grid grid-cols-2 gap-3">
                               {consumptionExams.map((exam, i) => (
-                                <button 
-                                  key={i} 
-                                  onClick={() => exam.url && window.open(exam.url, "_blank")}
-                                  className="bg-white p-2 rounded-lg border border-slate-100 flex items-center gap-2 text-left hover:border-primary/30 transition-colors"
-                                >
-                                  <div className="w-7 h-7 rounded bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                    <Upload size={14} />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-bold text-slate-800 truncate uppercase">{exam.type}</p>
-                                  </div>
-                                </button>
+                                <div key={i} className="bg-white p-1 rounded-lg border border-slate-100 space-y-2 relative group">
+                                  {exam.url ? (
+                                    <div className="relative aspect-video rounded-md overflow-hidden border border-slate-50">
+                                      <img src={exam.url} alt={exam.type} className="w-full h-full object-cover" />
+                                      <button 
+                                        onClick={() => window.open(exam.url, "_blank")}
+                                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[8px] font-bold uppercase"
+                                      >
+                                        Ampliar
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="aspect-video bg-slate-50 rounded-md border border-dashed border-slate-200 flex flex-col items-center justify-center gap-1">
+                                      <Upload size={14} className="text-slate-300" />
+                                      <p className="text-[7px] font-bold text-slate-400 uppercase text-center px-1">{exam.type}</p>
+                                    </div>
+                                  )}
+                                  <p className="text-[9px] font-black text-slate-700 uppercase px-1 truncate">{exam.type}</p>
+                                </div>
                               ))}
                             </div>
                           </div>
