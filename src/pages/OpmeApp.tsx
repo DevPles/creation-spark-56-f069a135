@@ -276,8 +276,14 @@ export default function OpmeApp() {
       else if (part === 3) nextStatus = "pendente_faturamento";
       else if (part === 4) nextStatus = "concluido";
 
+      // Sincronizar dados do responsável se necessário
+      const requester_name = form.requester_name || form.responsible_name;
+      const requester_register = form.requester_register || form.responsible_register;
+
       const payload = { 
-        ...form, 
+        ...form,
+        requester_name,
+        requester_register,
         status: nextStatus,
         created_by: user.id, 
         updated_at: new Date().toISOString() 
@@ -292,6 +298,8 @@ export default function OpmeApp() {
       }
       
       toast.success("Pedido enviado com sucesso!");
+      setPart(null);
+      setStep(0);
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar");
     } finally {
