@@ -684,64 +684,64 @@ export default function OpmeApp() {
             {part === 2 && step === 0 && (
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">1. Identificação do Paciente</h3>
+                  <h3 className="text-xs font-bold uppercase text-primary tracking-widest border-b pb-1">1. Identificação do Paciente</h3>
                   <div className="grid grid-cols-1 gap-3">
                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Nome Completo</Label>
-                      <p className="text-sm font-semibold text-slate-800">{form.patient_name || "Não informado"}</p>
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Nome Completo</Label>
+                      <p className="font-medium text-slate-900">{form.patient_name || "Não informado"}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Prontuário</Label>
-                        <p className="text-sm font-semibold text-slate-800">{form.patient_record || "---"}</p>
+                        <Label className="text-xs font-semibold uppercase text-slate-500">Prontuário</Label>
+                        <p className="font-medium text-slate-900">{form.patient_record || "---"}</p>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Nascimento</Label>
-                        <p className="text-sm font-semibold text-slate-800">{form.patient_birthdate ? new Date(form.patient_birthdate).toLocaleDateString('pt-BR') : "---"}</p>
+                        <Label className="text-xs font-semibold uppercase text-slate-500">Nascimento</Label>
+                        <p className="font-medium text-slate-900">{form.patient_birthdate ? new Date(form.patient_birthdate).toLocaleDateString('pt-BR') : "---"}</p>
                       </div>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Nome da Mãe</Label>
-                      <p className="text-sm font-semibold text-slate-800">{form.patient_mother_name || "---"}</p>
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Nome da Mãe</Label>
+                      <p className="font-medium text-slate-900">{form.patient_mother_name || "---"}</p>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Cartão SUS</Label>
-                      <p className="text-sm font-semibold text-slate-800">{form.patient_sus || "---"}</p>
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Cartão SUS</Label>
+                      <p className="font-medium text-slate-900">{form.patient_sus || "---"}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Responsável</Label>
-                        <p className="text-sm font-semibold text-slate-800">{form.responsible_name || "---"}</p>
+                        <Label className="text-xs font-semibold uppercase text-slate-500">Responsável</Label>
+                        <p className="font-medium text-slate-900">{form.responsible_name || "---"}</p>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Conselho</Label>
-                        <p className="text-sm font-semibold text-slate-800">{form.responsible_register || "---"}</p>
+                        <Label className="text-xs font-semibold uppercase text-slate-500">Conselho</Label>
+                        <p className="font-medium text-slate-900">{form.responsible_register || "---"}</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">2. Dados do Procedimento</h3>
+                  <h3 className="text-xs font-bold uppercase text-primary tracking-widest border-b pb-1">2. Dados do Procedimento</h3>
                   <div className="grid grid-cols-1 gap-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Data Prevista</Label>
-                        <p className="text-sm font-semibold text-slate-800">{form.procedure_date ? new Date(form.procedure_date).toLocaleDateString('pt-BR') : "---"}</p>
+                        <Label className="text-xs font-semibold uppercase text-slate-500">Data Prevista</Label>
+                        <p className="font-medium text-slate-900">{form.procedure_date ? new Date(form.procedure_date).toLocaleDateString('pt-BR') : "---"}</p>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <Label className="text-[9px] uppercase text-slate-400 font-bold">Tipo</Label>
-                        <p className="text-sm font-semibold text-slate-800 uppercase">{form.procedure_type}</p>
+                        <Label className="text-xs font-semibold uppercase text-slate-500">Tipo</Label>
+                        <p className="font-medium text-slate-900 uppercase">{form.procedure_type}</p>
                       </div>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Procedimento (SIGTAP)</Label>
-                      <p className="text-sm font-semibold text-slate-800">{form.procedure_name || "Não informado"}</p>
-                      <p className="text-[10px] text-slate-500 font-mono mt-1">CÓD: {form.procedure_sigtap_code || "---"}</p>
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Procedimento (SIGTAP)</Label>
+                      <p className="font-medium text-slate-900">{form.procedure_name || "Não informado"}</p>
+                      <p className="text-xs text-slate-500 font-mono mt-1">CÓD: {form.procedure_sigtap_code || "---"}</p>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                      <Label className="text-[9px] uppercase text-slate-400 font-bold">Sala / Setor</Label>
-                      <p className="text-sm font-semibold text-slate-800">{form.procedure_room || "---"}</p>
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Sala / Setor</Label>
+                      <p className="font-medium text-slate-900">{form.procedure_room || "---"}</p>
                     </div>
                   </div>
                 </div>
