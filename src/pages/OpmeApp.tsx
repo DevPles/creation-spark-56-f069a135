@@ -710,8 +710,9 @@ export default function OpmeApp() {
     doc.setFont("helvetica", "bold");
     doc.text("Indicação clínica", margin, y); y += 5;
     doc.setFont("helvetica", "normal");
-    doc.text(doc.splitTextToSize(form.clinical_indication || "Sem indicação clínica registrada.", 182), margin, y);
-    y += 14;
+    const indicationLines = doc.splitTextToSize(form.clinical_indication || "Sem indicação clínica registrada.", 182);
+    doc.text(indicationLines, margin, y);
+    y += Math.max(12, indicationLines.length * 5 + 4);
 
     autoTable(doc, { startY: y, head: [["Material solicitado", "Qtd", "Modelo", "SIGTAP"]], body: requested.map((item: any) => [item.description || "---", item.quantity || "0", item.size_model || "---", item.sigtap || "---"]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
     y = (doc as any).lastAutoTable.finalY + 6;
