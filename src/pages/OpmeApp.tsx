@@ -496,7 +496,9 @@ export default function OpmeApp() {
                 <button 
                   key={i} 
                   onClick={() => handleStatusFilter(item.status)}
-                  className={`flex items-center justify-center py-2.5 rounded-lg border transition-all text-[10px] font-bold uppercase ${
+                  className={`flex items-center justify-center py-2.5 rounded-lg border transition-all font-bold uppercase ${
+                    item.label === "Faturamento" ? "text-[8px]" : "text-[10px]"
+                  } ${
                     filterStatus === item.status 
                       ? "bg-primary text-white border-primary shadow-sm" 
                       : "bg-slate-50 text-slate-600 border-slate-200 hover:border-primary/30"
