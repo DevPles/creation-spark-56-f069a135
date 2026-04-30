@@ -1130,7 +1130,6 @@ export default function OpmeApp() {
               <div className="space-y-4">
                 <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">4. OPME Solicitada</h3>
                 <div className="space-y-3">
-                <div className="space-y-3">
                   {form.opme_requested.map((item: any, idx: number) => (
                     <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
                       <CardContent className="p-0">
@@ -1179,7 +1178,6 @@ export default function OpmeApp() {
                   {form.opme_requested.length < 10 && (
                     <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={() => addItem("opme_requested")}>+ Adicionar Material (Até 10)</Button>
                   )}
-                </div>
                 </div>
               </div>
             )}
@@ -1358,6 +1356,7 @@ export default function OpmeApp() {
                     </div>
                   </div>
                 </div>
+              </div>
             )}
 
 
