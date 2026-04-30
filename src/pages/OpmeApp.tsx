@@ -67,6 +67,40 @@ export default function OpmeApp() {
   const [preopExams, setPreopExams] = useState<any[]>([]);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authPassword, setAuthPassword] = useState("");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  const handleAuditAuth = async () => {
+    if (!user?.email) return;
+    setIsAuthenticating(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: authPassword,
+      });
+
+      if (error) {
+        toast.error("Senha incorreta. Verifique e tente novamente.");
+        return;
+      }
+
+      // Log da ação
+      await supabase.from("audit_logs").insert({
+        user_id: user.id,
+        request_id: recordId,
+        action: step === 0 ? "validacao_pre" : "validacao_pos"
+      });
+
+      setShowAuthModal(false);
+      setAuthPassword("");
+      handleSave(true);
+    } catch (err) {
+      toast.error("Erro na autenticação.");
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<string[]>([]);
    const [stats, setStats] = useState({
@@ -383,9 +417,15 @@ export default function OpmeApp() {
     setForm((p: any) => ({ ...p, [listName]: [...(p[listName] || []), newItem] }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (isAuthValidated = false) => {
     if (!user) { toast.error("Não autenticado"); return; }
     if (!form.patient_name?.trim()) { toast.error("Informe o nome do paciente"); setStep(0); return; }
+
+    // Se for parte de auditoria (3) e ainda não foi validado por senha
+    if (part === 3 && !isAuthValidated) {
+      setShowAuthModal(true);
+      return;
+    }
     
     setSaving(true);
     try {
@@ -1763,7 +1803,7 @@ export default function OpmeApp() {
         ) : (
           <Button 
             className="flex-[2] h-12 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200" 
-            onClick={handleSave}
+            onClick={() => handleSave(false)}
             disabled={saving}
           >
             {saving ? (
@@ -1782,6 +1822,69 @@ export default function OpmeApp() {
           </Button>
         )}
       </footer>
+
+      {/* Modal de Autenticação para Auditoria */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100"
+            >
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-xl">🔐</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 uppercase">Confirmar Validação</h3>
+                <p className="text-xs text-slate-500 mt-1 uppercase font-semibold">
+                  Médico Auditor: {step === 0 ? "PRÉ-OPERATÓRIO" : "PÓS-OPERATÓRIO"}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">Confirme sua senha de acesso</Label>
+                  <Input 
+                    type="password" 
+                    value={authPassword} 
+                    onChange={(e) => setAuthPassword(e.target.value)} 
+                    placeholder="••••••••"
+                    className="h-12 bg-slate-50 border-slate-200 text-center text-lg tracking-widest"
+                    autoFocus
+                    onKeyDown={(e) => e.key === "Enter" && handleAuditAuth()}
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 h-11 text-xs uppercase font-bold"
+                    onClick={() => {
+                      setShowAuthModal(false);
+                      setAuthPassword("");
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    className="flex-1 h-11 text-xs uppercase font-bold shadow-lg shadow-primary/20"
+                    onClick={handleAuditAuth}
+                    disabled={isAuthenticating || !authPassword}
+                  >
+                    {isAuthenticating ? "Validando..." : "Confirmar"}
+                  </Button>
+                </div>
+                
+                <p className="text-[9px] text-center text-slate-400 uppercase font-medium leading-relaxed mt-2">
+                  Esta ação será registrada em log de auditoria com seu usuário e data/hora.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
