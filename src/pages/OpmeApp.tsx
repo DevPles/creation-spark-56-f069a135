@@ -516,9 +516,10 @@ export default function OpmeApp() {
             {[
               { id: 1, title: "CADASTRO", description: "Paciente" },
               { id: 2, title: "REQUISIÇÃO", description: "Pedido" },
-              { id: 3, title: "AUDITORIA", description: "Técnica" },
+              { id: 3, title: "AUDITORIA PRÉ", description: "Técnica" },
               { id: 5, title: "CONTROLE ADM", description: "Logística" },
-              { id: 6, title: "CONSUMO CIRURGICO", description: "Uso" },
+              { id: 6, title: "CONSUMO", description: "Cirúrgico" },
+              { id: 7, title: "AUDITORIA PÓS", description: "Técnica" },
               { id: 4, title: "FATURAMENTO", description: "AIH" },
             ].map((card) => (
               <button
@@ -537,12 +538,13 @@ export default function OpmeApp() {
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
               {[
-                { status: "pendente_requisicao", label: "Requisição" },
-                { status: "pendente_auditoria", label: "Auditoria" },
+                { status: "pendente_requisicao", label: "Pedido" },
+                { status: "pendente_auditoria", label: "Aud. Pré" },
                 { status: "pendente_controle", label: "Controle" },
                 { status: "pendente_consumo", label: "Consumo" },
+                { status: "pendente_auditoria_post", label: "Aud. Pós" },
                 { status: "pendente_faturamento", label: "Faturamento" },
               ].map((item, i) => (
                 <button 
