@@ -78,6 +78,7 @@ export default function OpmeApp() {
    const [preopExams, setPreopExams] = useState<any[]>([]);
     const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
     const [postopExams, setPostopExams] = useState<any[]>([]);
+    const [aihFile, setAihFile] = useState<File | null>(null);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -1039,11 +1040,12 @@ export default function OpmeApp() {
                          className="absolute inset-0 opacity-0 cursor-pointer z-10" 
                          onChange={(e) => {
                            const file = e.target.files?.[0];
-                           if (file) {
-                             const url = URL.createObjectURL(file);
-                             updateForm("billing_aih_file_url", url);
-                             toast.success("AIH anexada!");
-                           }
+                            if (file) {
+                              const url = URL.createObjectURL(file);
+                              setAihFile(file);
+                              updateForm("billing_aih_file_url", url);
+                              toast.success("AIH anexada!");
+                            }
                          }} 
                        />
                        <Button 
