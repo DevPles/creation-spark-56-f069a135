@@ -1864,6 +1864,16 @@ export default function OpmeApp() {
                       );
                     })}
                     <Button variant="outline" className="w-full border-dashed h-10 text-[10px] font-bold uppercase" onClick={() => addItem("opme_used")}>+ Novo Material para Lançar</Button>
+                    
+                    {/* Botão Salvar Rascunho integrado à lista */}
+                    <Button 
+                      variant="secondary" 
+                      className="w-full h-10 text-[10px] font-bold uppercase bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      onClick={() => handleSave(false)}
+                      disabled={saving}
+                    >
+                      {saving ? "Salvando..." : "Salvar Rascunho / Pausar"}
+                    </Button>
                   </div>
                 </div>
 
