@@ -1366,7 +1366,7 @@ export default function OpmeApp() {
               <div className="space-y-6 pb-6">
                 <div className="space-y-6">
                   {step === 0 && (
-                    <>
+                    <div className="space-y-6">
                       <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
                     <div className="flex items-center gap-2 mb-2 border-b border-primary/10 pb-2">
                     <div className="w-2 h-4 bg-primary rounded-full"></div>
@@ -1487,13 +1487,12 @@ export default function OpmeApp() {
                     </div>
                   </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
-                      <Textarea value={form.auditor_pre_opinion} onChange={e => updateForm("auditor_pre_opinion", e.target.value)} placeholder="Descreva sua avaliação técnica aqui..." className="min-h-[100px] text-xs bg-white" />
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
+                        <Textarea value={form.auditor_pre_opinion} onChange={e => updateForm("auditor_pre_opinion", e.target.value)} placeholder="Descreva sua avaliação técnica aqui..." className="min-h-[100px] text-xs bg-white" />
+                      </div>
                     </div>
-                  </div>
-                </>
-              )}
+                  )}
 
                 {step === 1 && (
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
