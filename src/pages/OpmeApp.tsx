@@ -433,7 +433,7 @@ export default function OpmeApp() {
           <div className="w-10" />
         </header>
 
-        <main className="flex-1 p-6 overflow-y-auto pb-10 space-y-8">
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-10 space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
             {[
               { id: 1, title: "CADASTRO", description: "Cadastro de Paciente" },
@@ -456,33 +456,40 @@ export default function OpmeApp() {
             ))}
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Acompanhamento</h3>
-              <div className="h-px flex-1 bg-slate-200 ml-4" />
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filtros de Status</h3>
+              {filterStatus && (
+                <Button variant="ghost" size="sm" className="h-5 px-2 text-[10px] uppercase font-bold text-primary" onClick={() => applyFilter(null)}>Limpar Filtros</Button>
+              )}
             </div>
-            <div className="grid grid-cols-1 gap-4">
-               {[
-                 { status: "pendente_requisicao", label: "Pendentes Requisição", value: stats.requisicao, sub: "Equipe médica precisa preencher" },
-                 { status: "pendente_auditoria", label: "Pendentes Auditoria", value: stats.auditoria, sub: "Aguardando validação técnica" },
-                 { status: "pendente_faturamento", label: "Pendentes Faturamento", value: stats.faturamento, sub: "Aguardando codificação final" },
-                 { status: "rascunho", label: "Novos Cadastros", value: stats.cadastro, sub: "Iniciados recentemente" },
-                 { status: "divergencias", label: "Divergências Local", value: stats.divergencias, sub: "Lado cirúrgico divergente", color: "text-red-600" },
-               ].map((item, i) => (
-                 <button 
-                   key={i} 
-                   onClick={() => applyFilter(filterStatus === item.status ? null : item.status)}
-                   className={`flex items-center gap-4 p-6 bg-white rounded-xl border transition-all active:scale-[0.99] text-left group w-full ${filterStatus === item.status ? "border-primary ring-2 ring-primary/10 shadow-md" : "border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]"}`}
-                 >
-                   <div className="flex-1 min-w-0">
-                     <p className={`text-sm font-semibold ${(item as any).color || 'text-slate-900'} group-hover:text-primary transition-colors`}>{item.label}</p>
-                     <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
-                   </div>
-                   <div className={`text-3xl font-bold ${(item as any).color || 'text-slate-900'} tabular-nums tracking-tight`}>{item.value}</div>
-                 </button>
-               ))}
-             </div>
-           </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { status: "pendente_requisicao", label: "Requisição", value: stats.requisicao, color: "blue" },
+                { status: "pendente_auditoria", label: "Auditoria", value: stats.auditoria, color: "amber" },
+                { status: "pendente_faturamento", label: "Faturamento", value: stats.faturamento, color: "emerald" },
+                { status: "rascunho", label: "Cadastros", value: stats.cadastro, color: "slate" },
+                { status: "divergencias", label: "Divergências", value: stats.divergencias, color: "red" },
+              ].map((item, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => applyFilter(filterStatus === item.status ? null : item.status)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-[10px] font-bold uppercase ${
+                    filterStatus === item.status 
+                      ? "bg-primary text-white border-primary shadow-sm" 
+                      : "bg-white text-slate-600 border-slate-200 hover:border-primary/50"
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${
+                    filterStatus === item.status ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                  }`}>
+                    {item.value}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
  
            <div className="space-y-4">
              <div className="flex items-center justify-between px-1">
