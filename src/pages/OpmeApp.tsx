@@ -433,7 +433,7 @@ export default function OpmeApp() {
           <div className="w-10" />
         </header>
 
-        <main className="flex-1 p-6 overflow-y-auto pb-10 space-y-8">
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-10 space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
             {[
               { id: 1, title: "CADASTRO", description: "Cadastro de Paciente" },
