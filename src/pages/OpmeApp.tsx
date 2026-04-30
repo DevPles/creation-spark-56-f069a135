@@ -1625,9 +1625,94 @@ export default function OpmeApp() {
                 )}
 
                 {step === 1 && (
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-                    <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Validação Auditor Pós-OP</h3>
-                    
+                  <div className="space-y-6">
+                    <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
+                      <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
+                        <div className="w-2 h-4 bg-primary rounded-full"></div>
+                        <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resumo de Consumo para Auditoria Pós</h3>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Materiais Lançados no Consumo</p>
+                          <div className="space-y-2">
+                            {form.opme_used?.filter((item: any) => item.launched).length > 0 ? (
+                              form.opme_used.filter((item: any) => item.launched).map((item: any, i: number) => (
+                                <Card key={i} className="border-slate-100 shadow-sm bg-white overflow-hidden">
+                                  <CardContent className="p-3">
+                                    <div className="flex justify-between items-start gap-4">
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-[11px] font-bold text-slate-800 uppercase leading-tight">{item.description}</p>
+                                        <div className="flex gap-3 mt-1">
+                                          <p className="text-[9px] text-slate-500 font-bold uppercase">Qtd: <span className="text-primary">{item.quantity}</span></p>
+                                          <p className="text-[9px] text-slate-500 font-bold uppercase">Lote: <span className="text-primary">{item.batch || '---'}</span></p>
+                                        </div>
+                                      </div>
+                                      {item.photo_url && (
+                                        <button 
+                                          onClick={() => window.open(item.photo_url, "_blank")}
+                                          className="w-12 h-12 rounded border border-slate-100 overflow-hidden shrink-0 group relative"
+                                        >
+                                          <img src={item.photo_url} alt="Evidência" className="w-full h-full object-cover" />
+                                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                            <Eye size={12} className="text-white" />
+                                          </div>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))
+                            ) : (
+                              <p className="text-[10px] text-slate-400 italic bg-white p-3 rounded-lg border border-dashed text-center">Nenhum material lançado no consumo.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {consumptionExams.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Evidências / Imagens do Procedimento</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {consumptionExams.map((exam, i) => (
+                                <button 
+                                  key={i} 
+                                  onClick={() => exam.url && window.open(exam.url, "_blank")}
+                                  className="bg-white p-2 rounded-lg border border-slate-100 flex items-center gap-2 text-left hover:border-primary/30 transition-colors"
+                                >
+                                  <div className="w-7 h-7 rounded bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                    <Upload size={14} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-bold text-slate-800 truncate uppercase">{exam.type}</p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-2 pt-2 border-t border-primary/5">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Dados do Faturamento (AIH)</p>
+                          <div className="bg-white p-3 rounded-lg border border-slate-100 grid grid-cols-2 gap-3">
+                            <div className="space-y-0.5">
+                              <p className="text-[8px] font-bold text-slate-400 uppercase">Número AIH</p>
+                              <p className="text-[11px] font-bold text-slate-700">{form.billing_aih_number || 'Não informado'}</p>
+                            </div>
+                            <div className="space-y-0.5">
+                              <p className="text-[8px] font-bold text-slate-400 uppercase">Status Faturamento</p>
+                              <div className="flex items-center gap-1">
+                                <div className={`w-1.5 h-1.5 rounded-full ${form.billing_aih_generated ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                                <p className="text-[10px] font-bold text-slate-600 uppercase">{form.billing_aih_generated ? 'AIH Gerada' : 'Pendente'}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                      <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Validação Auditor Pós-OP</h3>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <Label className="text-[10px] font-bold uppercase text-slate-500">Nome Auditor</Label>
