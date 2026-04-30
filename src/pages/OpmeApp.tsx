@@ -751,7 +751,7 @@ export default function OpmeApp() {
             {part === 2 && step === 1 && (
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">3. Profissional Solicitante</h3>
+                  <h3 className="text-xs font-bold uppercase text-primary tracking-widest border-b pb-1">3. Profissional Solicitante</h3>
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Profissional</Label>
@@ -765,12 +765,12 @@ export default function OpmeApp() {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Localização Cirúrgica</h3>
+                  <h3 className="text-xs font-bold uppercase text-primary tracking-widest border-b pb-1">Localização Cirúrgica</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-slate-400">Lateralidade</Label>
+                      <Label className="text-xs font-semibold uppercase text-slate-500">Lateralidade</Label>
                       <Select value={form.procedure_side_requisicao} onValueChange={(v) => updateForm("procedure_side_requisicao", v)}>
-                        <SelectTrigger className="h-10 bg-white shadow-sm border-slate-200 text-xs font-semibold">
+                        <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200">
                           <SelectValue placeholder="Lado" />
                         </SelectTrigger>
                         <SelectContent>
@@ -837,18 +837,24 @@ export default function OpmeApp() {
                     form.procedure_segment_cadastro !== form.procedure_segment_requisicao ||
                     form.procedure_position_cadastro !== form.procedure_position_requisicao) && 
                     form.procedure_side_requisicao && (
-                    <div className="p-3 rounded-lg bg-red-50 border border-red-100 flex flex-col gap-1 mt-2">
+                  {(form.procedure_side_cadastro !== form.procedure_side_requisicao || 
+                    form.procedure_region_cadastro !== form.procedure_region_requisicao || 
+                    form.procedure_segment_cadastro !== form.procedure_segment_requisicao ||
+                    form.procedure_position_cadastro !== form.procedure_position_requisicao) && 
+                    form.procedure_side_requisicao && (
+                    <div className="p-4 rounded-lg bg-red-50 border border-red-100 flex flex-col gap-2 mt-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-red-500 font-bold">⚠️</span>
-                        <p className="text-[10px] font-black text-red-600 uppercase">Divergência Detectada:</p>
+                        <span className="text-red-500">⚠️</span>
+                        <p className="text-sm font-bold text-red-700 uppercase tracking-tight">Divergência Detectada:</p>
                       </div>
-                      <div className="pl-6 text-[9px] text-red-500 font-bold uppercase">
-                        {form.procedure_side_cadastro !== form.procedure_side_requisicao && <p>• Lado: {form.procedure_side_cadastro || 'Não inf.'} vs {form.procedure_side_requisicao}</p>}
-                        {form.procedure_region_cadastro !== form.procedure_region_requisicao && <p>• Região: {form.procedure_region_cadastro || 'Não inf.'} vs {form.procedure_region_requisicao}</p>}
-                        {form.procedure_segment_cadastro !== form.procedure_segment_requisicao && <p>• Segmento: {form.procedure_segment_cadastro || 'Não inf.'} vs {form.procedure_segment_requisicao}</p>}
-                        {form.procedure_position_cadastro !== form.procedure_position_requisicao && <p>• Posição: {form.procedure_position_cadastro || 'Não inf.'} vs {form.procedure_position_requisicao}</p>}
+                      <div className="pl-6 text-xs text-red-600 font-medium space-y-1">
+                        {form.procedure_side_cadastro !== form.procedure_side_requisicao && <p>• Lado: {form.procedure_side_cadastro || 'Não inf.'} → {form.procedure_side_requisicao}</p>}
+                        {form.procedure_region_cadastro !== form.procedure_region_requisicao && <p>• Região: {form.procedure_region_cadastro || 'Não inf.'} → {form.procedure_region_requisicao}</p>}
+                        {form.procedure_segment_cadastro !== form.procedure_segment_requisicao && <p>• Segmento: {form.procedure_segment_cadastro || 'Não inf.'} → {form.procedure_segment_requisicao}</p>}
+                        {form.procedure_position_cadastro !== form.procedure_position_requisicao && <p>• Posição: {form.procedure_position_cadastro || 'Não inf.'} → {form.procedure_position_requisicao}</p>}
                       </div>
                     </div>
+                  )}
                   )}
                 </div>
               </div>
