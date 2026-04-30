@@ -902,6 +902,7 @@ export default function OpmeApp() {
                             <div className="flex items-center gap-4 text-[11px] text-slate-500 font-medium">
                               <span>{req.procedure_date ? new Date(req.procedure_date).toLocaleDateString('pt-BR') : '---'}</span>
                               <span className="truncate">{req.requester_name || req.responsible_name || 'Não inf.'}</span>
+                              {req.billing_aih_number && <span className="text-[10px] bg-slate-100 px-1 rounded border border-slate-200">AIH: {req.billing_aih_number}</span>}
                             </div>
                          </div>
                             <div className="flex items-center gap-2">
