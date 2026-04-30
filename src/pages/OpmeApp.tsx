@@ -191,7 +191,7 @@ export default function OpmeApp() {
     surgery_dispatch_date: "",
     surgery_dispatch_responsible: "",
     opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim" }],
-    opme_returned: [{ description: "", quantity: "0", reason: "", responsible: "" }],
+    opme_returned: [{ description: "", quantity: "0", batch: "", reason: "", responsible: "" }],
     postop_image_types: [],
     postop_image_other: "",
     postop_exam_date: "",
@@ -473,7 +473,7 @@ export default function OpmeApp() {
     const newItem = listName === "opme_used" 
       ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim" }
       : listName === "opme_returned"
-      ? { description: "", quantity: "1", reason: "", responsible: "" }
+      ? { description: "", quantity: "0", batch: "", reason: "", responsible: "" }
       : { description: "", quantity: "1", size_model: "", sigtap: "" };
 
     setForm((p: any) => ({ ...p, [listName]: [...(p[listName] || []), newItem] }));
@@ -1825,14 +1825,28 @@ export default function OpmeApp() {
                   <div className="space-y-3">
                     {form.opme_returned?.map((item: any, idx: number) => (
                       <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden bg-slate-50/50">
-                        <CardContent className="p-4 space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase">Devolução #{idx + 1}</span>
-                            <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px]" onClick={() => setForm((p: any) => ({ ...p, opme_returned: p.opme_returned.filter((_: any, i: number) => i !== idx) }))}>×</Button>
+                        <CardContent className="p-4 space-y-4">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Devolução #{String(idx + 1).padStart(2, '0')}</span>
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px] font-bold uppercase" onClick={() => setForm((p: any) => ({ ...p, opme_returned: p.opme_returned.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-[10px] font-bold uppercase text-slate-500">Motivo</Label>
-                            <Input value={item.reason} onChange={e => updateItem(idx, "reason", e.target.value, "opme_returned")} className="h-9 text-xs" />
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase text-slate-500">Descrição do Material</Label>
+                            <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value, "opme_returned")} className="h-10 text-xs bg-white" placeholder="Nome do item devolvido" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] font-bold uppercase text-slate-500">Quantidade</Label>
+                              <Input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value, "opme_returned")} className="h-10 text-xs" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] font-bold uppercase text-slate-500">Lote</Label>
+                              <Input value={item.batch} onChange={e => updateItem(idx, "batch", e.target.value, "opme_returned")} className="h-10 text-xs" />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase text-slate-500">Motivo da Devolução</Label>
+                            <Input value={item.reason} onChange={e => updateItem(idx, "reason", e.target.value, "opme_returned")} className="h-10 text-xs bg-white" placeholder="Ex: Tamanho inadequado, soba..." />
                           </div>
                         </CardContent>
                       </Card>
