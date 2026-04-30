@@ -36,7 +36,7 @@ const STEPS_AUDITORIA = [
 ];
 
 const STEPS_CONTROLE = [
-  { id: "administrativo", title: "Logística", description: "Almoxarifado e CME" },
+  { id: "administrativo", title: "Controle Administrativo", description: "Logística e CME" },
 ];
 
 const STEPS_CONSUMO = [
@@ -553,7 +553,7 @@ export default function OpmeApp() {
               { id: 1, title: "CADASTRO", description: "Paciente" },
               { id: 2, title: "REQUISIÇÃO", description: "Pedido" },
               { id: 3, title: "AUDITORIA", description: "Pré e Pós" },
-              { id: 5, title: "CONTROLE ADM", description: "Logística" },
+              { id: 5, title: "CONTROLE ADM", description: "Logística e CME" },
               { id: 6, title: "CONSUMO", description: "Cirúrgico" },
               { id: 4, title: "FATURAMENTO", description: "AIH" },
             ].map((card) => (
@@ -1560,71 +1560,94 @@ export default function OpmeApp() {
               </div>
             )}
 
-            {/* --- PARTE 5: CONTROLE ADM --- */}
+            {/* --- PARTE 5: CONTROLE ADMINISTRATIVO --- */}
             {part === 5 && step === 0 && (
-              <div className="space-y-6">
+              <div className="space-y-6 pb-6">
                 <div className="space-y-4">
-                  <h3 className="text-xs font-bold uppercase text-slate-400">Controle Administrativo</h3>
+                  <div className="flex items-center gap-2 border-b pb-2">
+                    <div className="w-2 h-4 bg-primary rounded-full"></div>
+                    <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">9. CONTROLE ADMINISTRATIVO</h3>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase text-slate-500">Data Solicitação</Label>
-                      <Input type="date" value={form.request_date} onChange={e => updateForm("request_date", e.target.value)} className="h-12 bg-white shadow-sm" />
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Data da Solicitação</Label>
+                      <Input type="date" value={form.request_date} onChange={e => updateForm("request_date", e.target.value)} className="h-10 text-xs bg-white border-slate-200" />
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase text-slate-500">Horário</Label>
-                      <Input type="time" value={form.request_time} onChange={e => updateForm("request_time", e.target.value)} className="h-12 bg-white shadow-sm" />
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500">Horário da Solicitação</Label>
+                      <Input type="time" value={form.request_time} onChange={e => updateForm("request_time", e.target.value)} className="h-10 text-xs bg-white border-slate-200" />
                     </div>
                   </div>
-                  <div className="space-y-4 bg-slate-50 p-4 rounded-xl border shadow-sm">
-                    <h4 className="text-[10px] font-bold uppercase text-slate-400">Uso do Almoxarifado</h4>
+
+                  <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider border-b pb-1">PARA USO DO ALMOXARIFADO</h4>
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-semibold uppercase text-slate-500">Recebido por</Label>
-                        <Input value={form.warehouse_received_by} onChange={e => updateForm("warehouse_received_by", e.target.value)} placeholder="Identificação" className="h-12 bg-white border-slate-200 shadow-sm" />
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Recebido por</Label>
+                        <Input value={form.warehouse_received_by} onChange={e => updateForm("warehouse_received_by", e.target.value)} placeholder="Identificação" className="h-10 text-xs bg-white border-slate-200" />
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-semibold uppercase text-slate-500">OPME em Estoque?</Label>
-                        <Select value={form.stock_available} onValueChange={v => updateForm("stock_available", v)}>
-                          <SelectTrigger className="h-12 bg-white border-slate-200 shadow-sm"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="sim">Sim</SelectItem>
-                            <SelectItem value="nao">Não</SelectItem>
-                            <SelectItem value="parcial">Parcial</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold uppercase text-slate-500">Data</Label>
+                          <Input type="date" value={form.warehouse_date} onChange={e => updateForm("warehouse_date", e.target.value)} className="h-10 text-xs bg-white border-slate-200" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold uppercase text-slate-500">Hora do atendimento</Label>
+                          <Input type="time" value={form.warehouse_time} onChange={e => updateForm("warehouse_time", e.target.value)} className="h-10 text-xs bg-white border-slate-200" />
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="sent_cme" checked={form.sent_to_cme} onCheckedChange={v => updateForm("sent_to_cme", v)} />
-                        <Label htmlFor="sent_cme" className="text-xs">Enviada para CME (se aplicável)</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold uppercase text-slate-500">OPME disponível em estoque</Label>
+                          <Select value={form.stock_available} onValueChange={v => updateForm("stock_available", v)}>
+                            <SelectTrigger className="h-10 text-xs bg-white border-slate-200"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sim">Sim</SelectItem>
+                              <SelectItem value="nao">Não</SelectItem>
+                              <SelectItem value="parcial">Parcial</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold uppercase text-slate-500">OPME enviada para CME (se aplicável)</Label>
+                          <Select value={form.sent_to_cme === true ? "sim" : form.sent_to_cme === false ? "nao" : ""} onValueChange={v => updateForm("sent_to_cme", v === "sim")}>
+                            <SelectTrigger className="h-10 text-xs bg-white border-slate-200"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sim">Sim</SelectItem>
+                              <SelectItem value="nao">Não</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-4 bg-white p-4 rounded-xl border shadow-sm">
-                  <h4 className="text-[10px] font-bold uppercase text-slate-400 italic">Uso do CME (Esterilização)</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase text-slate-400">Data Processamento</Label>
-                      <Input type="date" value={form.cme_processing_date} onChange={e => updateForm("cme_processing_date", e.target.value)} className="h-12 bg-white border-slate-200 shadow-sm" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase text-slate-400">Responsável</Label>
-                      <Input value={form.cme_responsible} onChange={e => updateForm("cme_responsible", e.target.value)} placeholder="ID" className="h-12 bg-white border-slate-200 shadow-sm" />
+                  <div className="space-y-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider border-b pb-1">PARA USO DO CME (se aplicável)</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Data do processamento</Label>
+                        <Input type="date" value={form.cme_processing_date} onChange={e => updateForm("cme_processing_date", e.target.value)} className="h-10 text-xs bg-white border-slate-200" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Responsável</Label>
+                        <Input value={form.cme_responsible} onChange={e => updateForm("cme_responsible", e.target.value)} placeholder="Nome/Assinatura" className="h-10 text-xs bg-white border-slate-200" />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-4 bg-slate-50 p-4 rounded-xl border shadow-sm">
-                  <h4 className="text-[10px] font-bold uppercase text-slate-400 italic">Uso do Centro Cirúrgico</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase text-slate-400">Data Dispensação</Label>
-                      <Input type="date" value={form.surgery_dispatch_date} onChange={e => updateForm("surgery_dispatch_date", e.target.value)} className="h-12 bg-white border-slate-200 shadow-sm" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase text-slate-400">Responsável</Label>
-                      <Input value={form.surgery_dispatch_responsible} onChange={e => updateForm("surgery_dispatch_responsible", e.target.value)} placeholder="ID" className="h-12 bg-white border-slate-200 shadow-sm" />
+                  <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider border-b pb-1">PARA USO DO CENTRO CIRÚRGICO</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Data de dispensação</Label>
+                        <Input type="date" value={form.surgery_dispatch_date} onChange={e => updateForm("surgery_dispatch_date", e.target.value)} className="h-10 text-xs bg-white border-slate-200" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Responsável dispensação</Label>
+                        <Input value={form.surgery_dispatch_responsible} onChange={e => updateForm("surgery_dispatch_responsible", e.target.value)} placeholder="Nome/ID" className="h-10 text-xs bg-white border-slate-200" />
+                      </div>
                     </div>
                   </div>
                 </div>
