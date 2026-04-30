@@ -30,8 +30,12 @@ const STEPS_REQUISICAO = [
   { id: "justificativa_imagem", title: "Justificativa", description: "Indicação e Exames" },
 ];
 
-const STEPS_AUDITORIA = [
-  { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Técnica" },
+const STEPS_AUDITORIA_PRE = [
+  { id: "auditoria_pre", title: "Médico Auditor", description: "Validação Pré-OP" },
+];
+
+const STEPS_AUDITORIA_POST = [
+  { id: "auditoria_post", title: "Médico Auditor", description: "Validação Pós-OP" },
 ];
 
 const STEPS_CONTROLE = [
@@ -72,9 +76,10 @@ export default function OpmeApp() {
    const [stats, setStats] = useState({
      cadastro: 0,
      requisicao: 0,
-     auditoria: 0,
+     auditoria_pre: 0,
      controle: 0,
      consumo: 0,
+     auditoria_post: 0,
      faturamento: 0,
      divergencias: 0
    });
@@ -88,9 +93,10 @@ export default function OpmeApp() {
 
   const STEPS = part === 1 ? STEPS_CADASTRO : 
                 part === 2 ? STEPS_REQUISICAO : 
-                part === 3 ? STEPS_AUDITORIA : 
+                part === 3 ? STEPS_AUDITORIA_PRE : 
                 part === 5 ? STEPS_CONTROLE :
                 part === 6 ? STEPS_CONSUMO :
+                part === 7 ? STEPS_AUDITORIA_POST :
                 STEPS_FATURAMENTO;
 
    const [form, setForm] = useState<any>({
@@ -224,11 +230,21 @@ export default function OpmeApp() {
          if (data && !error) {
            setRequests(data);
            setFilteredRequests(data);
-           const s = { cadastro: 0, requisicao: 0, auditoria: 0, controle: 0, consumo: 0, faturamento: 0, divergencias: 0 };
+           const s = { 
+             cadastro: 0, 
+             requisicao: 0, 
+             auditoria_pre: 0, 
+             controle: 0, 
+             consumo: 0, 
+             auditoria_post: 0, 
+             faturamento: 0, 
+             divergencias: 0 
+           };
            data.forEach((c: any) => {
              if (c.status === "rascunho") s.cadastro++;
              if (c.status === "pendente_requisicao") s.requisicao++;
-             if (c.status === "pendente_auditoria") s.auditoria++;
+             if (c.status === "pendente_auditoria") s.auditoria_pre++;
+             if (c.status === "pendente_auditoria_post") s.auditoria_post++;
              if (c.status === "pendente_controle") s.controle++;
              if (c.status === "pendente_consumo") s.consumo++;
              if (c.status === "pendente_faturamento") s.faturamento++;
@@ -302,6 +318,7 @@ export default function OpmeApp() {
      else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
      else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
      else if (req.status === "pendente_consumo") { setPart(6); setStep(0); }
+     else if (req.status === "pendente_auditoria_post") { setPart(7); setStep(0); }
      else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
      else { setPart(1); setStep(0); } // Fallback
      
@@ -382,7 +399,8 @@ export default function OpmeApp() {
       else if (part === 2) nextStatus = "pendente_auditoria";
       else if (part === 3) nextStatus = "pendente_controle";
       else if (part === 5) nextStatus = "pendente_consumo";
-      else if (part === 6) nextStatus = "pendente_faturamento";
+      else if (part === 6) nextStatus = "pendente_auditoria_post";
+      else if (part === 7) nextStatus = "pendente_faturamento";
       else if (part === 4) nextStatus = "concluido";
 
       // Sincronizar dados do responsável e exames se necessário
@@ -457,7 +475,8 @@ export default function OpmeApp() {
       else if (part === 2) { setPart(3); setStep(0); }
       else if (part === 3) { setPart(5); setStep(0); }
       else if (part === 5) { setPart(6); setStep(0); }
-      else if (part === 6) { setPart(4); setStep(0); }
+      else if (part === 6) { setPart(7); setStep(0); }
+      else if (part === 7) { setPart(4); setStep(0); }
     }
   };
 
