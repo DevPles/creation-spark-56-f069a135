@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-  import { ArrowLeft, CalendarIcon, Eye, EyeOff, X, Trash2, Upload, FileText } from "lucide-react";
+  import { ArrowLeft, CalendarIcon, Eye, EyeOff, X, Trash2, Upload, FileText, Plus } from "lucide-react";
  import {
    AlertDialog,
    AlertDialogAction,
@@ -190,7 +190,7 @@ export default function OpmeApp() {
     cme_responsible: "",
     surgery_dispatch_date: "",
     surgery_dispatch_responsible: "",
-    opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false }],
+    opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false, launched_by: null, launched_at: null }],
     opme_returned: [{ description: "", quantity: "0", batch: "", reason: "", responsible: "" }],
     postop_image_types: [],
     postop_image_other: "",
@@ -480,6 +480,114 @@ export default function OpmeApp() {
     setForm((p: any) => ({ ...p, [listName]: [...(p[listName] || []), newItem] }));
   };
 
+  const resetForm = () => {
+    setForm({
+      facility_unit: profile?.facility_unit || "Hospital Geral",
+      status: "rascunho",
+      patient_name: "",
+      patient_record: "",
+      patient_birthdate: "",
+      patient_mother_name: "",
+      patient_sus: "",
+      responsible_name: "",
+      responsible_register: "",
+      procedure_date: new Date().toISOString().split("T")[0],
+      procedure_type: "eletivo",
+      procedure_name: "",
+      procedure_sigtap_code: "",
+      procedure_room: "",
+      requester_name: profile?.name || "",
+      requester_register: "",
+      opme_requested: [{ description: "", quantity: "1", size_model: "", sigtap: "" }],
+      instruments_specific: false,
+      instruments_loan: false,
+      instruments_na: true,
+      instruments_specify: "",
+      clinical_indication: "",
+      preop_image_types: [],
+      preop_image_other: "",
+      preop_exam_date: "",
+      preop_exam_number: "",
+      preop_finding_description: "",
+      preop_image_attached: false,
+      preop_image_count: 0,
+      preop_validation_responsible: profile?.name || "",
+      auditor_pre_name: "",
+      auditor_pre_crm: "",
+      auditor_pre_analysis: "adequada",
+      auditor_pre_sigtap_compat: "sim",
+      auditor_pre_opinion: "",
+      auditor_pre_date: "",
+      request_date: "",
+      request_time: "",
+      warehouse_received_by: "",
+      warehouse_date: "",
+      warehouse_time: "",
+      stock_available: "sim",
+      sent_to_cme: false,
+      cme_processing_date: "",
+      cme_responsible: "",
+      surgery_dispatch_date: "",
+      surgery_dispatch_responsible: "",
+      opme_used: [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false, launched_by: null, launched_at: null }],
+      opme_returned: [{ description: "", quantity: "0", batch: "", reason: "", responsible: "" }],
+      postop_image_types: [],
+      postop_image_other: "",
+      postop_exam_date: "",
+      postop_exam_number: "",
+      postop_result_description: "",
+      postop_image_attached: false,
+      postop_image_count: 0,
+      postop_validation_responsible: "",
+      auditor_post_name: "",
+      auditor_post_crm: "",
+      auditor_post_procedure_compat: "sim",
+      auditor_post_sigtap_compat: "sim",
+      auditor_post_image_conformity: "sim",
+      auditor_post_final_opinion: "",
+      auditor_post_date: "",
+      incident_date: "",
+      incident_description: "",
+      incident_responsible: "",
+      billing_aih_number: "",
+      billing_procedure_name: "",
+      billing_sigtap_code: "",
+      billing_prior_authorization: "nao_se_aplica",
+      billing_aih_generated: false,
+      billing_aih_file_url: "",
+      billing_opme_compatibility: "sim",
+      billing_divergence: false,
+      billing_divergence_description: "",
+      billing_docs: {
+        nf: false,
+        rastreabilidade: false,
+        laudo: false,
+        consumo: false,
+        autorizacao: false,
+        exames: false
+      }
+    });
+    setPreopExams([]);
+    setConsumptionExams([]);
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete("id");
+    window.history.pushState({}, '', newUrl);
+  };
+
+  const handleLaunchItem = (idx: number) => {
+    setForm((p: any) => {
+      const arr = [...(p.opme_used || [])];
+      arr[idx] = { 
+        ...arr[idx], 
+        launched: true, 
+        launched_by: user?.email || user?.id || "Usuário", 
+        launched_at: new Date().toISOString() 
+      };
+      return { ...p, opme_used: arr };
+    });
+    setTimeout(() => handleSave(false), 100);
+  };
+
   const handleSave = async (isAuthValidated = false) => {
     if (!user) { toast.error("Não autenticado"); return; }
     if (!form.patient_name?.trim()) { toast.error("Informe o nome do paciente"); setStep(0); return; }
@@ -519,7 +627,7 @@ export default function OpmeApp() {
         "auditor_post_date", "incident_date"
       ];
 
-      const sanitizedForm = { ...form };
+      const { id, ...sanitizedForm } = form;
       dateFields.forEach(field => {
         if (sanitizedForm[field] === "") {
           sanitizedForm[field] = null;
@@ -540,12 +648,21 @@ export default function OpmeApp() {
         updated_at: new Date().toISOString() 
       };
       
+      let result;
       if (recordId) {
-        const { error } = await supabase.from("opme_requests").update(payload).eq("id", recordId);
-        if (error) throw error;
+        result = await supabase.from("opme_requests").update(payload).eq("id", recordId).select().single();
       } else {
-        const { error } = await supabase.from("opme_requests").insert(payload);
-        if (error) throw error;
+        result = await supabase.from("opme_requests").insert(payload).select().single();
+      }
+
+      if (result.error) throw result.error;
+
+      // Se foi um novo registro, atualizar URL para permitir edições subsequentes
+      if (!recordId && result.data) {
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set("id", result.data.id);
+        window.history.pushState({}, '', newUrl);
+        setForm(result.data);
       }
       
       toast.success("Pedido enviado com sucesso!");
@@ -611,7 +728,10 @@ export default function OpmeApp() {
             <h1 className="text-base font-bold text-slate-900 uppercase tracking-wider">Módulos OPME</h1>
             <p className="text-xs text-slate-500 uppercase">Gestão Hospitalar</p>
           </div>
-          <div className="w-10" />
+          <Button variant="ghost" size="sm" className="text-primary font-bold uppercase text-xs" onClick={resetForm}>
+            <Plus className="h-4 w-4 mr-1" />
+            Novo
+          </Button>
         </header>
 
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-10 space-y-6">
@@ -1646,6 +1766,9 @@ export default function OpmeApp() {
                                         <div className="flex gap-3 mt-1">
                                           <p className="text-[9px] text-slate-500 font-bold uppercase">Qtd: <span className="text-primary">{item.quantity}</span></p>
                                           <p className="text-[9px] text-slate-500 font-bold uppercase">Lote: <span className="text-primary">{item.batch || '---'}</span></p>
+                                          {item.launched_by && (
+                                            <p className="text-[9px] text-slate-500 font-bold uppercase">Lançado por: <span className="text-primary">{item.launched_by.split('@')[0]}</span></p>
+                                          )}
                                         </div>
                                       </div>
                                       {item.photo_url && (
@@ -1887,9 +2010,11 @@ export default function OpmeApp() {
                               <div className="flex gap-2">
                                 <Button variant="ghost" size="sm" className="h-6 px-2 text-primary text-[10px] font-bold uppercase bg-primary/5 hover:bg-primary/10" 
                                   onClick={async () => {
-                                    if (!item.batch) { toast.error("Preencha o lote antes de lançar"); return; }
-                                    updateItem(idx, "launched", true, "opme_used");
-                                    setTimeout(() => handleSave(false), 100);
+                                    if (!item.batch) {
+                                      toast.error("Preencha o lote antes de lançar");
+                                      return;
+                                    }
+                                    handleLaunchItem(idx);
                                   }}
                                 >
                                   Lançar Item
@@ -1977,8 +2102,15 @@ export default function OpmeApp() {
                                   <FileText size={14} />
                                 </div>
                                 <div>
-                                  <p className="text-[11px] font-bold text-slate-700 uppercase">{item.description}</p>
-                                  <p className="text-[9px] text-slate-500 uppercase font-medium">Qtd: {item.quantity} | Lote: {item.batch}</p>
+                                  <p className="text-[10px] font-bold text-slate-700 uppercase leading-tight mb-0.5">{item.description}</p>
+                                  <p className="text-[9px] text-slate-500 uppercase font-medium leading-none">
+                                    Qtd: {item.quantity} | Lote: {item.batch}
+                                  </p>
+                                  {item.launched_by && (
+                                    <p className="text-[8px] text-slate-400 font-bold uppercase mt-1">
+                                      Lançado por: {item.launched_by.split('@')[0]} @ {item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                               <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold uppercase text-slate-400 hover:text-primary" onClick={() => updateItem(idx, "launched", false, "opme_used")}>Editar</Button>
