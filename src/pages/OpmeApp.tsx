@@ -509,10 +509,12 @@ export default function OpmeApp() {
       // Lógica de transição de partes
       if (part === 1) { setPart(2); setStep(0); }
       else if (part === 2) { setPart(3); setStep(0); }
-      else if (part === 3) { setPart(5); setStep(0); }
+      else if (part === 3) {
+        if (step === 0) { setPart(5); setStep(0); }
+        else { setPart(4); setStep(0); }
+      }
       else if (part === 5) { setPart(6); setStep(0); }
-      else if (part === 6) { setPart(7); setStep(0); }
-      else if (part === 7) { setPart(4); setStep(0); }
+      else if (part === 6) { setPart(3); setStep(1); } // Após consumo vai para Auditoria Pós (part 3, step 1)
     }
   };
 
@@ -1128,7 +1130,6 @@ export default function OpmeApp() {
               <div className="space-y-4">
                 <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">4. OPME Solicitada</h3>
                 <div className="space-y-3">
-                <div className="space-y-3">
                   {form.opme_requested.map((item: any, idx: number) => (
                     <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
                       <CardContent className="p-0">
@@ -1177,7 +1178,6 @@ export default function OpmeApp() {
                   {form.opme_requested.length < 10 && (
                     <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={() => addItem("opme_requested")}>+ Adicionar Material (Até 10)</Button>
                   )}
-                </div>
                 </div>
               </div>
             )}
@@ -1356,17 +1356,14 @@ export default function OpmeApp() {
                     </div>
                   </div>
                 </div>
-            )}
-
-
-
-            {/* --- PARTE 3: AUDITORIA (Médico Auditor) --- */}
+              </div>
             {part === 3 && (
               <div className="space-y-6 pb-6">
-                {step === 0 && (
-                  <div className="space-y-6">
-                    <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
-                  <div className="flex items-center gap-2 mb-2 border-b border-primary/10 pb-2">
+                <div className="space-y-6">
+                  {step === 0 && (
+                    <div className="space-y-6">
+                      <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
+                    <div className="flex items-center gap-2 mb-2 border-b border-primary/10 pb-2">
                     <div className="w-2 h-4 bg-primary rounded-full"></div>
                     <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resumo para Auditoria</h3>
                   </div>
@@ -1485,15 +1482,13 @@ export default function OpmeApp() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
-                    <Textarea value={form.auditor_pre_opinion} onChange={e => updateForm("auditor_pre_opinion", e.target.value)} placeholder="Descreva sua avaliação técnica aqui..." className="min-h-[100px] text-xs bg-white" />
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500">Parecer Técnico Final</Label>
+                        <Textarea value={form.auditor_pre_opinion} onChange={e => updateForm("auditor_pre_opinion", e.target.value)} placeholder="Descreva sua avaliação técnica aqui..." className="min-h-[100px] text-xs bg-white" />
+                      </div>
                     </div>
-                  </div>
-                </div>
-                )}
-
-                {step === 1 && (
+                  )}
+                  {step === 1 && (
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Validação Auditor Pós-OP</h3>
                     
@@ -1556,7 +1551,8 @@ export default function OpmeApp() {
                       </div>
                     </div>
                   </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 
@@ -1819,7 +1815,7 @@ export default function OpmeApp() {
           </Button>
         )}
         
-        {step < STEPS.length - 1 ? (
+        {(step < STEPS.length - 1 && part !== 3) ? (
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
             Próximo
           </Button>
@@ -1837,7 +1833,7 @@ export default function OpmeApp() {
             ) : (
             part === 1 ? "Finalizar Cadastro" : 
             part === 2 ? "Finalizar Requisição" : 
-            part === 3 ? "Finalizar Auditoria" : 
+            part === 3 ? (step === 0 ? "Finalizar Auditoria Pré" : "Finalizar Auditoria Pós") : 
             part === 5 ? "Finalizar Controle" :
             part === 6 ? "Finalizar Consumo" :
             "Concluir Faturamento"
