@@ -122,9 +122,6 @@ export default function OpmePage() {
                   {Object.entries(STATUS_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Button onClick={handleNew} size="sm" className="rounded-full h-9">
-                <Plus className="h-4 w-4 mr-1" />Nova solicitação
-              </Button>
             </>
           }
         />
