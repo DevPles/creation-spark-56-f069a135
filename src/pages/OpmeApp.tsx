@@ -1389,8 +1389,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="text-center">
-            <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h1>
-            <p className="text-[10px] text-slate-500 uppercase">{STEPS[step]?.description}</p>
+            <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{currentStepTitle}</h1>
+            <p className="text-[10px] text-slate-500 uppercase">{headerSubtitle}</p>
           </div>
           <div className="w-10" />
         </header>
@@ -1412,8 +1412,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
               Voltar
             </Button>
             <div className="mt-2">
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h2>
-              <p className="text-[11px] text-slate-500 uppercase">{STEPS[step]?.description}</p>
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{currentStepTitle}</h2>
+              <p className="text-[11px] text-slate-500 uppercase">{headerSubtitle}</p>
             </div>
           </div>
         )}
