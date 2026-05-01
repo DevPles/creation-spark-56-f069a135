@@ -716,7 +716,19 @@ export default function OpmeApp() {
 
     autoTable(doc, { startY: y, head: [["Material solicitado", "Qtd", "Modelo", "SIGTAP"]], body: requested.map((item: any) => [item.description || "---", item.quantity || "0", item.size_model || "---", item.sigtap || "---"]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
     y = (doc as any).lastAutoTable.finalY + 6;
-    autoTable(doc, { startY: y, head: [["Material consumido", "Qtd", "Lote", "Validade", "Etiqueta"]], body: used.map((item: any) => [item.description || "---", item.quantity || "0", item.batch || "---", item.expiry || "---", item.label_fixed === "sim" ? "Sim" : "Não"]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
+     autoTable(doc, { 
+       startY: y, 
+       head: [["Material consumido", "Qtd", "Lote", "Lançado por", "Horário"]], 
+       body: used.map((item: any) => [
+         item.description || "---", 
+         item.quantity || "0", 
+         item.batch || "---", 
+         item.launched_by?.split('@')[0] || "---",
+         item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR') : "---"
+       ]), 
+       styles: { fontSize: 8 }, 
+       headStyles: { fillColor: [32, 120, 110] } 
+     });
     y = (doc as any).lastAutoTable.finalY + 6;
     autoTable(doc, { startY: y, head: [["Validações de consumo"]], body: (divergences.length ? divergences : ["Sem divergências automáticas identificadas."]).map((text: string) => [text]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
     y = (doc as any).lastAutoTable.finalY + 6;
@@ -2028,38 +2040,153 @@ export default function OpmeApp() {
                       </div>
                     </div>
 
-                    <div className="bg-background p-4 rounded-xl border border-border space-y-4">
-                      <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Linha do Tempo de Evidências</h3>
-                      {getTimelineEvidence().length > 0 ? (
-                        <div className="grid grid-cols-2 gap-3">
-                          {getTimelineEvidence().map((exam: any, i: number) => (
-                            <div key={`${exam.stage}-${i}`} className="p-1 rounded-lg border border-border space-y-2 relative group flex flex-col h-full">
-                              <div className="relative aspect-video rounded-md overflow-hidden border border-border">
-                                <img src={exam.url} alt={exam.type || exam.stage} className="w-full h-full object-cover" />
-                                <button onClick={() => window.open(exam.url, "_blank")} className="absolute inset-0 bg-foreground/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-background text-[8px] font-bold uppercase">Ampliar</button>
-                              </div>
-                              <div className="px-1 pb-1">
-                                <p className="text-[9px] font-black text-foreground uppercase truncate">{exam.stage} — {exam.type || 'Evidência'}</p>
-                                <p className="text-[8px] text-muted-foreground font-bold uppercase">{formatDateBR(exam.date)}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-[10px] text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-dashed text-center">Nenhuma evidência anexada ao dossiê.</p>
-                      )}
-                    </div>
+                     <div className="bg-background p-4 rounded-xl border border-border space-y-6">
+                       <div className="flex items-center justify-between border-b border-border pb-2">
+                         <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Dossiê de Evidências Visuais</h3>
+                       </div>
 
-                    <div className="bg-background p-4 rounded-xl border border-border space-y-4">
-                      <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Validações Automáticas de Consumo</h3>
-                      <div className="space-y-2">
-                        {getPostAuditDivergences().length > 0 ? getPostAuditDivergences().map((item, i) => (
-                          <p key={i} className="text-[10px] font-bold text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2">{item}</p>
-                        )) : (
-                          <p className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-lg p-2">Sem divergências automáticas entre materiais autorizados, consumo e evidências.</p>
-                        )}
-                      </div>
-                    </div>
+                       {/* Seção 1: Justificativa Clínica (Pré-OP) */}
+                       <div className="space-y-3">
+                         <div className="flex items-center gap-2">
+                           <div className="w-1.5 h-3 bg-blue-500 rounded-full"></div>
+                           <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">1. Justificativa Clínica (Pré-OP)</h4>
+                         </div>
+                         <div className="grid grid-cols-2 gap-3">
+                           {getTimelineEvidence().filter(e => e.stage === "Pré-OP").length > 0 ? (
+                             getTimelineEvidence().filter(e => e.stage === "Pré-OP").map((exam, i) => (
+                               <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
+                                 <img src={exam.url} alt="Pré-OP" className="w-full h-full object-cover" />
+                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
+                                   <p className="text-[8px] text-white font-bold uppercase">{exam.type}</p>
+                                   <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
+                                   <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Ver Original</Button>
+                                 </div>
+                               </div>
+                             ))
+                           ) : (
+                             <p className="col-span-2 text-[9px] text-slate-400 italic bg-slate-50/50 p-2 rounded border border-dashed text-center">Nenhum exame pré-operatório anexado.</p>
+                           )}
+                         </div>
+                       </div>
+
+                       {/* Seção 2: Rastreabilidade de Materiais (Etiquetas/Lotes) */}
+                       <div className="space-y-3">
+                         <div className="flex items-center gap-2">
+                           <div className="w-1.5 h-3 bg-emerald-500 rounded-full"></div>
+                           <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">2. Rastreabilidade (Lotes e Etiquetas)</h4>
+                         </div>
+                         <div className="grid grid-cols-2 gap-3">
+                           {getTimelineEvidence().filter(e => e.category === "tracking").length > 0 ? (
+                             getTimelineEvidence().filter(e => e.category === "tracking").map((exam, i) => (
+                               <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-emerald-100 bg-emerald-50/30">
+                                 <img src={exam.url} alt="Etiqueta" className="w-full h-full object-cover" />
+                                 <div className="absolute inset-0 bg-emerald-900/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
+                                   <p className="text-[8px] text-white font-bold uppercase truncate">{exam.type}</p>
+                                   <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
+                                   <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Conferir Lote</Button>
+                                 </div>
+                               </div>
+                             ))
+                           ) : (
+                             <p className="col-span-2 text-[9px] text-destructive italic bg-destructive/5 p-2 rounded border border-dashed border-destructive/20 text-center">Atenção: Ausência de fotos das etiquetas para conferência.</p>
+                           )}
+                         </div>
+                       </div>
+
+                       {/* Seção 3: Conferência Técnica (Intra e Pós-OP) */}
+                       <div className="space-y-3">
+                         <div className="flex items-center gap-2">
+                           <div className="w-1.5 h-3 bg-purple-500 rounded-full"></div>
+                           <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">3. Conferência Técnica (Intra/Pós-OP)</h4>
+                         </div>
+                         <div className="grid grid-cols-2 gap-3">
+                           {getTimelineEvidence().filter(e => e.stage === "Pós-OP" || (e.stage === "Consumo" && e.category === "intra")).length > 0 ? (
+                             getTimelineEvidence().filter(e => e.stage === "Pós-OP" || (e.stage === "Consumo" && e.category === "intra")).map((exam, i) => (
+                               <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
+                                 <img src={exam.url} alt="Pós/Intra" className="w-full h-full object-cover" />
+                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
+                                   <p className="text-[8px] text-white font-bold uppercase">{exam.stage} - {exam.type}</p>
+                                   <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
+                                   <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Ver Detalhes</Button>
+                                 </div>
+                               </div>
+                             ))
+                           ) : (
+                             <p className="col-span-2 text-[9px] text-slate-400 italic bg-slate-50/50 p-2 rounded border border-dashed text-center">Nenhuma imagem intra ou pós-operatória.</p>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+
+                     <div className="bg-background p-4 rounded-xl border border-border space-y-4">
+                       <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Timeline de Movimentação e Auditoria</h3>
+                       <div className="space-y-4">
+                         <div className="relative pl-6 space-y-4 border-l border-slate-200 ml-2">
+                           {/* Solicitação */}
+                           <div className="relative">
+                             <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">1</div>
+                             <p className="text-[10px] font-bold text-slate-700 uppercase">Solicitação OPME</p>
+                             <p className="text-[9px] text-slate-500 font-medium">Médico: {form.requester_name || '---'} @ {formatDateBR(form.procedure_date)} {form.request_time || ''}</p>
+                           </div>
+
+                           {/* Almoxarifado */}
+                           {form.warehouse_date && (
+                             <div className="relative">
+                               <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">2</div>
+                               <p className="text-[10px] font-bold text-slate-700 uppercase">Recebimento Almoxarifado</p>
+                               <p className="text-[9px] text-slate-500 font-medium">Resp: {form.warehouse_received_by || '---'} @ {formatDateBR(form.warehouse_date)} {form.warehouse_time || ''}</p>
+                               <p className="text-[8px] text-emerald-600 font-bold uppercase">Estoque: {form.stock_available}</p>
+                             </div>
+                           )}
+
+                           {/* CME */}
+                           {form.cme_processing_date && (
+                             <div className="relative">
+                               <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-purple-500 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">3</div>
+                               <p className="text-[10px] font-bold text-slate-700 uppercase">Processamento CME</p>
+                               <p className="text-[9px] text-slate-500 font-medium">Resp: {form.cme_responsible || '---'} @ {formatDateBR(form.cme_processing_date)}</p>
+                             </div>
+                           )}
+
+                           {/* Consumo */}
+                           <div className="relative">
+                             <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-amber-500 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">4</div>
+                             <p className="text-[10px] font-bold text-slate-700 uppercase">Registro de Consumo (Sala)</p>
+                             <p className="text-[9px] text-slate-500 font-medium">
+                               {form.opme_used?.filter((i: any) => i.launched).length || 0} Itens Lançados @ {formatDateBR(form.procedure_date)}
+                             </p>
+                             {form.opme_used?.some((i: any) => i.launched_by) && (
+                               <p className="text-[8px] text-slate-400 italic">Último lançamento: {form.opme_used.find((i: any) => i.launched_by)?.launched_by?.split('@')[0]}</p>
+                             )}
+                           </div>
+
+                           {/* Auditoria Final */}
+                           <div className="relative">
+                             <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-slate-300 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">5</div>
+                             <p className="text-[10px] font-bold text-slate-700 uppercase">Auditoria de Fechamento</p>
+                             <p className="text-[9px] text-slate-500 font-medium">Status: Em Análise pelo Auditor</p>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+
+                     <div className="bg-background p-4 rounded-xl border border-border space-y-4">
+                       <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Alertas de Auditoria de Anexos</h3>
+                       <div className="space-y-2">
+                         {getPostAuditDivergences().length > 0 ? getPostAuditDivergences().map((item, i) => (
+                           <p key={i} className="text-[10px] font-bold text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2">{item}</p>
+                         )) : (
+                           <p className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-lg p-2">Dossiê Completo: Todas as evidências e justificativas em conformidade.</p>
+                         )}
+                         
+                         {/* Verificação específica de fotos de rastreabilidade */}
+                         {form.opme_used?.some((i: any) => i.launched && !i.photo_url) && (
+                           <p className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 rounded-lg p-2">
+                             ⚠️ FALHA CRÍTICA: Existem materiais consumidos sem foto da etiqueta/lote para conferência.
+                           </p>
+                         )}
+                       </div>
+                     </div>
 
                     <div className="bg-muted/30 p-4 rounded-xl border border-border space-y-4">
                       <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Validação Auditor Pós-OP</h3>
