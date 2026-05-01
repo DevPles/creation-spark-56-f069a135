@@ -615,13 +615,13 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme, image_url, fabricante, fornecedor_padrao")
           .or(`descricao.ilike.%${value}%,descricao_resumida.ilike.%${value}%,codigo.ilike.%${value}%`)
           .eq("ativo", true)
-          .limit(6),
+          .limit(50),
         supabase
           .from("price_history")
           .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte, fornecedor_cnpj")
           .ilike("descricao_produto", `%${value}%`)
           .order("data_referencia", { ascending: false })
-          .limit(20),
+          .limit(50),
       ]).then(async ([catRes, priceRes]) => {
         if (catRes.error) console.warn("[OPME suggest] catalog error", catRes.error);
         if (priceRes.error) console.warn("[OPME suggest] price_history error", priceRes.error);
@@ -729,7 +729,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           });
         }
 
-        setMaterialSuggestions({ idx, items: [...fromCatalog, ...fromPrices].slice(0, 12), listName });
+        setMaterialSuggestions({ idx, items: [...fromCatalog, ...fromPrices].slice(0, 60), listName });
 
         // Auto-vincula preço/código quando há correspondência exata (sem precisar clicar na sugestão)
         const combined = [...fromCatalog, ...fromPrices];
@@ -2151,7 +2151,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">4. OPME Solicitada</h3>
                 <div className="space-y-3">
                   {toList(form.opme_requested).map((item: any, idx: number) => (
-                    <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
+                    <Card key={idx} className="border-slate-200 shadow-sm overflow-visible">
                       <CardContent className="p-0">
                         <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 flex justify-between items-center">
                           <span className="text-xs font-bold text-slate-500 uppercase">Item #{String(idx + 1).padStart(2, '0')}</span>
@@ -2173,8 +2173,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                             ) : item.description?.length > 2 ? (
                               <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
                             ) : null}
-                            {materialSuggestions.idx === idx && (materialSuggestions.listName ?? "opme_requested") === "opme_requested" && materialSuggestions.items.length > 0 && (
-                              <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-auto">
+                              {materialSuggestions.idx === idx && (materialSuggestions.listName ?? "opme_requested") === "opme_requested" && materialSuggestions.items.length > 0 && (
+                              <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-[55vh] overflow-y-auto overscroll-contain pb-2 pr-1">
                                 {materialSuggestions.items.map((m: any) => (
                                   <button key={m.product_id || m.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
                                     const arr = [...toList(form.opme_requested)];
@@ -3271,7 +3271,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                     {toList(form.opme_used).filter((item: any) => !item?.launched).map((item: any) => {
                       const idx = toList(form.opme_used).findIndex((i: any) => i === item);
                       return (
-                        <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
+                        <Card key={idx} className="border-slate-200 shadow-sm overflow-visible">
                           <CardContent className="p-4 space-y-4">
                             <div className="flex justify-between items-center mb-1">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Item #{String(idx + 1).padStart(2, '0')}</span>
@@ -3318,7 +3318,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                 <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
                               ) : null}
                               {materialSuggestions.idx === idx && materialSuggestions.listName === "opme_used" && materialSuggestions.items.length > 0 && (
-                                <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-[520px] overflow-auto">
+                                <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-[60vh] overflow-y-auto overscroll-contain pb-3 pr-1">
                                   {materialSuggestions.items.map((m: any) => {
                                     const opts: any[] = Array.isArray(m.price_options) && m.price_options.length > 0
                                       ? m.price_options
