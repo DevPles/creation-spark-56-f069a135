@@ -69,6 +69,21 @@ const ANATOMY_DATA: Record<string, string[]> = {
   "Coluna": ["Cervical", "Torácica", "Lombar", "Sacro-Coccígea"]
 };
 
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const getFileExtension = (file: any) => {
+  const name = typeof file?.name === "string" ? file.name : "";
+  const dot = name.lastIndexOf(".");
+  return dot >= 0 ? name.slice(dot + 1) || "bin" : "bin";
+};
+const isUploadableFile = (file: any): file is File => typeof File !== "undefined" && file instanceof File && typeof file.name === "string";
+const isRemoteUrl = (url: any) => typeof url === "string" && /^https?:\/\//i.test(url);
+const shortActorName = (value: any) => {
+  const text = typeof value === "string" ? value : String(value ?? "");
+  if (!text) return "---";
+  const at = text.indexOf("@");
+  return at > 0 ? text.slice(0, at) : text;
+};
+
 export default function OpmeApp() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -153,7 +168,7 @@ export default function OpmeApp() {
     patient_sus: "",
     responsible_name: "",
     responsible_register: "",
-    procedure_date: new Date().toISOString().split("T")[0],
+    procedure_date: todayISO(),
     procedure_type: "eletivo",
     procedure_name: "",
     procedure_sigtap_code: "",
@@ -209,7 +224,7 @@ export default function OpmeApp() {
     auditor_post_sigtap_compat: "sim",
     auditor_post_image_conformity: "sim",
     auditor_post_final_opinion: "",
-    auditor_post_date: new Date().toISOString().split("T")[0],
+    auditor_post_date: todayISO(),
     auditor_post_justification_requested: false,
     auditor_post_justification_reason: "",
     incident_date: "",
@@ -256,16 +271,11 @@ export default function OpmeApp() {
         setLoading(true);
         const { data, error } = await supabase.from("opme_requests").select("*").eq("id", recordId).single();
         if (data && !error) {
-          setForm(data);
-          if (data.preop_exams_details && Array.isArray(data.preop_exams_details)) {
-            setPreopExams(data.preop_exams_details as any[]);
-          }
-          if (data.postop_exams_details && Array.isArray(data.postop_exams_details)) {
-            setPostopExams(data.postop_exams_details as any[]);
-          }
-          if (data.consumption_exams_details && Array.isArray(data.consumption_exams_details)) {
-            setConsumptionExams(data.consumption_exams_details as any[]);
-          }
+          const safeData = sanitizeLoadedRequest(data);
+          setForm(safeData);
+          setPreopExams(toList(safeData.preop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+          setPostopExams(toList(safeData.postop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+          setConsumptionExams(toList(safeData.consumption_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
         }
         setLoading(false);
       })();
@@ -388,31 +398,26 @@ export default function OpmeApp() {
    };
  
    const loadRequest = (req: any) => {
-     setForm(req);
-      if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
-        setPreopExams(req.preop_exams_details as any[]);
-      }
-      if (req.consumption_exams_details && Array.isArray(req.consumption_exams_details)) {
-        setConsumptionExams(req.consumption_exams_details as any[]);
-      }
-      if (req.postop_exams_details && Array.isArray(req.postop_exams_details)) {
-        setPostopExams(req.postop_exams_details as any[]);
-      }
+      const safeReq = sanitizeLoadedRequest(req);
+      setForm(safeReq);
+      setPreopExams(toList(safeReq.preop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+      setConsumptionExams(toList(safeReq.consumption_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+      setPostopExams(toList(safeReq.postop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
      
       // Determinar qual parte e passo abrir baseado no status
-      if (req.status === "rascunho") { setPart(1); setStep(0); }
-      else if (req.status === "pendente_requisicao") { setPart(2); setStep(0); }
-      else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
-      else if (req.status === "pendente_auditoria_post") { setPart(3); setStep(1); }
-      else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
-      else if (req.status === "pendente_consumo") { 
+       if (safeReq.status === "rascunho") { setPart(1); setStep(0); }
+       else if (safeReq.status === "pendente_requisicao") { setPart(2); setStep(0); }
+       else if (safeReq.status === "pendente_auditoria") { setPart(3); setStep(0); }
+       else if (safeReq.status === "pendente_auditoria_post") { setPart(3); setStep(1); }
+       else if (safeReq.status === "pendente_controle") { setPart(5); setStep(0); }
+       else if (safeReq.status === "pendente_consumo") { 
         setPart(6); 
         setStep(0); 
         
         // Sincronizar itens solicitados para o consumo se estiver vazio
-        if (!req.opme_used || req.opme_used.length === 0 || (req.opme_used.length === 1 && !req.opme_used[0].description)) {
-          if (req.opme_requested && req.opme_requested.length > 0) {
-            const initialUsed = req.opme_requested.map((item: any) => ({
+         if (!safeReq.opme_used || safeReq.opme_used.length === 0 || (safeReq.opme_used.length === 1 && !safeReq.opme_used[0].description)) {
+           if (safeReq.opme_requested && safeReq.opme_requested.length > 0) {
+             const initialUsed = safeReq.opme_requested.map((item: any) => ({
               description: item.description,
               quantity: item.quantity,
               batch: "",
@@ -424,12 +429,12 @@ export default function OpmeApp() {
           }
         }
       }
-      else if (req.status === "pendente_faturamento" || req.status === "aguardando_justificativa") { setPart(4); setStep(0); }
+       else if (safeReq.status === "pendente_faturamento" || safeReq.status === "aguardando_justificativa") { setPart(4); setStep(0); }
       else { setPart(1); setStep(0); } // Fallback
      
      // Adicionar ID na URL sem recarregar para manter consistência
      const newUrl = new URL(window.location.href);
-     newUrl.searchParams.set("id", req.id);
+      newUrl.searchParams.set("id", safeReq.id);
      window.history.pushState({}, '', newUrl);
    };
 
@@ -465,7 +470,8 @@ export default function OpmeApp() {
   };
 
   const uploadFile = async (file: File, bucket: string = "opme-attachments"): Promise<string | null> => {
-    const ext = file.name.split(".").pop();
+    if (!isUploadableFile(file)) return null;
+    const ext = getFileExtension(file);
     const path = `${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from(bucket).upload(path, file);
     if (error) {
@@ -477,9 +483,10 @@ export default function OpmeApp() {
   };
 
   const uploadExamFiles = async (exams: any[]): Promise<any[]> => {
-    const results = [...exams];
+    const results = (Array.isArray(exams) ? exams : []).map((exam) => ({ ...(exam || {}) }));
     for (let i = 0; i < results.length; i++) {
-      if (results[i].file && !results[i].url.startsWith("http")) {
+      const currentUrl = results[i]?.url;
+      if (isUploadableFile(results[i]?.file) && !isRemoteUrl(currentUrl)) {
         const url = await uploadFile(results[i].file);
         if (url) {
           results[i].url = url;
@@ -488,8 +495,24 @@ export default function OpmeApp() {
         }
       }
     }
-    return results.map(({ file, ...rest }) => rest);
+    return results
+      .filter((exam) => isRemoteUrl(exam?.url))
+      .map(({ file, ...rest }) => rest);
   };
+
+  const sanitizeLoadedRequest = (req: any) => ({
+    ...req,
+    opme_requested: toList(req?.opme_requested).length ? toList(req.opme_requested) : [{ description: "", quantity: "1", size_model: "", sigtap: "" }],
+    opme_used: toList(req?.opme_used).length ? toList(req.opme_used) : [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false, launched_by: null, launched_at: null }],
+    opme_returned: toList(req?.opme_returned).length ? toList(req.opme_returned) : [{ description: "", quantity: "0", batch: "", reason: "", responsible: "" }],
+    billing_docs: req?.billing_docs || { nf: false, rastreabilidade: false, laudo: false, consumo: false, autorizacao: false, exames: false },
+    auditor_post_procedure_compat: req?.auditor_post_procedure_compat || "sim",
+    auditor_post_sigtap_compat: req?.auditor_post_sigtap_compat || "sim",
+    auditor_post_image_conformity: req?.auditor_post_image_conformity || "sim",
+    auditor_post_final_opinion: req?.auditor_post_final_opinion || "",
+    auditor_post_justification_reason: req?.auditor_post_justification_reason || "",
+    auditor_post_date: req?.auditor_post_date || todayISO()
+  });
 
   const updateItem = (idx: number, field: string, value: any, listName: string = "opme_requested") => {
     setForm((p: any) => {
@@ -531,7 +554,7 @@ export default function OpmeApp() {
       patient_sus: "",
       responsible_name: "",
       responsible_register: "",
-      procedure_date: new Date().toISOString().split("T")[0],
+      procedure_date: todayISO(),
       procedure_type: "eletivo",
       procedure_name: "",
       procedure_sigtap_code: "",
@@ -1731,13 +1754,13 @@ export default function OpmeApp() {
               <div className="space-y-4">
                 <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">4. OPME Solicitada</h3>
                 <div className="space-y-3">
-                  {form.opme_requested.map((item: any, idx: number) => (
+                  {toList(form.opme_requested).map((item: any, idx: number) => (
                     <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
                       <CardContent className="p-0">
                         <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 flex justify-between items-center">
                           <span className="text-xs font-bold text-slate-500 uppercase">Item #{String(idx + 1).padStart(2, '0')}</span>
-                          {form.opme_requested.length > 1 && (
-                            <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px] font-bold" onClick={() => setForm((p: any) => ({ ...p, opme_requested: p.opme_requested.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
+                          {toList(form.opme_requested).length > 1 && (
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px] font-bold" onClick={() => setForm((p: any) => ({ ...p, opme_requested: toList(p.opme_requested).filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
                           )}
                         </div>
                         <div className="p-4 space-y-4">
@@ -1748,7 +1771,7 @@ export default function OpmeApp() {
                               <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-auto">
                                 {materialSuggestions.items.map((m) => (
                                   <button key={m.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
-                                    const arr = [...form.opme_requested]; arr[idx] = { ...arr[idx], description: m.name, sigtap: m.code };
+                                     const arr = [...toList(form.opme_requested)]; arr[idx] = { ...arr[idx], description: m.name, sigtap: m.code };
                                     setForm((p: any) => ({ ...p, opme_requested: arr })); setMaterialSuggestions({ idx: -1, items: [] });
                                   }}>
                                     <p className="text-xs font-bold text-slate-800">{m.name}</p>
@@ -1776,7 +1799,7 @@ export default function OpmeApp() {
                       </CardContent>
                     </Card>
                   ))}
-                  {form.opme_requested.length < 10 && (
+                  {toList(form.opme_requested).length < 10 && (
                     <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={() => addItem("opme_requested")}>+ Adicionar Material (Até 10)</Button>
                   )}
                 </div>
@@ -2024,8 +2047,8 @@ export default function OpmeApp() {
                     <div className="space-y-3 mt-4">
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Materiais Solicitados</p>
                       <div className="space-y-2">
-                        {form.opme_requested.length > 0 ? (
-                          form.opme_requested.map((item: any, i: number) => (
+                         {toList(form.opme_requested).length > 0 ? (
+                           toList(form.opme_requested).map((item: any, i: number) => (
                             <div key={i} className="bg-white px-3 py-2 rounded-lg border border-slate-100 flex items-center justify-between gap-3">
                               <div className="flex-1 min-w-0">
                                 <p className="text-[11px] font-bold text-slate-800 truncate uppercase">{item.description}</p>
@@ -2318,15 +2341,15 @@ export default function OpmeApp() {
                            <div className="relative">
                               <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-slate-400 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">4</div>
                              <p className="text-[10px] font-bold text-slate-700 uppercase">Registro de Consumo (Sala)</p>
-                             <p className="text-[9px] text-slate-500 font-medium">
-                               {form.opme_used?.filter((i: any) => i.launched).length || 0} Itens Lançados @ {formatDateBR(form.procedure_date)}
+                              <p className="text-[9px] text-slate-500 font-medium">
+                                {toList(form.opme_used).filter((i: any) => i?.launched).length || 0} Itens Lançados @ {formatDateBR(form.procedure_date)}
                              </p>
                              {(() => {
-                               const lastLaunch = form.opme_used?.find((i: any) => i.launched_by);
+                                const lastLaunch = toList(form.opme_used).find((i: any) => i?.launched_by);
                                if (!lastLaunch || !lastLaunch.launched_by) return null;
                                return (
                                  <p className="text-[8px] text-slate-400 italic">
-                                   Último lançamento: {lastLaunch.launched_by && String(lastLaunch.launched_by).includes('@') ? String(lastLaunch.launched_by).split('@')[0] : (lastLaunch.launched_by || '---')}
+                                   Último lançamento: {shortActorName(lastLaunch.launched_by)}
                                  </p>
                                );
                              })()}
@@ -2354,7 +2377,7 @@ export default function OpmeApp() {
                        <div className="space-y-2">
                                   {(() => {
                                     const auditDivergences = getPostAuditDivergences();
-                                    const missingPhotos = form.opme_used?.some((i: any) => i.launched && !i.photo_url);
+                                    const missingPhotos = toList(form.opme_used).some((i: any) => i?.launched && !i.photo_url);
                                     
                                     if (auditDivergences.length === 0 && !missingPhotos) {
                                       return (
@@ -2576,8 +2599,8 @@ export default function OpmeApp() {
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Materiais a Lançar</h3>
                   <div className="space-y-3">
-                    {form.opme_used?.filter((item: any) => !item.launched).map((item: any) => {
-                      const idx = form.opme_used.findIndex((i: any) => i === item);
+                    {toList(form.opme_used).filter((item: any) => !item?.launched).map((item: any) => {
+                      const idx = toList(form.opme_used).findIndex((i: any) => i === item);
                       return (
                         <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
                           <CardContent className="p-4 space-y-4">
@@ -2595,7 +2618,7 @@ export default function OpmeApp() {
                                 >
                                   Lançar Item
                                 </Button>
-                                {form.opme_used.length > 1 && (
+                                {toList(form.opme_used).length > 1 && (
                                   <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px] font-bold uppercase" onClick={() => setForm((p: any) => ({ ...p, opme_used: p.opme_used.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
                                 )}
                               </div>
@@ -2664,12 +2687,12 @@ export default function OpmeApp() {
                   </div>
                 </div>
 
-                {form.opme_used?.some((item: any) => item.launched) && (
+                {toList(form.opme_used).some((item: any) => item?.launched) && (
                   <div className="space-y-4">
                     <h3 className="text-[10px] font-black uppercase text-emerald-600 tracking-widest border-b pb-1">Materiais Lançados</h3>
                     <div className="space-y-2">
-                      {form.opme_used?.filter((item: any) => item.launched).map((item: any) => {
-                        const idx = form.opme_used.findIndex((i: any) => i === item);
+                      {toList(form.opme_used).filter((item: any) => item?.launched).map((item: any) => {
+                        const idx = toList(form.opme_used).findIndex((i: any) => i === item);
                         return (
                           <Card key={idx} className="border-emerald-100 bg-emerald-50/30 overflow-hidden">
                             <CardContent className="p-3 flex items-center justify-between">
@@ -2684,7 +2707,7 @@ export default function OpmeApp() {
                                   </p>
                                    {item.launched_by && (
                                      <p className="text-[8px] text-slate-400 font-bold uppercase mt-1">
-                                       Lançado por: {item.launched_by && String(item.launched_by).includes('@') ? String(item.launched_by).split('@')[0] : (item.launched_by || '---')} @ {item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                       Lançado por: {shortActorName(item.launched_by)} @ {item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
                                      </p>
                                    )}
                                 </div>
@@ -2701,7 +2724,7 @@ export default function OpmeApp() {
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Devoluções / Sobras</h3>
                   <div className="space-y-3">
-                    {form.opme_returned?.map((item: any, idx: number) => (
+                    {toList(form.opme_returned).map((item: any, idx: number) => (
                       <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden bg-slate-50/50">
                         <CardContent className="p-4 space-y-4">
                           <div className="flex justify-between items-center mb-1">
@@ -2738,7 +2761,7 @@ export default function OpmeApp() {
                    <div className="space-y-4">
                      <Select onValueChange={(v) => {
                        if (!v) return;
-                       const newExam = { id: Math.random().toString(36), type: v, date: new Date().toISOString().split('T')[0], file: null, url: "" };
+                       const newExam = { id: Math.random().toString(36), type: v, date: todayISO(), file: null, url: "" };
                        setConsumptionExams(prev => [...prev, newExam]);
                      }}>
                        <SelectTrigger className="h-10 bg-white border-slate-200 text-xs font-bold uppercase">
@@ -2828,7 +2851,7 @@ export default function OpmeApp() {
                         const newExam = { 
                           id: Math.random().toString(36), 
                           type: v, 
-                          date: new Date().toISOString().split('T')[0], 
+                          date: todayISO(), 
                           file: null, 
                           url: "",
                           category: v === "Etiqueta/Rastreabilidade" ? "tracking" : "intra"
