@@ -971,48 +971,93 @@ export type Database = {
       product_catalog: {
         Row: {
           ativo: boolean
+          categoria_opme: string | null
           classificacao: string
           codigo: string
+          consignado: boolean
           created_at: string
           created_by: string | null
           descricao: string
+          descricao_resumida: string | null
+          fabricante: string | null
           facility_unit: string | null
+          fornecedor_padrao: string | null
           id: string
           image_url: string | null
+          multiplicador_embalagem: number
+          preco_referencia: number | null
+          reprocessavel: boolean
+          requires_etiqueta: boolean
+          requires_lote: boolean
+          requires_prior_auth: boolean
+          requires_validade: boolean
           setor: string | null
+          sigtap_code: string | null
+          sigtap_procedures: Json
           tipo: string
           unidade_medida: string
           updated_at: string
+          uso_unico: boolean
         }
         Insert: {
           ativo?: boolean
+          categoria_opme?: string | null
           classificacao?: string
           codigo: string
+          consignado?: boolean
           created_at?: string
           created_by?: string | null
           descricao: string
+          descricao_resumida?: string | null
+          fabricante?: string | null
           facility_unit?: string | null
+          fornecedor_padrao?: string | null
           id?: string
           image_url?: string | null
+          multiplicador_embalagem?: number
+          preco_referencia?: number | null
+          reprocessavel?: boolean
+          requires_etiqueta?: boolean
+          requires_lote?: boolean
+          requires_prior_auth?: boolean
+          requires_validade?: boolean
           setor?: string | null
+          sigtap_code?: string | null
+          sigtap_procedures?: Json
           tipo?: string
           unidade_medida?: string
           updated_at?: string
+          uso_unico?: boolean
         }
         Update: {
           ativo?: boolean
+          categoria_opme?: string | null
           classificacao?: string
           codigo?: string
+          consignado?: boolean
           created_at?: string
           created_by?: string | null
           descricao?: string
+          descricao_resumida?: string | null
+          fabricante?: string | null
           facility_unit?: string | null
+          fornecedor_padrao?: string | null
           id?: string
           image_url?: string | null
+          multiplicador_embalagem?: number
+          preco_referencia?: number | null
+          reprocessavel?: boolean
+          requires_etiqueta?: boolean
+          requires_lote?: boolean
+          requires_prior_auth?: boolean
+          requires_validade?: boolean
           setor?: string | null
+          sigtap_code?: string | null
+          sigtap_procedures?: Json
           tipo?: string
           unidade_medida?: string
           updated_at?: string
+          uso_unico?: boolean
         }
         Relationships: []
       }
