@@ -2318,12 +2318,19 @@ export default function OpmeApp() {
                              )}
                            </div>
 
-                           {/* Auditoria Final */}
-                           <div className="relative">
-                             <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-slate-300 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">5</div>
-                             <p className="text-[10px] font-bold text-slate-700 uppercase">Auditoria de Fechamento</p>
-                             <p className="text-[9px] text-slate-500 font-medium">Status: Em Análise pelo Auditor</p>
-                           </div>
+                            {/* Auditoria Final */}
+                            <div className="relative">
+                              <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-slate-300 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">5</div>
+                              <p className="text-[10px] font-bold text-slate-700 uppercase">Auditoria de Fechamento</p>
+                              <p className="text-[9px] text-slate-500 font-medium">
+                                Status: {form.status === "aguardando_justificativa" ? "Aguardando Justificativa do Cirurgião" : 
+                                        form.status === "pendente_faturamento" ? "Liberado para Faturamento" :
+                                        form.status === "concluido" ? "Processo Finalizado" : "Em Análise pelo Auditor"}
+                              </p>
+                              {form.incident_description && (
+                                <p className="text-[8px] text-emerald-600 font-bold uppercase mt-1">✓ Justificativa Anexada</p>
+                              )}
+                            </div>
                          </div>
                        </div>
                      </div>
