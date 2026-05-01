@@ -3098,6 +3098,11 @@ export default function OpmeApp() {
                         <p className="font-bold text-slate-600 uppercase">Rodada {(h.round ?? i) + 1}</p>
                         <p className="text-slate-700"><span className="font-semibold">Motivo do auditor:</span> {h.auditor_reason || '---'}</p>
                         <p className="text-slate-700"><span className="font-semibold">Resposta:</span> {h.surgeon_justification || '---'}</p>
+                        {Array.isArray(h.attachments) && h.attachments.length > 0 && (
+                          <p className="text-slate-600"><span className="font-semibold">Anexos:</span> {h.attachments.map((a: any, k: number) => (
+                            <a key={k} href={a.url} target="_blank" rel="noreferrer" className="underline text-primary mr-2">{a.name || `arquivo ${k + 1}`}</a>
+                          ))}</p>
+                        )}
                         {h.decision && (
                           <p className="text-slate-600 italic">
                             Decisão do auditor: <span className={h.decision === 'liberada' ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>{h.decision === 'liberada' ? 'LIBERADA' : 'REPROVADA — nova justificativa solicitada'}</span>
@@ -3123,17 +3128,120 @@ export default function OpmeApp() {
                   />
                   <p className="text-[10px] text-slate-500">Sua resposta retorna ao Médico Auditor para reanálise. Somente após a liberação do auditor o processo segue para o faturamento.</p>
                 </div>
+
+                {/* === EVIDÊNCIAS OBRIGATÓRIAS === */}
+                <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Evidências Anexadas <span className="text-rose-600">*</span></Label>
+                    <span className="text-[9px] font-bold uppercase text-slate-400">{surgeonJustificationFiles.length} arquivo(s)</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500">Anexe exames, etiquetas de rastreabilidade, fotos do procedimento, laudos ou qualquer documento que comprove a justificativa. Pelo menos um anexo é obrigatório.</p>
+
+                  <div className="relative">
+                    <Button type="button" variant="outline" className="w-full h-10 text-xs font-bold uppercase border-dashed">
+                      + Adicionar Evidência
+                    </Button>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,application/pdf"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        if (!files.length) return;
+                        const additions = files.map((f) => ({
+                          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                          file: f,
+                          name: f.name,
+                          size: f.size,
+                          mime: f.type || "application/octet-stream",
+                          previewUrl: f.type?.startsWith("image/") ? URL.createObjectURL(f) : "",
+                        }));
+                        setSurgeonJustificationFiles((prev) => [...prev, ...additions]);
+                        e.target.value = "";
+                      }}
+                    />
+                  </div>
+
+                  {surgeonJustificationFiles.length > 0 && (
+                    <div className="space-y-2 pt-1">
+                      {surgeonJustificationFiles.map((a) => (
+                        <div key={a.id} className="flex items-center gap-3 bg-white p-2 rounded border border-slate-200">
+                          {a.previewUrl ? (
+                            <img src={a.previewUrl} alt={a.name} className="w-10 h-10 object-cover rounded border" />
+                          ) : (
+                            <div className="w-10 h-10 flex items-center justify-center rounded border bg-slate-50 text-[9px] font-bold text-slate-500 uppercase">PDF</div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-medium text-slate-700 truncate">{a.name}</p>
+                            <p className="text-[9px] text-slate-400">{(a.size / 1024).toFixed(0)} KB</p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-[10px] text-rose-600 hover:bg-rose-50"
+                            onClick={() => setSurgeonJustificationFiles((prev) => prev.filter((x) => x.id !== a.id))}
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {(!((form.surgeon_justification || "").trim()) || surgeonJustificationFiles.length === 0) && (
+                    <p className="text-[10px] text-rose-600 font-medium">
+                      {!((form.surgeon_justification || "").trim()) ? "Preencha a justificativa técnica." : "Anexe ao menos uma evidência para enviar."}
+                    </p>
+                  )}
+                </div>
+
                 <Button
                   className="w-full h-12 bg-primary"
-                  disabled={saving || !(form.surgeon_justification || "").trim()}
-                  onClick={() => {
-                    updateForm("surgeon_justification_at", new Date().toISOString());
-                    updateForm("surgeon_justification_by", user?.email || user?.id || "Cirurgião");
-                    updateForm("status", "justificativa_respondida");
-                    setTimeout(() => handleSave(true), 50);
+                  disabled={saving || uploadingJustification || !(form.surgeon_justification || "").trim() || surgeonJustificationFiles.length === 0}
+                  onClick={async () => {
+                    if (uploadingJustification || saving) return;
+                    if (!(form.surgeon_justification || "").trim()) { toast.error("Preencha a justificativa técnica."); return; }
+                    if (surgeonJustificationFiles.length === 0) { toast.error("Anexe ao menos uma evidência."); return; }
+
+                    setUploadingJustification(true);
+                    try {
+                      const uploaded: Array<{ name: string; url: string; mime: string; size: number; uploaded_at: string }> = [];
+                      for (const item of surgeonJustificationFiles) {
+                        const url = await uploadFile(item.file);
+                        if (!url) {
+                          toast.error(`Falha no upload do anexo ${item.name}.`);
+                          setUploadingJustification(false);
+                          return;
+                        }
+                        uploaded.push({
+                          name: item.name,
+                          url,
+                          mime: item.mime,
+                          size: item.size,
+                          uploaded_at: new Date().toISOString(),
+                        });
+                      }
+
+                      const previousAttachments = Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [];
+                      setForm((p: any) => ({
+                        ...p,
+                        surgeon_justification_at: new Date().toISOString(),
+                        surgeon_justification_by: user?.email || user?.id || "Cirurgião",
+                        surgeon_justification_attachments: [...previousAttachments, ...uploaded],
+                        status: "justificativa_respondida",
+                      }));
+                      setSurgeonJustificationFiles([]);
+                      setTimeout(() => handleSave(true), 50);
+                    } catch (err: any) {
+                      toast.error(err?.message || "Erro ao enviar justificativa.");
+                    } finally {
+                      setUploadingJustification(false);
+                    }
                   }}
                 >
-                  {saving ? "Enviando..." : "Enviar Justificativa ao Auditor"}
+                  {uploadingJustification ? "Enviando anexos..." : (saving ? "Enviando..." : "Enviar Justificativa ao Auditor")}
                 </Button>
               </div>
             )}
