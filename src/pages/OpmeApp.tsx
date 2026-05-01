@@ -3367,6 +3367,20 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                               <div className="space-y-1">
                                 <Label className="text-[10px] font-bold uppercase text-slate-500">Lote</Label>
                                 <Input value={item.batch} onChange={e => updateItem(idx, "batch", e.target.value, "opme_used")} className="h-10 text-xs" />
+                                {Array.isArray(item.lotes_sugeridos) && item.lotes_sugeridos.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 pt-1">
+                                    {item.lotes_sugeridos.slice(0, 5).map((l: string) => (
+                                      <button
+                                        key={l}
+                                        type="button"
+                                        className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-primary/10 hover:border-primary"
+                                        onClick={() => updateItem(idx, "batch", l, "opme_used")}
+                                      >
+                                        {l}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-[10px] font-bold uppercase text-slate-500">Valor unit. (R$)</Label>
