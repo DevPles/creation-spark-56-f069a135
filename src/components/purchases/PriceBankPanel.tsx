@@ -155,8 +155,9 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
   const filteredCatalog = catalog.filter(c => {
     if (unitFilter !== "all" && c.facility_unit && c.facility_unit !== unitFilter) return false;
     if (search) {
-      const q = search.toLowerCase();
-      const hay = [c.codigo, c.descricao, c.tipo, c.classificacao, c.facility_unit, c.setor].filter(Boolean).join(" ").toLowerCase();
+      const normalize = (s: string) => (s || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const q = normalize(search);
+      const hay = normalize([c.codigo, c.descricao, c.tipo, c.classificacao, c.facility_unit, c.setor, c.categoria_opme].filter(Boolean).join(" "));
       if (!hay.includes(q)) return false;
     }
     return true;
