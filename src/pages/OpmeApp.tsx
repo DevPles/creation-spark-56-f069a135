@@ -445,18 +445,68 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         // Sincronizar itens solicitados para o consumo se estiver vazio
          if (!safeReq.opme_used || safeReq.opme_used.length === 0 || (safeReq.opme_used.length === 1 && !safeReq.opme_used[0].description)) {
            if (safeReq.opme_requested && safeReq.opme_requested.length > 0) {
-             const initialUsed = safeReq.opme_requested.map((item: any) => ({
-              description: item.description,
-              quantity: item.quantity,
-              batch: "",
-              expiry: "",
-              label_fixed: "sim",
-              launched: false,
-              unit_price: item.unit_price ?? 0,
-              product_id: item.product_id ?? null,
-              product_code: item.product_code ?? null,
-            }));
-            setForm((p: any) => ({ ...p, opme_used: initialUsed }));
+             // Enriquecer com foto, fabricante, fornecedor e lotes históricos quando produto está vinculado
+             const initialUsed = await Promise.all(safeReq.opme_requested.map(async (item: any) => {
+               let image_ref_url: string | null = null;
+               let fabricante: string | null = null;
+               let fornecedor: string | null = item.fornecedor || null;
+               let lotes_sugeridos: string[] = [];
+               if (item.product_id) {
+                 try {
+                   const { data: pc } = await supabase
+                     .from("product_catalog")
+                     .select("image_url, fabricante, fornecedor_padrao, descricao")
+                     .eq("id", item.product_id)
+                     .maybeSingle();
+                   if (pc) {
+                     image_ref_url = pc.image_url || null;
+                     fabricante = pc.fabricante || null;
+                     fornecedor = fornecedor || pc.fornecedor_padrao || null;
+                     // Buscar lotes históricos
+                     const { data: orHist } = await supabase
+                       .from("opme_requests")
+                       .select("opme_used")
+                       .not("opme_used", "is", null)
+                       .order("created_at", { ascending: false })
+                       .limit(40);
+                     const setLotes = new Set<string>();
+                     const target = (pc.descricao || "").toLowerCase().trim();
+                     for (const r of (orHist || [])) {
+                       const arr: any[] = Array.isArray(r.opme_used) ? (r.opme_used as any[]) : [];
+                       for (const itAny of arr) {
+                         const it: any = itAny;
+                         if (!it?.batch) continue;
+                         const desc = (it.description || "").toLowerCase().trim();
+                         if (desc && target && (desc === target || desc.includes(target.slice(0, 12)))) {
+                           setLotes.add(String(it.batch));
+                         }
+                       }
+                     }
+                     lotes_sugeridos = Array.from(setLotes).slice(0, 8);
+                   }
+                 } catch {}
+               }
+               return {
+                 description: item.description,
+                 quantity: item.quantity,
+                 batch: "",
+                 expiry: "",
+                 label_fixed: "sim",
+                 launched: false,
+                 unit_price: item.unit_price ?? 0,
+                 product_id: item.product_id ?? null,
+                 product_code: item.product_code ?? null,
+                 price_source: item.price_source ?? null,
+                 image_ref_url,
+                 fabricante,
+                 fornecedor,
+                 lotes_sugeridos,
+                 photo_url: "",
+                 launched_by: null,
+                 launched_at: null,
+               };
+             }));
+             setForm((p: any) => ({ ...p, opme_used: initialUsed }));
           }
         }
       }
