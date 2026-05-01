@@ -1425,11 +1425,6 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
-            <div className="mb-6">
-              <h2 className="font-bold text-slate-800">{STEPS[step]?.title}</h2>
-              <p className="text-xs text-slate-500">{STEPS[step]?.description}</p>
-            </div>
-
             {/* --- PARTE 1: CADASTRO --- */}
             {part === 1 && step === 0 && (
               <div className="space-y-4">
