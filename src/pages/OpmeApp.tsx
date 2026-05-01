@@ -271,16 +271,11 @@ export default function OpmeApp() {
         setLoading(true);
         const { data, error } = await supabase.from("opme_requests").select("*").eq("id", recordId).single();
         if (data && !error) {
-          setForm(data);
-          if (data.preop_exams_details && Array.isArray(data.preop_exams_details)) {
-            setPreopExams(data.preop_exams_details as any[]);
-          }
-          if (data.postop_exams_details && Array.isArray(data.postop_exams_details)) {
-            setPostopExams(data.postop_exams_details as any[]);
-          }
-          if (data.consumption_exams_details && Array.isArray(data.consumption_exams_details)) {
-            setConsumptionExams(data.consumption_exams_details as any[]);
-          }
+          const safeData = sanitizeLoadedRequest(data);
+          setForm(safeData);
+          setPreopExams(toList(safeData.preop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+          setPostopExams(toList(safeData.postop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+          setConsumptionExams(toList(safeData.consumption_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
         }
         setLoading(false);
       })();
