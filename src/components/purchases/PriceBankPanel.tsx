@@ -166,17 +166,22 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
   // exibidas apenas quando há um termo de busca para evitar poluição visual.
   const priceBankSuggestions = (() => {
     if (!search || search.trim().length < 2) return [] as any[];
-    const q = search.toLowerCase();
+    const normalize = (s: string) => (s || "")
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    const q = normalize(search);
     const catalogDescriptions = new Set(
-      catalog.map(c => (c.descricao || "").trim().toLowerCase())
+      catalog.map(c => normalize((c.descricao || "").trim()))
     );
     const seen = new Set<string>();
     const out: any[] = [];
     history.forEach(h => {
       const desc = (h.descricao_produto || "").trim();
-      const key = desc.toLowerCase();
+      const key = normalize(desc);
       if (!key || seen.has(key) || catalogDescriptions.has(key)) return;
-      const hay = [h.descricao_produto, h.fornecedor_nome, h.categoria, h.fonte].filter(Boolean).join(" ").toLowerCase();
+      const hay = normalize([h.descricao_produto, h.fornecedor_nome, h.categoria, h.fonte].filter(Boolean).join(" "));
       if (!hay.includes(q)) return;
       seen.add(key);
       out.push({
