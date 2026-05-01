@@ -557,7 +557,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       return { ...p, [listName]: arr };
     });
 
-    if (field === "description" && value.length > 2 && listName === "opme_requested") {
+    if (field === "description" && value.length > 2 && (listName === "opme_requested" || listName === "opme_used")) {
       // Busca combinada: 1) Catálogo do hospital  +  2) Banco de preços OPME (price_history)
       Promise.all([
         supabase
@@ -618,10 +618,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           });
         }
 
-        setMaterialSuggestions({ idx, items: [...fromCatalog, ...fromPrices].slice(0, 12) });
+        setMaterialSuggestions({ idx, items: [...fromCatalog, ...fromPrices].slice(0, 12), listName });
       });
     } else if (field === "description") {
-      setMaterialSuggestions({ idx: -1, items: [] });
+      setMaterialSuggestions({ idx: -1, items: [], listName });
     }
   };
 
