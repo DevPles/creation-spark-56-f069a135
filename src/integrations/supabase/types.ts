@@ -527,6 +527,9 @@ export type Database = {
           auditor_post_date: string | null
           auditor_post_final_opinion: string | null
           auditor_post_image_conformity: string | null
+          auditor_post_justification_decision: string | null
+          auditor_post_justification_decision_at: string | null
+          auditor_post_justification_decision_notes: string | null
           auditor_post_justification_reason: string | null
           auditor_post_justification_requested: boolean | null
           auditor_post_name: string | null
@@ -564,6 +567,8 @@ export type Database = {
           instruments_na: boolean | null
           instruments_specific: boolean | null
           instruments_specify: string | null
+          justification_history: Json
+          justification_round: number
           notes: string | null
           opme_requested: Json
           opme_returned: Json
@@ -613,6 +618,10 @@ export type Database = {
           sent_to_cme: boolean | null
           status: Database["public"]["Enums"]["opme_status"]
           stock_available: string | null
+          surgeon_justification: string | null
+          surgeon_justification_at: string | null
+          surgeon_justification_attachments: Json
+          surgeon_justification_by: string | null
           surgery_dispatch_date: string | null
           surgery_dispatch_responsible: string | null
           updated_at: string
@@ -625,6 +634,9 @@ export type Database = {
           auditor_post_date?: string | null
           auditor_post_final_opinion?: string | null
           auditor_post_image_conformity?: string | null
+          auditor_post_justification_decision?: string | null
+          auditor_post_justification_decision_at?: string | null
+          auditor_post_justification_decision_notes?: string | null
           auditor_post_justification_reason?: string | null
           auditor_post_justification_requested?: boolean | null
           auditor_post_name?: string | null
@@ -662,6 +674,8 @@ export type Database = {
           instruments_na?: boolean | null
           instruments_specific?: boolean | null
           instruments_specify?: string | null
+          justification_history?: Json
+          justification_round?: number
           notes?: string | null
           opme_requested?: Json
           opme_returned?: Json
@@ -711,6 +725,10 @@ export type Database = {
           sent_to_cme?: boolean | null
           status?: Database["public"]["Enums"]["opme_status"]
           stock_available?: string | null
+          surgeon_justification?: string | null
+          surgeon_justification_at?: string | null
+          surgeon_justification_attachments?: Json
+          surgeon_justification_by?: string | null
           surgery_dispatch_date?: string | null
           surgery_dispatch_responsible?: string | null
           updated_at?: string
@@ -723,6 +741,9 @@ export type Database = {
           auditor_post_date?: string | null
           auditor_post_final_opinion?: string | null
           auditor_post_image_conformity?: string | null
+          auditor_post_justification_decision?: string | null
+          auditor_post_justification_decision_at?: string | null
+          auditor_post_justification_decision_notes?: string | null
           auditor_post_justification_reason?: string | null
           auditor_post_justification_requested?: boolean | null
           auditor_post_name?: string | null
@@ -760,6 +781,8 @@ export type Database = {
           instruments_na?: boolean | null
           instruments_specific?: boolean | null
           instruments_specify?: string | null
+          justification_history?: Json
+          justification_round?: number
           notes?: string | null
           opme_requested?: Json
           opme_returned?: Json
@@ -809,6 +832,10 @@ export type Database = {
           sent_to_cme?: boolean | null
           status?: Database["public"]["Enums"]["opme_status"]
           stock_available?: string | null
+          surgeon_justification?: string | null
+          surgeon_justification_at?: string | null
+          surgeon_justification_attachments?: Json
+          surgeon_justification_by?: string | null
           surgery_dispatch_date?: string | null
           surgery_dispatch_responsible?: string | null
           updated_at?: string
@@ -2318,6 +2345,7 @@ export type Database = {
         | "pendente_consumo"
         | "pendente_auditoria_post"
         | "aguardando_justificativa"
+        | "justificativa_respondida"
       problem_type:
         | "processo"
         | "equipamento"
@@ -2497,6 +2525,7 @@ export const Constants = {
         "pendente_consumo",
         "pendente_auditoria_post",
         "aguardando_justificativa",
+        "justificativa_respondida",
       ],
       problem_type: [
         "processo",
