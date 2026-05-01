@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import FaturamentoWizard from "@/components/opme/FaturamentoWizard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,7 +58,11 @@ const STEPS_CONSUMO = [
 
 const STEPS_FATURAMENTO = [
   { id: "justificativa_cirurgiao", title: "Justificativa", description: "Responder Auditoria" },
-  { id: "faturamento", title: "Codificação", description: "Fechamento e AIH" },
+  { id: "fat_resumo", title: "Resumo do Caso", description: "Paciente e Procedimento" },
+  { id: "fat_opme", title: "OPME e Rastreabilidade", description: "Solicitado x Utilizado x Faturado" },
+  { id: "fat_validacao", title: "Validação Cruzada", description: "Auditoria, SIGTAP e Glosa" },
+  { id: "fat_docs", title: "Documentação", description: "Evidências e Anexos" },
+  { id: "fat_fechamento", title: "Fechamento", description: "Status Final e Dossiê" },
 ];
 
 const ANATOMY_DATA: Record<string, string[]> = {
@@ -969,8 +974,11 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         if (step === 0) {
           // Cirurgião enviando justificativa — nunca conclui.
           nextStatus = "justificativa_respondida";
-        } else if (step === 1 && form.status === "pendente_faturamento") {
-          // Faturamento só conclui se o auditor já tiver liberado.
+        } else if (step >= 1 && step < 5) {
+          // Sub-passos intermediários do faturamento — apenas salvar, sem concluir.
+          nextStatus = form.status || "pendente_faturamento";
+        } else if (step === 5 && (form.status === "pendente_faturamento" || form.status === "concluido")) {
+          // Faturamento só conclui no último sub-passo (Fechamento) e se o auditor já tiver liberado.
           nextStatus = "concluido";
         } else {
           setSaving(false);
@@ -3324,97 +3332,13 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             )}
 
             {/* --- PARTE 4: FATURAMENTO (Dados Faturamento) --- */}
-            {part === 4 && step === 1 && (
-              <div className="space-y-4">
-                <h3 className="text-xs font-bold uppercase text-slate-400">Dados do Faturamento</h3>
-                <div className="bg-sky-50 border border-sky-100 rounded-lg p-3 text-[10px] font-medium uppercase tracking-wide text-sky-700">
-                  Os dados abaixo vêm automaticamente do Cadastro. Para alterar, edite a Parte 1.
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Número da AIH</Label>
-                    <div className={`h-12 flex items-center px-3 rounded-md border text-sm font-medium ${form.billing_aih_number ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
-                      {form.billing_aih_number || "Pendente — preencher no Cadastro"}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">AIH Anexada</Label>
-                    {form.billing_aih_file_url ? (
-                      <Button
-                        variant="outline"
-                        className="w-full h-12 text-xs font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700 flex gap-2"
-                        onClick={() => window.open(form.billing_aih_file_url, "_blank")}
-                      >
-                        <FileText size={16} /> Ver AIH Anexada
-                      </Button>
-                    ) : (
-                      <div className="h-12 flex items-center justify-center border rounded-md border-rose-200 bg-rose-50 text-rose-600 text-xs font-medium uppercase">
-                        Nenhuma AIH anexada
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Procedimento</Label>
-                    <div className={`h-12 flex items-center px-3 rounded-md border text-sm font-medium uppercase ${form.procedure_type ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
-                      {form.procedure_type || "Pendente"}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Data do Procedimento</Label>
-                    <div className={`h-12 flex items-center px-3 rounded-md border text-sm font-medium ${form.procedure_date ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
-                      {form.procedure_date || "Pendente"}
-                    </div>
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Procedimento (SIGTAP)</Label>
-                    <div className={`min-h-12 flex items-center px-3 py-2 rounded-md border text-sm font-medium ${form.procedure_name ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
-                      {form.procedure_name || "Pendente — preencher no Cadastro"}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Cód. SIGTAP</Label>
-                    <div className={`h-12 flex items-center px-3 rounded-md border text-sm font-medium ${form.procedure_sigtap_code ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
-                      {form.procedure_sigtap_code || "Pendente"}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Cirurgião Responsável</Label>
-                    <div className={`h-12 flex items-center px-3 rounded-md border text-sm font-medium ${form.responsible_name ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
-                      {form.responsible_name ? `${form.responsible_name}${form.responsible_register ? ' — ' + form.responsible_register : ''}` : "Pendente"}
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-4 bg-slate-50 p-4 rounded-xl border">
-                  <Label className="text-[10px] font-bold uppercase text-slate-400">Documentação Anexada</Label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {[
-                      { id: "nf", label: "Nota Fiscal da OPME" },
-                      { id: "rastreabilidade", label: "Rastreabilidade (Lote/Etiqueta)" },
-                      { id: "laudo", label: "Laudo Cirúrgico" },
-                      { id: "consumo", label: "Registro de Consumo" },
-                      { id: "exames", label: "Exames de Imagem (Pré/Pós)" },
-                    ].map(doc => (
-                      <div key={doc.id} className="flex items-center space-x-2 bg-white p-3 rounded border">
-                        <Checkbox id={`doc_${doc.id}`} checked={form.billing_docs?.[doc.id]} onCheckedChange={v => {
-                          updateForm("billing_docs", { ...form.billing_docs, [doc.id]: v });
-                        }} />
-                        <Label htmlFor={`doc_${doc.id}`} className="text-xs">{doc.label}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Compatibilidade Utilizada x Faturada</Label>
-                  <Select value={form.billing_opme_compatibility} onValueChange={v => updateForm("billing_opme_compatibility", v)}>
-                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sim">Sim</SelectItem>
-                      <SelectItem value="nao">Não</SelectItem>
-                      <SelectItem value="parcial">Parcial</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            {part === 4 && step >= 1 && (
+              <FaturamentoWizard
+                step={step}
+                form={form}
+                updateForm={updateForm}
+                user={user}
+              />
             )}
           </motion.div>
         </AnimatePresence>
