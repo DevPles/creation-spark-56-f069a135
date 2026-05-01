@@ -2263,6 +2263,7 @@ export default function OpmeApp() {
                                     surgeon_justification: form.surgeon_justification || "",
                                     surgeon_justification_at: form.surgeon_justification_at || null,
                                     surgeon_justification_by: form.surgeon_justification_by || null,
+                                    attachments: Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [],
                                     decision: "liberada",
                                     decision_at: new Date().toISOString(),
                                     decision_by: user?.email || user?.id || "Auditor",
@@ -2292,6 +2293,7 @@ export default function OpmeApp() {
                                     surgeon_justification: form.surgeon_justification || "",
                                     surgeon_justification_at: form.surgeon_justification_at || null,
                                     surgeon_justification_by: form.surgeon_justification_by || null,
+                                    attachments: Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [],
                                     decision: "reprovada",
                                     decision_at: new Date().toISOString(),
                                     decision_by: user?.email || user?.id || "Auditor",
@@ -2307,6 +2309,7 @@ export default function OpmeApp() {
                                     surgeon_justification: "",
                                     surgeon_justification_at: null,
                                     surgeon_justification_by: null,
+                                    surgeon_justification_attachments: [],
                                     auditor_post_justification_decision_notes: "",
                                     status: "justificativa_respondida" // handleSave usa decision=reprovada para mandar de volta
                                   }));
