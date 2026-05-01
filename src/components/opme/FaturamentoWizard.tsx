@@ -315,10 +315,22 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
             <div className="space-y-2">
               {requested.map((m: any, i: number) => (
                 <div key={i} className="bg-white border border-slate-200 rounded-md p-3 text-xs">
-                  <div className="font-bold text-slate-800">{m.description || "—"}</div>
-                  <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • SIGTAP: {m.sigtap || "—"} • Modelo: {m.size_model || "—"}</div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-800 truncate">{m.description || "—"}</div>
+                      <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • SIGTAP: {m.sigtap || "—"} • Modelo: {m.size_model || "—"}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[10px] text-slate-400 uppercase font-bold">unit. {formatBRL(Number(m.unit_price) || 0)}</div>
+                      <div className="text-sm font-black text-emerald-700">{formatBRL((Number(m.quantity) || 0) * (Number(m.unit_price) || 0))}</div>
+                    </div>
+                  </div>
                 </div>
               ))}
+              <div className="bg-primary/5 border border-primary/20 rounded-md px-3 py-2 flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-slate-500">Total estimado solicitado</span>
+                <span className="text-sm font-black text-primary">{formatBRL(sumOpme(requested))}</span>
+              </div>
             </div>
           )}
         </Accordion>
@@ -330,10 +342,22 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
             <div className="space-y-2">
               {launchedUsed.map((m: any, i: number) => (
                 <div key={i} className="bg-white border border-slate-200 rounded-md p-3 text-xs">
-                  <div className="font-bold text-slate-800">{m.description || "—"}</div>
-                  <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • Lote: {m.batch || <span className="text-rose-600">faltando</span>} • Validade: {m.expiry || <span className="text-rose-600">—</span>} • Etiqueta: {m.photo_url ? <a href={m.photo_url} target="_blank" rel="noreferrer" className="text-sky-600 underline">ver</a> : <span className="text-rose-600">faltando</span>}</div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-800 truncate">{m.description || "—"}</div>
+                      <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • Lote: {m.batch || <span className="text-rose-600">faltando</span>} • Validade: {m.expiry || <span className="text-rose-600">—</span>} • Etiqueta: {m.photo_url ? <a href={m.photo_url} target="_blank" rel="noreferrer" className="text-sky-600 underline">ver</a> : <span className="text-rose-600">faltando</span>}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[10px] text-slate-400 uppercase font-bold">unit. {formatBRL(Number(m.unit_price) || 0)}</div>
+                      <div className="text-sm font-black text-emerald-700">{formatBRL((Number(m.quantity) || 0) * (Number(m.unit_price) || 0))}</div>
+                    </div>
+                  </div>
                 </div>
               ))}
+              <div className="bg-primary/5 border border-primary/20 rounded-md px-3 py-2 flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-slate-500">Total utilizado em cirurgia</span>
+                <span className="text-sm font-black text-primary">{formatBRL(sumOpme(launchedUsed))}</span>
+              </div>
             </div>
           )}
         </Accordion>
