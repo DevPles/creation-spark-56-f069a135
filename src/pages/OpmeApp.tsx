@@ -2341,11 +2341,11 @@ export default function OpmeApp() {
                            <div className="relative">
                               <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-slate-400 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">4</div>
                              <p className="text-[10px] font-bold text-slate-700 uppercase">Registro de Consumo (Sala)</p>
-                             <p className="text-[9px] text-slate-500 font-medium">
-                               {form.opme_used?.filter((i: any) => i.launched).length || 0} Itens Lançados @ {formatDateBR(form.procedure_date)}
+                              <p className="text-[9px] text-slate-500 font-medium">
+                                {toList(form.opme_used).filter((i: any) => i?.launched).length || 0} Itens Lançados @ {formatDateBR(form.procedure_date)}
                              </p>
                              {(() => {
-                               const lastLaunch = form.opme_used?.find((i: any) => i.launched_by);
+                                const lastLaunch = toList(form.opme_used).find((i: any) => i?.launched_by);
                                if (!lastLaunch || !lastLaunch.launched_by) return null;
                                return (
                                  <p className="text-[8px] text-slate-400 italic">
