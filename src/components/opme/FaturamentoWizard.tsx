@@ -178,7 +178,8 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
     const requested = Array.isArray(form.opme_requested) ? form.opme_requested : [];
     const used = Array.isArray(form.opme_used) ? form.opme_used : [];
     const returned = Array.isArray(form.opme_returned) ? form.opme_returned : [];
-    const hasTracking = used.some((u: any) => u?.lot || u?.label_url);
+    const launchedUsed = used.filter((u: any) => u?.launched);
+    const hasTracking = launchedUsed.length > 0 && launchedUsed.every((u: any) => u?.batch && u?.photo_url);
     return (
       <div className="space-y-3">
         <div className="bg-sky-50 border border-sky-100 rounded-lg p-3 text-[10px] font-medium uppercase tracking-wide text-sky-700">
@@ -193,22 +194,22 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
               {requested.map((m: any, i: number) => (
                 <div key={i} className="bg-white border border-slate-200 rounded-md p-3 text-xs">
                   <div className="font-bold text-slate-800">{m.description || "—"}</div>
-                  <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • SIGTAP: {m.sigtap_code || "—"} • Modelo: {m.size || "—"}</div>
+                  <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • SIGTAP: {m.sigtap || "—"} • Modelo: {m.size_model || "—"}</div>
                 </div>
               ))}
             </div>
           )}
         </Accordion>
 
-        <Accordion title={`Utilizado em Cirurgia (${used.length})`} defaultOpen status={used.length ? "ok" : "pending"}>
-          {used.length === 0 ? (
+        <Accordion title={`Utilizado em Cirurgia (${launchedUsed.length})`} defaultOpen status={launchedUsed.length ? "ok" : "pending"}>
+          {launchedUsed.length === 0 ? (
             <p className="text-xs text-rose-600 italic">Nenhum material registrado no Consumo Cirúrgico.</p>
           ) : (
             <div className="space-y-2">
-              {used.map((m: any, i: number) => (
+              {launchedUsed.map((m: any, i: number) => (
                 <div key={i} className="bg-white border border-slate-200 rounded-md p-3 text-xs">
                   <div className="font-bold text-slate-800">{m.description || "—"}</div>
-                  <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • Lote: {m.lot || <span className="text-rose-600">faltando</span>} • Etiqueta: {m.label_url ? <a href={m.label_url} target="_blank" rel="noreferrer" className="text-sky-600 underline">ver</a> : <span className="text-rose-600">faltando</span>}</div>
+                  <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • Lote: {m.batch || <span className="text-rose-600">faltando</span>} • Validade: {m.expiry || <span className="text-rose-600">—</span>} • Etiqueta: {m.photo_url ? <a href={m.photo_url} target="_blank" rel="noreferrer" className="text-sky-600 underline">ver</a> : <span className="text-rose-600">faltando</span>}</div>
                 </div>
               ))}
             </div>
@@ -216,11 +217,11 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
         </Accordion>
 
         <Accordion title={`Devolvido (${returned.length})`} status={null}>
-          {returned.length === 0 ? (
+          {returned.filter((m: any) => m?.description?.trim()).length === 0 ? (
             <p className="text-xs text-slate-500 italic">Nenhum material devolvido.</p>
           ) : (
             <div className="space-y-2">
-              {returned.map((m: any, i: number) => (
+              {returned.filter((m: any) => m?.description?.trim()).map((m: any, i: number) => (
                 <div key={i} className="bg-white border border-slate-200 rounded-md p-3 text-xs">
                   <div className="font-bold text-slate-800">{m.description || "—"}</div>
                   <div className="text-slate-500 mt-1">Qtd devolvida: {m.quantity || 0} • Motivo: {m.reason || "—"}</div>
@@ -254,7 +255,7 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
                 />
               </div>
             )}
-            {!hasTracking && used.length > 0 && (
+            {!hasTracking && launchedUsed.length > 0 && (
               <div className="bg-rose-50 border border-rose-200 rounded-md p-3 text-[11px] text-rose-700 font-medium">
                 ⚠ Rastreabilidade incompleta: lote/etiqueta ausentes. Cadastre no módulo de Consumo Cirúrgico antes do fechamento.
               </div>
