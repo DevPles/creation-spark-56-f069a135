@@ -3518,6 +3518,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 form={form}
                 updateForm={updateForm}
                 user={user}
+                onGeneratePdf={generateAuditDossierPdf}
               />
             )}
           </motion.div>

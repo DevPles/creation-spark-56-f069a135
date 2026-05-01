@@ -15,6 +15,7 @@ interface FaturamentoWizardProps {
   form: any;
   updateForm: (field: string, value: any) => void;
   user: any;
+  onGeneratePdf?: () => void;
 }
 
 const ReadOnlyField = ({ label, value, placeholder = "Pendente" }: { label: string; value: any; placeholder?: string }) => {
@@ -623,14 +624,32 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
           </div>
         </Accordion>
 
-        <Accordion title="Dossiê do Caso" status={form.billing_dossier_url ? "ok" : null}>
-          {form.billing_dossier_url ? (
-            <Button variant="outline" className="w-full h-12 text-xs font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700 flex gap-2" onClick={() => window.open(form.billing_dossier_url, "_blank")}>
-              <FileText size={16} /> Ver Dossiê PDF
-            </Button>
-          ) : (
-            <p className="text-xs text-slate-500 italic">O dossiê PDF será gerado automaticamente após o fechamento com status "Faturado" ou "Ressalva".</p>
-          )}
+        <Accordion title="Dossiê do Caso" status={form.billing_dossier_url || onGeneratePdf ? "ok" : null}>
+          <div className="space-y-3">
+            {onGeneratePdf && (
+              <Button 
+                variant="default" 
+                className="w-full h-12 text-xs font-bold uppercase flex gap-2" 
+                onClick={onGeneratePdf}
+              >
+                <FileText size={16} /> Gerar Dossiê Consolidado (PDF)
+              </Button>
+            )}
+            
+            {form.billing_dossier_url && (
+              <Button 
+                variant="outline" 
+                className="w-full h-12 text-xs font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700 flex gap-2" 
+                onClick={() => window.open(form.billing_dossier_url, "_blank")}
+              >
+                <FileText size={16} /> Ver Arquivo Externo
+              </Button>
+            )}
+            
+            {!form.billing_dossier_url && !onGeneratePdf && (
+              <p className="text-xs text-slate-500 italic">O dossiê PDF será gerado automaticamente após o fechamento com status "Faturado" ou "Ressalva".</p>
+            )}
+          </div>
         </Accordion>
       </div>
     );
