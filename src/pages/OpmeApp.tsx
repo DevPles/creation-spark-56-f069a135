@@ -2066,9 +2066,7 @@ export default function OpmeApp() {
                           ))}
                         </div>
                       ) : (
-                        <div className="bg-white/50 border border-dashed border-slate-200 rounded-lg p-4 text-center">
-                          <p className="text-[10px] text-slate-400 italic uppercase font-bold tracking-tighter">Nenhum exame pré-operatório anexado.</p>
-                        </div>
+                      <p className="col-span-2 text-[9px] text-slate-400 italic bg-slate-50/50 p-2 rounded border border-dashed text-center">Nenhum exame pré-operatório anexado.</p>
                       )}
                     </div>
                   </div>
@@ -2356,16 +2354,16 @@ export default function OpmeApp() {
                     <div className="bg-muted/30 p-4 rounded-xl border border-border space-y-4">
                       <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Validação Auditor Pós-OP</h3>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <Label className="text-[10px] font-bold uppercase text-slate-500">Nome Auditor</Label>
-                        <Input value={form.auditor_post_name} onChange={e => updateForm("auditor_post_name", e.target.value)} className="h-10 text-xs bg-white" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold uppercase text-slate-500">Nome Auditor</Label>
+                          <Input value={form.auditor_post_name} onChange={e => updateForm("auditor_post_name", e.target.value)} className="h-10 text-xs bg-white" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold uppercase text-slate-500">CRM</Label>
+                          <Input value={form.auditor_post_crm} onChange={e => updateForm("auditor_post_crm", e.target.value)} className="h-10 text-xs bg-white" />
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-[10px] font-bold uppercase text-slate-500">CRM</Label>
-                        <Input value={form.auditor_post_crm} onChange={e => updateForm("auditor_post_crm", e.target.value)} className="h-10 text-xs bg-white" />
-                      </div>
-                    </div>
 
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase text-slate-500">Compatibilidade OPME x Procedimento</Label>
