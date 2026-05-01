@@ -619,6 +619,30 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         }
 
         setMaterialSuggestions({ idx, items: [...fromCatalog, ...fromPrices].slice(0, 12), listName });
+
+        // Auto-vincula preço/código quando há correspondência exata (sem precisar clicar na sugestão)
+        const combined = [...fromCatalog, ...fromPrices];
+        const norm = (s: string) => (s || "").toLowerCase().trim();
+        const exact = combined.find((m: any) => norm(m.name) === norm(value));
+        const best = exact || (combined.length === 1 ? combined[0] : null);
+        if (best && (best.unit_price > 0 || best.product_id)) {
+          setForm((p: any) => {
+            const arr = [...(p[listName] || [])];
+            const cur = arr[idx] || {};
+            // Só auto-preenche se ainda não tiver preço definido pelo usuário
+            if (!cur.unit_price || Number(cur.unit_price) === 0) {
+              arr[idx] = {
+                ...cur,
+                product_id: cur.product_id ?? best.product_id ?? null,
+                product_code: cur.product_code ?? best.code ?? null,
+                unit_price: Number(best.unit_price) || 0,
+                price_source: best.price_source,
+              };
+              return { ...p, [listName]: arr };
+            }
+            return p;
+          });
+        }
       });
     } else if (field === "description") {
       setMaterialSuggestions({ idx: -1, items: [], listName });
