@@ -2336,9 +2336,11 @@ export default function OpmeApp() {
                      <div className="bg-background p-4 rounded-xl border border-border space-y-4">
                        <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Alertas de Auditoria de Anexos</h3>
                        <div className="space-y-2">
-                         {getPostAuditDivergences().length > 0 ? getPostAuditDivergences().map((item, i) => (
-                           <p key={i} className="text-[10px] font-bold text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2">{item}</p>
-                         )) : (
+                          {getPostAuditDivergences().length > 0 ? getPostAuditDivergences().map((item: any, i: number) => (
+                            <p key={i} className="text-[10px] font-bold text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2">
+                              {typeof item === 'string' ? item : (item?.description || 'Divergência identificada')}
+                            </p>
+                          )) : (
                            <p className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-lg p-2">Dossiê Completo: Todas as evidências e justificativas em conformidade.</p>
                          )}
                          
