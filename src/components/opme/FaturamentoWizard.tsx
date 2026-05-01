@@ -57,7 +57,7 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
   );
 };
 
-export default function FaturamentoWizard({ step, form, updateForm, user }: FaturamentoWizardProps) {
+ export default function FaturamentoWizard({ step, form, updateForm, user, onGeneratePdf }: FaturamentoWizardProps) {
   const { contracts } = useContracts();
   const unitContract = contracts.find(c => c.unit === form.facility_unit);
   const autoCnes = unitContract?.cnes || "";
