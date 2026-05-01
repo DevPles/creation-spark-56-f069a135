@@ -3042,7 +3042,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
             {/* --- PARTE 5: CONTROLE ADMINISTRATIVO --- */}
             {part === 5 && step === 0 && (
-              <div className="space-y-6 pb-6">
+              <div className="space-y-6 pb-6 font-display">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 border-b pb-2">
                     <div className="w-2 h-4 bg-primary rounded-full"></div>
