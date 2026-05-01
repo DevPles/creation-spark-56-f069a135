@@ -403,6 +403,40 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
               {filteredCatalog.length === 0 && (
                 <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum item no catálogo</TableCell></TableRow>
               )}
+              {priceBankSuggestions.length > 0 && (
+                <>
+                  <TableRow className="bg-muted/40">
+                    <TableCell colSpan={8} className="text-xs font-medium text-muted-foreground py-2">
+                      Sugestões do banco de preços ({priceBankSuggestions.length}) — itens encontrados com preços de referência. Clique em "Cadastrar" para adicionar ao catálogo.
+                    </TableCell>
+                  </TableRow>
+                  {priceBankSuggestions.map((s, idx) => (
+                    <TableRow key={`sugg-${idx}`} className="bg-muted/10">
+                      <TableCell className="text-xs text-muted-foreground italic">—</TableCell>
+                      <TableCell className="text-xs">{(s.categoria || "").toUpperCase() === "OPME" ? "IMP" : "MMH"}</TableCell>
+                      <TableCell className="text-xs capitalize">{s.categoria}</TableCell>
+                      <TableCell className="text-xs">
+                        <div className="font-medium">{s.descricao}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {fmtBRL(s.valor_unitario)} • {s.fornecedor_nome || s.fonte || "referência"} • {fmtDate(s.data_referencia)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                      <TableCell className="text-xs">{s.unidade_medida}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          className="h-8 rounded-full px-3"
+                          onClick={() => importFromPriceBank(s)}
+                        >
+                          Cadastrar
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </>
+              )}
             </TableBody>
           </Table>
         </CardContent>
