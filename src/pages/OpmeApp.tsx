@@ -2761,7 +2761,7 @@ export default function OpmeApp() {
                    <div className="space-y-4">
                      <Select onValueChange={(v) => {
                        if (!v) return;
-                       const newExam = { id: Math.random().toString(36), type: v, date: new Date().toISOString().split('T')[0], file: null, url: "" };
+                       const newExam = { id: Math.random().toString(36), type: v, date: todayISO(), file: null, url: "" };
                        setConsumptionExams(prev => [...prev, newExam]);
                      }}>
                        <SelectTrigger className="h-10 bg-white border-slate-200 text-xs font-bold uppercase">
@@ -2851,7 +2851,7 @@ export default function OpmeApp() {
                         const newExam = { 
                           id: Math.random().toString(36), 
                           type: v, 
-                          date: new Date().toISOString().split('T')[0], 
+                          date: todayISO(), 
                           file: null, 
                           url: "",
                           category: v === "Etiqueta/Rastreabilidade" ? "tracking" : "intra"
