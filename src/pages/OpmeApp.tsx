@@ -1120,17 +1120,19 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
   if (part === null) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-20">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="text-center">
-            <h1 className="text-base font-bold text-slate-900 uppercase tracking-wider">Módulos OPME</h1>
-            <p className="text-xs text-slate-500 uppercase">Gestão Hospitalar</p>
-          </div>
-          <div className="w-10" />
-        </header>
+      <div className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
+        {!embedded && (
+          <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="text-center">
+              <h1 className="text-base font-bold text-slate-900 uppercase tracking-wider">Módulos OPME</h1>
+              <p className="text-xs text-slate-500 uppercase">Gestão Hospitalar</p>
+            </div>
+            <div className="w-10" />
+          </header>
+        )}
 
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-10 space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
