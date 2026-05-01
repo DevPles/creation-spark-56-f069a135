@@ -161,7 +161,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     const [filterStatus, setFilterStatus] = useState<string | null>(null);
     const [filterDate, setFilterDate] = useState<string>("");
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
-  const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[] }>({ idx: -1, items: [] });
+  const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[], listName?: string }>({ idx: -1, items: [], listName: "opme_requested" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const STEPS = part === 1 ? STEPS_CADASTRO : 
@@ -557,7 +557,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       return { ...p, [listName]: arr };
     });
 
-    if (field === "description" && value.length > 2 && listName === "opme_requested") {
+    if (field === "description" && value.length > 2 && (listName === "opme_requested" || listName === "opme_used")) {
       // Busca combinada: 1) Catálogo do hospital  +  2) Banco de preços OPME (price_history)
       Promise.all([
         supabase
@@ -618,10 +618,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           });
         }
 
-        setMaterialSuggestions({ idx, items: [...fromCatalog, ...fromPrices].slice(0, 12) });
+        setMaterialSuggestions({ idx, items: [...fromCatalog, ...fromPrices].slice(0, 12), listName });
       });
     } else if (field === "description") {
-      setMaterialSuggestions({ idx: -1, items: [] });
+      setMaterialSuggestions({ idx: -1, items: [], listName });
     }
   };
 
@@ -2045,7 +2045,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                             ) : item.description?.length > 2 ? (
                               <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
                             ) : null}
-                            {materialSuggestions.idx === idx && materialSuggestions.items.length > 0 && (
+                            {materialSuggestions.idx === idx && (materialSuggestions.listName ?? "opme_requested") === "opme_requested" && materialSuggestions.items.length > 0 && (
                               <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-auto">
                                 {materialSuggestions.items.map((m: any) => (
                                   <button key={m.product_id || m.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
@@ -2060,7 +2060,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                       price_source: m.price_source || "sem_preco",
                                     };
                                     setForm((p: any) => ({ ...p, opme_requested: arr }));
-                                    setMaterialSuggestions({ idx: -1, items: [] });
+                                    setMaterialSuggestions({ idx: -1, items: [], listName: "opme_requested" });
                                   }}>
                                     <div className="flex items-center justify-between gap-2">
                                       <div className="min-w-0">
@@ -3042,7 +3042,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
             {/* --- PARTE 5: CONTROLE ADMINISTRATIVO --- */}
             {part === 5 && step === 0 && (
-              <div className="space-y-6 pb-6">
+              <div className="space-y-6 pb-6 font-display">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 border-b pb-2">
                     <div className="w-2 h-4 bg-primary rounded-full"></div>
@@ -3136,7 +3136,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
             {/* --- PARTE 6: CONSUMO CIRURGICO --- */}
             {part === 6 && step === 0 && (
-              <div className="space-y-6">
+              <div className="space-y-6 font-display">
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Materiais a Lançar</h3>
                   <div className="space-y-3">
@@ -3164,11 +3164,66 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                 )}
                               </div>
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-2 relative">
                               <Label className="text-[10px] font-bold uppercase text-slate-500">Descrição Material</Label>
-                              <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value, "opme_used")} className="h-10 text-xs bg-white" />
+                              <Input
+                                value={item.description}
+                                onChange={e => updateItem(idx, "description", e.target.value, "opme_used")}
+                                placeholder="Digite para buscar no catálogo de OPME..."
+                                className="h-10 text-xs bg-white"
+                              />
+                              {item.product_id ? (
+                                <p className="text-[10px] text-emerald-600 font-bold uppercase">Vinculado ao catálogo • cód. {item.product_code || "—"} • unit. {Number(item.unit_price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                              ) : item.description?.length > 2 ? (
+                                <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
+                              ) : null}
+                              {materialSuggestions.idx === idx && materialSuggestions.listName === "opme_used" && materialSuggestions.items.length > 0 && (
+                                <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-auto">
+                                  {materialSuggestions.items.map((m: any) => (
+                                    <button
+                                      key={m.product_id || m.code}
+                                      type="button"
+                                      className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                                      onClick={() => {
+                                        const arr = [...toList(form.opme_used)];
+                                        arr[idx] = {
+                                          ...arr[idx],
+                                          description: m.name,
+                                          product_id: m.product_id || null,
+                                          product_code: m.code || null,
+                                          unit_price: typeof m.unit_price === "number" ? m.unit_price : 0,
+                                          price_source: m.price_source || "sem_preco",
+                                        };
+                                        setForm((p: any) => ({ ...p, opme_used: arr }));
+                                        setMaterialSuggestions({ idx: -1, items: [], listName: "opme_used" });
+                                      }}
+                                    >
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-bold text-slate-800 truncate">{m.name}</p>
+                                          <p className="text-[10px] text-slate-500 uppercase">Cód: {m.code} {m.sigtap ? `• SIGTAP: ${m.sigtap}` : ""}</p>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                          <p className="text-xs font-black text-primary">
+                                            {typeof m.unit_price === "number" && m.unit_price > 0
+                                              ? m.unit_price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                                              : "Sem preço"}
+                                          </p>
+                                          <p className={`text-[9px] uppercase font-bold ${
+                                            m.price_source === "historico" ? "text-emerald-600" :
+                                            m.price_source === "base_opme" ? "text-sky-600" :
+                                            m.price_source === "referencia" ? "text-amber-600" : "text-slate-400"
+                                          }`}>
+                                            {m.source_label || "—"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-3 gap-3">
                               <div className="space-y-1">
                                 <Label className="text-[10px] font-bold uppercase text-slate-500">Qtd</Label>
                                 <Input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value, "opme_used")} className="h-10 text-xs" />
@@ -3177,6 +3232,22 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                 <Label className="text-[10px] font-bold uppercase text-slate-500">Lote</Label>
                                 <Input value={item.batch} onChange={e => updateItem(idx, "batch", e.target.value, "opme_used")} className="h-10 text-xs" />
                               </div>
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-bold uppercase text-slate-500">Valor unit. (R$)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.unit_price ?? 0}
+                                  onChange={e => updateItem(idx, "unit_price", e.target.value, "opme_used")}
+                                  className="h-10 text-xs"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between bg-primary/5 border border-primary/10 rounded-md px-3 py-2">
+                              <span className="text-[10px] uppercase font-bold text-slate-500">Total deste item</span>
+                              <span className="text-sm font-black text-primary">
+                                {((Number(item.quantity) || 0) * (Number(item.unit_price) || 0)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                              </span>
                             </div>
                             <div className="space-y-1.5 pt-1">
                               <Label className="text-[10px] font-bold uppercase text-slate-500">Comprovação (Etiqueta/Lote)</Label>
