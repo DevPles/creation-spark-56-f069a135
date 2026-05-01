@@ -88,7 +88,7 @@ export default function OpmeApp() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const recordId = searchParams.get("id");
+  const [recordId, setRecordId] = useState<string | null>(searchParams.get("id"));
   const [part, setPart] = useState<number | null>(null);
    const [preopExams, setPreopExams] = useState<any[]>([]);
     const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
