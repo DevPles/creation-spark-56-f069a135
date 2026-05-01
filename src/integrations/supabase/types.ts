@@ -2317,6 +2317,7 @@ export type Database = {
         | "em_controle"
         | "pendente_consumo"
         | "pendente_auditoria_post"
+        | "aguardando_justificativa"
       problem_type:
         | "processo"
         | "equipamento"
@@ -2495,6 +2496,7 @@ export const Constants = {
         "em_controle",
         "pendente_consumo",
         "pendente_auditoria_post",
+        "aguardando_justificativa",
       ],
       problem_type: [
         "processo",
