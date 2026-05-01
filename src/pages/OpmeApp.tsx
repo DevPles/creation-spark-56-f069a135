@@ -425,7 +425,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      }
    };
  
-   const loadRequest = (req: any) => {
+   const loadRequest = async (req: any) => {
       const safeReq = sanitizeLoadedRequest(req);
       setForm(safeReq);
       setPreopExams(toList(safeReq.preop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
