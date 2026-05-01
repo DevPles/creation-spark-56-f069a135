@@ -574,11 +574,166 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
     if (!form.billing_cid_main) blockers.push("CID principal ausente");
     if (!form.billing_cnes) blockers.push("CNES ausente");
 
+    // ====== Dados consolidados do caso (modo consulta após conclusão) ======
+    const isClosed = form.status === "concluido";
+    const requested = Array.isArray(form.opme_requested) ? form.opme_requested : [];
+    const used = Array.isArray(form.opme_used) ? form.opme_used : [];
+    const launchedUsed = used.filter((u: any) => u?.launched);
+    const returned = Array.isArray(form.opme_returned) ? form.opme_returned : [];
+    const totalRequested = sumOpme(requested);
+    const totalUsed = sumOpme(launchedUsed);
+    const economy = totalRequested - totalUsed;
+    const economyPct = totalRequested > 0 ? (economy / totalRequested) * 100 : 0;
+    const docsCount = requiredDocs.filter(id => docs[id]).length;
+    const justRounds = Number(form.justification_round || 0);
+    const justHistory = Array.isArray(form.justification_history) ? form.justification_history : [];
+
+    const fmtDate = (d?: string) => {
+      if (!d) return "—";
+      try { return new Date(d).toLocaleDateString("pt-BR"); } catch { return "—"; }
+    };
+    const fmtDateTime = (d?: string) => {
+      if (!d) return "—";
+      try { return new Date(d).toLocaleString("pt-BR"); } catch { return "—"; }
+    };
+
+    const timeline: { label: string; when?: string; who?: string }[] = [
+      { label: "Cadastro do paciente", when: form.created_at, who: form.created_by_name || form.responsible_name },
+      { label: "Requisição médica", when: form.requested_at || form.procedure_date, who: form.requester_name || form.responsible_name },
+      { label: "Auditoria Pré-OP", when: form.auditor_pre_date, who: form.auditor_pre_name },
+      { label: "Procedimento cirúrgico", when: form.procedure_date, who: form.responsible_name },
+      { label: "Consumo cirúrgico", when: form.consumption_at, who: form.consumption_responsible_name || form.responsible_name },
+      { label: "Auditoria Pós-OP", when: form.auditor_post_date, who: form.auditor_post_name },
+      ...(justRounds > 0 ? [{ label: `Justificativa do cirurgião (${justRounds} rodada${justRounds > 1 ? "s" : ""})`, when: form.surgeon_justification_at, who: form.surgeon_justification_by }] : []),
+      { label: "Fechamento de faturamento", when: form.billing_closed_at || form.updated_at, who: form.billing_responsible_name },
+    ].filter(t => t.when || t.who);
+
     return (
       <div className="space-y-3">
-        <div className="bg-sky-50 border border-sky-100 rounded-lg p-3 text-[10px] font-medium uppercase tracking-wide text-sky-700">
-          Tela 5 de 5 — Status final, responsável e geração do dossiê.
+        <div className={`rounded-lg p-3 text-[10px] font-medium uppercase tracking-wide ${isClosed ? "bg-emerald-50 border border-emerald-200 text-emerald-700" : "bg-sky-50 border border-sky-100 text-sky-700"}`}>
+          {isClosed
+            ? `Processo concluído em ${fmtDateTime(form.billing_closed_at || form.updated_at)} — registro consolidado e somente leitura.`
+            : "Tela 5 de 5 — Status final, responsável e geração do dossiê."}
         </div>
+
+        {isClosed && (
+          <>
+            {/* KPIs do caso */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="bg-white border border-slate-200 rounded-xl p-3">
+                <div className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Solicitado</div>
+                <div className="text-sm font-black text-slate-700 mt-1">{formatBRL(totalRequested)}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">{requested.length} item(ns)</div>
+              </div>
+              <div className="bg-white border border-slate-200 rounded-xl p-3">
+                <div className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Utilizado</div>
+                <div className="text-sm font-black text-primary mt-1">{formatBRL(totalUsed)}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">{launchedUsed.length} consumido(s)</div>
+              </div>
+              <div className="bg-white border border-slate-200 rounded-xl p-3">
+                <div className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Devolvido</div>
+                <div className="text-sm font-black text-amber-600 mt-1">{returned.filter((r: any) => r?.description?.trim()).length}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">item(ns) ao estoque</div>
+              </div>
+              <div className={`border rounded-xl p-3 ${economy >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}>
+                <div className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">{economy >= 0 ? "Economia" : "Excedente"}</div>
+                <div className={`text-sm font-black mt-1 ${economy >= 0 ? "text-emerald-700" : "text-rose-700"}`}>{formatBRL(Math.abs(economy))}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">{economyPct >= 0 ? "−" : "+"}{Math.abs(economyPct).toFixed(1)}% vs. solicitado</div>
+              </div>
+            </div>
+
+            {/* Resumo Executivo */}
+            <Accordion title="Resumo Executivo do Caso" defaultOpen status="ok">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="bg-white border border-slate-200 rounded-md p-3 space-y-1">
+                  <div className="text-[9px] font-bold uppercase text-slate-400">Paciente</div>
+                  <div className="font-bold text-slate-800">{form.patient_name || "—"}</div>
+                  <div className="text-slate-500">Prontuário {form.patient_record || "—"} • SUS {form.patient_sus || "—"}</div>
+                  <div className="text-slate-500">Nascimento: {fmtDate(form.patient_birthdate)}</div>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-md p-3 space-y-1">
+                  <div className="text-[9px] font-bold uppercase text-slate-400">Unidade & AIH</div>
+                  <div className="font-bold text-slate-800">{form.facility_unit || "—"}</div>
+                  <div className="text-slate-500">CNES {form.billing_cnes || "—"} • AIH {form.billing_aih_number || "—"}</div>
+                  <div className="text-slate-500">Internação: {fmtDate(form.billing_admission_date)} → {fmtDate(form.billing_discharge_date)}</div>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-md p-3 space-y-1 md:col-span-2">
+                  <div className="text-[9px] font-bold uppercase text-slate-400">Procedimento</div>
+                  <div className="font-bold text-slate-800">{form.procedure_name || "—"}</div>
+                  <div className="text-slate-500">SIGTAP {form.procedure_sigtap_code || "—"} • CID {form.billing_cid_main || "—"}{form.billing_cid_secondary ? ` / ${form.billing_cid_secondary}` : ""}</div>
+                  <div className="text-slate-500">Realizado em {fmtDate(form.procedure_date)} — Sala {form.procedure_room || "—"} — Caráter {form.billing_attendance_character || form.procedure_type || "—"}</div>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-md p-3 space-y-1">
+                  <div className="text-[9px] font-bold uppercase text-slate-400">Auditoria Pós</div>
+                  <div className="font-bold text-slate-800">{form.auditor_post_name || "—"}{form.auditor_post_crm ? ` — ${form.auditor_post_crm}` : ""}</div>
+                  <div className="text-slate-500">Parecer: <span className={auditOk ? "text-emerald-700 font-bold uppercase" : "text-rose-700 font-bold uppercase"}>{form.auditor_post_final_opinion || "—"}</span></div>
+                  <div className="text-slate-500">Data: {fmtDate(form.auditor_post_date)}</div>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-md p-3 space-y-1">
+                  <div className="text-[9px] font-bold uppercase text-slate-400">Faturamento</div>
+                  <div className="font-bold text-slate-800">{form.billing_responsible_name || "—"}</div>
+                  <div className="text-slate-500">Status: <span className="font-bold uppercase text-emerald-700">{form.billing_final_status || "Faturado"}</span></div>
+                  <div className="text-slate-500">Risco de glosa: <span className={`font-bold uppercase ${form.billing_glosa_risk === "baixo" ? "text-emerald-700" : form.billing_glosa_risk === "medio" ? "text-amber-700" : "text-rose-700"}`}>{form.billing_glosa_risk || "—"}</span></div>
+                </div>
+              </div>
+            </Accordion>
+
+            {/* Linha do Tempo */}
+            <Accordion title="Linha do Tempo do Processo" defaultOpen status="ok">
+              <ol className="relative border-l-2 border-slate-200 ml-2 space-y-3">
+                {timeline.map((t, i) => (
+                  <li key={i} className="ml-4">
+                    <div className="absolute -left-[7px] w-3 h-3 bg-primary rounded-full border-2 border-white shadow"></div>
+                    <div className="bg-white border border-slate-200 rounded-md p-3">
+                      <div className="text-xs font-bold text-slate-800">{t.label}</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        {fmtDateTime(t.when)} {t.who ? `• ${t.who}` : ""}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </Accordion>
+
+            {/* Justificativas (se houve reanálise) */}
+            {justRounds > 0 && (
+              <Accordion title={`Reanálises e Justificativas (${justRounds})`} status="warn">
+                <div className="space-y-2">
+                  {justHistory.map((h: any, i: number) => (
+                    <div key={i} className="bg-white border border-amber-200 rounded-md p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-[10px] font-bold uppercase text-amber-700">Rodada {h.round || i + 1}</div>
+                        <div className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${h.decision === "liberada" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>{h.decision || "—"}</div>
+                      </div>
+                      {h.auditor_reason && (<div className="text-[11px]"><span className="font-bold text-slate-600">Auditor: </span><span className="text-slate-700">{h.auditor_reason}</span></div>)}
+                      {h.surgeon_justification && (<div className="text-[11px]"><span className="font-bold text-slate-600">Cirurgião: </span><span className="text-slate-700">{h.surgeon_justification}</span></div>)}
+                      {Array.isArray(h.attachments) && h.attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {h.attachments.map((a: any, ai: number) => (
+                            <a key={ai} href={a.url} target="_blank" rel="noreferrer" className="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 rounded px-2 py-1 hover:bg-sky-100 underline">{a.name || `anexo ${ai + 1}`}</a>
+                          ))}
+                        </div>
+                      )}
+                      <div className="text-[10px] text-slate-400">{fmtDateTime(h.decision_at)} • {h.decision_by || "—"}</div>
+                    </div>
+                  ))}
+                </div>
+              </Accordion>
+            )}
+
+            {/* Documentação consolidada */}
+            <Accordion title={`Documentação Consolidada (${docsCount}/${requiredDocs.length})`} status={docsComplete ? "ok" : "warn"}>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {requiredDocs.map(id => (
+                  <div key={id} className={`text-[11px] flex items-center gap-2 p-2 rounded border ${docs[id] ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-rose-50 border-rose-200 text-rose-700"}`}>
+                    {docs[id] ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                    <span className="font-medium uppercase">{id.replace(/_/g, " ")}</span>
+                  </div>
+                ))}
+              </div>
+            </Accordion>
+          </>
+        )}
 
         <Accordion title="Validação Final" defaultOpen status={blockers.length === 0 ? "ok" : "pending"}>
           {blockers.length === 0 ? (
