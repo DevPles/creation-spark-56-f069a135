@@ -450,45 +450,48 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
             )}
           </div>
 
-          <Separator />
-
-          {/* 2. SIGTAP */}
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vínculo SIGTAP</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Código SIGTAP</Label>
-                <Input value={sigtapCode} onChange={e => setSigtapCode(e.target.value)} placeholder="Ex: 07.02.03.001-2" />
+          {opmeMode && (
+            <>
+              <Separator />
+              {/* 2. SIGTAP — somente OPME */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vínculo SIGTAP</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Código SIGTAP</Label>
+                    <Input value={sigtapCode} onChange={e => setSigtapCode(e.target.value)} placeholder="Ex: 07.02.03.001-2" />
+                  </div>
+                  <div className="flex items-end gap-2 pb-2">
+                    <Switch checked={requiresPriorAuth} onCheckedChange={setRequiresPriorAuth} id="prior-auth" />
+                    <Label htmlFor="prior-auth" className="cursor-pointer">Exige autorização prévia</Label>
+                  </div>
+                </div>
+                <div>
+                  <Label>Procedimentos SIGTAP compatíveis</Label>
+                  <Textarea
+                    value={sigtapProcedures}
+                    onChange={e => setSigtapProcedures(e.target.value)}
+                    placeholder="Códigos separados por vírgula. Ex: 04.07.04.012-0, 04.07.04.013-9"
+                    rows={2}
+                  />
+                </div>
               </div>
-              <div className="flex items-end gap-2 pb-2">
-                <Switch checked={requiresPriorAuth} onCheckedChange={setRequiresPriorAuth} id="prior-auth" />
-                <Label htmlFor="prior-auth" className="cursor-pointer">Exige autorização prévia</Label>
+
+              <Separator />
+
+              {/* 3. Rastreabilidade — somente OPME */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Regras de rastreabilidade</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  <div className="flex items-center gap-2"><Switch id="r-lote" checked={requiresLote} onCheckedChange={setRequiresLote} /><Label htmlFor="r-lote" className="cursor-pointer">Exige lote</Label></div>
+                  <div className="flex items-center gap-2"><Switch id="r-val" checked={requiresValidade} onCheckedChange={setRequiresValidade} /><Label htmlFor="r-val" className="cursor-pointer">Exige validade</Label></div>
+                  <div className="flex items-center gap-2"><Switch id="r-etq" checked={requiresEtiqueta} onCheckedChange={setRequiresEtiqueta} /><Label htmlFor="r-etq" className="cursor-pointer">Exige etiqueta</Label></div>
+                  <div className="flex items-center gap-2"><Switch id="r-uu" checked={usoUnico} onCheckedChange={setUsoUnico} /><Label htmlFor="r-uu" className="cursor-pointer">Uso único</Label></div>
+                  <div className="flex items-center gap-2"><Switch id="r-rep" checked={reprocessavel} onCheckedChange={setReprocessavel} /><Label htmlFor="r-rep" className="cursor-pointer">Reprocessável</Label></div>
+                </div>
               </div>
-            </div>
-            <div>
-              <Label>Procedimentos SIGTAP compatíveis</Label>
-              <Textarea
-                value={sigtapProcedures}
-                onChange={e => setSigtapProcedures(e.target.value)}
-                placeholder="Códigos separados por vírgula. Ex: 04.07.04.012-0, 04.07.04.013-9"
-                rows={2}
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* 3. Rastreabilidade */}
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Regras de rastreabilidade</p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-              <div className="flex items-center gap-2"><Switch id="r-lote" checked={requiresLote} onCheckedChange={setRequiresLote} /><Label htmlFor="r-lote" className="cursor-pointer">Exige lote</Label></div>
-              <div className="flex items-center gap-2"><Switch id="r-val" checked={requiresValidade} onCheckedChange={setRequiresValidade} /><Label htmlFor="r-val" className="cursor-pointer">Exige validade</Label></div>
-              <div className="flex items-center gap-2"><Switch id="r-etq" checked={requiresEtiqueta} onCheckedChange={setRequiresEtiqueta} /><Label htmlFor="r-etq" className="cursor-pointer">Exige etiqueta</Label></div>
-              <div className="flex items-center gap-2"><Switch id="r-uu" checked={usoUnico} onCheckedChange={setUsoUnico} /><Label htmlFor="r-uu" className="cursor-pointer">Uso único</Label></div>
-              <div className="flex items-center gap-2"><Switch id="r-rep" checked={reprocessavel} onCheckedChange={setReprocessavel} /><Label htmlFor="r-rep" className="cursor-pointer">Reprocessável</Label></div>
-            </div>
-          </div>
+            </>
+          )}
 
           <Separator />
 
@@ -505,10 +508,12 @@ export default function ProductCatalogModal({ open, onOpenChange, onSaved, editi
                 <Input value={fornecedorPadrao} onChange={e => setFornecedorPadrao(e.target.value)} placeholder="Ex: MedSul Distribuidora" />
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch id="consig" checked={consignado} onCheckedChange={setConsignado} />
-              <Label htmlFor="consig" className="cursor-pointer">Material consignado</Label>
-            </div>
+            {opmeMode && (
+              <div className="flex items-center gap-2">
+                <Switch id="consig" checked={consignado} onCheckedChange={setConsignado} />
+                <Label htmlFor="consig" className="cursor-pointer">Material consignado</Label>
+              </div>
+            )}
           </div>
 
           <Separator />
