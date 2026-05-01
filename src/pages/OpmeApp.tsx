@@ -1799,7 +1799,7 @@ export default function OpmeApp() {
                       </CardContent>
                     </Card>
                   ))}
-                  {form.opme_requested.length < 10 && (
+                  {toList(form.opme_requested).length < 10 && (
                     <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={() => addItem("opme_requested")}>+ Adicionar Material (Até 10)</Button>
                   )}
                 </div>
@@ -2047,8 +2047,8 @@ export default function OpmeApp() {
                     <div className="space-y-3 mt-4">
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Materiais Solicitados</p>
                       <div className="space-y-2">
-                        {form.opme_requested.length > 0 ? (
-                          form.opme_requested.map((item: any, i: number) => (
+                         {toList(form.opme_requested).length > 0 ? (
+                           toList(form.opme_requested).map((item: any, i: number) => (
                             <div key={i} className="bg-white px-3 py-2 rounded-lg border border-slate-100 flex items-center justify-between gap-3">
                               <div className="flex-1 min-w-0">
                                 <p className="text-[11px] font-bold text-slate-800 truncate uppercase">{item.description}</p>
