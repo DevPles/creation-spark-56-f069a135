@@ -1,92 +1,83 @@
-## Problema atual
+## Problemas a corrigir
 
-Quando o **Médico Auditor** marca "Solicitar Justificativa ao Cirurgião" na Validação Pós-OP, o status vai para `aguardando_justificativa` e a Parte 4 abre direto na tela do **cirurgião**. Porém o fluxo está furado:
+A tela de "Justificativa do Cirurgião" (Parte 4 / Step 0) hoje:
 
-1. Quem entra no processo (qualquer perfil) cai direto na tela "Resposta à Auditoria" — não há gating por papel (cirurgião responde, auditor lê).
-2. Após o cirurgião enviar a resposta, o sistema vai **direto** para `pendente_faturamento` — pulando a re-análise do auditor (linha 2932: `updateForm("status", "pendente_faturamento")`).
-3. O auditor nunca tem a oportunidade de **ler a justificativa e decidir** se libera para faturamento ou reprova.
-4. A justificativa do cirurgião é gravada em `incident_description` (campo reaproveitado de outro contexto) — ambíguo.
-5. Não há registro de data/autor da resposta do cirurgião nem da decisão final do auditor sobre a justificativa.
+1. Aceita só texto — sem anexar exames, etiquetas, fotos ou laudos. O auditor não tem evidência para reanalisar.
+2. Mostra o botão "Próximo" do rodapé, permitindo que o cirurgião pule direto para a tela de Faturamento (Step 1) — exatamente o que não pode acontecer.
+3. Mesmo após enviar a justificativa, o status `aguardando_justificativa`/`justificativa_respondida` poderia avançar para `concluido` se alguém forçasse um save da Parte 4. O fluxo correto exige que **só o auditor** decida liberar para Faturamento.
 
-## Fluxo correto a implementar
+## Fluxo correto reforçado
 
 ```text
-Auditor Pós-OP marca "Solicitar Justificativa"
+Auditor pede justificativa
         │
-        ▼
-status = aguardando_justificativa
+        ▼  Parte 4 / Step 0 — APENAS o cirurgião
+Cirurgião:
+  • lê a solicitação
+  • escreve justificativa técnica
+  • ANEXA evidências (1+ arquivo obrigatório: exames, etiqueta, foto, laudo, PDF…)
+  • clica "Enviar Justificativa ao Auditor"
         │
-        ▼  (Parte 4 / Step 0 — visível só para CIRURGIÃO/SOLICITANTE)
-Cirurgião lê a solicitação + escreve justificativa + anexa evidência (opcional)
+        ▼ status = justificativa_respondida
+Auditor (Parte 3 / Step 1) reanalisa → Liberar OU Reprovar/pedir nova
         │
-        ▼
-status = justificativa_respondida   (NOVO status)
-        │
-        ▼  (Parte 3 / Step 1 reaberta — visível só para AUDITOR)
-Auditor lê a justificativa do cirurgião e decide:
-  ├── "Liberar para Faturamento" → status = pendente_faturamento → Parte 4 / Step 1
-  └── "Reprovar / Pedir nova justificativa" → volta a aguardando_justificativa
-        │                                       (com novo motivo do auditor)
-        ▼
-Faturamento conclui → status = concluido
+        ▼ (só após "Liberar") status = pendente_faturamento
+Faturamento conclui
 ```
+
+A Parte 4 / Step 1 (Faturamento) **nunca** pode ser acessada enquanto o status for `aguardando_justificativa` ou `justificativa_respondida`.
 
 ## Mudanças
 
-### 1. Banco (migration)
+### 1. Tela do Cirurgião (Parte 4 / Step 0) — `src/pages/OpmeApp.tsx`
 
-- Adicionar valor ao enum `opme_status`: `'justificativa_respondida'`.
-- Adicionar colunas em `opme_requests`:
-  - `surgeon_justification text` — texto da resposta do cirurgião (substitui o uso ambíguo de `incident_description`).
-  - `surgeon_justification_at timestamptz` — quando enviou.
-  - `surgeon_justification_by text` — e-mail/nome do cirurgião que respondeu.
-  - `surgeon_justification_attachments jsonb default '[]'::jsonb` — anexos opcionais.
-  - `auditor_post_justification_decision text` — `'liberada'` | `'reprovada'`.
-  - `auditor_post_justification_decision_at timestamptz`.
-  - `auditor_post_justification_decision_notes text` — comentário do auditor ao decidir.
-  - Histórico: `justification_round int default 0` — incrementa a cada novo pedido (permite múltiplas rodadas).
+**Adicionar bloco "Evidências Anexadas":**
+- Lista de anexos da rodada atual (estado `surgeonJustificationFiles`).
+- Botão "Adicionar Evidência" abrindo `<input type="file">` com `accept="image/*,application/pdf"` e `multiple`.
+- Cada item mostra nome, tamanho, miniatura (se imagem) e botão remover.
+- Texto auxiliar: "Anexe exames, etiquetas de rastreabilidade, fotos do procedimento, laudos ou qualquer documento que comprove a justificativa."
 
-### 2. `src/pages/OpmeApp.tsx`
+**Validação para enviar:**
+- Botão "Enviar Justificativa ao Auditor" só é habilitado quando:
+  - `surgeon_justification.trim().length > 0` **E**
+  - há pelo menos **1 anexo** com URL válida (após upload).
+- Se faltar algum, exibir hint vermelho explicando o que falta.
 
-**a) Roteamento por status (`loadRequest`):**
-- `aguardando_justificativa` → Parte 4, Step 0 (resposta do cirurgião).
-- `justificativa_respondida` → Parte 3, Step 1 (auditor reanalisa) — abrir uma sub-view "Reanálise da Justificativa" ao invés do form em branco.
+**Persistência ao enviar:**
+- Fazer upload de cada arquivo via `uploadFile` para o bucket `opme-attachments`.
+- Gravar em `surgeon_justification_attachments` (jsonb já existente) array `[{ name, url, mime, size, uploaded_at }]`.
+- Setar `surgeon_justification_at`, `surgeon_justification_by`, `status = "justificativa_respondida"` e chamar `handleSave(true)`.
+- Limpar `surgeonJustificationFiles` após sucesso.
 
-**b) Tela do Cirurgião (Parte 4 / Step 0) — refatorar:**
-- Mostrar o **motivo do auditor** (já existe).
-- Campo `surgeon_justification` em vez de `incident_description`.
-- Mostrar histórico se for re-rodada (`justification_round > 0`): exibir todas as rodadas anteriores (motivo do auditor + resposta do cirurgião + decisão).
-- Botão "Enviar Justificativa ao Auditor" → grava `surgeon_justification`, `surgeon_justification_at = now()`, `surgeon_justification_by = user.email`, status = `justificativa_respondida`.
-- **NÃO** pular para faturamento.
+### 2. Render dos anexos no painel do Auditor (Parte 3 / Step 1)
 
-**c) Tela do Auditor (Parte 3 / Step 1) — adicionar bloco "Análise da Justificativa do Cirurgião":**
-- Visível **somente** quando `status === 'justificativa_respondida'` (ou quando há `surgeon_justification` preenchida em rodadas anteriores).
-- Mostrar destacado: motivo solicitado + resposta do cirurgião + data/autor.
-- Campo "Comentário do auditor sobre a justificativa".
-- Dois botões claros:
-  - **"Liberar para Faturamento"** → `auditor_post_justification_decision = 'liberada'`, status = `pendente_faturamento`.
-  - **"Reprovar e solicitar nova justificativa"** → `decision = 'reprovada'`, incrementa `justification_round`, atualiza `auditor_post_justification_reason` com novo motivo, status volta para `aguardando_justificativa`.
-- Exigir senha (já há fluxo `handleAuditAuth`) para ambas as decisões.
+No bloco amarelo "Reanálise — Justificativa do Cirurgião", abaixo de "Resposta enviada pelo cirurgião":
+- Listar anexos clicáveis (abrir em nova aba). Imagens com thumbnail; PDFs com ícone.
+- No histórico de rodadas anteriores também listar os anexos daquela rodada (preservar `attachments` em `justification_history` ao gerar `newEntry` nos botões "Liberar" e "Reprovar").
 
-**d) Timeline / Status badges:**
-- Adicionar label para `justificativa_respondida`: "Justificativa Recebida — Aguardando Reanálise".
-- Atualizar a etapa 5 da timeline visual (linhas 2358–2370) para refletir as 4 fases: pedida → respondida → liberada/reprovada.
+### 3. Bloquear atalhos do Cirurgião
 
-**e) Lista de trabalho (cards na home):**
-- Filtros e contadores incluindo `justificativa_respondida` (alerta para o auditor agir).
-- Cor distinta (ex: âmbar) para `aguardando_justificativa` (cirurgião) e azul para `justificativa_respondida` (auditor).
+No rodapé global (`<footer>`):
+- Quando `part === 4 && step === 0` (justificativa), **esconder o botão "Próximo"** e o botão verde "Concluir Faturamento". Mostrar apenas "Sair" e a instrução "Use o botão 'Enviar Justificativa ao Auditor' acima". Isso impede que o cirurgião pule para o Step 1 (Faturamento).
+- Em `loadRequest`, manter o roteamento atual: `aguardando_justificativa → Parte 4/Step 0`. Adicionar guarda em `next()`: se `part === 4 && step === 0 && status in ("aguardando_justificativa","justificativa_respondida")`, não avançar.
 
-### 3. `src/integrations/supabase/types.ts`
-- Será regenerado automaticamente após a migration.
+### 4. handleSave — proteção extra
 
-### 4. Compatibilidade
-- Registros antigos com `incident_description` preenchido continuam exibindo o texto como "justificativa legada" no painel do auditor (read-only fallback).
+Em `handleSave`, no ramo `part === 4`:
+- Se `step === 0` e `status === "aguardando_justificativa"` → manter status como `justificativa_respondida` (cirurgião só envia, nunca conclui).
+- Só permitir `nextStatus = "concluido"` quando `step === 1` **E** `status === "pendente_faturamento"`. Caso contrário, abortar com toast.
+
+### 5. Banco
+
+Nenhuma migração necessária — `surgeon_justification_attachments jsonb default '[]'` já existe. Reaproveitar bucket `opme-attachments`.
 
 ## Arquivos afetados
 
-- `supabase/migrations/<novo>.sql` — enum + colunas.
-- `src/pages/OpmeApp.tsx` — roteamento, tela cirurgião, bloco auditor, botões de decisão, timeline, badges.
+- `src/pages/OpmeApp.tsx` — bloco de upload no Step 0 do Part 4, render dos anexos no painel do auditor, persistência em `surgeon_justification_attachments`, ajuste do footer e guardas em `next()`/`handleSave`.
 
 ## Resultado para o usuário
 
-O auditor pede justificativa → o cirurgião é o único que vê a tela de resposta → após enviar, o processo **volta** para o auditor com destaque visual → o auditor lê e decide explicitamente liberar ou pedir de novo → só então segue para faturamento. Cada rodada fica registrada com data, autor e decisão.
+1. Cirurgião abre a justificativa: vê o pedido do auditor, escreve a resposta e **é obrigado a anexar evidências** antes de poder enviar.
+2. O botão "Próximo"/"Concluir Faturamento" desaparece nessa tela — não dá mais para pular para o faturamento.
+3. Auditor recebe a resposta com todos os anexos visíveis e clicáveis, decide Liberar ou Reprovar.
+4. Faturamento só fica acessível após o auditor liberar.
