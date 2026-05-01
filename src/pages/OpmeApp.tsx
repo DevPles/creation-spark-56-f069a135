@@ -463,6 +463,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        else if (safeReq.status === "aguardando_justificativa") { setPart(4); setStep(0); }
        else if (safeReq.status === "justificativa_respondida") { setPart(3); setStep(1); }
        else if (safeReq.status === "pendente_faturamento") { setPart(4); setStep(1); }
+       else if (safeReq.status === "concluido") { setPart(4); setStep(1); }
       else { setPart(1); setStep(0); } // Fallback
      
      // Adicionar ID na URL sem recarregar para manter consistência
