@@ -960,7 +960,19 @@ export default function OpmeApp() {
       }
       else if (part === 5) nextStatus = "pendente_consumo";
       else if (part === 6) nextStatus = "pendente_auditoria_post";
-      else if (part === 4) nextStatus = "concluido";
+      else if (part === 4) {
+        if (step === 0) {
+          // Cirurgião enviando justificativa — nunca conclui.
+          nextStatus = "justificativa_respondida";
+        } else if (step === 1 && form.status === "pendente_faturamento") {
+          // Faturamento só conclui se o auditor já tiver liberado.
+          nextStatus = "concluido";
+        } else {
+          setSaving(false);
+          toast.error("Faturamento só fica disponível após o Médico Auditor liberar a justificativa.");
+          return;
+        }
+      }
 
       // Sincronizar dados do responsável e exames se necessário
       const requester_name = form.requester_name || form.responsible_name;
