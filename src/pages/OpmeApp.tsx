@@ -684,63 +684,219 @@ export default function OpmeApp() {
     return `Solicito justificativa complementar para os seguintes pontos de divergência:\n- ${divergences.join("\n- ")}`;
   };
 
-  const generateAuditDossierPdf = async () => {
-    const { jsPDF } = await import("jspdf");
-    const autoTableModule = await import("jspdf-autotable");
-    const autoTable = autoTableModule.default;
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const requested = toList(form.opme_requested).filter((item: any) => item?.description?.trim());
-    const used = toList(form.opme_used).filter((item: any) => item?.description?.trim() && item?.launched);
-    const divergences = getPostAuditDivergences();
-    const evidence = getTimelineEvidence();
-    const margin = 14;
-    let y = margin;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("Dossiê Auditoria Pós-OP", margin, y);
-    y += 8;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(`Paciente: ${form.patient_name || "Não informado"}`, margin, y); y += 5;
-    doc.text(`Unidade: ${form.facility_unit || "Não informada"} | Data cirurgia: ${formatDateBR(form.procedure_date)}`, margin, y); y += 5;
-    doc.text(`Procedimento: ${form.procedure_name || "Não informado"}`, margin, y); y += 5;
-    doc.text(`SIGTAP: ${form.procedure_sigtap_code || "---"} | AIH: ${form.billing_aih_number || "---"}`, margin, y); y += 8;
-
-    doc.setFont("helvetica", "bold");
-    doc.text("Indicação clínica", margin, y); y += 5;
-    doc.setFont("helvetica", "normal");
-    const indicationLines = doc.splitTextToSize(form.clinical_indication || "Sem indicação clínica registrada.", 182);
-    doc.text(indicationLines, margin, y);
-    y += Math.max(12, indicationLines.length * 5 + 4);
-
-    autoTable(doc, { startY: y, head: [["Material solicitado", "Qtd", "Modelo", "SIGTAP"]], body: requested.map((item: any) => [item.description || "---", item.quantity || "0", item.size_model || "---", item.sigtap || "---"]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
-    y = (doc as any).lastAutoTable.finalY + 6;
+   const generateAuditDossierPdf = async () => {
+     const { jsPDF } = await import("jspdf");
+     const autoTableModule = await import("jspdf-autotable");
+     const autoTable = autoTableModule.default;
+     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+     const requested = toList(form.opme_requested).filter((item: any) => item?.description?.trim());
+     const used = toList(form.opme_used).filter((item: any) => item?.description?.trim() && item?.launched);
+     const divergences = getPostAuditDivergences();
+     const evidence = getTimelineEvidence();
+     const margin = 14;
+     let y = margin;
+ 
+     // Helper para converter imagem para base64
+     const getBase64Image = async (url: string) => {
+       try {
+         const response = await fetch(url);
+         const blob = await response.blob();
+         return new Promise<string>((resolve) => {
+           const reader = new FileReader();
+           reader.onloadend = () => resolve(reader.result as string);
+           reader.readAsDataURL(blob);
+         });
+       } catch (e) {
+         console.error("Erro ao carregar imagem para PDF:", e);
+         return null;
+       }
+     };
+ 
+     // Capa institucional
+     doc.setFont("helvetica", "bold");
+     doc.setFontSize(16);
+     doc.setTextColor(32, 120, 110);
+     doc.text("DOSSIÊ DE AUDITORIA PÓS-OPERATÓRIA", margin, y);
+     doc.setDrawColor(32, 120, 110);
+     doc.setLineWidth(0.5);
+     doc.line(margin, y + 2, 196, y + 2);
+     y += 12;
+ 
+     doc.setFontSize(10);
+     doc.setTextColor(0, 0, 0);
+     doc.setFont("helvetica", "bold");
+     doc.text("1. IDENTIFICAÇÃO DO PACIENTE", margin, y);
+     y += 6;
+     doc.setFont("helvetica", "normal");
+     doc.setFontSize(9);
+     doc.text(`Paciente: ${form.patient_name?.toUpperCase() || "NÃO INFORMADO"}`, margin, y);
+     doc.text(`Prontuário: ${form.patient_record || "---"} | SUS: ${form.patient_sus || "---"}`, 120, y);
+     y += 5;
+     doc.text(`Data Nasc: ${formatDateBR(form.patient_birthdate)} | Nome da Mãe: ${form.patient_mother_name || "---"}`, margin, y);
+     y += 8;
+ 
+     doc.setFont("helvetica", "bold");
+     doc.setFontSize(10);
+     doc.text("2. DADOS DO PROCEDIMENTO", margin, y);
+     y += 6;
+     doc.setFont("helvetica", "normal");
+     doc.setFontSize(9);
+     doc.text(`Cirurgia: ${form.procedure_name?.toUpperCase() || "NÃO INFORMADA"}`, margin, y);
+     y += 5;
+     doc.text(`Data: ${formatDateBR(form.procedure_date)} | Unidade: ${form.facility_unit || "---"} | Sala: ${form.procedure_room || "---"}`, margin, y);
+     y += 5;
+     doc.text(`Cirurgião: ${form.responsible_name || "---"} | SIGTAP: ${form.procedure_sigtap_code || "---"} | AIH: ${form.billing_aih_number || "---"}`, margin, y);
+     y += 8;
+ 
+     doc.setFont("helvetica", "bold");
+     doc.setFontSize(10);
+     doc.text("3. INDICAÇÃO CLÍNICA", margin, y);
+     y += 6;
+     doc.setFont("helvetica", "normal");
+     doc.setFontSize(9);
+     const indicationLines = doc.splitTextToSize(form.clinical_indication || "Nenhuma indicação clínica registrada.", 182);
+     doc.text(indicationLines, margin, y);
+     y += Math.max(8, indicationLines.length * 5 + 4);
+ 
+     // Timeline de Movimentações
+     doc.setFont("helvetica", "bold");
+     doc.setFontSize(10);
+     doc.text("4. LOGS DE RASTREABILIDADE E MOVIMENTAÇÃO", margin, y);
+     y += 4;
+     const logs = [
+       { etapa: "Cadastro Inicial", data: formatDateBR(form.created_at), resp: form.requester_name || "---" },
+       { etapa: "Auditoria Pré-OP", data: formatDateBR(form.auditor_pre_date), resp: form.auditor_pre_name || "---" },
+       { etapa: "Almoxarifado (Recebimento)", data: formatDateBR(form.warehouse_date), resp: form.warehouse_received_by || "---" },
+       { etapa: "CME (Processamento)", data: formatDateBR(form.cme_processing_date), resp: form.cme_responsible || "---" },
+       { etapa: "Despacho para Sala", data: formatDateBR(form.surgery_dispatch_date), resp: form.surgery_dispatch_responsible || "---" },
+       { etapa: "Auditoria Pós-OP", data: formatDateBR(form.auditor_post_date), resp: form.auditor_post_name || "---" }
+     ].filter(l => l.data !== "---");
+ 
+     autoTable(doc, {
+       startY: y,
+       head: [["Etapa do Fluxo", "Data de Conclusão", "Responsável Logístico"]],
+       body: logs.map(l => [l.etapa, l.data, l.resp]),
+       styles: { fontSize: 8 },
+       headStyles: { fillColor: [32, 120, 110] }
+     });
+     y = (doc as any).lastAutoTable.finalY + 8;
+ 
+     // Materiais
+     doc.setFont("helvetica", "bold");
+     doc.setFontSize(10);
+     doc.text("5. CONTROLE DE MATERIAIS (SOLICITADO X CONSUMIDO)", margin, y);
+     y += 4;
      autoTable(doc, { 
        startY: y, 
-       head: [["Material consumido", "Qtd", "Lote", "Lançado por", "Horário"]], 
+       head: [["Material Autorizado", "Qtd", "Modelo", "SIGTAP"]], 
+       body: requested.map((item: any) => [item.description || "---", item.quantity || "0", item.size_model || "---", item.sigtap || "---"]), 
+       styles: { fontSize: 8 }, 
+       headStyles: { fillColor: [70, 70, 70] } 
+     });
+     y = (doc as any).lastAutoTable.finalY + 6;
+ 
+     autoTable(doc, { 
+       startY: y, 
+       head: [["Consumo Efetivo", "Qtd", "Lote", "Validade", "Horário Lançamento"]], 
        body: used.map((item: any) => [
          item.description || "---", 
          item.quantity || "0", 
          item.batch || "---", 
-         item.launched_by?.split('@')[0] || "---",
+         item.expiry || "---",
          item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR') : "---"
        ]), 
        styles: { fontSize: 8 }, 
        headStyles: { fillColor: [32, 120, 110] } 
      });
-    y = (doc as any).lastAutoTable.finalY + 6;
-    autoTable(doc, { startY: y, head: [["Validações de consumo"]], body: (divergences.length ? divergences : ["Sem divergências automáticas identificadas."]).map((text: string) => [text]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
-    y = (doc as any).lastAutoTable.finalY + 6;
-    autoTable(doc, { startY: y, head: [["Etapa", "Data", "Evidência"]], body: evidence.map((item: any) => [item.stage, formatDateBR(item.date), item.type || "Evidência"]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
-    y = (doc as any).lastAutoTable.finalY + 8;
-
-    doc.setFont("helvetica", "bold");
-    doc.text("Parecer final", margin, y); y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text(doc.splitTextToSize(form.auditor_post_final_opinion || "Parecer ainda não preenchido.", 182), margin, y);
-    doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
-  };
+     y = (doc as any).lastAutoTable.finalY + 8;
+ 
+     // Validações
+     doc.setFont("helvetica", "bold");
+     doc.setFontSize(10);
+     doc.text("6. PARECER TÉCNICO E CONFORMIDADE", margin, y);
+     y += 4;
+     autoTable(doc, { 
+       startY: y, 
+       head: [["Análise de Divergências e Inconsistências"]], 
+       body: (divergences.length ? divergences : ["Nenhuma divergência detectada no fluxo de consumo."]).map((text: string) => [text]), 
+       styles: { fontSize: 8 }, 
+       headStyles: { fillColor: divergences.length ? [200, 50, 50] : [32, 120, 110] } 
+     });
+     y = (doc as any).lastAutoTable.finalY + 8;
+ 
+     // Galeria de Imagens (Nova página se necessário)
+     if (evidence.length > 0) {
+       doc.addPage();
+       y = margin;
+       doc.setFont("helvetica", "bold");
+       doc.setFontSize(12);
+       doc.setTextColor(32, 120, 110);
+       doc.text("7. GALERIA DE EVIDÊNCIAS (IMAGENS E RASTREABILIDADE)", margin, y);
+       y += 8;
+ 
+       for (let i = 0; i < evidence.length; i++) {
+         const img = evidence[i];
+         if (!img.url) continue;
+ 
+         if (y > 240) {
+           doc.addPage();
+           y = margin;
+         }
+ 
+         const base64 = await getBase64Image(img.url);
+         if (base64) {
+           try {
+             // Tentar renderizar a imagem (ajustando proporção básica)
+             doc.addImage(base64, 'JPEG', margin, y, 90, 60);
+             doc.setFontSize(8);
+             doc.setFont("helvetica", "bold");
+             doc.setTextColor(50, 50, 50);
+             doc.text(`Evidência #${i + 1}: ${img.stage} - ${img.type || "Imagem"}`, margin, y + 65);
+             doc.setFont("helvetica", "normal");
+             doc.text(`Data: ${formatDateBR(img.date)}`, margin, y + 69);
+             
+             // Alternar entre coluna esquerda e direita se quiser grid, mas para simplicidade faremos lista
+             y += 80;
+           } catch (e) {
+             doc.setFontSize(8);
+             doc.setTextColor(200, 0, 0);
+             doc.text(`[Erro ao carregar imagem: ${img.type}]`, margin, y);
+             y += 10;
+           }
+         }
+       }
+     }
+ 
+     // Parecer Final
+     if (y > 250) {
+       doc.addPage();
+       y = margin;
+     } else {
+       y += 10;
+     }
+ 
+     doc.setFont("helvetica", "bold");
+     doc.setFontSize(10);
+     doc.setTextColor(0, 0, 0);
+     doc.text("8. CONCLUSÃO DA AUDITORIA", margin, y);
+     y += 6;
+     doc.setFont("helvetica", "normal");
+     doc.setFontSize(9);
+     const opinionLines = doc.splitTextToSize(form.auditor_post_final_opinion || "Auditoria concluída sem parecer textual específico.", 182);
+     doc.text(opinionLines, margin, y);
+     y += Math.max(20, opinionLines.length * 5 + 10);
+ 
+     // Assinatura
+     doc.setFont("helvetica", "bold");
+     doc.line(margin + 50, y, 146, y);
+     y += 5;
+     doc.text(form.auditor_post_name || "MÉDICO AUDITOR", 105, y, { align: "center" });
+     y += 4;
+     doc.setFontSize(8);
+     doc.text(`CRM: ${form.auditor_post_crm || "---"} | Data: ${formatDateBR(form.auditor_post_date)}`, 105, y, { align: "center" });
+ 
+     doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
+   };
 
   const handleSave = async (isAuthValidated = false) => {
     if (!user) { toast.error("Não autenticado"); return; }
