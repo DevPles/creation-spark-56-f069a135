@@ -480,7 +480,8 @@ export default function OpmeApp() {
   };
 
   const uploadFile = async (file: File, bucket: string = "opme-attachments"): Promise<string | null> => {
-    const ext = file.name.split(".").pop();
+    if (!isUploadableFile(file)) return null;
+    const ext = getFileExtension(file);
     const path = `${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from(bucket).upload(path, file);
     if (error) {
@@ -492,9 +493,10 @@ export default function OpmeApp() {
   };
 
   const uploadExamFiles = async (exams: any[]): Promise<any[]> => {
-    const results = [...exams];
+    const results = (Array.isArray(exams) ? exams : []).map((exam) => ({ ...(exam || {}) }));
     for (let i = 0; i < results.length; i++) {
-      if (results[i].file && !results[i].url.startsWith("http")) {
+      const currentUrl = results[i]?.url;
+      if (isUploadableFile(results[i]?.file) && !isRemoteUrl(currentUrl)) {
         const url = await uploadFile(results[i].file);
         if (url) {
           results[i].url = url;
@@ -503,7 +505,9 @@ export default function OpmeApp() {
         }
       }
     }
-    return results.map(({ file, ...rest }) => rest);
+    return results
+      .filter((exam) => isRemoteUrl(exam?.url))
+      .map(({ file, ...rest }) => rest);
   };
 
   const updateItem = (idx: number, field: string, value: any, listName: string = "opme_requested") => {
