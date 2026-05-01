@@ -1520,15 +1520,6 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         </header>
       )}
 
-      <div className="flex h-1 bg-slate-200">
-        {STEPS.map((_, i) => (
-          <div 
-            key={i} 
-            className={`flex-1 transition-all duration-300 ${i <= step ? "bg-primary" : ""}`} 
-          />
-        ))}
-      </div>
-
       <main className="flex-1 p-4 pb-24">
         {embedded && (
           <div className="mb-3">

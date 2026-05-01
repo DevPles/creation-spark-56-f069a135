@@ -195,8 +195,42 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
     const cadastroOk = !!(form.patient_name && form.patient_record && form.facility_unit);
     const procedimentoOk = !!(form.procedure_name && form.procedure_sigtap_code && form.procedure_date);
     const aihOk = !!(form.billing_aih_number && form.billing_aih_file_url);
+    // Risco de glosa (calculado automaticamente) e valor financeiro em risco
+    const usedNow = Array.isArray(form.opme_used) ? form.opme_used.filter((u: any) => u?.launched) : [];
+    const baseTotal = sumOpme(usedNow.length ? usedNow : (Array.isArray(form.opme_requested) ? form.opme_requested : []));
+    const glosaPct = glosaAuto.level === "alto" ? 0.6 : glosaAuto.level === "medio" ? 0.25 : 0.05;
+    const glosaValue = baseTotal * glosaPct;
+    const riskColor =
+      glosaAuto.level === "alto" ? "bg-rose-50 border-rose-200 text-rose-700" :
+      glosaAuto.level === "medio" ? "bg-amber-50 border-amber-200 text-amber-700" :
+      "bg-emerald-50 border-emerald-200 text-emerald-700";
     return (
       <div className="space-y-3">
+        {/* Risco e Valor de Glosa — destaque no topo do Resumo */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div className={`rounded-xl border p-3 ${riskColor}`}>
+            <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">Risco de Glosa</div>
+            <div className="text-lg font-black uppercase mt-1">{glosaAuto.level === "baixo" ? "Baixo" : glosaAuto.level === "medio" ? "Médio" : "Alto"}</div>
+            <div className="text-[10px] font-medium opacity-70 mt-0.5">Score automático: {glosaAuto.score}</div>
+          </div>
+          <div className={`rounded-xl border p-3 ${riskColor}`}>
+            <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">Valor estimado em risco</div>
+            <div className="text-lg font-black mt-1">{formatBRL(glosaValue)}</div>
+            <div className="text-[10px] font-medium opacity-70 mt-0.5">{(glosaPct * 100).toFixed(0)}% sobre {formatBRL(baseTotal)}</div>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Principais fatores</div>
+            {glosaAuto.reasons.length === 0 ? (
+              <div className="text-[11px] text-emerald-700 font-medium mt-1">Nenhum fator de risco identificado.</div>
+            ) : (
+              <ul className="text-[10px] text-slate-600 mt-1 space-y-0.5 list-disc list-inside">
+                {glosaAuto.reasons.slice(0, 3).map((r, i) => (<li key={i} className="truncate">{r}</li>))}
+                {glosaAuto.reasons.length > 3 && (<li className="text-slate-400 italic">+{glosaAuto.reasons.length - 3} outro(s)…</li>)}
+              </ul>
+            )}
+          </div>
+        </div>
+
         <Accordion title="Identificação do Paciente" defaultOpen status={cadastroOk ? "ok" : "pending"}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <ReadOnlyField label="Unidade de Saúde" value={form.facility_unit} />
