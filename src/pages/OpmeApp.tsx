@@ -2796,7 +2796,14 @@ export default function OpmeApp() {
                       
                       <Select onValueChange={(v) => {
                         if (!v) return;
-                        const newExam = { id: Math.random().toString(36), type: v, date: new Date().toISOString().split('T')[0], file: null, url: "" };
+                        const newExam = { 
+                          id: Math.random().toString(36), 
+                          type: v, 
+                          date: new Date().toISOString().split('T')[0], 
+                          file: null, 
+                          url: "",
+                          category: v === "Etiqueta/Rastreabilidade" ? "tracking" : "intra"
+                        };
                         setPostopExams(prev => [...prev, newExam]);
                       }}>
                         <SelectTrigger className="h-10 bg-white border-slate-200 text-xs font-bold uppercase">
