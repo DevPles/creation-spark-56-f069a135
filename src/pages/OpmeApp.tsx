@@ -1290,6 +1290,44 @@ export default function OpmeApp() {
     );
   }
 
+  const sendSurgeonJustification = async () => {
+    if (uploadingJustification || saving) return;
+    if (!(form.surgeon_justification || "").trim()) { toast.error("Preencha a justificativa técnica."); return; }
+    setUploadingJustification(true);
+    try {
+      const uploaded: Array<{ name: string; url: string; mime: string; size: number; uploaded_at: string }> = [];
+      for (const item of surgeonJustificationFiles) {
+        const url = await uploadFile(item.file);
+        if (!url) {
+          toast.error(`Falha no upload do anexo ${item.name}.`);
+          setUploadingJustification(false);
+          return;
+        }
+        uploaded.push({
+          name: item.name,
+          url,
+          mime: item.mime,
+          size: item.size,
+          uploaded_at: new Date().toISOString(),
+        });
+      }
+      const previousAttachments = Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [];
+      setForm((p: any) => ({
+        ...p,
+        surgeon_justification_at: new Date().toISOString(),
+        surgeon_justification_by: user?.email || user?.id || "Cirurgião",
+        surgeon_justification_attachments: [...previousAttachments, ...uploaded],
+        status: "justificativa_respondida",
+      }));
+      setSurgeonJustificationFiles([]);
+      setTimeout(() => handleSave(true), 50);
+    } catch (err: any) {
+      toast.error(err?.message || "Erro ao enviar justificativa.");
+    } finally {
+      setUploadingJustification(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
