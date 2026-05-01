@@ -88,7 +88,7 @@ export default function OpmeApp() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const recordId = searchParams.get("id");
+  const [recordId, setRecordId] = useState<string | null>(searchParams.get("id"));
   const [part, setPart] = useState<number | null>(null);
    const [preopExams, setPreopExams] = useState<any[]>([]);
     const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
@@ -438,6 +438,7 @@ export default function OpmeApp() {
      const newUrl = new URL(window.location.href);
       newUrl.searchParams.set("id", safeReq.id);
      window.history.pushState({}, '', newUrl);
+      setRecordId(safeReq.id);
    };
 
   useEffect(() => {
@@ -1037,6 +1038,7 @@ export default function OpmeApp() {
         newUrl.searchParams.set("id", result.data.id);
         window.history.pushState({}, '', newUrl);
         setForm(result.data);
+        setRecordId(result.data.id);
       }
       
       toast.success("Pedido enviado com sucesso!");

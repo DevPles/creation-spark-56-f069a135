@@ -1,0 +1,1 @@
+DELETE FROM public.opme_requests WHERE id IN ('dd91db34-f9c8-44bf-ac63-147e68584ed7','8e0ea2ba-a5a4-4d8c-bd06-1b24638819b6');
