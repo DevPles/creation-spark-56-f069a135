@@ -395,18 +395,35 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
         <Accordion title="Risco de Glosa" defaultOpen status={form.billing_glosa_risk === "baixo" ? "ok" : form.billing_glosa_risk ? "warn" : "pending"}>
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">Nível de Risco</Label>
-              <Select value={form.billing_glosa_risk || ""} onValueChange={v => updateForm("billing_glosa_risk", v)}>
-                <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Avalie o risco" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="baixo">Baixo</SelectItem>
-                  <SelectItem value="medio">Médio</SelectItem>
-                  <SelectItem value="alto">Alto</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-xs font-semibold uppercase text-slate-500">Nível de Risco (calculado automaticamente)</Label>
+              <div className={`min-h-12 flex items-center justify-between gap-3 px-4 py-3 rounded-md border text-sm font-bold uppercase ${
+                glosaAuto.level === "baixo" ? "bg-emerald-50 border-emerald-200 text-emerald-700" :
+                glosaAuto.level === "medio" ? "bg-amber-50 border-amber-200 text-amber-700" :
+                "bg-rose-50 border-rose-200 text-rose-700"
+              }`}>
+                <span>{glosaAuto.level === "baixo" ? "Baixo" : glosaAuto.level === "medio" ? "Médio" : "Alto"}</span>
+                <span className="text-[10px] font-medium">Score: {glosaAuto.score}</span>
+              </div>
             </div>
+            {glosaAuto.reasons.length > 0 ? (
+              <div className="space-y-2">
+                <Label className="text-[10px] font-semibold uppercase text-slate-500">Fatores que compõem o risco</Label>
+                <ul className="space-y-1">
+                  {glosaAuto.reasons.map((r, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[11px] text-slate-700 bg-white border border-slate-200 rounded-md p-2">
+                      <AlertCircle size={12} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                      <span>{r}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-3 text-[11px] text-emerald-700 font-medium">
+                ✓ Nenhum fator de risco identificado — processo conforme.
+              </div>
+            )}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">Observações sobre Glosa</Label>
+              <Label className="text-xs font-semibold uppercase text-slate-500">Observações Complementares</Label>
               <Textarea
                 value={form.billing_glosa_observations || ""}
                 onChange={e => updateForm("billing_glosa_observations", e.target.value)}
