@@ -2173,8 +2173,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                             ) : item.description?.length > 2 ? (
                               <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
                             ) : null}
-                            {materialSuggestions.idx === idx && (materialSuggestions.listName ?? "opme_requested") === "opme_requested" && materialSuggestions.items.length > 0 && (
-                              <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-auto">
+                              {materialSuggestions.idx === idx && (materialSuggestions.listName ?? "opme_requested") === "opme_requested" && materialSuggestions.items.length > 0 && (
+                              <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-[55vh] overflow-y-auto overscroll-contain pb-2 pr-1">
                                 {materialSuggestions.items.map((m: any) => (
                                   <button key={m.product_id || m.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
                                     const arr = [...toList(form.opme_requested)];
