@@ -94,6 +94,9 @@ export default function OpmeApp() {
     const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
     const [postopExams, setPostopExams] = useState<any[]>([]);
     const [aihFile, setAihFile] = useState<File | null>(null);
+    // Anexos da rodada atual de justificativa do cirurgião (somente em memória até o envio)
+    const [surgeonJustificationFiles, setSurgeonJustificationFiles] = useState<Array<{ id: string; file: File; name: string; size: number; mime: string; previewUrl: string }>>([]);
+    const [uploadingJustification, setUploadingJustification] = useState(false);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -957,7 +960,19 @@ export default function OpmeApp() {
       }
       else if (part === 5) nextStatus = "pendente_consumo";
       else if (part === 6) nextStatus = "pendente_auditoria_post";
-      else if (part === 4) nextStatus = "concluido";
+      else if (part === 4) {
+        if (step === 0) {
+          // Cirurgião enviando justificativa — nunca conclui.
+          nextStatus = "justificativa_respondida";
+        } else if (step === 1 && form.status === "pendente_faturamento") {
+          // Faturamento só conclui se o auditor já tiver liberado.
+          nextStatus = "concluido";
+        } else {
+          setSaving(false);
+          toast.error("Faturamento só fica disponível após o Médico Auditor liberar a justificativa.");
+          return;
+        }
+      }
 
       // Sincronizar dados do responsável e exames se necessário
       const requester_name = form.requester_name || form.responsible_name;
@@ -1052,6 +1067,11 @@ export default function OpmeApp() {
   };
 
   const next = () => {
+    // GUARDA: cirurgião na tela de justificativa NUNCA pode pular para faturamento.
+    if (part === 4 && step === 0 && (form.status === "aguardando_justificativa" || form.status === "justificativa_respondida")) {
+      toast.error("Use o botão 'Enviar Justificativa ao Auditor'. Só o auditor pode liberar o faturamento.");
+      return;
+    }
     // Sincronizar dados do responsável ao avançar da Parte 1 para a Parte 2
     if (part === 1 && step === STEPS.length - 1) {
       setForm((p: any) => ({
@@ -2188,6 +2208,29 @@ export default function OpmeApp() {
                                 Enviada por <span className="font-bold">{shortActorName(form.surgeon_justification_by)}</span> em {new Date(form.surgeon_justification_at).toLocaleString('pt-BR')}
                               </p>
                             )}
+                            {Array.isArray(form.surgeon_justification_attachments) && form.surgeon_justification_attachments.length > 0 && (
+                              <div className="mt-3 pt-2 border-t border-amber-100 space-y-1">
+                                <p className="text-[9px] font-bold uppercase text-amber-800">Evidências anexadas ({form.surgeon_justification_attachments.length})</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {form.surgeon_justification_attachments.map((a: any, idx: number) => (
+                                    <a
+                                      key={idx}
+                                      href={a.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 p-1.5 transition-colors"
+                                    >
+                                      {a.mime?.startsWith?.("image/") ? (
+                                        <img src={a.url} alt={a.name} className="w-9 h-9 object-cover rounded" />
+                                      ) : (
+                                        <div className="w-9 h-9 flex items-center justify-center rounded bg-white border text-[8px] font-bold text-slate-500 uppercase">PDF</div>
+                                      )}
+                                      <span className="text-[10px] text-slate-700 truncate flex-1">{a.name || `arquivo ${idx + 1}`}</span>
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -2237,6 +2280,7 @@ export default function OpmeApp() {
                                     surgeon_justification: form.surgeon_justification || "",
                                     surgeon_justification_at: form.surgeon_justification_at || null,
                                     surgeon_justification_by: form.surgeon_justification_by || null,
+                                    attachments: Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [],
                                     decision: "liberada",
                                     decision_at: new Date().toISOString(),
                                     decision_by: user?.email || user?.id || "Auditor",
@@ -2266,6 +2310,7 @@ export default function OpmeApp() {
                                     surgeon_justification: form.surgeon_justification || "",
                                     surgeon_justification_at: form.surgeon_justification_at || null,
                                     surgeon_justification_by: form.surgeon_justification_by || null,
+                                    attachments: Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [],
                                     decision: "reprovada",
                                     decision_at: new Date().toISOString(),
                                     decision_by: user?.email || user?.id || "Auditor",
@@ -2281,6 +2326,7 @@ export default function OpmeApp() {
                                     surgeon_justification: "",
                                     surgeon_justification_at: null,
                                     surgeon_justification_by: null,
+                                    surgeon_justification_attachments: [],
                                     auditor_post_justification_decision_notes: "",
                                     status: "justificativa_respondida" // handleSave usa decision=reprovada para mandar de volta
                                   }));
@@ -3095,6 +3141,11 @@ export default function OpmeApp() {
                         <p className="font-bold text-slate-600 uppercase">Rodada {(h.round ?? i) + 1}</p>
                         <p className="text-slate-700"><span className="font-semibold">Motivo do auditor:</span> {h.auditor_reason || '---'}</p>
                         <p className="text-slate-700"><span className="font-semibold">Resposta:</span> {h.surgeon_justification || '---'}</p>
+                        {Array.isArray(h.attachments) && h.attachments.length > 0 && (
+                          <p className="text-slate-600"><span className="font-semibold">Anexos:</span> {h.attachments.map((a: any, k: number) => (
+                            <a key={k} href={a.url} target="_blank" rel="noreferrer" className="underline text-primary mr-2">{a.name || `arquivo ${k + 1}`}</a>
+                          ))}</p>
+                        )}
                         {h.decision && (
                           <p className="text-slate-600 italic">
                             Decisão do auditor: <span className={h.decision === 'liberada' ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>{h.decision === 'liberada' ? 'LIBERADA' : 'REPROVADA — nova justificativa solicitada'}</span>
@@ -3120,17 +3171,120 @@ export default function OpmeApp() {
                   />
                   <p className="text-[10px] text-slate-500">Sua resposta retorna ao Médico Auditor para reanálise. Somente após a liberação do auditor o processo segue para o faturamento.</p>
                 </div>
+
+                {/* === EVIDÊNCIAS OBRIGATÓRIAS === */}
+                <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Evidências Anexadas <span className="text-rose-600">*</span></Label>
+                    <span className="text-[9px] font-bold uppercase text-slate-400">{surgeonJustificationFiles.length} arquivo(s)</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500">Anexe exames, etiquetas de rastreabilidade, fotos do procedimento, laudos ou qualquer documento que comprove a justificativa. Pelo menos um anexo é obrigatório.</p>
+
+                  <div className="relative">
+                    <Button type="button" variant="outline" className="w-full h-10 text-xs font-bold uppercase border-dashed">
+                      + Adicionar Evidência
+                    </Button>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,application/pdf"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        if (!files.length) return;
+                        const additions = files.map((f) => ({
+                          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                          file: f,
+                          name: f.name,
+                          size: f.size,
+                          mime: f.type || "application/octet-stream",
+                          previewUrl: f.type?.startsWith("image/") ? URL.createObjectURL(f) : "",
+                        }));
+                        setSurgeonJustificationFiles((prev) => [...prev, ...additions]);
+                        e.target.value = "";
+                      }}
+                    />
+                  </div>
+
+                  {surgeonJustificationFiles.length > 0 && (
+                    <div className="space-y-2 pt-1">
+                      {surgeonJustificationFiles.map((a) => (
+                        <div key={a.id} className="flex items-center gap-3 bg-white p-2 rounded border border-slate-200">
+                          {a.previewUrl ? (
+                            <img src={a.previewUrl} alt={a.name} className="w-10 h-10 object-cover rounded border" />
+                          ) : (
+                            <div className="w-10 h-10 flex items-center justify-center rounded border bg-slate-50 text-[9px] font-bold text-slate-500 uppercase">PDF</div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-medium text-slate-700 truncate">{a.name}</p>
+                            <p className="text-[9px] text-slate-400">{(a.size / 1024).toFixed(0)} KB</p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-[10px] text-rose-600 hover:bg-rose-50"
+                            onClick={() => setSurgeonJustificationFiles((prev) => prev.filter((x) => x.id !== a.id))}
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {(!((form.surgeon_justification || "").trim()) || surgeonJustificationFiles.length === 0) && (
+                    <p className="text-[10px] text-rose-600 font-medium">
+                      {!((form.surgeon_justification || "").trim()) ? "Preencha a justificativa técnica." : "Anexe ao menos uma evidência para enviar."}
+                    </p>
+                  )}
+                </div>
+
                 <Button
                   className="w-full h-12 bg-primary"
-                  disabled={saving || !(form.surgeon_justification || "").trim()}
-                  onClick={() => {
-                    updateForm("surgeon_justification_at", new Date().toISOString());
-                    updateForm("surgeon_justification_by", user?.email || user?.id || "Cirurgião");
-                    updateForm("status", "justificativa_respondida");
-                    setTimeout(() => handleSave(true), 50);
+                  disabled={saving || uploadingJustification || !(form.surgeon_justification || "").trim() || surgeonJustificationFiles.length === 0}
+                  onClick={async () => {
+                    if (uploadingJustification || saving) return;
+                    if (!(form.surgeon_justification || "").trim()) { toast.error("Preencha a justificativa técnica."); return; }
+                    if (surgeonJustificationFiles.length === 0) { toast.error("Anexe ao menos uma evidência."); return; }
+
+                    setUploadingJustification(true);
+                    try {
+                      const uploaded: Array<{ name: string; url: string; mime: string; size: number; uploaded_at: string }> = [];
+                      for (const item of surgeonJustificationFiles) {
+                        const url = await uploadFile(item.file);
+                        if (!url) {
+                          toast.error(`Falha no upload do anexo ${item.name}.`);
+                          setUploadingJustification(false);
+                          return;
+                        }
+                        uploaded.push({
+                          name: item.name,
+                          url,
+                          mime: item.mime,
+                          size: item.size,
+                          uploaded_at: new Date().toISOString(),
+                        });
+                      }
+
+                      const previousAttachments = Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [];
+                      setForm((p: any) => ({
+                        ...p,
+                        surgeon_justification_at: new Date().toISOString(),
+                        surgeon_justification_by: user?.email || user?.id || "Cirurgião",
+                        surgeon_justification_attachments: [...previousAttachments, ...uploaded],
+                        status: "justificativa_respondida",
+                      }));
+                      setSurgeonJustificationFiles([]);
+                      setTimeout(() => handleSave(true), 50);
+                    } catch (err: any) {
+                      toast.error(err?.message || "Erro ao enviar justificativa.");
+                    } finally {
+                      setUploadingJustification(false);
+                    }
                   }}
                 >
-                  {saving ? "Enviando..." : "Enviar Justificativa ao Auditor"}
+                  {uploadingJustification ? "Enviando anexos..." : (saving ? "Enviando..." : "Enviar Justificativa ao Auditor")}
                 </Button>
               </div>
             )}
@@ -3208,7 +3362,11 @@ export default function OpmeApp() {
           </Button>
         )}
         
-        {(step < STEPS.length - 1 && part !== 3) ? (
+        {(part === 4 && step === 0) ? (
+          <div className="flex-[2] h-12 flex items-center justify-center text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 text-center">
+            Use o botão "Enviar Justificativa ao Auditor" acima
+          </div>
+        ) : (step < STEPS.length - 1 && part !== 3) ? (
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
             Próximo
           </Button>
