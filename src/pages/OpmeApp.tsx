@@ -2377,7 +2377,7 @@ export default function OpmeApp() {
                        <div className="space-y-2">
                                   {(() => {
                                     const auditDivergences = getPostAuditDivergences();
-                                    const missingPhotos = form.opme_used?.some((i: any) => i.launched && !i.photo_url);
+                                    const missingPhotos = toList(form.opme_used).some((i: any) => i?.launched && !i.photo_url);
                                     
                                     if (auditDivergences.length === 0 && !missingPhotos) {
                                       return (
