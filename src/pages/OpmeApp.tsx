@@ -1038,6 +1038,7 @@ export default function OpmeApp() {
         newUrl.searchParams.set("id", result.data.id);
         window.history.pushState({}, '', newUrl);
         setForm(result.data);
+        setRecordId(result.data.id);
       }
       
       toast.success("Pedido enviado com sucesso!");
