@@ -17,6 +17,7 @@ export interface ContractData {
   pdfUrl?: string;
   rubricas?: Rubrica[];
   notificationEmail?: string;
+  cnes?: string;
 }
 
 export interface ContractFormModalProps {

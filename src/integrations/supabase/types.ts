@@ -250,6 +250,7 @@ export type Database = {
       }
       contracts: {
         Row: {
+          cnes: string | null
           created_at: string
           goals: number
           id: string
@@ -266,6 +267,7 @@ export type Database = {
           variable: number
         }
         Insert: {
+          cnes?: string | null
           created_at?: string
           goals?: number
           id?: string
@@ -282,6 +284,7 @@ export type Database = {
           variable?: number
         }
         Update: {
+          cnes?: string | null
           created_at?: string
           goals?: number
           id?: string

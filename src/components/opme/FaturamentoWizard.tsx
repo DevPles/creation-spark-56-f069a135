@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useContracts } from "@/contexts/ContractsContext";
 
 interface FaturamentoWizardProps {
   step: number;
@@ -54,6 +55,18 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
 };
 
 export default function FaturamentoWizard({ step, form, updateForm, user }: FaturamentoWizardProps) {
+  const { contracts } = useContracts();
+  const unitContract = contracts.find(c => c.unit === form.facility_unit);
+  const autoCnes = unitContract?.cnes || "";
+
+  // Auto-fill CNES from the unit's contract if missing
+  useEffect(() => {
+    if (autoCnes && !form.billing_cnes) {
+      updateForm("billing_cnes", autoCnes);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCnes]);
+
   // ====== TELA 1 — RESUMO DO CASO ======
   if (step === 1) {
     const cadastroOk = !!(form.patient_name && form.patient_record && form.facility_unit);
@@ -93,8 +106,10 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+            <ReadOnlyField label="Data Internação" value={form.billing_admission_date} placeholder="Pendente — preencher no Cadastro" />
+            <ReadOnlyField label="Data Alta" value={form.billing_discharge_date} placeholder="Pendente — preencher no Cadastro" />
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de AIH</Label>
+              <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de AIH (Faturista)</Label>
               <Select value={form.billing_aih_type || ""} onValueChange={v => updateForm("billing_aih_type", v)}>
                 <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
@@ -103,14 +118,6 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
                   <SelectItem value="longa_permanencia">Longa Permanência</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">Data Internação</Label>
-              <Input type="date" value={form.billing_admission_date || ""} onChange={e => updateForm("billing_admission_date", e.target.value)} className="h-12 bg-white" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">Data Alta</Label>
-              <Input type="date" value={form.billing_discharge_date || ""} onChange={e => updateForm("billing_discharge_date", e.target.value)} className="h-12 bg-white" />
             </div>
           </div>
         </Accordion>
@@ -137,10 +144,14 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
               <Label className="text-xs font-semibold uppercase text-slate-500">CID Secundário</Label>
               <Input value={form.billing_cid_secondary || ""} onChange={e => updateForm("billing_cid_secondary", e.target.value)} placeholder="Opcional" className="h-12 bg-white" />
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">CNES da Unidade</Label>
-              <Input value={form.billing_cnes || ""} onChange={e => updateForm("billing_cnes", e.target.value)} placeholder="0000000" className="h-12 bg-white" />
-            </div>
+            {autoCnes ? (
+              <ReadOnlyField label="CNES da Unidade" value={form.billing_cnes || autoCnes} placeholder="Cadastre em Contratos" />
+            ) : (
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold uppercase text-slate-500">CNES da Unidade</Label>
+                <Input value={form.billing_cnes || ""} onChange={e => updateForm("billing_cnes", e.target.value)} placeholder="Cadastre em Contratos" className="h-12 bg-white" />
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
             <div className="space-y-2">
