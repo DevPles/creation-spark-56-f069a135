@@ -67,6 +67,97 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCnes]);
 
+  // Auto-fill Caráter de Atendimento from procedure_type (Procedimento)
+  useEffect(() => {
+    if (form.procedure_type && form.billing_attendance_character !== form.procedure_type) {
+      updateForm("billing_attendance_character", form.procedure_type);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.procedure_type]);
+
+  // ====== CÁLCULO AUTOMÁTICO DO RISCO DE GLOSA ======
+  // Score completo: checklist + justificativas + valor (qtd itens) + tempo de internação
+  const computeGlosaScore = () => {
+    const reasons: string[] = [];
+    let score = 0; // 0 = baixo, quanto maior pior
+
+    // 1) Checklist de documentação (peso alto)
+    const docs = form.billing_docs || {};
+    const requiredDocs = ["nf", "rastreabilidade", "laudo", "consumo", "exames", "aih_anexa", "termo_consentimento"];
+    const missingDocs = requiredDocs.filter(d => !docs[d]);
+    if (missingDocs.length >= 3) { score += 3; reasons.push(`${missingDocs.length} documentos obrigatórios faltando`); }
+    else if (missingDocs.length > 0) { score += 1; reasons.push(`${missingDocs.length} documento(s) faltando`); }
+
+    // 2) Justificativa do cirurgião exigida pelo auditor (sinal forte de glosa)
+    if (form.auditor_post_justification_requested || Number(form.justification_round || 0) > 0) {
+      score += 2;
+      reasons.push("Caso passou por reanálise/justificativa do cirurgião");
+    }
+
+    // 3) Divergência OPME utilizado x faturado
+    if (form.billing_opme_compatibility === "nao") {
+      score += 3;
+      reasons.push("Divergência crítica entre OPME utilizado e faturado");
+    } else if (form.billing_opme_compatibility === "parcial") {
+      score += 1;
+      reasons.push("Divergência parcial OPME utilizado x faturado");
+    }
+
+    // 4) Auditoria pós sem aprovação clara
+    const auditOk = form.auditor_post_final_opinion === "aprovado" || form.auditor_post_final_opinion === "liberado";
+    if (!auditOk && form.auditor_post_final_opinion) {
+      score += 2;
+      reasons.push("Auditoria pós sem parecer favorável");
+    }
+
+    // 5) Rastreabilidade incompleta nos itens utilizados
+    const used = Array.isArray(form.opme_used) ? form.opme_used : [];
+    const launched = used.filter((u: any) => u?.launched);
+    const semRastreio = launched.filter((u: any) => !u?.batch || !u?.photo_url);
+    if (launched.length > 0 && semRastreio.length > 0) {
+      score += semRastreio.length >= launched.length ? 2 : 1;
+      reasons.push(`${semRastreio.length}/${launched.length} item(ns) sem lote/etiqueta`);
+    }
+
+    // 6) Volume de itens (proxy de valor — quanto mais alto, maior exposição)
+    if (launched.length >= 5) { score += 1; reasons.push(`Alto volume de itens (${launched.length})`); }
+
+    // 7) Tempo de internação acima da média (>15 dias = alta exposição)
+    if (form.billing_admission_date && form.billing_discharge_date) {
+      const a = new Date(form.billing_admission_date);
+      const b = new Date(form.billing_discharge_date);
+      const dias = Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+      if (dias > 30) { score += 2; reasons.push(`Internação prolongada (${dias} dias)`); }
+      else if (dias > 15) { score += 1; reasons.push(`Internação acima da média (${dias} dias)`); }
+    }
+
+    // 8) Autorização prévia ausente
+    if (form.billing_prior_authorization === "nao") {
+      score += 2;
+      reasons.push("Sem autorização prévia");
+    }
+
+    // 9) AIH ou CID ausentes
+    if (!form.billing_aih_number) { score += 2; reasons.push("AIH não informada"); }
+    if (!form.billing_cid_main) { score += 1; reasons.push("CID Principal ausente"); }
+
+    let level: "baixo" | "medio" | "alto" = "baixo";
+    if (score >= 5) level = "alto";
+    else if (score >= 2) level = "medio";
+
+    return { level, score, reasons };
+  };
+
+  const glosaAuto = computeGlosaScore();
+
+  // Persistir nível calculado automaticamente
+  useEffect(() => {
+    if (form.billing_glosa_risk !== glosaAuto.level) {
+      updateForm("billing_glosa_risk", glosaAuto.level);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [glosaAuto.level]);
+
   // ====== TELA 1 — RESUMO DO CASO ======
   if (step === 1) {
     const cadastroOk = !!(form.patient_name && form.patient_record && form.facility_unit);
