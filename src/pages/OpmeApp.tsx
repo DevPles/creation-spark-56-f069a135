@@ -170,6 +170,21 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 part === 6 ? STEPS_CONSUMO :
                 STEPS_FATURAMENTO;
 
+  const PART_NAMES: Record<number, string> = {
+    1: "Cadastro",
+    2: "Requisição",
+    3: "Auditoria",
+    4: "Faturamento",
+    5: "Controle",
+    6: "Consumo",
+  };
+  const currentStepTitle = STEPS[step]?.title || "Solicitação OPME";
+  const currentStepDescription = STEPS[step]?.description || "";
+  const currentPartName = part ? PART_NAMES[part] : "";
+  const headerSubtitle = currentPartName
+    ? `${currentPartName}${currentStepDescription ? ` · ${currentStepDescription}` : ""}`
+    : currentStepDescription;
+
    const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
     status: "rascunho",
