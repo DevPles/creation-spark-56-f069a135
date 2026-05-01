@@ -546,7 +546,7 @@ export default function OpmeApp() {
       patient_sus: "",
       responsible_name: "",
       responsible_register: "",
-      procedure_date: new Date().toISOString().split("T")[0],
+      procedure_date: todayISO(),
       procedure_type: "eletivo",
       procedure_name: "",
       procedure_sigtap_code: "",
