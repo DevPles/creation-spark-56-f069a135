@@ -557,36 +557,67 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     });
 
     if (field === "description" && value.length > 2 && listName === "opme_requested") {
-      // Busca no catálogo de produtos (somente OPME) e traz preço de referência
-      supabase
-        .from("product_catalog")
-        .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme")
-        .or(`tipo.eq.IMP,classificacao.eq.implante`)
-        .or(`descricao.ilike.%${value}%,descricao_resumida.ilike.%${value}%,codigo.ilike.%${value}%`)
-        .eq("ativo", true)
-        .limit(8)
-        .then(async ({ data }) => {
-          const items = data || [];
-          // Para cada produto, buscar último preço praticado em price_history
-          const enriched = await Promise.all(items.map(async (p: any) => {
-            const { data: ph } = await supabase
-              .from("price_history")
-              .select("valor_unitario, data_referencia")
-              .ilike("descricao_produto", `%${p.descricao}%`)
-              .order("data_referencia", { ascending: false })
-              .limit(1);
-            const lastPrice = ph && ph.length > 0 ? Number(ph[0].valor_unitario) : null;
-            return {
-              code: p.codigo,
-              name: p.descricao,
-              product_id: p.id,
-              sigtap: p.sigtap_code || "",
-              unit_price: lastPrice ?? (p.preco_referencia != null ? Number(p.preco_referencia) : 0),
-              price_source: lastPrice != null ? "historico" : (p.preco_referencia != null ? "referencia" : "sem_preco"),
-            };
-          }));
-          setMaterialSuggestions({ idx, items: enriched });
-        });
+      // Busca combinada: 1) Catálogo do hospital  +  2) Banco de preços OPME (price_history)
+      Promise.all([
+        supabase
+          .from("product_catalog")
+          .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme")
+          .or(`tipo.eq.IMP,classificacao.eq.implante`)
+          .or(`descricao.ilike.%${value}%,descricao_resumida.ilike.%${value}%,codigo.ilike.%${value}%`)
+          .eq("ativo", true)
+          .limit(6),
+        supabase
+          .from("price_history")
+          .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte")
+          .ilike("descricao_produto", `%${value}%`)
+          .order("data_referencia", { ascending: false })
+          .limit(10),
+      ]).then(async ([catRes, priceRes]) => {
+        const catItems = catRes.data || [];
+        const priceItems = priceRes.data || [];
+
+        // 1) Itens do catálogo (com preço enriquecido pelo histórico)
+        const fromCatalog = await Promise.all(catItems.map(async (p: any) => {
+          const { data: ph } = await supabase
+            .from("price_history")
+            .select("valor_unitario, data_referencia, fornecedor_nome")
+            .ilike("descricao_produto", `%${p.descricao}%`)
+            .order("data_referencia", { ascending: false })
+            .limit(1);
+          const lastPrice = ph && ph.length > 0 ? Number(ph[0].valor_unitario) : null;
+          return {
+            code: p.codigo,
+            name: p.descricao,
+            product_id: p.id,
+            sigtap: p.sigtap_code || "",
+            unit_price: lastPrice ?? (p.preco_referencia != null ? Number(p.preco_referencia) : 0),
+            price_source: lastPrice != null ? "historico" : (p.preco_referencia != null ? "referencia" : "sem_preco"),
+            source_label: lastPrice != null ? `Catálogo • último praticado` : "Catálogo • referência",
+          };
+        }));
+
+        // 2) Itens do banco de preços que NÃO estão no catálogo (deduplicados por descrição)
+        const seen = new Set(fromCatalog.map((x) => x.name.toLowerCase().trim()));
+        const fromPrices: any[] = [];
+        for (const ph of priceItems) {
+          const key = (ph.descricao_produto || "").toLowerCase().trim();
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          fromPrices.push({
+            code: "—",
+            name: ph.descricao_produto,
+            product_id: null,
+            sigtap: "",
+            unit_price: Number(ph.valor_unitario) || 0,
+            price_source: ph.fonte === "base_opme" ? "base_opme" : "historico",
+            source_label: ph.fonte === "base_opme"
+              ? "Banco de preços • referência SUS"
+              : `Histórico • ${ph.fornecedor_nome || "fornecedor"}`,
+          });
+        }
+
+        setMaterialSuggestions({ idx, items: [...fromCatalog, ...fromPrices].slice(0, 12) });
+      });
     } else if (field === "description") {
       setMaterialSuggestions({ idx: -1, items: [] });
     }
