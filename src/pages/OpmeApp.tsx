@@ -1933,23 +1933,57 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                         </div>
                         <div className="p-4 space-y-4">
                           <div className="space-y-2 relative">
-                            <Label className="text-xs font-semibold uppercase text-slate-500">Descrição / Especificação</Label>
-                            <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value)} placeholder="Ex: Prótese de quadril..." className="h-12 bg-white border-slate-200" />
+                            <Label className="text-xs font-semibold uppercase text-slate-500">Descrição / Especificação (selecionar do Catálogo)</Label>
+                            <Input
+                              value={item.description}
+                              onChange={e => updateItem(idx, "description", e.target.value)}
+                              placeholder="Digite para buscar no catálogo de OPME..."
+                              className="h-12 bg-white border-slate-200"
+                            />
+                            {item.product_id ? (
+                              <p className="text-[10px] text-emerald-600 font-bold uppercase">Vinculado ao catálogo • cód. {item.product_code || item.sigtap || "—"}</p>
+                            ) : item.description?.length > 2 ? (
+                              <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
+                            ) : null}
                             {materialSuggestions.idx === idx && materialSuggestions.items.length > 0 && (
                               <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-auto">
-                                {materialSuggestions.items.map((m) => (
-                                  <button key={m.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
-                                     const arr = [...toList(form.opme_requested)]; arr[idx] = { ...arr[idx], description: m.name, sigtap: m.code };
-                                    setForm((p: any) => ({ ...p, opme_requested: arr })); setMaterialSuggestions({ idx: -1, items: [] });
+                                {materialSuggestions.items.map((m: any) => (
+                                  <button key={m.product_id || m.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
+                                    const arr = [...toList(form.opme_requested)];
+                                    arr[idx] = {
+                                      ...arr[idx],
+                                      description: m.name,
+                                      sigtap: m.sigtap || arr[idx].sigtap || "",
+                                      product_id: m.product_id || null,
+                                      product_code: m.code || null,
+                                      unit_price: typeof m.unit_price === "number" ? m.unit_price : 0,
+                                      price_source: m.price_source || "sem_preco",
+                                    };
+                                    setForm((p: any) => ({ ...p, opme_requested: arr }));
+                                    setMaterialSuggestions({ idx: -1, items: [] });
                                   }}>
-                                    <p className="text-xs font-bold text-slate-800">{m.name}</p>
-                                    <p className="text-[10px] text-slate-500 uppercase">Cód: {m.code}</p>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-bold text-slate-800 truncate">{m.name}</p>
+                                        <p className="text-[10px] text-slate-500 uppercase">Cód: {m.code} {m.sigtap ? `• SIGTAP: ${m.sigtap}` : ""}</p>
+                                      </div>
+                                      <div className="text-right shrink-0">
+                                        <p className="text-xs font-black text-primary">
+                                          {typeof m.unit_price === "number" && m.unit_price > 0
+                                            ? m.unit_price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                                            : "Sem preço"}
+                                        </p>
+                                        <p className="text-[9px] text-slate-400 uppercase font-bold">
+                                          {m.price_source === "historico" ? "histórico" : m.price_source === "referencia" ? "referência" : "—"}
+                                        </p>
+                                      </div>
+                                    </div>
                                   </button>
                                 ))}
                               </div>
                             )}
                           </div>
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-4 gap-3">
                             <div className="space-y-2">
                               <Label className="text-xs font-semibold uppercase text-slate-500">Qtd</Label>
                               <Input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value)} className="h-12 bg-white border-slate-200" />
@@ -1962,6 +1996,23 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                               <Label className="text-xs font-semibold uppercase text-slate-500">SIGTAP</Label>
                               <Input value={item.sigtap} onChange={e => updateItem(idx, "sigtap", e.target.value)} placeholder="000..." className="h-12 bg-white border-slate-200" />
                             </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs font-semibold uppercase text-slate-500">Valor unit. (R$)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.unit_price ?? 0}
+                                onChange={e => updateItem(idx, "unit_price", e.target.value)}
+                                className="h-12 bg-white border-slate-200 font-mono"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-end items-center gap-3 pt-2 border-t border-slate-100">
+                            <span className="text-[10px] uppercase font-bold text-slate-400">Subtotal</span>
+                            <span className="text-sm font-black text-primary">
+                              {((Number(item.quantity) || 0) * (Number(item.unit_price) || 0)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            </span>
                           </div>
                         </div>
                       </CardContent>
@@ -1969,6 +2020,20 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                   ))}
                   {toList(form.opme_requested).length < 10 && (
                     <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={() => addItem("opme_requested")}>+ Adicionar Material (Até 10)</Button>
+                  )}
+                  {/* Total geral da OPME solicitada */}
+                  {toList(form.opme_requested).length > 0 && (
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Valor estimado da OPME</p>
+                        <p className="text-[10px] text-slate-500">Calculado a partir do catálogo / banco de preços. Editável caso necessário.</p>
+                      </div>
+                      <p className="text-2xl font-black text-primary">
+                        {toList(form.opme_requested)
+                          .reduce((acc: number, it: any) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
+                          .toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
