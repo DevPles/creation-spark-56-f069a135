@@ -3278,14 +3278,6 @@ export default function OpmeApp() {
                     </p>
                   )}
                 </div>
-
-                <Button
-                  className="w-full h-12 bg-primary"
-                  disabled={saving || uploadingJustification || !(form.surgeon_justification || "").trim()}
-                  onClick={sendSurgeonJustification}
-                >
-                  {uploadingJustification ? "Enviando anexos..." : (saving ? "Enviando..." : "Enviar Justificativa ao Auditor")}
-                </Button>
               </div>
             )}
 
