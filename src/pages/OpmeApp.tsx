@@ -3175,10 +3175,10 @@ export default function OpmeApp() {
                 {/* === EVIDÊNCIAS OBRIGATÓRIAS === */}
                 <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Evidências Anexadas <span className="text-rose-600">*</span></Label>
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Evidências Anexadas <span className="text-slate-400 normal-case font-normal">(opcional)</span></Label>
                     <span className="text-[9px] font-bold uppercase text-slate-400">{surgeonJustificationFiles.length} arquivo(s)</span>
                   </div>
-                  <p className="text-[10px] text-slate-500">Anexe exames, etiquetas de rastreabilidade, fotos do procedimento, laudos ou qualquer documento que comprove a justificativa. Pelo menos um anexo é obrigatório.</p>
+                  <p className="text-[10px] text-slate-500">Anexe exames, etiquetas de rastreabilidade, fotos do procedimento, laudos ou qualquer documento que comprove a justificativa, se necessário.</p>
 
                   <div className="relative">
                     <Button type="button" variant="outline" className="w-full h-10 text-xs font-bold uppercase border-dashed">
@@ -3233,20 +3233,19 @@ export default function OpmeApp() {
                     </div>
                   )}
 
-                  {(!((form.surgeon_justification || "").trim()) || surgeonJustificationFiles.length === 0) && (
+                  {!((form.surgeon_justification || "").trim()) && (
                     <p className="text-[10px] text-rose-600 font-medium">
-                      {!((form.surgeon_justification || "").trim()) ? "Preencha a justificativa técnica." : "Anexe ao menos uma evidência para enviar."}
+                      Preencha a justificativa técnica.
                     </p>
                   )}
                 </div>
 
                 <Button
                   className="w-full h-12 bg-primary"
-                  disabled={saving || uploadingJustification || !(form.surgeon_justification || "").trim() || surgeonJustificationFiles.length === 0}
+                  disabled={saving || uploadingJustification || !(form.surgeon_justification || "").trim()}
                   onClick={async () => {
                     if (uploadingJustification || saving) return;
                     if (!(form.surgeon_justification || "").trim()) { toast.error("Preencha a justificativa técnica."); return; }
-                    if (surgeonJustificationFiles.length === 0) { toast.error("Anexe ao menos uma evidência."); return; }
 
                     setUploadingJustification(true);
                     try {
