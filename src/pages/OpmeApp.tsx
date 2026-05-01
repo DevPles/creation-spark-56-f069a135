@@ -2191,6 +2191,29 @@ export default function OpmeApp() {
                                 Enviada por <span className="font-bold">{shortActorName(form.surgeon_justification_by)}</span> em {new Date(form.surgeon_justification_at).toLocaleString('pt-BR')}
                               </p>
                             )}
+                            {Array.isArray(form.surgeon_justification_attachments) && form.surgeon_justification_attachments.length > 0 && (
+                              <div className="mt-3 pt-2 border-t border-amber-100 space-y-1">
+                                <p className="text-[9px] font-bold uppercase text-amber-800">Evidências anexadas ({form.surgeon_justification_attachments.length})</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {form.surgeon_justification_attachments.map((a: any, idx: number) => (
+                                    <a
+                                      key={idx}
+                                      href={a.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 p-1.5 transition-colors"
+                                    >
+                                      {a.mime?.startsWith?.("image/") ? (
+                                        <img src={a.url} alt={a.name} className="w-9 h-9 object-cover rounded" />
+                                      ) : (
+                                        <div className="w-9 h-9 flex items-center justify-center rounded bg-white border text-[8px] font-bold text-slate-500 uppercase">PDF</div>
+                                      )}
+                                      <span className="text-[10px] text-slate-700 truncate flex-1">{a.name || `arquivo ${idx + 1}`}</span>
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 
