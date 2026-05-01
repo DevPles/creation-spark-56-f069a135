@@ -2311,11 +2311,25 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                               <div className="text-right shrink-0">
                                 <p className="text-[10px] font-black text-primary">QTD: {item.quantity}</p>
                                 <p className="text-[9px] text-slate-400 font-bold uppercase">{item.size_model || '---'}</p>
+                                <p className="text-[10px] font-black text-emerald-700 mt-0.5">
+                                  {((Number(item.quantity) || 0) * (Number(item.unit_price) || 0)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                </p>
+                                <p className="text-[8px] text-slate-400 uppercase">unit. {Number(item.unit_price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                               </div>
                             </div>
                           ))
                         ) : (
                           <p className="text-[10px] text-slate-400 italic">Nenhum material listado.</p>
+                        )}
+                        {toList(form.opme_requested).length > 0 && (
+                          <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase text-slate-500">Valor total da OPME</span>
+                            <span className="text-sm font-black text-primary">
+                              {toList(form.opme_requested)
+                                .reduce((acc: number, it: any) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
+                                .toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
