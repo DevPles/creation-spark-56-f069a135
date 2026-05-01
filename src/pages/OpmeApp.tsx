@@ -621,7 +621,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             const setLotes = new Set<string>();
             for (const r of (orHist || [])) {
               const arr = Array.isArray(r.opme_used) ? r.opme_used : [];
-              for (const it of arr) {
+              for (const itAny of arr) {
+                const it: any = itAny;
                 if (!it?.batch) continue;
                 const desc = (it.description || "").toLowerCase().trim();
                 if (desc && (desc === p.descricao.toLowerCase().trim() || desc.includes(p.descricao.toLowerCase().slice(0, 12)))) {
