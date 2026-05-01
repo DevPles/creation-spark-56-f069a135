@@ -2932,19 +2932,61 @@ export default function OpmeApp() {
             {/* --- PARTE 4: FATURAMENTO (Justificativa Cirurgião) --- */}
             {part === 4 && step === 0 && (
               <div className="space-y-6">
-                <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Resposta à Auditoria</h3>
+                <div className="flex items-center justify-between border-b pb-2">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resposta do Cirurgião à Auditoria</h3>
+                  {form.justification_round > 0 && (
+                    <span className="text-[9px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                      Rodada {Number(form.justification_round) + 1}
+                    </span>
+                  )}
+                </div>
+
+                {/* Histórico de rodadas anteriores */}
+                {Array.isArray(form.justification_history) && form.justification_history.length > 0 && (
+                  <div className="space-y-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <Label className="text-[10px] font-bold uppercase text-slate-500">Histórico de Justificativas Anteriores</Label>
+                    {form.justification_history.map((h: any, i: number) => (
+                      <div key={i} className="text-[10px] border-l-2 border-slate-300 pl-2 py-1">
+                        <p className="font-bold text-slate-600 uppercase">Rodada {(h.round ?? i) + 1}</p>
+                        <p className="text-slate-700"><span className="font-semibold">Motivo do auditor:</span> {h.auditor_reason || '---'}</p>
+                        <p className="text-slate-700"><span className="font-semibold">Resposta:</span> {h.surgeon_justification || '---'}</p>
+                        {h.decision && (
+                          <p className="text-slate-600 italic">
+                            Decisão do auditor: <span className={h.decision === 'liberada' ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>{h.decision === 'liberada' ? 'LIBERADA' : 'REPROVADA — nova justificativa solicitada'}</span>
+                            {h.decision_notes ? ` — ${h.decision_notes}` : ''}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                  <Label className="text-[10px] font-bold uppercase text-amber-800">Solicitação do Auditor:</Label>
-                  <p className="text-xs text-amber-900 mt-1 font-medium italic">"{form.auditor_post_justification_reason || 'Favor justificar divergências apontadas.'}"</p>
+                  <Label className="text-[10px] font-bold uppercase text-amber-800">Solicitação atual do Auditor:</Label>
+                  <p className="text-xs text-amber-900 mt-1 font-medium italic whitespace-pre-line">"{form.auditor_post_justification_reason || 'Favor justificar divergências apontadas.'}"</p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Justificativa do Cirurgião</Label>
-                  <Textarea value={form.incident_description} onChange={e => updateForm("incident_description", e.target.value)} placeholder="Descreva sua justificativa técnica..." className="min-h-[150px] bg-white shadow-sm" />
+                  <Textarea
+                    value={form.surgeon_justification || ""}
+                    onChange={e => updateForm("surgeon_justification", e.target.value)}
+                    placeholder="Descreva sua justificativa técnica para os pontos apontados pelo auditor..."
+                    className="min-h-[180px] bg-white shadow-sm"
+                  />
+                  <p className="text-[10px] text-slate-500">Sua resposta retorna ao Médico Auditor para reanálise. Somente após a liberação do auditor o processo segue para o faturamento.</p>
                 </div>
-                <Button className="w-full h-12 bg-primary" onClick={() => {
-                  updateForm("status", "pendente_faturamento");
-                  handleSave(true);
-                }}>Enviar Resposta ao Auditor</Button>
+                <Button
+                  className="w-full h-12 bg-primary"
+                  disabled={saving || !(form.surgeon_justification || "").trim()}
+                  onClick={() => {
+                    updateForm("surgeon_justification_at", new Date().toISOString());
+                    updateForm("surgeon_justification_by", user?.email || user?.id || "Cirurgião");
+                    updateForm("status", "justificativa_respondida");
+                    setTimeout(() => handleSave(true), 50);
+                  }}
+                >
+                  {saving ? "Enviando..." : "Enviar Justificativa ao Auditor"}
+                </Button>
               </div>
             )}
 
