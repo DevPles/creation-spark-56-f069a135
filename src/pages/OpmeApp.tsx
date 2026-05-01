@@ -438,6 +438,7 @@ export default function OpmeApp() {
      const newUrl = new URL(window.location.href);
       newUrl.searchParams.set("id", safeReq.id);
      window.history.pushState({}, '', newUrl);
+      setRecordId(safeReq.id);
    };
 
   useEffect(() => {
