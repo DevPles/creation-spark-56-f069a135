@@ -1359,17 +1359,19 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
-        <Button variant="ghost" size="icon" onClick={() => setPart(null)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="text-center">
-          <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h1>
-          <p className="text-[10px] text-slate-500 uppercase">{STEPS[step]?.description}</p>
-        </div>
-        <div className="w-10" />
-      </header>
+    <div className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
+      {!embedded && (
+        <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
+          <Button variant="ghost" size="icon" onClick={() => setPart(null)}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="text-center">
+            <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h1>
+            <p className="text-[10px] text-slate-500 uppercase">{STEPS[step]?.description}</p>
+          </div>
+          <div className="w-10" />
+        </header>
+      )}
 
       <div className="flex h-1 bg-slate-200">
         {STEPS.map((_, i) => (
