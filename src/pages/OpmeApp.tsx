@@ -27,7 +27,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import BillingTabs from "@/components/opme/BillingTabs";
 
 const STEPS_CADASTRO = [
   { id: "paciente", title: "Paciente", description: "Identificação do Paciente" },
@@ -3326,14 +3325,61 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
             {/* --- PARTE 4: FATURAMENTO (Dados Faturamento) --- */}
             {part === 4 && step === 1 && (
-              <BillingTabs
-                form={form}
-                updateForm={updateForm}
-                preopExams={preopExams}
-                postopExams={postopExams}
-                consumptionExams={consumptionExams}
-                recordId={recordId}
-              />
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase text-slate-400">Dados do Faturamento</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                     <Label className="text-xs font-semibold uppercase text-slate-500">Número da AIH</Label>
+                     <Input value={form.billing_aih_number} onChange={e => updateForm("billing_aih_number", e.target.value)} placeholder="000.000.000-0" className="h-12 bg-white shadow-sm" />
+                   </div>
+                   <div className="space-y-2">
+                     <Label className="text-xs font-semibold uppercase text-slate-500">AIH Carregada no Cadastro</Label>
+                     {form.billing_aih_file_url ? (
+                       <Button 
+                         variant="outline" 
+                         className="w-full h-12 text-xs font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700 flex gap-2"
+                         onClick={() => window.open(form.billing_aih_file_url, "_blank")}
+                       >
+                         <FileText size={16} /> Ver AIH Anexada
+                       </Button>
+                     ) : (
+                       <div className="h-12 flex items-center justify-center border rounded-md border-slate-100 bg-slate-50 text-slate-400 text-xs font-medium uppercase">
+                         Nenhuma AIH anexada
+                       </div>
+                     )}
+                   </div>
+                 </div>
+                <div className="space-y-4 bg-slate-50 p-4 rounded-xl border">
+                  <Label className="text-[10px] font-bold uppercase text-slate-400">Documentação Anexada</Label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { id: "nf", label: "Nota Fiscal da OPME" },
+                      { id: "rastreabilidade", label: "Rastreabilidade (Lote/Etiqueta)" },
+                      { id: "laudo", label: "Laudo Cirúrgico" },
+                      { id: "consumo", label: "Registro de Consumo" },
+                      { id: "exames", label: "Exames de Imagem (Pré/Pós)" },
+                    ].map(doc => (
+                      <div key={doc.id} className="flex items-center space-x-2 bg-white p-3 rounded border">
+                        <Checkbox id={`doc_${doc.id}`} checked={form.billing_docs?.[doc.id]} onCheckedChange={v => {
+                          updateForm("billing_docs", { ...form.billing_docs, [doc.id]: v });
+                        }} />
+                        <Label htmlFor={`doc_${doc.id}`} className="text-xs">{doc.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Compatibilidade Utilizada x Faturada</Label>
+                  <Select value={form.billing_opme_compatibility} onValueChange={v => updateForm("billing_opme_compatibility", v)}>
+                    <SelectTrigger className="h-12 bg-white shadow-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                      <SelectItem value="parcial">Parcial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             )}
           </motion.div>
         </AnimatePresence>
