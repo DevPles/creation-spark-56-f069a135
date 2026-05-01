@@ -429,7 +429,9 @@ export default function OpmeApp() {
           }
         }
       }
-       else if (safeReq.status === "pendente_faturamento" || safeReq.status === "aguardando_justificativa") { setPart(4); setStep(0); }
+       else if (safeReq.status === "aguardando_justificativa") { setPart(4); setStep(0); }
+       else if (safeReq.status === "justificativa_respondida") { setPart(3); setStep(1); }
+       else if (safeReq.status === "pendente_faturamento") { setPart(4); setStep(1); }
       else { setPart(1); setStep(0); } // Fallback
      
      // Adicionar ID na URL sem recarregar para manter consistência
@@ -938,6 +940,17 @@ export default function OpmeApp() {
       else if (part === 2) nextStatus = "pendente_auditoria";
       else if (part === 3) {
         if (step === 0) nextStatus = "pendente_controle";
+        else if (form.status === "justificativa_respondida") {
+          // Re-análise da justificativa do cirurgião — decisão do auditor
+          if (form.auditor_post_justification_decision === "reprovada") {
+            nextStatus = "aguardando_justificativa";
+          } else if (form.auditor_post_justification_decision === "liberada") {
+            nextStatus = "pendente_faturamento";
+          } else {
+            // Sem decisão definida → mantém em re-análise
+            nextStatus = "justificativa_respondida";
+          }
+        }
         else if (form.auditor_post_justification_requested) nextStatus = "aguardando_justificativa";
         else nextStatus = "pendente_faturamento";
       }
@@ -2141,6 +2154,146 @@ export default function OpmeApp() {
 
                 {step === 1 && (
                   <div className="space-y-6">
+                    {/* === BLOCO DE REANÁLISE DA JUSTIFICATIVA DO CIRURGIÃO === */}
+                    {(form.status === "justificativa_respondida" || (form.surgeon_justification && form.surgeon_justification.trim())) && (
+                      <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 space-y-4">
+                        <div className="flex items-center justify-between border-b border-amber-200 pb-2">
+                          <h3 className="text-[11px] font-black uppercase text-amber-900 tracking-widest">
+                            Reanálise — Justificativa do Cirurgião
+                          </h3>
+                          {form.justification_round > 0 && (
+                            <span className="text-[9px] font-bold uppercase bg-amber-200 text-amber-900 px-2 py-1 rounded-full">
+                              Rodada {Number(form.justification_round) + 1}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold uppercase text-amber-800">Motivo solicitado por você</Label>
+                          <p className="text-[11px] text-slate-800 bg-white p-2 rounded border border-amber-100 italic whitespace-pre-line">
+                            "{form.auditor_post_justification_reason || '---'}"
+                          </p>
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-bold uppercase text-amber-800">Resposta enviada pelo cirurgião</Label>
+                          <div className="bg-white p-3 rounded border border-amber-200">
+                            <p className="text-[11px] text-slate-800 whitespace-pre-line">
+                              {form.surgeon_justification || "Aguardando resposta do cirurgião."}
+                            </p>
+                            {form.surgeon_justification_at && (
+                              <p className="text-[9px] text-slate-500 mt-2 font-medium">
+                                Enviada por <span className="font-bold">{shortActorName(form.surgeon_justification_by)}</span> em {new Date(form.surgeon_justification_at).toLocaleString('pt-BR')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Histórico */}
+                        {Array.isArray(form.justification_history) && form.justification_history.length > 0 && (
+                          <details className="bg-white/50 rounded border border-amber-100 p-2">
+                            <summary className="text-[10px] font-bold uppercase text-amber-800 cursor-pointer">Ver rodadas anteriores ({form.justification_history.length})</summary>
+                            <div className="mt-2 space-y-2">
+                              {form.justification_history.map((h: any, i: number) => (
+                                <div key={i} className="text-[10px] border-l-2 border-amber-300 pl-2 py-1">
+                                  <p className="font-bold text-slate-700 uppercase">Rodada {(h.round ?? i) + 1}</p>
+                                  <p><span className="font-semibold">Motivo:</span> {h.auditor_reason || '---'}</p>
+                                  <p><span className="font-semibold">Resposta:</span> {h.surgeon_justification || '---'}</p>
+                                  {h.decision && (
+                                    <p className="italic">
+                                      Decisão: <span className={h.decision === 'liberada' ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>{h.decision === 'liberada' ? 'LIBERADA' : 'REPROVADA'}</span>
+                                      {h.decision_notes ? ` — ${h.decision_notes}` : ''}
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        )}
+
+                        {form.status === "justificativa_respondida" && (
+                          <div className="space-y-3 pt-2 border-t border-amber-200">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] font-bold uppercase text-amber-800">Comentário do auditor sobre a justificativa</Label>
+                              <Textarea
+                                value={form.auditor_post_justification_decision_notes || ""}
+                                onChange={e => updateForm("auditor_post_justification_decision_notes", e.target.value)}
+                                placeholder="Ex: justificativa aceita, material compatível com perfil clínico do paciente..."
+                                className="min-h-[80px] text-xs bg-white"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <Button
+                                className="h-11 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold uppercase"
+                                disabled={saving}
+                                onClick={() => {
+                                  const previousHistory = Array.isArray(form.justification_history) ? form.justification_history : [];
+                                  const newEntry = {
+                                    round: Number(form.justification_round || 0),
+                                    auditor_reason: form.auditor_post_justification_reason || "",
+                                    surgeon_justification: form.surgeon_justification || "",
+                                    surgeon_justification_at: form.surgeon_justification_at || null,
+                                    surgeon_justification_by: form.surgeon_justification_by || null,
+                                    decision: "liberada",
+                                    decision_at: new Date().toISOString(),
+                                    decision_by: user?.email || user?.id || "Auditor",
+                                    decision_notes: form.auditor_post_justification_decision_notes || ""
+                                  };
+                                  setForm((p: any) => ({
+                                    ...p,
+                                    auditor_post_justification_decision: "liberada",
+                                    auditor_post_justification_decision_at: new Date().toISOString(),
+                                    justification_history: [...previousHistory, newEntry],
+                                    status: "justificativa_respondida" // handleSave decide próximo status
+                                  }));
+                                  setTimeout(() => handleSave(false), 50);
+                                }}
+                              >
+                                Liberar para Faturamento
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="h-11 border-rose-300 text-rose-700 hover:bg-rose-50 text-[11px] font-bold uppercase"
+                                disabled={saving || !(form.auditor_post_justification_decision_notes || "").trim()}
+                                onClick={() => {
+                                  const previousHistory = Array.isArray(form.justification_history) ? form.justification_history : [];
+                                  const newEntry = {
+                                    round: Number(form.justification_round || 0),
+                                    auditor_reason: form.auditor_post_justification_reason || "",
+                                    surgeon_justification: form.surgeon_justification || "",
+                                    surgeon_justification_at: form.surgeon_justification_at || null,
+                                    surgeon_justification_by: form.surgeon_justification_by || null,
+                                    decision: "reprovada",
+                                    decision_at: new Date().toISOString(),
+                                    decision_by: user?.email || user?.id || "Auditor",
+                                    decision_notes: form.auditor_post_justification_decision_notes || ""
+                                  };
+                                  setForm((p: any) => ({
+                                    ...p,
+                                    auditor_post_justification_decision: "reprovada",
+                                    auditor_post_justification_decision_at: new Date().toISOString(),
+                                    auditor_post_justification_reason: p.auditor_post_justification_decision_notes || p.auditor_post_justification_reason,
+                                    justification_history: [...previousHistory, newEntry],
+                                    justification_round: Number(p.justification_round || 0) + 1,
+                                    surgeon_justification: "",
+                                    surgeon_justification_at: null,
+                                    surgeon_justification_by: null,
+                                    auditor_post_justification_decision_notes: "",
+                                    status: "justificativa_respondida" // handleSave usa decision=reprovada para mandar de volta
+                                  }));
+                                  setTimeout(() => handleSave(false), 50);
+                                }}
+                              >
+                                Reprovar e solicitar nova
+                              </Button>
+                            </div>
+                            <p className="text-[9px] text-amber-700 italic">Para reprovar é obrigatório informar o comentário (será o novo motivo enviado ao cirurgião).</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-4">
                       <div className="flex items-center justify-between gap-3 border-b border-primary/10 pb-2">
                         <div className="flex items-center gap-2">
@@ -2359,11 +2512,12 @@ export default function OpmeApp() {
                             <div className="relative">
                               <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-slate-300 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">5</div>
                               <p className="text-[10px] font-bold text-slate-700 uppercase">Auditoria de Fechamento</p>
-                              <p className="text-[9px] text-slate-500 font-medium">
-                                Status: {form.status === "aguardando_justificativa" ? "Aguardando Justificativa do Cirurgião" : 
-                                        form.status === "pendente_faturamento" ? "Liberado para Faturamento" :
-                                        form.status === "concluido" ? "Processo Finalizado" : "Em Análise pelo Auditor"}
-                              </p>
+                               <p className="text-[9px] text-slate-500 font-medium">
+                                 Status: {form.status === "aguardando_justificativa" ? "Aguardando Justificativa do Cirurgião" :
+                                         form.status === "justificativa_respondida" ? "Justificativa Recebida — Aguardando Reanálise" :
+                                         form.status === "pendente_faturamento" ? "Liberado para Faturamento" :
+                                         form.status === "concluido" ? "Processo Finalizado" : "Em Análise pelo Auditor"}
+                               </p>
                               {form.incident_description && (
                                 <p className="text-[8px] text-emerald-600 font-bold uppercase mt-1">✓ Justificativa Anexada</p>
                               )}
@@ -2405,6 +2559,7 @@ export default function OpmeApp() {
                        </div>
                      </div>
 
+                    {form.status !== "justificativa_respondida" && (
                     <div className="bg-muted/30 p-4 rounded-xl border border-border space-y-4">
                       <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Validação Auditor Pós-OP</h3>
 
@@ -2494,6 +2649,7 @@ export default function OpmeApp() {
                        </div>
                      </div>
                    </div>
+                   )}
                  </div>
                  )}
               </div>
@@ -2919,19 +3075,61 @@ export default function OpmeApp() {
             {/* --- PARTE 4: FATURAMENTO (Justificativa Cirurgião) --- */}
             {part === 4 && step === 0 && (
               <div className="space-y-6">
-                <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Resposta à Auditoria</h3>
+                <div className="flex items-center justify-between border-b pb-2">
+                  <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Resposta do Cirurgião à Auditoria</h3>
+                  {form.justification_round > 0 && (
+                    <span className="text-[9px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                      Rodada {Number(form.justification_round) + 1}
+                    </span>
+                  )}
+                </div>
+
+                {/* Histórico de rodadas anteriores */}
+                {Array.isArray(form.justification_history) && form.justification_history.length > 0 && (
+                  <div className="space-y-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <Label className="text-[10px] font-bold uppercase text-slate-500">Histórico de Justificativas Anteriores</Label>
+                    {form.justification_history.map((h: any, i: number) => (
+                      <div key={i} className="text-[10px] border-l-2 border-slate-300 pl-2 py-1">
+                        <p className="font-bold text-slate-600 uppercase">Rodada {(h.round ?? i) + 1}</p>
+                        <p className="text-slate-700"><span className="font-semibold">Motivo do auditor:</span> {h.auditor_reason || '---'}</p>
+                        <p className="text-slate-700"><span className="font-semibold">Resposta:</span> {h.surgeon_justification || '---'}</p>
+                        {h.decision && (
+                          <p className="text-slate-600 italic">
+                            Decisão do auditor: <span className={h.decision === 'liberada' ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>{h.decision === 'liberada' ? 'LIBERADA' : 'REPROVADA — nova justificativa solicitada'}</span>
+                            {h.decision_notes ? ` — ${h.decision_notes}` : ''}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                  <Label className="text-[10px] font-bold uppercase text-amber-800">Solicitação do Auditor:</Label>
-                  <p className="text-xs text-amber-900 mt-1 font-medium italic">"{form.auditor_post_justification_reason || 'Favor justificar divergências apontadas.'}"</p>
+                  <Label className="text-[10px] font-bold uppercase text-amber-800">Solicitação atual do Auditor:</Label>
+                  <p className="text-xs text-amber-900 mt-1 font-medium italic whitespace-pre-line">"{form.auditor_post_justification_reason || 'Favor justificar divergências apontadas.'}"</p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Justificativa do Cirurgião</Label>
-                  <Textarea value={form.incident_description} onChange={e => updateForm("incident_description", e.target.value)} placeholder="Descreva sua justificativa técnica..." className="min-h-[150px] bg-white shadow-sm" />
+                  <Textarea
+                    value={form.surgeon_justification || ""}
+                    onChange={e => updateForm("surgeon_justification", e.target.value)}
+                    placeholder="Descreva sua justificativa técnica para os pontos apontados pelo auditor..."
+                    className="min-h-[180px] bg-white shadow-sm"
+                  />
+                  <p className="text-[10px] text-slate-500">Sua resposta retorna ao Médico Auditor para reanálise. Somente após a liberação do auditor o processo segue para o faturamento.</p>
                 </div>
-                <Button className="w-full h-12 bg-primary" onClick={() => {
-                  updateForm("status", "pendente_faturamento");
-                  handleSave(true);
-                }}>Enviar Resposta ao Auditor</Button>
+                <Button
+                  className="w-full h-12 bg-primary"
+                  disabled={saving || !(form.surgeon_justification || "").trim()}
+                  onClick={() => {
+                    updateForm("surgeon_justification_at", new Date().toISOString());
+                    updateForm("surgeon_justification_by", user?.email || user?.id || "Cirurgião");
+                    updateForm("status", "justificativa_respondida");
+                    setTimeout(() => handleSave(true), 50);
+                  }}
+                >
+                  {saving ? "Enviando..." : "Enviar Justificativa ao Auditor"}
+                </Button>
               </div>
             )}
 
@@ -3012,6 +3210,10 @@ export default function OpmeApp() {
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
             Próximo
           </Button>
+        ) : (part === 3 && step === 1 && form.status === "justificativa_respondida") ? (
+          <div className="flex-[2] h-12 flex items-center justify-center text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 text-center">
+            Use os botões "Liberar para Faturamento" ou "Reprovar e solicitar nova" no bloco amarelo acima
+          </div>
         ) : (
           <Button 
             className="flex-[2] h-12 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200" 

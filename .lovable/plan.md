@@ -1,82 +1,92 @@
+## Problema atual
 
+Quando o **Médico Auditor** marca "Solicitar Justificativa ao Cirurgião" na Validação Pós-OP, o status vai para `aguardando_justificativa` e a Parte 4 abre direto na tela do **cirurgião**. Porém o fluxo está furado:
 
-## Dossiê de Auditoria da Ordem de Compra (Tribunal de Contas)
+1. Quem entra no processo (qualquer perfil) cai direto na tela "Resposta à Auditoria" — não há gating por papel (cirurgião responde, auditor lê).
+2. Após o cirurgião enviar a resposta, o sistema vai **direto** para `pendente_faturamento` — pulando a re-análise do auditor (linha 2932: `updateForm("status", "pendente_faturamento")`).
+3. O auditor nunca tem a oportunidade de **ler a justificativa e decidir** se libera para faturamento ou reprova.
+4. A justificativa do cirurgião é gravada em `incident_description` (campo reaproveitado de outro contexto) — ambíguo.
+5. Não há registro de data/autor da resposta do cirurgião nem da decisão final do auditor sobre a justificativa.
 
-Adicionar, em **Compras → Ordens de Compra**, um novo botão **"Dossiê"** na coluna Ações que gera um documento PDF completo, oficial e auditável de todo o processo daquela OC — pronto para envio ao Tribunal de Contas. Também adicionar um **filtro por período (calendário)** na página.
+## Fluxo correto a implementar
 
----
+```text
+Auditor Pós-OP marca "Solicitar Justificativa"
+        │
+        ▼
+status = aguardando_justificativa
+        │
+        ▼  (Parte 4 / Step 0 — visível só para CIRURGIÃO/SOLICITANTE)
+Cirurgião lê a solicitação + escreve justificativa + anexa evidência (opcional)
+        │
+        ▼
+status = justificativa_respondida   (NOVO status)
+        │
+        ▼  (Parte 3 / Step 1 reaberta — visível só para AUDITOR)
+Auditor lê a justificativa do cirurgião e decide:
+  ├── "Liberar para Faturamento" → status = pendente_faturamento → Parte 4 / Step 1
+  └── "Reprovar / Pedir nova justificativa" → volta a aguardando_justificativa
+        │                                       (com novo motivo do auditor)
+        ▼
+Faturamento conclui → status = concluido
+```
 
-### O que muda para o usuário
+## Mudanças
 
-**1. Novo filtro de período (calendário) no topo da página**
-- Componente `Popover` + `Calendar` em modo `range`, com botões rápidos: "Hoje", "Últimos 7 dias", "Mês atual", "Limpar".
-- Aplica em todas as abas (Requisições, Cotações, Ordens) filtrando pela data principal de cada registro.
+### 1. Banco (migration)
 
-**2. Botão "Dossiê" na coluna Ações de Ordens de Compra**
-- Ao clicar, abre modal com pré-visualização e botão **"Baixar PDF"**.
-- Nome do arquivo: `Dossie_OC_[numero]_[data].pdf`.
+- Adicionar valor ao enum `opme_status`: `'justificativa_respondida'`.
+- Adicionar colunas em `opme_requests`:
+  - `surgeon_justification text` — texto da resposta do cirurgião (substitui o uso ambíguo de `incident_description`).
+  - `surgeon_justification_at timestamptz` — quando enviou.
+  - `surgeon_justification_by text` — e-mail/nome do cirurgião que respondeu.
+  - `surgeon_justification_attachments jsonb default '[]'::jsonb` — anexos opcionais.
+  - `auditor_post_justification_decision text` — `'liberada'` | `'reprovada'`.
+  - `auditor_post_justification_decision_at timestamptz`.
+  - `auditor_post_justification_decision_notes text` — comentário do auditor ao decidir.
+  - Histórico: `justification_round int default 0` — incrementa a cada novo pedido (permite múltiplas rodadas).
 
-**3. Conteúdo do Dossiê (PDF estruturado e numerado)**
+### 2. `src/pages/OpmeApp.tsx`
 
-**Capa**
-- Marca Moss, número da OC, unidade hospitalar, fornecedor vencedor, valor total, data de emissão e data de geração do dossiê.
+**a) Roteamento por status (`loadRequest`):**
+- `aguardando_justificativa` → Parte 4, Step 0 (resposta do cirurgião).
+- `justificativa_respondida` → Parte 3, Step 1 (auditor reanalisa) — abrir uma sub-view "Reanálise da Justificativa" ao invés do form em branco.
 
-**Seção 1 — Histórico do processo (linha do tempo)**
-- Requisição: criação (data/hora, solicitante, setor)
-- Convites enviados aos fornecedores (data/hora, e-mail/telefone, status)
-- Respostas recebidas via link público (data/hora, IP do envio)
-- Cotações lançadas (manuais ou via link), com autor e data/hora
-- Geração da OC (autor, data/hora)
-- Aprovação/recusa pública (assinante, cargo, e-mail, IP, LGPD, data/hora)
-- Mudanças de status posteriores
-- Origem: `purchase_audit_log` + `quotation_invites` + `purchase_order_approvals` + `purchase_orders`.
+**b) Tela do Cirurgião (Parte 4 / Step 0) — refatorar:**
+- Mostrar o **motivo do auditor** (já existe).
+- Campo `surgeon_justification` em vez de `incident_description`.
+- Mostrar histórico se for re-rodada (`justification_round > 0`): exibir todas as rodadas anteriores (motivo do auditor + resposta do cirurgião + decisão).
+- Botão "Enviar Justificativa ao Auditor" → grava `surgeon_justification`, `surgeon_justification_at = now()`, `surgeon_justification_by = user.email`, status = `justificativa_respondida`.
+- **NÃO** pular para faturamento.
 
-**Seção 2 — Grade comparativa de preços e log de preenchimento**
-- Tabela cruzada: itens × fornecedores, com preço unitário, total, prazo, condição e marcação do vencedor.
-- Log detalhado por fornecedor:
-  - Razão social e CNPJ
-  - Origem (link público / manual)
-  - Data e hora de envio da resposta
-  - **Endereço IP** da máquina usada (capturado via header `x-forwarded-for` na submissão pública)
-  - Quem lançou (nome do usuário, no caso de cotação manual)
+**c) Tela do Auditor (Parte 3 / Step 1) — adicionar bloco "Análise da Justificativa do Cirurgião":**
+- Visível **somente** quando `status === 'justificativa_respondida'` (ou quando há `surgeon_justification` preenchida em rodadas anteriores).
+- Mostrar destacado: motivo solicitado + resposta do cirurgião + data/autor.
+- Campo "Comentário do auditor sobre a justificativa".
+- Dois botões claros:
+  - **"Liberar para Faturamento"** → `auditor_post_justification_decision = 'liberada'`, status = `pendente_faturamento`.
+  - **"Reprovar e solicitar nova justificativa"** → `decision = 'reprovada'`, incrementa `justification_round`, atualiza `auditor_post_justification_reason` com novo motivo, status volta para `aguardando_justificativa`.
+- Exigir senha (já há fluxo `handleAuditAuth`) para ambas as decisões.
 
-**Seção 3 — Itens comprados**
-- Tabela completa: nº, **código do produto** (do catálogo), descrição, quantidade, unidade, preço unitário, total, **setor solicitante** (do `purchase_requisitions.setor` e/ou `product_catalog.setor`).
-- Quando houver foto cadastrada no catálogo, miniatura ao lado do código.
+**d) Timeline / Status badges:**
+- Adicionar label para `justificativa_respondida`: "Justificativa Recebida — Aguardando Reanálise".
+- Atualizar a etapa 5 da timeline visual (linhas 2358–2370) para refletir as 4 fases: pedida → respondida → liberada/reprovada.
 
-**Seção 4 — Aprovação e rastreabilidade legal**
-- Dados completos do aprovador (nome, cargo, e-mail, IP, ciência LGPD, data/hora da assinatura).
-- Contrato vinculado, rubrica utilizada, saldo da rubrica antes/depois.
+**e) Lista de trabalho (cards na home):**
+- Filtros e contadores incluindo `justificativa_respondida` (alerta para o auditor agir).
+- Cor distinta (ex: âmbar) para `aguardando_justificativa` (cirurgião) e azul para `justificativa_respondida` (auditor).
 
-**Rodapé em todas as páginas:** "Documento gerado automaticamente em DD/MM/AAAA HH:MM por [usuário] — Sistema MetricOss" + numeração de páginas.
+### 3. `src/integrations/supabase/types.ts`
+- Será regenerado automaticamente após a migration.
 
----
+### 4. Compatibilidade
+- Registros antigos com `incident_description` preenchido continuam exibindo o texto como "justificativa legada" no painel do auditor (read-only fallback).
 
-### Detalhes técnicos
+## Arquivos afetados
 
-**Banco de dados**
-- Adicionar coluna `submission_ip text` em `quotation_invite_responses` (e/ou em `quotation_invites` no `submitted_at`) para registrar o IP de envio.
-- Atualizar a função RPC `submit_invite_response` para receber e gravar o IP (já existe parâmetro similar em `submit_order_approval`).
-- Nova função RPC `get_order_dossier(_order_id uuid)` retornando JSON consolidado: ordem, itens (com `product_id` → catálogo para código/setor/imagem), requisição, convites + respostas (com IP/data/hora), cotação + suppliers + prices, aprovação, audit log filtrado pelas entidades relacionadas.
+- `supabase/migrations/<novo>.sql` — enum + colunas.
+- `src/pages/OpmeApp.tsx` — roteamento, tela cirurgião, bloco auditor, botões de decisão, timeline, badges.
 
-**Frontend**
-- Novo componente `OrderDossierModal.tsx` em `src/components/purchases/`:
-  - Chama a RPC e renderiza preview na tela.
-  - Geração do PDF com **jsPDF + jspdf-autotable** (já compatível com o stack atual).
-- `ComprasPage.tsx`:
-  - Adicionar estado `dateRange: { from?: Date; to?: Date }` e `Popover` com `Calendar mode="range"` (com `pointer-events-auto`).
-  - Aplicar `dateRange` em `filteredReqs`, `filteredQuotes`, `filteredOrders` (campos `data_requisicao`, `data_cotacao`, `created_at`).
-  - Novo botão **"Dossiê"** (variant `outline`, rounded-full) na coluna Ações da tabela de Ordens, abrindo `OrderDossierModal`.
+## Resultado para o usuário
 
-**Captura de IP**
-- A página pública `PublicQuotationPage` ao chamar `submit_invite_response` enviará o IP obtido via serviço público leve (ex: `https://api.ipify.org?format=json`) como parâmetro adicional. Fallback: registra "não capturado".
-
----
-
-### Arquivos afetados
-
-- `supabase/migrations/` — nova coluna `submission_ip`, atualização de `submit_invite_response`, criação da RPC `get_order_dossier`.
-- `src/pages/ComprasPage.tsx` — filtro de calendário (range) + botão "Dossiê" nas Ordens.
-- `src/components/purchases/OrderDossierModal.tsx` — novo (preview + geração de PDF).
-- `src/pages/PublicQuotationPage.tsx` — captura e envio do IP na submissão.
-
+O auditor pede justificativa → o cirurgião é o único que vê a tela de resposta → após enviar, o processo **volta** para o auditor com destaque visual → o auditor lê e decide explicitamente liberar ou pedir de novo → só então segue para faturamento. Cada rodada fica registrada com data, autor e decisão.
