@@ -3325,26 +3325,26 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                       : (m.unit_price > 0 ? [{ valor: m.unit_price, fornecedor: m.fornecedor_padrao || "—", data: null, fonte: m.price_source }] : []);
                                     return (
                                       <div key={m.product_id || m.code} className="border-b border-slate-100 last:border-0 p-2 hover:bg-slate-50/60">
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-2 items-stretch">
                                           {m.image_url ? (
-                                            <img src={m.image_url} alt={m.name} className="h-14 w-14 rounded-md object-cover border border-slate-200 shrink-0" />
+                                            <img src={m.image_url} alt={m.name} className="h-20 w-20 rounded-md object-cover border border-slate-200 shrink-0 self-start" />
                                           ) : (
-                                            <div className="h-14 w-14 rounded-md bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-[8px] text-slate-400 uppercase font-bold">Sem foto</div>
+                                            <div className="h-20 w-20 rounded-md bg-slate-100 border border-slate-200 shrink-0 self-start flex items-center justify-center text-[8px] text-slate-400 uppercase font-bold">Sem foto</div>
                                           )}
-                                          <div className="min-w-0 flex-1 space-y-1">
+                                          <div className="min-w-0 flex-1 space-y-1.5">
                                             <div className="min-w-0">
-                                              <p className="text-xs font-bold text-slate-800 leading-tight truncate">{m.name}</p>
-                                              <p className="text-[9px] text-slate-500 uppercase truncate">
+                                              <p className="text-xs font-bold text-slate-800 leading-tight">{m.name}</p>
+                                              <p className="text-[9px] text-slate-500 uppercase leading-tight">
                                                 Cód: {m.code}{m.sigtap ? ` • SIGTAP: ${m.sigtap}` : ""}{m.fabricante ? ` • ${m.fabricante}` : ""}
                                               </p>
                                             </div>
                                             {opts.length > 0 ? (
-                                              <div className="grid grid-cols-2 gap-1">
+                                              <div className="space-y-1">
                                                 {opts.map((opt: any, oi: number) => (
                                                   <button
                                                     key={oi}
                                                     type="button"
-                                                    className="text-left px-1.5 py-1 rounded border border-slate-200 hover:border-primary hover:bg-primary/5 flex items-center justify-between gap-1 min-w-0"
+                                                    className="w-full text-left px-2 py-1.5 rounded border border-slate-200 hover:border-primary hover:bg-primary/5 flex items-center justify-between gap-2"
                                                     onClick={() => {
                                                   const arr = [...toList(form.opme_used)];
                                                   arr[idx] = {
@@ -3364,12 +3364,12 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                                 }}
                                               >
                                                     <div className="min-w-0">
-                                                      <p className="text-[9px] font-bold text-slate-700 truncate leading-tight">{opt.fornecedor}</p>
-                                                      <p className="text-[8px] text-slate-400 uppercase truncate leading-tight">
+                                                      <p className="text-[10px] font-bold text-slate-700 truncate leading-tight">{opt.fornecedor}</p>
+                                                      <p className="text-[9px] text-slate-400 uppercase truncate leading-tight">
                                                         {opt.data ? new Date(opt.data).toLocaleDateString("pt-BR") : "Ref."} • {opt.fonte === "base_opme" ? "SUS" : (opt.fonte === "referencia" ? "Cat." : "Hist.")}
                                                       </p>
                                                     </div>
-                                                    <p className="text-[10px] font-black text-primary shrink-0">
+                                                    <p className="text-xs font-black text-primary shrink-0">
                                                       {Number(opt.valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                                                     </p>
                                                   </button>
@@ -3378,7 +3378,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                             ) : (
                                               <button
                                                 type="button"
-                                                className="w-full text-[9px] uppercase font-bold text-slate-500 border border-dashed border-slate-300 rounded px-2 py-1 hover:bg-slate-100"
+                                                className="w-full text-[10px] uppercase font-bold text-slate-500 border border-dashed border-slate-300 rounded px-2 py-1.5 hover:bg-slate-100"
                                                 onClick={() => {
                                               const arr = [...toList(form.opme_used)];
                                               arr[idx] = {
