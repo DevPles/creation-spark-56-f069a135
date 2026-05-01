@@ -552,13 +552,37 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       return { ...p, [listName]: arr };
     });
 
-    if (field === "description" && value.length > 2) {
+    if (field === "description" && value.length > 2 && listName === "opme_requested") {
+      // Busca no catálogo de produtos (somente OPME) e traz preço de referência
       supabase
-        .from("opme_materials")
-        .select("code, name")
-        .ilike("name", `%${value}%`)
-        .limit(5)
-        .then(({ data }) => setMaterialSuggestions({ idx, items: data || [] }));
+        .from("product_catalog")
+        .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme")
+        .or(`tipo.eq.IMP,classificacao.eq.implante`)
+        .or(`descricao.ilike.%${value}%,descricao_resumida.ilike.%${value}%,codigo.ilike.%${value}%`)
+        .eq("ativo", true)
+        .limit(8)
+        .then(async ({ data }) => {
+          const items = data || [];
+          // Para cada produto, buscar último preço praticado em price_history
+          const enriched = await Promise.all(items.map(async (p: any) => {
+            const { data: ph } = await supabase
+              .from("price_history")
+              .select("valor_unitario, data_referencia")
+              .ilike("descricao_produto", `%${p.descricao}%`)
+              .order("data_referencia", { ascending: false })
+              .limit(1);
+            const lastPrice = ph && ph.length > 0 ? Number(ph[0].valor_unitario) : null;
+            return {
+              code: p.codigo,
+              name: p.descricao,
+              product_id: p.id,
+              sigtap: p.sigtap_code || "",
+              unit_price: lastPrice ?? (p.preco_referencia != null ? Number(p.preco_referencia) : 0),
+              price_source: lastPrice != null ? "historico" : (p.preco_referencia != null ? "referencia" : "sem_preco"),
+            };
+          }));
+          setMaterialSuggestions({ idx, items: enriched });
+        });
     } else if (field === "description") {
       setMaterialSuggestions({ idx: -1, items: [] });
     }
@@ -566,10 +590,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
   const addItem = (listName: string = "opme_requested") => {
     const newItem = listName === "opme_used"
-      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false }
+      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false, unit_price: 0, product_id: null }
       : listName === "opme_returned"
       ? { description: "", quantity: "0", batch: "", reason: "", responsible: "" }
-      : { description: "", quantity: "1", size_model: "", sigtap: "" };
+      : { description: "", quantity: "1", size_model: "", sigtap: "", unit_price: 0, product_id: null, price_source: "sem_preco" };
 
     setForm((p: any) => ({ ...p, [listName]: [...(p[listName] || []), newItem] }));
   };
