@@ -54,6 +54,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
   const [pdfUrl, setPdfUrl] = useState("");
   const [rubricas, setRubricas] = useState<Rubrica[]>(DEFAULT_RUBRICAS);
   const [notificationEmail, setNotificationEmail] = useState("");
+  const [cnes, setCnes] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -107,6 +108,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setPdfName(contract.pdfName || "");
       setPdfUrl(contract.pdfUrl || "");
       setNotificationEmail(contract.notificationEmail || "");
+      setCnes(contract.cnes || "");
       setRubricas(contract.rubricas?.length ? contract.rubricas : DEFAULT_RUBRICAS);
       const parts = contract.period.split("-");
       if (parts.length === 2) {
@@ -123,6 +125,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       setPdfName("");
       setPdfUrl("");
       setNotificationEmail("");
+      setCnes("");
       setPeriodStart("2024");
       setPeriodEnd("2025");
       setRubricas(DEFAULT_RUBRICAS.map((r) => ({ ...r })));
@@ -237,6 +240,7 @@ const ContractFormModal = ({ contract, open, onOpenChange, onSave, isNew = false
       pdfName,
       pdfUrl,
       notificationEmail,
+      cnes: cnes.trim() || undefined,
       rubricas: rubricas.filter((r) => r.percent > 0),
     };
     
