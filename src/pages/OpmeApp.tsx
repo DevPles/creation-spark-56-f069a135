@@ -562,13 +562,13 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       Promise.all([
         supabase
           .from("product_catalog")
-          .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme")
+          .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme, image_url, fabricante, fornecedor_padrao")
           .or(`descricao.ilike.%${value}%,descricao_resumida.ilike.%${value}%,codigo.ilike.%${value}%`)
           .eq("ativo", true)
           .limit(6),
         supabase
           .from("price_history")
-          .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte")
+          .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte, fornecedor_cnpj")
           .ilike("descricao_produto", `%${value}%`)
           .order("data_referencia", { ascending: false })
           .limit(20),
@@ -582,16 +582,66 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         const fromCatalog = await Promise.all(catItems.map(async (p: any) => {
           const { data: ph } = await supabase
             .from("price_history")
-            .select("valor_unitario, data_referencia, fornecedor_nome")
+            .select("valor_unitario, data_referencia, fornecedor_nome, fonte")
             .ilike("descricao_produto", `%${p.descricao}%`)
             .order("data_referencia", { ascending: false })
-            .limit(1);
-          const lastPrice = ph && ph.length > 0 ? Number(ph[0].valor_unitario) : null;
+            .limit(8);
+          // Constrói lista de opções de preço (1 por fornecedor, mais recentes)
+          const priceOptions: any[] = [];
+          const seenSup = new Set<string>();
+          for (const r of (ph || [])) {
+            const supKey = (r.fornecedor_nome || r.fonte || "—").toLowerCase();
+            if (seenSup.has(supKey)) continue;
+            seenSup.add(supKey);
+            priceOptions.push({
+              valor: Number(r.valor_unitario) || 0,
+              fornecedor: r.fornecedor_nome || (r.fonte === "base_opme" ? "Banco SUS" : "—"),
+              data: r.data_referencia,
+              fonte: r.fonte,
+            });
+          }
+          if (p.preco_referencia != null && !priceOptions.some((o) => Math.abs(o.valor - Number(p.preco_referencia)) < 0.01)) {
+            priceOptions.push({
+              valor: Number(p.preco_referencia),
+              fornecedor: p.fornecedor_padrao || "Referência catálogo",
+              data: null,
+              fonte: "referencia",
+            });
+          }
+          const lastPrice = priceOptions[0]?.valor ?? null;
+          // Lotes históricos para esse produto a partir de opme_requests
+          let lotes: string[] = [];
+          try {
+            const { data: orHist } = await supabase
+              .from("opme_requests")
+              .select("opme_used")
+              .not("opme_used", "is", null)
+              .limit(40)
+              .order("created_at", { ascending: false });
+            const setLotes = new Set<string>();
+            for (const r of (orHist || [])) {
+              const arr = Array.isArray(r.opme_used) ? r.opme_used : [];
+              for (const it of arr) {
+                if (!it?.batch) continue;
+                const desc = (it.description || "").toLowerCase().trim();
+                if (desc && (desc === p.descricao.toLowerCase().trim() || desc.includes(p.descricao.toLowerCase().slice(0, 12)))) {
+                  setLotes.add(String(it.batch));
+                }
+              }
+            }
+            lotes = Array.from(setLotes).slice(0, 8);
+          } catch {}
+
           return {
             code: p.codigo,
             name: p.descricao,
             product_id: p.id,
             sigtap: p.sigtap_code || "",
+            image_url: p.image_url || null,
+            fabricante: p.fabricante || null,
+            fornecedor_padrao: p.fornecedor_padrao || null,
+            price_options: priceOptions,
+            lotes_sugeridos: lotes,
             unit_price: lastPrice ?? (p.preco_referencia != null ? Number(p.preco_referencia) : 0),
             price_source: lastPrice != null ? "historico" : (p.preco_referencia != null ? "referencia" : "sem_preco"),
             source_label: lastPrice != null ? `Catálogo • último praticado` : "Catálogo • referência",
@@ -610,6 +660,16 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             name: ph.descricao_produto,
             product_id: null,
             sigtap: "",
+            image_url: null,
+            fabricante: null,
+            fornecedor_padrao: ph.fornecedor_nome || null,
+            price_options: [{
+              valor: Number(ph.valor_unitario) || 0,
+              fornecedor: ph.fornecedor_nome || (ph.fonte === "base_opme" ? "Banco SUS" : "—"),
+              data: ph.data_referencia,
+              fonte: ph.fonte,
+            }],
+            lotes_sugeridos: [],
             unit_price: Number(ph.valor_unitario) || 0,
             price_source: ph.fonte === "base_opme" ? "base_opme" : "historico",
             source_label: ph.fonte === "base_opme"
