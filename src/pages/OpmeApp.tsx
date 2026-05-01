@@ -170,6 +170,21 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 part === 6 ? STEPS_CONSUMO :
                 STEPS_FATURAMENTO;
 
+  const PART_NAMES: Record<number, string> = {
+    1: "Cadastro",
+    2: "Requisição",
+    3: "Auditoria",
+    4: "Faturamento",
+    5: "Controle",
+    6: "Consumo",
+  };
+  const currentStepTitle = STEPS[step]?.title || "Solicitação OPME";
+  const currentStepDescription = STEPS[step]?.description || "";
+  const currentPartName = part ? PART_NAMES[part] : "";
+  const headerSubtitle = currentPartName
+    ? `${currentPartName}${currentStepDescription ? ` · ${currentStepDescription}` : ""}`
+    : currentStepDescription;
+
    const [form, setForm] = useState<any>({
     facility_unit: profile?.facility_unit || "Hospital Geral",
     status: "rascunho",
@@ -1374,8 +1389,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="text-center">
-            <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h1>
-            <p className="text-[10px] text-slate-500 uppercase">{STEPS[step]?.description}</p>
+            <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{currentStepTitle}</h1>
+            <p className="text-[10px] text-slate-500 uppercase">{headerSubtitle}</p>
           </div>
           <div className="w-10" />
         </header>
@@ -1397,8 +1412,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
               Voltar
             </Button>
             <div className="mt-2">
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h2>
-              <p className="text-[11px] text-slate-500 uppercase">{STEPS[step]?.description}</p>
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{currentStepTitle}</h2>
+              <p className="text-[11px] text-slate-500 uppercase">{headerSubtitle}</p>
             </div>
           </div>
         )}
@@ -1410,11 +1425,6 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
-            <div className="mb-6">
-              <h2 className="font-bold text-slate-800">{STEPS[step]?.title}</h2>
-              <p className="text-xs text-slate-500">{STEPS[step]?.description}</p>
-            </div>
-
             {/* --- PARTE 1: CADASTRO --- */}
             {part === 1 && step === 0 && (
               <div className="space-y-4">
