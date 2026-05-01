@@ -99,8 +99,9 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
 
   const filtered = history.filter(h => {
     if (search) {
-      const q = search.toLowerCase();
-      const hay = [h.descricao_produto, h.fornecedor_nome, h.categoria].filter(Boolean).join(" ").toLowerCase();
+      const normalize = (s: string) => (s || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const q = normalize(search);
+      const hay = normalize([h.descricao_produto, h.fornecedor_nome, h.categoria, h.fonte].filter(Boolean).join(" "));
       if (!hay.includes(q)) return false;
     }
     if (supplierFilter !== "all") {
