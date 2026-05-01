@@ -2151,7 +2151,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">4. OPME Solicitada</h3>
                 <div className="space-y-3">
                   {toList(form.opme_requested).map((item: any, idx: number) => (
-                    <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
+                    <Card key={idx} className="border-slate-200 shadow-sm overflow-visible">
                       <CardContent className="p-0">
                         <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 flex justify-between items-center">
                           <span className="text-xs font-bold text-slate-500 uppercase">Item #{String(idx + 1).padStart(2, '0')}</span>
@@ -3271,7 +3271,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                     {toList(form.opme_used).filter((item: any) => !item?.launched).map((item: any) => {
                       const idx = toList(form.opme_used).findIndex((i: any) => i === item);
                       return (
-                        <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
+                        <Card key={idx} className="border-slate-200 shadow-sm overflow-visible">
                           <CardContent className="p-4 space-y-4">
                             <div className="flex justify-between items-center mb-1">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Item #{String(idx + 1).padStart(2, '0')}</span>
