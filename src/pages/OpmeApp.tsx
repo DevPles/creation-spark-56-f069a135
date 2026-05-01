@@ -26,8 +26,9 @@ import { toast } from "sonner";
  } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+ import { format } from "date-fns";
+ import { ptBR } from "date-fns/locale";
+ import { sumOpme, formatBRL, toNumber, itemSubtotal } from "@/lib/opmeValue";
 
 const STEPS_CADASTRO = [
   { id: "paciente", title: "Paciente", description: "Identificação do Paciente" },
@@ -862,34 +863,48 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      });
      y = (doc as any).lastAutoTable.finalY + 8;
  
-     // Materiais
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(10);
-     doc.text("5. CONTROLE DE MATERIAIS (SOLICITADO X CONSUMIDO)", margin, y);
-     y += 4;
-     autoTable(doc, { 
-       startY: y, 
-       head: [["Material Autorizado", "Qtd", "Modelo", "SIGTAP"]], 
-       body: requested.map((item: any) => [item.description || "---", item.quantity || "0", item.size_model || "---", item.sigtap || "---"]), 
-       styles: { fontSize: 8 }, 
-       headStyles: { fillColor: [70, 70, 70] } 
-     });
-     y = (doc as any).lastAutoTable.finalY + 6;
- 
-     autoTable(doc, { 
-       startY: y, 
-       head: [["Consumo Efetivo", "Qtd", "Lote", "Validade", "Horário Lançamento"]], 
-       body: used.map((item: any) => [
-         item.description || "---", 
-         item.quantity || "0", 
-         item.batch || "---", 
-         item.expiry || "---",
-         item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR') : "---"
-       ]), 
-       styles: { fontSize: 8 }, 
-        headStyles: { fillColor: [30, 58, 138] } 
-     });
-     y = (doc as any).lastAutoTable.finalY + 8;
+      // Materiais
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("5. CONTROLE DE MATERIAIS (SOLICITADO X CONSUMIDO)", margin, y);
+      y += 4;
+      autoTable(doc, { 
+        startY: y, 
+        head: [["Material Autorizado", "Qtd", "Modelo", "SIGTAP", "Vlr Unit.", "Subtotal"]], 
+        body: [
+          ...requested.map((item: any) => [
+            item.description || "---", 
+            item.quantity || "0", 
+            item.size_model || "---", 
+            item.sigtap || "---",
+            formatBRL(toNumber(item.unit_price)),
+            formatBRL(itemSubtotal(item))
+          ]),
+          [{ content: `TOTAL ESTIMADO SOLICITADO: ${formatBRL(sumOpme(requested))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } }]
+        ], 
+        styles: { fontSize: 8 }, 
+        headStyles: { fillColor: [70, 70, 70] } 
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+  
+      autoTable(doc, { 
+        startY: y, 
+        head: [["Consumo Efetivo", "Qtd", "Lote", "Validade", "Vlr Unit.", "Subtotal"]], 
+        body: [
+          ...used.map((item: any) => [
+            item.description || "---", 
+            item.quantity || "0", 
+            item.batch || "---", 
+            item.expiry || "---",
+            formatBRL(toNumber(item.unit_price)),
+            formatBRL(itemSubtotal(item))
+          ]),
+          [{ content: `TOTAL EFETIVO UTILIZADO: ${formatBRL(sumOpme(used))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [219, 234, 254] } }]
+        ], 
+        styles: { fontSize: 8 }, 
+         headStyles: { fillColor: [30, 58, 138] } 
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
  
      // Validações
      doc.setFont("helvetica", "bold");
@@ -3393,10 +3408,28 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                   </div>
                 )}
 
-                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                  <Label className="text-[10px] font-bold uppercase text-amber-800">Solicitação atual do Auditor:</Label>
-                  <p className="text-xs text-amber-900 mt-1 font-medium italic whitespace-pre-line">"{form.auditor_post_justification_reason || 'Favor justificar divergências apontadas.'}"</p>
-                </div>
+                 <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 space-y-3">
+                   <div>
+                     <Label className="text-[10px] font-bold uppercase text-amber-800">Solicitação atual do Auditor:</Label>
+                     <p className="text-xs text-amber-900 mt-1 font-medium italic whitespace-pre-line">"{form.auditor_post_justification_reason || 'Favor justificar divergências apontadas.'}"</p>
+                   </div>
+                   
+                   <div className="pt-2 border-t border-amber-200">
+                     <Label className="text-[10px] font-bold uppercase text-amber-800">Resumo Financeiro da OPME:</Label>
+                     <div className="mt-2 space-y-1.5">
+                       {toList(form.opme_requested).filter((it: any) => it?.description?.trim()).map((it: any, i: number) => (
+                         <div key={i} className="flex justify-between items-center text-[10px] text-amber-900">
+                           <span className="truncate flex-1 mr-4">{it.description} (x{it.quantity})</span>
+                           <span className="font-bold">{formatBRL(itemSubtotal(it))}</span>
+                         </div>
+                       ))}
+                       <div className="flex justify-between items-center text-xs font-black text-amber-950 pt-1 border-t border-amber-200 mt-1">
+                         <span>VALOR TOTAL ESTIMADO</span>
+                         <span>{formatBRL(sumOpme(toList(form.opme_requested)))}</span>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Justificativa do Cirurgião</Label>
                   <Textarea
