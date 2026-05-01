@@ -940,6 +940,17 @@ export default function OpmeApp() {
       else if (part === 2) nextStatus = "pendente_auditoria";
       else if (part === 3) {
         if (step === 0) nextStatus = "pendente_controle";
+        else if (form.status === "justificativa_respondida") {
+          // Re-análise da justificativa do cirurgião — decisão do auditor
+          if (form.auditor_post_justification_decision === "reprovada") {
+            nextStatus = "aguardando_justificativa";
+          } else if (form.auditor_post_justification_decision === "liberada") {
+            nextStatus = "pendente_faturamento";
+          } else {
+            // Sem decisão definida → mantém em re-análise
+            nextStatus = "justificativa_respondida";
+          }
+        }
         else if (form.auditor_post_justification_requested) nextStatus = "aguardando_justificativa";
         else nextStatus = "pendente_faturamento";
       }
