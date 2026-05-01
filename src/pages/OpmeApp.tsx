@@ -84,7 +84,11 @@ const shortActorName = (value: any) => {
   return at > 0 ? text.slice(0, at) : text;
 };
 
-export default function OpmeApp() {
+interface OpmeAppProps {
+  embedded?: boolean;
+}
+
+export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1116,17 +1120,19 @@ export default function OpmeApp() {
 
   if (part === null) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-20">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="text-center">
-            <h1 className="text-base font-bold text-slate-900 uppercase tracking-wider">Módulos OPME</h1>
-            <p className="text-xs text-slate-500 uppercase">Gestão Hospitalar</p>
-          </div>
-          <div className="w-10" />
-        </header>
+      <div className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
+        {!embedded && (
+          <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="text-center">
+              <h1 className="text-base font-bold text-slate-900 uppercase tracking-wider">Módulos OPME</h1>
+              <p className="text-xs text-slate-500 uppercase">Gestão Hospitalar</p>
+            </div>
+            <div className="w-10" />
+          </header>
+        )}
 
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-10 space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
@@ -1353,17 +1359,19 @@ export default function OpmeApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
-        <Button variant="ghost" size="icon" onClick={() => setPart(null)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="text-center">
-          <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h1>
-          <p className="text-[10px] text-slate-500 uppercase">{STEPS[step]?.description}</p>
-        </div>
-        <div className="w-10" />
-      </header>
+    <div className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
+      {!embedded && (
+        <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
+          <Button variant="ghost" size="icon" onClick={() => setPart(null)}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="text-center">
+            <h1 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h1>
+            <p className="text-[10px] text-slate-500 uppercase">{STEPS[step]?.description}</p>
+          </div>
+          <div className="w-10" />
+        </header>
+      )}
 
       <div className="flex h-1 bg-slate-200">
         {STEPS.map((_, i) => (
@@ -1375,6 +1383,18 @@ export default function OpmeApp() {
       </div>
 
       <main className="flex-1 p-4 pb-24">
+        {embedded && (
+          <div className="mb-3">
+            <Button variant="ghost" size="sm" onClick={() => { setPart(null); setStep(0); }}>
+              <ArrowLeft className="h-4 w-4" />
+              Voltar aos módulos
+            </Button>
+            <div className="mt-2">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h2>
+              <p className="text-[11px] text-slate-500 uppercase">{STEPS[step]?.description}</p>
+            </div>
+          </div>
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={`${part}-${step}`}
