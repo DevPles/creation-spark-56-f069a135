@@ -2682,52 +2682,52 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                       <div className="flex items-center justify-between gap-3 border-b border-primary/10 pb-2">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-4 bg-primary rounded-full"></div>
-                          <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">Dossiê Consolidado Pós-OP</h3>
+                          <h3 className="font-display text-[10px] font-black uppercase text-primary tracking-widest">Dossiê Consolidado Pós-OP</h3>
                         </div>
-                        <Button variant="outline" size="sm" className="h-8 rounded-full text-[10px] font-bold uppercase" onClick={generateAuditDossierPdf}>Gerar PDF</Button>
+                        <Button variant="outline" size="sm" className="h-8 rounded-full font-display text-[10px] font-bold uppercase" onClick={generateAuditDossierPdf}>Gerar PDF</Button>
                       </div>
 
                       <div className="grid grid-cols-2 gap-y-3 gap-x-4">
                         <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Paciente</p>
-                          <p className="text-xs font-bold text-foreground truncate">{form.patient_name || 'Não informado'}</p>
+                          <p className="font-display text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Paciente</p>
+                          <p className="font-display text-xs font-bold text-foreground truncate">{form.patient_name || 'Não informado'}</p>
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Unidade</p>
-                          <p className="text-xs font-bold text-foreground truncate">{form.facility_unit || 'Não informada'}</p>
+                          <p className="font-display text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Unidade</p>
+                          <p className="font-display text-xs font-bold text-foreground truncate">{form.facility_unit || 'Não informada'}</p>
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Registro / SUS</p>
-                          <p className="text-xs font-bold text-foreground">{form.patient_record || '---'} / {form.patient_sus || '---'}</p>
+                          <p className="font-display text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Registro / SUS</p>
+                          <p className="font-display text-xs font-bold text-foreground">{form.patient_record || '---'} / {form.patient_sus || '---'}</p>
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Nascimento</p>
-                          <p className="text-xs font-bold text-foreground">{formatDateBR(form.patient_birthdate)}</p>
+                          <p className="font-display text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Nascimento</p>
+                          <p className="font-display text-xs font-bold text-foreground">{formatDateBR(form.patient_birthdate)}</p>
                         </div>
                         <div className="col-span-2 space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Procedimento</p>
-                          <p className="text-xs font-bold text-foreground">{form.procedure_name || 'Não informado'}</p>
-                          <p className="text-[10px] text-muted-foreground font-medium">SIGTAP: {form.procedure_sigtap_code || '---'} | Data: {formatDateBR(form.procedure_date)} | Sala: {form.procedure_room || '---'}</p>
+                          <p className="font-display text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Procedimento</p>
+                          <p className="font-display text-xs font-bold text-foreground">{form.procedure_name || 'Não informado'}</p>
+                          <p className="font-display text-[10px] text-muted-foreground font-medium">SIGTAP: {form.procedure_sigtap_code || '---'} | Data: {formatDateBR(form.procedure_date)} | Sala: {form.procedure_room || '---'}</p>
                         </div>
                         <div className="col-span-2 space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Indicação Clínica</p>
-                          <div className="bg-background p-3 rounded-lg border border-border text-[11px] text-foreground font-medium leading-relaxed">
+                          <p className="font-display text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Indicação Clínica</p>
+                          <div className="font-display bg-background p-3 rounded-lg border border-border text-[11px] text-foreground font-medium leading-relaxed">
                             {form.clinical_indication || 'Sem indicação clínica registrada.'}
                           </div>
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Auditoria Pré-OP</p>
-                          <p className="text-xs font-bold text-foreground">{form.auditor_pre_analysis || '---'} | SIGTAP {form.auditor_pre_sigtap_compat || '---'}</p>
+                          <p className="font-display text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Auditoria Pré-OP</p>
+                          <p className="font-display text-xs font-bold text-foreground">{form.auditor_pre_analysis || '---'} | SIGTAP {form.auditor_pre_sigtap_compat || '---'}</p>
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">AIH / Faturamento</p>
-                          <p className="text-xs font-bold text-foreground">{form.billing_aih_number || 'Não informado'} | {form.billing_aih_generated ? 'Gerada' : 'Pendente'}</p>
+                          <p className="font-display text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">AIH / Faturamento</p>
+                          <p className="font-display text-xs font-bold text-foreground">{form.billing_aih_number || 'Não informado'} | {form.billing_aih_generated ? 'Gerada' : 'Pendente'}</p>
                         </div>
                       </div>
                     </div>
 
                     <div className="bg-muted/30 p-4 rounded-xl border border-border space-y-4">
-                      <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Comparativo Autorizado x Consumido</h3>
+                      <h3 className="font-display text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Comparativo Autorizado x Consumido</h3>
                       <div className="space-y-2">
                         {toList(form.opme_requested).filter((item: any) => item?.description?.trim()).map((item: any, i: number) => {
                           const usedItems = toList(form.opme_used).filter((used: any) => used?.launched && normalizeMaterial(used.description) === normalizeMaterial(item.description));
@@ -2737,20 +2737,20 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                           return (
                             <div key={i} className="bg-background p-3 rounded-lg border border-border grid grid-cols-[minmax(0,1fr)_auto] gap-3">
                               <div className="min-w-0">
-                                <p className="text-[11px] font-bold text-foreground uppercase leading-tight">{item.description}</p>
-                                <p className="text-[9px] text-muted-foreground font-bold uppercase">Autorizado: {item.quantity || 0} | Consumido: {usedQty} | Modelo: {item.size_model || '---'}</p>
+                                <p className="font-display text-[11px] font-bold text-foreground uppercase leading-tight">{item.description}</p>
+                                <p className="font-display text-[9px] text-muted-foreground font-bold uppercase">Autorizado: {item.quantity || 0} | Consumido: {usedQty} | Modelo: {item.size_model || '---'}</p>
                                 {usedItems.map((used: any, idx: number) => (
-                                  <p key={idx} className="text-[9px] text-muted-foreground font-medium">Lote {used.batch || '---'} | Validade {used.expiry || '---'} | Etiqueta {used.label_fixed === 'sim' ? 'sim' : 'não'}</p>
+                                  <p key={idx} className="font-display text-[9px] text-muted-foreground font-medium">Lote {used.batch || '---'} | Validade {used.expiry || '---'} | Etiqueta {used.label_fixed === 'sim' ? 'sim' : 'não'}</p>
                                 ))}
                               </div>
-                              <span className={`self-start rounded-full px-2 py-1 text-[9px] font-black uppercase ${status === 'Conforme' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>{status}</span>
+                              <span className={`self-start rounded-full px-2 py-1 font-display text-[9px] font-black uppercase ${status === 'Conforme' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>{status}</span>
                             </div>
                           );
                         })}
                         {toList(form.opme_used).filter((used: any) => used?.launched && used?.description?.trim() && !toList(form.opme_requested).some((req: any) => normalizeMaterial(req.description) === normalizeMaterial(used.description))).map((item: any, i: number) => (
                           <div key={`extra-${i}`} className="bg-destructive/10 p-3 rounded-lg border border-destructive/20">
-                            <p className="text-[11px] font-bold text-destructive uppercase leading-tight">Consumido sem autorização: {item.description}</p>
-                            <p className="text-[9px] text-destructive font-bold uppercase">Qtd: {item.quantity || 0} | Lote: {item.batch || '---'}</p>
+                            <p className="font-display text-[11px] font-bold text-destructive uppercase leading-tight">Consumido sem autorização: {item.description}</p>
+                            <p className="font-display text-[9px] text-destructive font-bold uppercase">Qtd: {item.quantity || 0} | Lote: {item.batch || '---'}</p>
                           </div>
                         ))}
                       </div>
