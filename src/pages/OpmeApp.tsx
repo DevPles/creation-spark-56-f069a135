@@ -982,14 +982,63 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      doc.text(opinionLines, margin, y);
      y += Math.max(20, opinionLines.length * 5 + 10);
  
-     // Assinatura
-     doc.setFont("helvetica", "bold");
-     doc.line(margin + 50, y, 146, y);
-     y += 5;
-     doc.text(form.auditor_post_name || "MÉDICO AUDITOR", 105, y, { align: "center" });
-     y += 4;
-     doc.setFontSize(8);
-     doc.text(`CRM: ${form.auditor_post_crm || "---"} | Data: ${formatDateBR(form.auditor_post_date)}`, 105, y, { align: "center" });
+      // Informações de Faturamento (Se disponível)
+      if (form.billing_final_status || form.billing_aih_number) {
+        if (y > 230) {
+          doc.addPage();
+          y = margin;
+        } else {
+          y += 10;
+        }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("9. INFORMAÇÕES DE FATURAMENTO E FECHAMENTO", margin, y);
+        y += 4;
+
+        autoTable(doc, {
+          startY: y,
+          head: [["Campo", "Valor"]],
+          body: [
+            ["Número da AIH", form.billing_aih_number || "---"],
+            ["Tipo de AIH", form.billing_aih_type || "---"],
+            ["Data Internação", formatDateBR(form.billing_admission_date)],
+            ["Data Alta", formatDateBR(form.billing_discharge_date)],
+            ["Motivo da Saída", form.billing_exit_reason || "---"],
+            ["Risco de Glosa", (form.billing_glosa_risk || "---").toUpperCase()],
+            ["Responsável", form.billing_responsible_name || "---"],
+            ["Status Final", (form.billing_final_status || "---").toUpperCase()]
+          ],
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [5, 150, 105] } // Emerald-600
+        });
+        y = (doc as any).lastAutoTable.finalY + 8;
+        
+        if (form.billing_final_observations) {
+          doc.setFont("helvetica", "bold");
+          doc.text("Observações de Fechamento:", margin, y);
+          y += 5;
+          doc.setFont("helvetica", "normal");
+          const obsLines = doc.splitTextToSize(form.billing_final_observations, 182);
+          doc.text(obsLines, margin, y);
+          y += obsLines.length * 5 + 8;
+        }
+      }
+
+      // Assinatura
+      if (y > 260) {
+        doc.addPage();
+        y = margin + 20;
+      } else {
+        y += 15;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.line(margin + 50, y, 146, y);
+      y += 5;
+      doc.text(form.auditor_post_name || "MÉDICO AUDITOR", 105, y, { align: "center" });
+      y += 4;
+      doc.setFontSize(8);
+      doc.text(`CRM: ${form.auditor_post_crm || "---"} | Data: ${formatDateBR(form.auditor_post_date)}`, 105, y, { align: "center" });
  
      doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
    };
