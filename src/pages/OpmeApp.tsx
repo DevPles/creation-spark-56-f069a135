@@ -2599,8 +2599,8 @@ export default function OpmeApp() {
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Materiais a Lançar</h3>
                   <div className="space-y-3">
-                    {form.opme_used?.filter((item: any) => !item.launched).map((item: any) => {
-                      const idx = form.opme_used.findIndex((i: any) => i === item);
+                    {toList(form.opme_used).filter((item: any) => !item?.launched).map((item: any) => {
+                      const idx = toList(form.opme_used).findIndex((i: any) => i === item);
                       return (
                         <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden">
                           <CardContent className="p-4 space-y-4">
@@ -2618,7 +2618,7 @@ export default function OpmeApp() {
                                 >
                                   Lançar Item
                                 </Button>
-                                {form.opme_used.length > 1 && (
+                                {toList(form.opme_used).length > 1 && (
                                   <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px] font-bold uppercase" onClick={() => setForm((p: any) => ({ ...p, opme_used: p.opme_used.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
                                 )}
                               </div>
@@ -2687,12 +2687,12 @@ export default function OpmeApp() {
                   </div>
                 </div>
 
-                {form.opme_used?.some((item: any) => item.launched) && (
+                {toList(form.opme_used).some((item: any) => item?.launched) && (
                   <div className="space-y-4">
                     <h3 className="text-[10px] font-black uppercase text-emerald-600 tracking-widest border-b pb-1">Materiais Lançados</h3>
                     <div className="space-y-2">
-                      {form.opme_used?.filter((item: any) => item.launched).map((item: any) => {
-                        const idx = form.opme_used.findIndex((i: any) => i === item);
+                      {toList(form.opme_used).filter((item: any) => item?.launched).map((item: any) => {
+                        const idx = toList(form.opme_used).findIndex((i: any) => i === item);
                         return (
                           <Card key={idx} className="border-emerald-100 bg-emerald-50/30 overflow-hidden">
                             <CardContent className="p-3 flex items-center justify-between">
@@ -2724,7 +2724,7 @@ export default function OpmeApp() {
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-1">Devoluções / Sobras</h3>
                   <div className="space-y-3">
-                    {form.opme_returned?.map((item: any, idx: number) => (
+                    {toList(form.opme_returned).map((item: any, idx: number) => (
                       <Card key={idx} className="border-slate-200 shadow-sm overflow-hidden bg-slate-50/50">
                         <CardContent className="p-4 space-y-4">
                           <div className="flex justify-between items-center mb-1">
