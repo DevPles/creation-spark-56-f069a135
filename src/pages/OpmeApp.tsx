@@ -69,6 +69,21 @@ const ANATOMY_DATA: Record<string, string[]> = {
   "Coluna": ["Cervical", "Torácica", "Lombar", "Sacro-Coccígea"]
 };
 
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const getFileExtension = (file: any) => {
+  const name = typeof file?.name === "string" ? file.name : "";
+  const dot = name.lastIndexOf(".");
+  return dot >= 0 ? name.slice(dot + 1) || "bin" : "bin";
+};
+const isUploadableFile = (file: any): file is File => typeof File !== "undefined" && file instanceof File && typeof file.name === "string";
+const isRemoteUrl = (url: any) => typeof url === "string" && /^https?:\/\//i.test(url);
+const shortActorName = (value: any) => {
+  const text = typeof value === "string" ? value : String(value ?? "");
+  if (!text) return "---";
+  const at = text.indexOf("@");
+  return at > 0 ? text.slice(0, at) : text;
+};
+
 export default function OpmeApp() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
