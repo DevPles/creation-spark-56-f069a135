@@ -1980,6 +1980,27 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                     <Label className="text-xs font-semibold uppercase text-slate-500">Indicação Clínica / Evidência</Label>
                     <Textarea value={form.clinical_indication} onChange={e => updateForm("clinical_indication", e.target.value)} placeholder="Justificativa para uso de OPME..." className="min-h-[100px] text-sm bg-white border-slate-200 shadow-sm" />
                   </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">CID Principal</Label>
+                    <Input
+                      value={form.billing_cid_main || ""}
+                      onChange={e => updateForm("billing_cid_main", e.target.value.toUpperCase())}
+                      placeholder="Ex: M17.1"
+                      className="h-12 text-sm bg-white border-slate-200 shadow-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">CID Secundário</Label>
+                    <Input
+                      value={form.billing_cid_secondary || ""}
+                      onChange={e => updateForm("billing_cid_secondary", e.target.value.toUpperCase())}
+                      placeholder="Opcional"
+                      className="h-12 text-sm bg-white border-slate-200 shadow-sm"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 italic">CID definido pelo médico solicitante — será usado pelo Faturamento.</p>
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Parecer da Comissão</Label>
                     <Select value={form.auditor_pre_analysis} onValueChange={(v) => updateForm("auditor_pre_analysis", v)}>

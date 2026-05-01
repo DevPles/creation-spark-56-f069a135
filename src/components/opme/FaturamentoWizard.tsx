@@ -67,6 +67,97 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCnes]);
 
+  // Auto-fill Caráter de Atendimento from procedure_type (Procedimento)
+  useEffect(() => {
+    if (form.procedure_type && form.billing_attendance_character !== form.procedure_type) {
+      updateForm("billing_attendance_character", form.procedure_type);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.procedure_type]);
+
+  // ====== CÁLCULO AUTOMÁTICO DO RISCO DE GLOSA ======
+  // Score completo: checklist + justificativas + valor (qtd itens) + tempo de internação
+  const computeGlosaScore = () => {
+    const reasons: string[] = [];
+    let score = 0; // 0 = baixo, quanto maior pior
+
+    // 1) Checklist de documentação (peso alto)
+    const docs = form.billing_docs || {};
+    const requiredDocs = ["nf", "rastreabilidade", "laudo", "consumo", "exames", "aih_anexa", "termo_consentimento"];
+    const missingDocs = requiredDocs.filter(d => !docs[d]);
+    if (missingDocs.length >= 3) { score += 3; reasons.push(`${missingDocs.length} documentos obrigatórios faltando`); }
+    else if (missingDocs.length > 0) { score += 1; reasons.push(`${missingDocs.length} documento(s) faltando`); }
+
+    // 2) Justificativa do cirurgião exigida pelo auditor (sinal forte de glosa)
+    if (form.auditor_post_justification_requested || Number(form.justification_round || 0) > 0) {
+      score += 2;
+      reasons.push("Caso passou por reanálise/justificativa do cirurgião");
+    }
+
+    // 3) Divergência OPME utilizado x faturado
+    if (form.billing_opme_compatibility === "nao") {
+      score += 3;
+      reasons.push("Divergência crítica entre OPME utilizado e faturado");
+    } else if (form.billing_opme_compatibility === "parcial") {
+      score += 1;
+      reasons.push("Divergência parcial OPME utilizado x faturado");
+    }
+
+    // 4) Auditoria pós sem aprovação clara
+    const auditOk = form.auditor_post_final_opinion === "aprovado" || form.auditor_post_final_opinion === "liberado";
+    if (!auditOk && form.auditor_post_final_opinion) {
+      score += 2;
+      reasons.push("Auditoria pós sem parecer favorável");
+    }
+
+    // 5) Rastreabilidade incompleta nos itens utilizados
+    const used = Array.isArray(form.opme_used) ? form.opme_used : [];
+    const launched = used.filter((u: any) => u?.launched);
+    const semRastreio = launched.filter((u: any) => !u?.batch || !u?.photo_url);
+    if (launched.length > 0 && semRastreio.length > 0) {
+      score += semRastreio.length >= launched.length ? 2 : 1;
+      reasons.push(`${semRastreio.length}/${launched.length} item(ns) sem lote/etiqueta`);
+    }
+
+    // 6) Volume de itens (proxy de valor — quanto mais alto, maior exposição)
+    if (launched.length >= 5) { score += 1; reasons.push(`Alto volume de itens (${launched.length})`); }
+
+    // 7) Tempo de internação acima da média (>15 dias = alta exposição)
+    if (form.billing_admission_date && form.billing_discharge_date) {
+      const a = new Date(form.billing_admission_date);
+      const b = new Date(form.billing_discharge_date);
+      const dias = Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+      if (dias > 30) { score += 2; reasons.push(`Internação prolongada (${dias} dias)`); }
+      else if (dias > 15) { score += 1; reasons.push(`Internação acima da média (${dias} dias)`); }
+    }
+
+    // 8) Autorização prévia ausente
+    if (form.billing_prior_authorization === "nao") {
+      score += 2;
+      reasons.push("Sem autorização prévia");
+    }
+
+    // 9) AIH ou CID ausentes
+    if (!form.billing_aih_number) { score += 2; reasons.push("AIH não informada"); }
+    if (!form.billing_cid_main) { score += 1; reasons.push("CID Principal ausente"); }
+
+    let level: "baixo" | "medio" | "alto" = "baixo";
+    if (score >= 5) level = "alto";
+    else if (score >= 2) level = "medio";
+
+    return { level, score, reasons };
+  };
+
+  const glosaAuto = computeGlosaScore();
+
+  // Persistir nível calculado automaticamente
+  useEffect(() => {
+    if (form.billing_glosa_risk !== glosaAuto.level) {
+      updateForm("billing_glosa_risk", glosaAuto.level);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [glosaAuto.level]);
+
   // ====== TELA 1 — RESUMO DO CASO ======
   if (step === 1) {
     const cadastroOk = !!(form.patient_name && form.patient_record && form.facility_unit);
@@ -136,14 +227,8 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
 
         <Accordion title="CID e CNES" status={form.billing_cid_main && form.billing_cnes ? "ok" : "pending"}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">CID Principal</Label>
-              <Input value={form.billing_cid_main || ""} onChange={e => updateForm("billing_cid_main", e.target.value)} placeholder="Ex: M17.1" className="h-12 bg-white" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">CID Secundário</Label>
-              <Input value={form.billing_cid_secondary || ""} onChange={e => updateForm("billing_cid_secondary", e.target.value)} placeholder="Opcional" className="h-12 bg-white" />
-            </div>
+            <ReadOnlyField label="CID Principal" value={form.billing_cid_main} placeholder="Pendente — preencher na Requisição" />
+            <ReadOnlyField label="CID Secundário" value={form.billing_cid_secondary} placeholder="Opcional — Requisição" />
             {autoCnes ? (
               <ReadOnlyField label="CNES da Unidade" value={form.billing_cnes || autoCnes} placeholder="Cadastre em Contratos" />
             ) : (
@@ -153,18 +238,13 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
               </div>
             )}
           </div>
+          <p className="text-[10px] text-slate-400 italic mt-1">CID definido pelo médico na Requisição (Parte 2). Para alterar, retorne àquela etapa.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">Caráter de Atendimento</Label>
-              <Select value={form.billing_attendance_character || ""} onValueChange={v => updateForm("billing_attendance_character", v)}>
-                <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="eletivo">Eletivo</SelectItem>
-                  <SelectItem value="urgencia">Urgência</SelectItem>
-                  <SelectItem value="emergencia">Emergência</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <ReadOnlyField
+              label="Caráter de Atendimento"
+              value={form.billing_attendance_character || form.procedure_type}
+              placeholder="Pendente — definir Tipo no Procedimento"
+            />
             <div className="space-y-2">
               <Label className="text-xs font-semibold uppercase text-slate-500">Motivo da Saída</Label>
               <Select value={form.billing_exit_reason || ""} onValueChange={v => updateForm("billing_exit_reason", v)}>
@@ -315,18 +395,35 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
         <Accordion title="Risco de Glosa" defaultOpen status={form.billing_glosa_risk === "baixo" ? "ok" : form.billing_glosa_risk ? "warn" : "pending"}>
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">Nível de Risco</Label>
-              <Select value={form.billing_glosa_risk || ""} onValueChange={v => updateForm("billing_glosa_risk", v)}>
-                <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Avalie o risco" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="baixo">Baixo</SelectItem>
-                  <SelectItem value="medio">Médio</SelectItem>
-                  <SelectItem value="alto">Alto</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-xs font-semibold uppercase text-slate-500">Nível de Risco (calculado automaticamente)</Label>
+              <div className={`min-h-12 flex items-center justify-between gap-3 px-4 py-3 rounded-md border text-sm font-bold uppercase ${
+                glosaAuto.level === "baixo" ? "bg-emerald-50 border-emerald-200 text-emerald-700" :
+                glosaAuto.level === "medio" ? "bg-amber-50 border-amber-200 text-amber-700" :
+                "bg-rose-50 border-rose-200 text-rose-700"
+              }`}>
+                <span>{glosaAuto.level === "baixo" ? "Baixo" : glosaAuto.level === "medio" ? "Médio" : "Alto"}</span>
+                <span className="text-[10px] font-medium">Score: {glosaAuto.score}</span>
+              </div>
             </div>
+            {glosaAuto.reasons.length > 0 ? (
+              <div className="space-y-2">
+                <Label className="text-[10px] font-semibold uppercase text-slate-500">Fatores que compõem o risco</Label>
+                <ul className="space-y-1">
+                  {glosaAuto.reasons.map((r, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[11px] text-slate-700 bg-white border border-slate-200 rounded-md p-2">
+                      <AlertCircle size={12} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                      <span>{r}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-3 text-[11px] text-emerald-700 font-medium">
+                ✓ Nenhum fator de risco identificado — processo conforme.
+              </div>
+            )}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">Observações sobre Glosa</Label>
+              <Label className="text-xs font-semibold uppercase text-slate-500">Observações Complementares</Label>
               <Textarea
                 value={form.billing_glosa_observations || ""}
                 onChange={e => updateForm("billing_glosa_observations", e.target.value)}
