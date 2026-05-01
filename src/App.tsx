@@ -55,7 +55,15 @@ const App = () => (
             <Route path="/treinamento" element={<ProtectedRoute><TreinamentoPage /></ProtectedRoute>} />
             <Route path="/assistente" element={<ProtectedRoute><AssistentePage /></ProtectedRoute>} />
             <Route path="/opme" element={<ProtectedRoute><OpmePage /></ProtectedRoute>} />
-            <Route path="/opme-app" element={<ProtectedRoute><OpmeApp /></ProtectedRoute>} />
+            <Route path="/opme-app" element={
+              <ProtectedRoute>
+                <div className="min-h-screen w-full bg-slate-900 flex justify-center">
+                  <div className="w-full max-w-[420px] min-h-screen bg-slate-50 shadow-2xl overflow-hidden">
+                    <OpmeApp />
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
             <Route path="/compras" element={<ProtectedRoute><ComprasPage /></ProtectedRoute>} />
             <Route path="/cotacao-publica/:token" element={<PublicQuotationPage />} />
             <Route path="/aprovar-oc/:token" element={<PublicOrderApprovalPage />} />
