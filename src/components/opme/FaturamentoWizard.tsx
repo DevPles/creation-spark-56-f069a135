@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useContracts } from "@/contexts/ContractsContext";
+import { supabase } from "@/integrations/supabase/client";
+import { sumOpme, formatBRL } from "@/lib/opmeValue";
 
 interface FaturamentoWizardProps {
   step: number;
@@ -58,6 +60,29 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
   const { contracts } = useContracts();
   const unitContract = contracts.find(c => c.unit === form.facility_unit);
   const autoCnes = unitContract?.cnes || "";
+
+  // Threshold dinâmico (média + 1σ) do valor de OPME nos últimos casos
+  const [opmeThreshold, setOpmeThreshold] = useState<number | null>(null);
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("opme_requests")
+        .select("opme_used, opme_requested")
+        .eq("facility_unit", form.facility_unit)
+        .eq("status", "concluido")
+        .limit(200);
+      if (!active || !data) return;
+      const totals = data
+        .map((r: any) => sumOpme(Array.isArray(r.opme_used) && r.opme_used.length ? r.opme_used : r.opme_requested))
+        .filter((v: number) => v > 0);
+      if (totals.length < 3) { setOpmeThreshold(null); return; }
+      const mean = totals.reduce((a, b) => a + b, 0) / totals.length;
+      const variance = totals.reduce((a, b) => a + (b - mean) ** 2, 0) / totals.length;
+      setOpmeThreshold(mean + Math.sqrt(variance));
+    })();
+    return () => { active = false; };
+  }, [form.facility_unit]);
 
   // Auto-fill CNES from the unit's contract if missing
   useEffect(() => {
@@ -119,8 +144,14 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
       reasons.push(`${semRastreio.length}/${launched.length} item(ns) sem lote/etiqueta`);
     }
 
-    // 6) Volume de itens (proxy de valor — quanto mais alto, maior exposição)
-    if (launched.length >= 5) { score += 1; reasons.push(`Alto volume de itens (${launched.length})`); }
+    // 6) Valor da OPME — agora REAL (catálogo / banco de preços)
+    const opmeTotal = sumOpme(launched.length ? launched : (Array.isArray(form.opme_requested) ? form.opme_requested : []));
+    if (opmeThreshold && opmeTotal > 0) {
+      if (opmeTotal > opmeThreshold * 1.5) { score += 2; reasons.push(`Valor de OPME muito acima da média da unidade (${formatBRL(opmeTotal)})`); }
+      else if (opmeTotal > opmeThreshold) { score += 1; reasons.push(`Valor de OPME acima da média + 1σ (${formatBRL(opmeTotal)})`); }
+    } else if (launched.length >= 5) {
+      score += 1; reasons.push(`Alto volume de itens (${launched.length})`);
+    }
 
     // 7) Tempo de internação acima da média (>15 dias = alta exposição)
     if (form.billing_admission_date && form.billing_discharge_date) {
