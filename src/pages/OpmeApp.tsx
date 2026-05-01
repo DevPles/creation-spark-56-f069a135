@@ -478,7 +478,8 @@ export default function OpmeApp() {
   const uploadFile = async (file: File, bucket: string = "opme-attachments"): Promise<string | null> => {
     if (!isUploadableFile(file)) return null;
     const ext = getFileExtension(file);
-    const path = `${crypto.randomUUID()}.${ext}`;
+    const folder = user?.id || "anon";
+    const path = `${folder}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from(bucket).upload(path, file);
     if (error) {
       console.error("Erro no upload:", error);
