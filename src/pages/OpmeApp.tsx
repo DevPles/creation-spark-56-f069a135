@@ -84,7 +84,11 @@ const shortActorName = (value: any) => {
   return at > 0 ? text.slice(0, at) : text;
 };
 
-export default function OpmeApp() {
+interface OpmeAppProps {
+  embedded?: boolean;
+}
+
+export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
