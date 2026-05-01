@@ -56,7 +56,7 @@ const STEPS_CONSUMO = [
 ];
 
 const STEPS_FATURAMENTO = [
-  { id: "cirurgiao_just", title: "Justificativa", description: "Descrição de Intercorrências" },
+  { id: "justificativa_cirurgiao", title: "Justificativa", description: "Responder Auditoria" },
   { id: "faturamento", title: "Codificação", description: "Fechamento e AIH" },
 ];
 
@@ -424,7 +424,7 @@ export default function OpmeApp() {
           }
         }
       }
-      else if (req.status === "pendente_faturamento") { setPart(4); setStep(0); }
+      else if (req.status === "pendente_faturamento" || req.status === "aguardando_justificativa") { setPart(4); setStep(0); }
       else { setPart(1); setStep(0); } // Fallback
      
      // Adicionar ID na URL sem recarregar para manter consistência
@@ -914,7 +914,9 @@ export default function OpmeApp() {
       if (part === 1) nextStatus = "pendente_requisicao";
       else if (part === 2) nextStatus = "pendente_auditoria";
       else if (part === 3) {
-        nextStatus = step === 0 ? "pendente_controle" : "pendente_faturamento";
+        if (step === 0) nextStatus = "pendente_controle";
+        else if (form.auditor_post_justification_requested) nextStatus = "aguardando_justificativa";
+        else nextStatus = "pendente_faturamento";
       }
       else if (part === 5) nextStatus = "pendente_consumo";
       else if (part === 6) nextStatus = "pendente_auditoria_post";
@@ -2850,20 +2852,20 @@ export default function OpmeApp() {
 
             {/* --- PARTE 4: FATURAMENTO (Justificativa Cirurgião) --- */}
             {part === 4 && step === 0 && (
-              <div className="space-y-4">
-                <h3 className="text-xs font-bold uppercase text-slate-400">Justificativa do Cirurgião</h3>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Data do Ocorrido</Label>
-                  <Input type="date" value={form.incident_date} onChange={e => updateForm("incident_date", e.target.value)} className="h-12 bg-white shadow-sm" />
+              <div className="space-y-6">
+                <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b pb-2">Resposta à Auditoria</h3>
+                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                  <Label className="text-[10px] font-bold uppercase text-amber-800">Solicitação do Auditor:</Label>
+                  <p className="text-xs text-amber-900 mt-1 font-medium italic">"{form.auditor_post_justification_reason || 'Favor justificar divergências apontadas.'}"</p>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Descrição (Perda / Dano / Violação)</Label>
-                  <Textarea value={form.incident_description} onChange={e => updateForm("incident_description", e.target.value)} placeholder="Descreva o ocorrido, se aplicável..." className="min-h-[120px] bg-white shadow-sm" />
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Justificativa do Cirurgião</Label>
+                  <Textarea value={form.incident_description} onChange={e => updateForm("incident_description", e.target.value)} placeholder="Descreva sua justificativa técnica..." className="min-h-[150px] bg-white shadow-sm" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Assinatura Profissional</Label>
-                  <Input value={form.incident_responsible} onChange={e => updateForm("incident_responsible", e.target.value)} placeholder="Nome do Cirurgião" className="h-12 bg-white shadow-sm" />
-                </div>
+                <Button className="w-full h-12 bg-primary" onClick={() => {
+                  updateForm("status", "pendente_faturamento");
+                  handleSave(true);
+                }}>Enviar Resposta ao Auditor</Button>
               </div>
             )}
 
