@@ -2206,7 +2206,7 @@ export default function OpmeApp() {
                        {/* Seção 1: Justificativa Clínica (Pré-OP) */}
                        <div className="space-y-3">
                          <div className="flex items-center gap-2">
-                           <div className="w-1.5 h-3 bg-blue-500 rounded-full"></div>
+                            <div className="w-1.5 h-3 bg-slate-400 rounded-full"></div>
                            <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">1. Justificativa Clínica (Pré-OP)</h4>
                          </div>
                          <div className="grid grid-cols-2 gap-3">
@@ -2230,15 +2230,15 @@ export default function OpmeApp() {
                        {/* Seção 2: Rastreabilidade de Materiais (Etiquetas/Lotes) */}
                        <div className="space-y-3">
                          <div className="flex items-center gap-2">
-                           <div className="w-1.5 h-3 bg-emerald-500 rounded-full"></div>
+                            <div className="w-1.5 h-3 bg-slate-400 rounded-full"></div>
                            <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">2. Rastreabilidade (Lotes e Etiquetas)</h4>
                          </div>
                          <div className="grid grid-cols-2 gap-3">
                            {getTimelineEvidence().filter(e => e.category === "tracking").length > 0 ? (
                              getTimelineEvidence().filter(e => e.category === "tracking").map((exam, i) => (
-                               <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-emerald-100 bg-emerald-50/30">
+                                <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-200 bg-slate-50/30">
                                  <img src={exam.url} alt="Etiqueta" className="w-full h-full object-cover" />
-                                 <div className="absolute inset-0 bg-emerald-900/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
+                                  <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
                                    <p className="text-[8px] text-white font-bold uppercase truncate">{exam.type}</p>
                                    <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
                                    <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Conferir Lote</Button>
@@ -2254,7 +2254,7 @@ export default function OpmeApp() {
                        {/* Seção 3: Conferência Técnica (Intra e Pós-OP) */}
                        <div className="space-y-3">
                          <div className="flex items-center gap-2">
-                           <div className="w-1.5 h-3 bg-purple-500 rounded-full"></div>
+                            <div className="w-1.5 h-3 bg-slate-400 rounded-full"></div>
                            <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">3. Conferência Técnica (Intra/Pós-OP)</h4>
                          </div>
                          <div className="grid grid-cols-2 gap-3">
@@ -2282,7 +2282,7 @@ export default function OpmeApp() {
                          <div className="relative pl-6 space-y-4 border-l border-slate-200 ml-2">
                            {/* Solicitação */}
                            <div className="relative">
-                             <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">1</div>
+                              <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-slate-400 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">1</div>
                              <p className="text-[10px] font-bold text-slate-700 uppercase">Solicitação OPME</p>
                              <p className="text-[9px] text-slate-500 font-medium">Médico: {form.requester_name || '---'} @ {formatDateBR(form.procedure_date)} {form.request_time || ''}</p>
                            </div>
@@ -2290,17 +2290,17 @@ export default function OpmeApp() {
                            {/* Almoxarifado */}
                            {form.warehouse_date && (
                              <div className="relative">
-                               <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">2</div>
-                               <p className="text-[10px] font-bold text-slate-700 uppercase">Recebimento Almoxarifado</p>
-                               <p className="text-[9px] text-slate-500 font-medium">Resp: {form.warehouse_received_by || '---'} @ {formatDateBR(form.warehouse_date)} {form.warehouse_time || ''}</p>
-                               <p className="text-[8px] text-emerald-600 font-bold uppercase">Estoque: {form.stock_available}</p>
+                                <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-slate-400 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">2</div>
+                                <p className="text-[10px] font-bold text-slate-700 uppercase">Recebimento Almoxarifado</p>
+                                <p className="text-[9px] text-slate-500 font-medium">Resp: {form.warehouse_received_by || '---'} @ {formatDateBR(form.warehouse_date)} {form.warehouse_time || ''}</p>
+                                <p className="text-[8px] text-slate-500 font-bold uppercase">Estoque: {form.stock_available}</p>
                              </div>
                            )}
 
                            {/* CME */}
                            {form.cme_processing_date && (
                              <div className="relative">
-                               <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-purple-500 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">3</div>
+                                <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-slate-400 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">3</div>
                                <p className="text-[10px] font-bold text-slate-700 uppercase">Processamento CME</p>
                                <p className="text-[9px] text-slate-500 font-medium">Resp: {form.cme_responsible || '---'} @ {formatDateBR(form.cme_processing_date)}</p>
                              </div>
@@ -2308,7 +2308,7 @@ export default function OpmeApp() {
 
                            {/* Consumo */}
                            <div className="relative">
-                             <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-amber-500 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">4</div>
+                              <div className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-slate-400 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">4</div>
                              <p className="text-[10px] font-bold text-slate-700 uppercase">Registro de Consumo (Sala)</p>
                              <p className="text-[9px] text-slate-500 font-medium">
                                {form.opme_used?.filter((i: any) => i.launched).length || 0} Itens Lançados @ {formatDateBR(form.procedure_date)}
