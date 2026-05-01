@@ -555,6 +555,7 @@ export type Database = {
           billing_divergence: boolean | null
           billing_divergence_description: string | null
           billing_docs: Json
+          billing_dossier_url: string | null
           billing_exit_reason: string | null
           billing_final_observations: string | null
           billing_final_status: string | null
@@ -679,6 +680,7 @@ export type Database = {
           billing_divergence?: boolean | null
           billing_divergence_description?: string | null
           billing_docs?: Json
+          billing_dossier_url?: string | null
           billing_exit_reason?: string | null
           billing_final_observations?: string | null
           billing_final_status?: string | null
@@ -803,6 +805,7 @@ export type Database = {
           billing_divergence?: boolean | null
           billing_divergence_description?: string | null
           billing_docs?: Json
+          billing_dossier_url?: string | null
           billing_exit_reason?: string | null
           billing_final_observations?: string | null
           billing_final_status?: string | null
