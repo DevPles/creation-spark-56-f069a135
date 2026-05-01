@@ -162,6 +162,57 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
     return true;
   });
 
+  // Sugestões do banco de preços (price_history) que NÃO estão no catálogo,
+  // exibidas apenas quando há um termo de busca para evitar poluição visual.
+  const priceBankSuggestions = (() => {
+    if (!search || search.trim().length < 2) return [] as any[];
+    const q = search.toLowerCase();
+    const catalogDescriptions = new Set(
+      catalog.map(c => (c.descricao || "").trim().toLowerCase())
+    );
+    const seen = new Set<string>();
+    const out: any[] = [];
+    history.forEach(h => {
+      const desc = (h.descricao_produto || "").trim();
+      const key = desc.toLowerCase();
+      if (!key || seen.has(key) || catalogDescriptions.has(key)) return;
+      const hay = [h.descricao_produto, h.fornecedor_nome, h.categoria, h.fonte].filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(q)) return;
+      seen.add(key);
+      out.push({
+        descricao: desc,
+        unidade_medida: h.unidade_medida || "UN",
+        valor_unitario: Number(h.valor_unitario) || 0,
+        categoria: h.categoria || "—",
+        fonte: h.fonte,
+        fornecedor_nome: h.fornecedor_nome,
+        data_referencia: h.data_referencia,
+      });
+    });
+    return out.slice(0, 30);
+  })();
+
+  const importFromPriceBank = async (row: any) => {
+    if (!profile) return;
+    const isOpme = (row.categoria || "").toUpperCase() === "OPME";
+    const codigo = `AUTO-${Date.now().toString(36).toUpperCase()}`;
+    const payload: any = {
+      codigo,
+      descricao: row.descricao,
+      unidade_medida: row.unidade_medida || "UN",
+      tipo: isOpme ? "IMP" : "MMH",
+      classificacao: isOpme ? "implante" : "medico",
+      categoria_opme: isOpme ? "Material Especial" : null,
+      preco_referencia: row.valor_unitario || null,
+      ativo: true,
+      created_by: profile.id,
+    };
+    const { error } = await supabase.from("product_catalog").insert(payload);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`"${row.descricao}" cadastrado no catálogo`);
+    load();
+  };
+
   // Agrupa histórico por unidade + descrição para calcular curva de consumo
   const consumoCurva = (() => {
     const groups = new Map<string, any[]>();
@@ -351,6 +402,40 @@ export default function PriceBankPanel({ externalSearch = "", externalUnit = "al
               ))}
               {filteredCatalog.length === 0 && (
                 <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum item no catálogo</TableCell></TableRow>
+              )}
+              {priceBankSuggestions.length > 0 && (
+                <>
+                  <TableRow className="bg-muted/40">
+                    <TableCell colSpan={8} className="text-xs font-medium text-muted-foreground py-2">
+                      Sugestões do banco de preços ({priceBankSuggestions.length}) — itens encontrados com preços de referência. Clique em "Cadastrar" para adicionar ao catálogo.
+                    </TableCell>
+                  </TableRow>
+                  {priceBankSuggestions.map((s, idx) => (
+                    <TableRow key={`sugg-${idx}`} className="bg-muted/10">
+                      <TableCell className="text-xs text-muted-foreground italic">—</TableCell>
+                      <TableCell className="text-xs">{(s.categoria || "").toUpperCase() === "OPME" ? "IMP" : "MMH"}</TableCell>
+                      <TableCell className="text-xs capitalize">{s.categoria}</TableCell>
+                      <TableCell className="text-xs">
+                        <div className="font-medium">{s.descricao}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {fmtBRL(s.valor_unitario)} • {s.fornecedor_nome || s.fonte || "referência"} • {fmtDate(s.data_referencia)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                      <TableCell className="text-xs">{s.unidade_medida}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          className="h-8 rounded-full px-3"
+                          onClick={() => importFromPriceBank(s)}
+                        >
+                          Cadastrar
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </>
               )}
             </TableBody>
           </Table>
