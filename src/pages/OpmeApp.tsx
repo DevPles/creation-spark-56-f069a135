@@ -715,9 +715,9 @@ export default function OpmeApp() {
      // Capa institucional
      doc.setFont("helvetica", "bold");
      doc.setFontSize(16);
-     doc.setTextColor(32, 120, 110);
+      doc.setTextColor(30, 58, 138);
      doc.text("DOSSIÊ DE AUDITORIA PÓS-OPERATÓRIA", margin, y);
-     doc.setDrawColor(32, 120, 110);
+      doc.setDrawColor(30, 58, 138);
      doc.setLineWidth(0.5);
      doc.line(margin, y + 2, 196, y + 2);
      y += 12;
@@ -777,7 +777,7 @@ export default function OpmeApp() {
        head: [["Etapa do Fluxo", "Data de Conclusão", "Responsável Logístico"]],
        body: logs.map(l => [l.etapa, l.data, l.resp]),
        styles: { fontSize: 8 },
-       headStyles: { fillColor: [32, 120, 110] }
+        headStyles: { fillColor: [30, 58, 138] }
      });
      y = (doc as any).lastAutoTable.finalY + 8;
  
@@ -806,7 +806,7 @@ export default function OpmeApp() {
          item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR') : "---"
        ]), 
        styles: { fontSize: 8 }, 
-       headStyles: { fillColor: [32, 120, 110] } 
+        headStyles: { fillColor: [30, 58, 138] } 
      });
      y = (doc as any).lastAutoTable.finalY + 8;
  
@@ -820,7 +820,7 @@ export default function OpmeApp() {
        head: [["Análise de Divergências e Inconsistências"]], 
        body: (divergences.length ? divergences : ["Nenhuma divergência detectada no fluxo de consumo."]).map((text: string) => [text]), 
        styles: { fontSize: 8 }, 
-       headStyles: { fillColor: divergences.length ? [200, 50, 50] : [32, 120, 110] } 
+        headStyles: { fillColor: [75, 85, 99] } 
      });
      y = (doc as any).lastAutoTable.finalY + 8;
  
@@ -830,7 +830,7 @@ export default function OpmeApp() {
        y = margin;
        doc.setFont("helvetica", "bold");
        doc.setFontSize(12);
-       doc.setTextColor(32, 120, 110);
+        doc.setTextColor(30, 58, 138);
        doc.text("7. GALERIA DE EVIDÊNCIAS (IMAGENS E RASTREABILIDADE)", margin, y);
        y += 8;
  
