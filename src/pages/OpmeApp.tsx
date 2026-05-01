@@ -510,6 +510,20 @@ export default function OpmeApp() {
       .map(({ file, ...rest }) => rest);
   };
 
+  const sanitizeLoadedRequest = (req: any) => ({
+    ...req,
+    opme_requested: toList(req?.opme_requested).length ? toList(req.opme_requested) : [{ description: "", quantity: "1", size_model: "", sigtap: "" }],
+    opme_used: toList(req?.opme_used).length ? toList(req.opme_used) : [{ description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false, launched_by: null, launched_at: null }],
+    opme_returned: toList(req?.opme_returned).length ? toList(req.opme_returned) : [{ description: "", quantity: "0", batch: "", reason: "", responsible: "" }],
+    billing_docs: req?.billing_docs || { nf: false, rastreabilidade: false, laudo: false, consumo: false, autorizacao: false, exames: false },
+    auditor_post_procedure_compat: req?.auditor_post_procedure_compat || "sim",
+    auditor_post_sigtap_compat: req?.auditor_post_sigtap_compat || "sim",
+    auditor_post_image_conformity: req?.auditor_post_image_conformity || "sim",
+    auditor_post_final_opinion: req?.auditor_post_final_opinion || "",
+    auditor_post_justification_reason: req?.auditor_post_justification_reason || "",
+    auditor_post_date: req?.auditor_post_date || todayISO()
+  });
+
   const updateItem = (idx: number, field: string, value: any, listName: string = "opme_requested") => {
     setForm((p: any) => {
       const arr = [...(p[listName] || [])];
