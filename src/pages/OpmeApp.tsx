@@ -1160,17 +1160,17 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-10 space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
             {[
-              { id: 1, title: "CADASTRO", description: "Paciente" },
-              { id: 2, title: "REQUISIÇÃO", description: "Pedido" },
-              { id: 3, title: "AUDITORIA", description: "Pré e Pós" },
-              { id: 5, title: "CONTROLE ADM", description: "Logística e CME" },
-              { id: 6, title: "CONSUMO", description: "Cirúrgico" },
-              { id: 4, title: "FATURAMENTO", description: "AIH" },
+              { id: 1, title: "Cadastro", description: "Identificação do paciente e procedimento" },
+              { id: 2, title: "Requisição", description: "Solicitação de OPME e justificativa" },
+              { id: 3, title: "Auditoria", description: "Validação pré e pós-operatória" },
+              { id: 5, title: "Controle Administrativo", description: "Logística, CME e rastreabilidade" },
+              { id: 6, title: "Consumo", description: "Registro de uso cirúrgico" },
+              { id: 4, title: "Faturamento", description: "AIH, glosas e fechamento do dossiê" },
             ].map((card) => (
               <button
                 key={card.id}
                 onClick={() => setPart(card.id)}
-                className="kpi-card group w-full cursor-pointer text-left min-h-[70px] sm:min-h-0 bg-white border border-slate-100 shadow-sm rounded-xl p-4 transition-all active:scale-95 hover:shadow-md"
+                className="kpi-card group w-full cursor-pointer text-left min-h-[70px] sm:min-h-0"
               >
                 <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors text-sm sm:text-base leading-tight">
                   {card.title}
