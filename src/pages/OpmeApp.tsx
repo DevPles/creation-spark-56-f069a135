@@ -2232,20 +2232,25 @@ export default function OpmeApp() {
                            <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">2. Rastreabilidade (Lotes e Etiquetas)</h4>
                          </div>
                          <div className="grid grid-cols-2 gap-3">
-                           {getTimelineEvidence().filter(e => e.category === "tracking").length > 0 ? (
-                             getTimelineEvidence().filter(e => e.category === "tracking").map((exam, i) => (
-                                <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-200 bg-slate-50/30">
-                                 <img src={exam.url} alt="Etiqueta" className="w-full h-full object-cover" />
-                                  <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
-                                   <p className="text-[8px] text-white font-bold uppercase truncate">{exam.type}</p>
-                                   <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
-                                   <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Conferir Lote</Button>
-                                 </div>
-                               </div>
-                             ))
-                           ) : (
-                             <p className="col-span-2 text-[9px] text-destructive italic bg-destructive/5 p-2 rounded border border-dashed border-destructive/20 text-center">Atenção: Ausência de fotos das etiquetas para conferência.</p>
-                           )}
+                            {(() => {
+                              const trackingEvidence = getTimelineEvidence().filter(e => e.category === "tracking");
+                              return trackingEvidence.length > 0 ? (
+                                trackingEvidence.map((exam, i) => (
+                                   <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-200 bg-slate-50/30">
+                                    <img src={exam.url} alt="Etiqueta" className="w-full h-full object-cover" />
+                                     <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
+                                      <p className="text-[8px] text-white font-bold uppercase truncate">{exam.type}</p>
+                                      <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
+                                      <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Conferir Lote</Button>
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="col-span-2 text-[9px] text-slate-500 italic bg-slate-100/50 p-3 rounded-lg border border-dashed border-slate-200 text-center">
+                                  Informação: Ausência de fotos das etiquetas para conferência técnica.
+                                </p>
+                              );
+                            })()}
                          </div>
                        </div>
 
@@ -2256,20 +2261,25 @@ export default function OpmeApp() {
                            <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">3. Conferência Técnica (Intra/Pós-OP)</h4>
                          </div>
                          <div className="grid grid-cols-2 gap-3">
-                           {getTimelineEvidence().filter(e => e.stage === "Pós-OP" || (e.stage === "Consumo" && e.category === "intra")).length > 0 ? (
-                             getTimelineEvidence().filter(e => e.stage === "Pós-OP" || (e.stage === "Consumo" && e.category === "intra")).map((exam, i) => (
-                               <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
-                                 <img src={exam.url} alt="Pós/Intra" className="w-full h-full object-cover" />
-                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
-                                   <p className="text-[8px] text-white font-bold uppercase">{exam.stage} - {exam.type}</p>
-                                   <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
-                                   <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Ver Detalhes</Button>
-                                 </div>
-                               </div>
-                             ))
-                           ) : (
-                             <p className="col-span-2 text-[9px] text-slate-400 italic bg-slate-50/50 p-2 rounded border border-dashed text-center">Nenhuma imagem intra ou pós-operatória.</p>
-                           )}
+                            {(() => {
+                              const technicalEvidence = getTimelineEvidence().filter(e => e.stage === "Pós-OP" || (e.stage === "Consumo" && e.category === "intra"));
+                              return technicalEvidence.length > 0 ? (
+                                technicalEvidence.map((exam, i) => (
+                                  <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
+                                    <img src={exam.url} alt="Pós/Intra" className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
+                                      <p className="text-[8px] text-white font-bold uppercase">{exam.stage} - {exam.type}</p>
+                                      <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
+                                      <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Ver Detalhes</Button>
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="col-span-2 text-[9px] text-slate-400 italic bg-slate-50/50 p-3 rounded-lg border border-dashed border-slate-200 text-center">
+                                  Nenhuma imagem intra ou pós-operatória identificada.
+                                </p>
+                              );
+                            })()}
                          </div>
                        </div>
                      </div>
@@ -2311,9 +2321,15 @@ export default function OpmeApp() {
                              <p className="text-[9px] text-slate-500 font-medium">
                                {form.opme_used?.filter((i: any) => i.launched).length || 0} Itens Lançados @ {formatDateBR(form.procedure_date)}
                              </p>
-                             {form.opme_used?.some((i: any) => i.launched_by) && (
-                               <p className="text-[8px] text-slate-400 italic">Último lançamento: {form.opme_used.find((i: any) => i.launched_by)?.launched_by?.split('@')[0]}</p>
-                             )}
+                             {(() => {
+                               const lastLaunch = form.opme_used?.find((i: any) => i.launched_by);
+                               if (!lastLaunch || !lastLaunch.launched_by) return null;
+                               return (
+                                 <p className="text-[8px] text-slate-400 italic">
+                                   Último lançamento: {String(lastLaunch.launched_by).includes('@') ? lastLaunch.launched_by.split('@')[0] : lastLaunch.launched_by}
+                                 </p>
+                               );
+                             })()}
                            </div>
 
                             {/* Auditoria Final */}
@@ -2336,20 +2352,33 @@ export default function OpmeApp() {
                      <div className="bg-background p-4 rounded-xl border border-border space-y-4">
                        <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Alertas de Auditoria de Anexos</h3>
                        <div className="space-y-2">
-                          {getPostAuditDivergences().length > 0 ? getPostAuditDivergences().map((item: any, i: number) => (
-                            <p key={i} className="text-[10px] font-bold text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2">
-                              {typeof item === 'string' ? item : (item?.description || 'Divergência identificada')}
-                            </p>
-                          )) : (
-                           <p className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-lg p-2">Dossiê Completo: Todas as evidências e justificativas em conformidade.</p>
-                         )}
-                         
-                         {/* Verificação específica de fotos de rastreabilidade */}
-                         {form.opme_used?.some((i: any) => i.launched && !i.photo_url) && (
-                           <p className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 rounded-lg p-2">
-                             ⚠️ FALHA CRÍTICA: Existem materiais consumidos sem foto da etiqueta/lote para conferência.
-                           </p>
-                         )}
+                                  {(() => {
+                                    const auditDivergences = getPostAuditDivergences();
+                                    const missingPhotos = form.opme_used?.some((i: any) => i.launched && !i.photo_url);
+                                    
+                                    if (auditDivergences.length === 0 && !missingPhotos) {
+                                      return (
+                                        <p className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                          Dossiê em Conformidade: Todas as evidências e justificativas básicas foram identificadas.
+                                        </p>
+                                      );
+                                    }
+
+                                    return (
+                                      <div className="space-y-2">
+                                        {auditDivergences.map((item: any, i: number) => (
+                                          <p key={i} className="text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-lg p-2.5">
+                                            • {typeof item === 'string' ? item : (item?.description || 'Divergência técnica identificada')}
+                                          </p>
+                                        ))}
+                                        {missingPhotos && (
+                                          <p className="text-[10px] font-bold text-blue-900 bg-blue-100/50 border border-blue-200 rounded-lg p-2.5">
+                                            ℹ️ OBSERVAÇÃO TÉCNICA: Identificados materiais sem anexo de foto da etiqueta para conferência de lote.
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                        </div>
                      </div>
 
@@ -2653,11 +2682,11 @@ export default function OpmeApp() {
                                   <p className="text-[9px] text-slate-500 uppercase font-medium leading-none">
                                     Qtd: {item.quantity} | Lote: {item.batch}
                                   </p>
-                                  {item.launched_by && (
-                                    <p className="text-[8px] text-slate-400 font-bold uppercase mt-1">
-                                      Lançado por: {item.launched_by.split('@')[0]} @ {item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
-                                    </p>
-                                  )}
+                                   {item.launched_by && (
+                                     <p className="text-[8px] text-slate-400 font-bold uppercase mt-1">
+                                       Lançado por: {String(item.launched_by).includes('@') ? item.launched_by.split('@')[0] : item.launched_by} @ {item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                     </p>
+                                   )}
                                 </div>
                               </div>
                               <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold uppercase text-slate-400 hover:text-primary" onClick={() => updateItem(idx, "launched", false, "opme_used")}>Editar</Button>
