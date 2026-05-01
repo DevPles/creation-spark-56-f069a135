@@ -450,7 +450,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
               batch: "",
               expiry: "",
               label_fixed: "sim",
-              launched: false
+              launched: false,
+              unit_price: item.unit_price ?? 0,
+              product_id: item.product_id ?? null,
+              product_code: item.product_code ?? null,
             }));
             setForm((p: any) => ({ ...p, opme_used: initialUsed }));
           }
@@ -552,13 +555,37 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       return { ...p, [listName]: arr };
     });
 
-    if (field === "description" && value.length > 2) {
+    if (field === "description" && value.length > 2 && listName === "opme_requested") {
+      // Busca no catálogo de produtos (somente OPME) e traz preço de referência
       supabase
-        .from("opme_materials")
-        .select("code, name")
-        .ilike("name", `%${value}%`)
-        .limit(5)
-        .then(({ data }) => setMaterialSuggestions({ idx, items: data || [] }));
+        .from("product_catalog")
+        .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme")
+        .or(`tipo.eq.IMP,classificacao.eq.implante`)
+        .or(`descricao.ilike.%${value}%,descricao_resumida.ilike.%${value}%,codigo.ilike.%${value}%`)
+        .eq("ativo", true)
+        .limit(8)
+        .then(async ({ data }) => {
+          const items = data || [];
+          // Para cada produto, buscar último preço praticado em price_history
+          const enriched = await Promise.all(items.map(async (p: any) => {
+            const { data: ph } = await supabase
+              .from("price_history")
+              .select("valor_unitario, data_referencia")
+              .ilike("descricao_produto", `%${p.descricao}%`)
+              .order("data_referencia", { ascending: false })
+              .limit(1);
+            const lastPrice = ph && ph.length > 0 ? Number(ph[0].valor_unitario) : null;
+            return {
+              code: p.codigo,
+              name: p.descricao,
+              product_id: p.id,
+              sigtap: p.sigtap_code || "",
+              unit_price: lastPrice ?? (p.preco_referencia != null ? Number(p.preco_referencia) : 0),
+              price_source: lastPrice != null ? "historico" : (p.preco_referencia != null ? "referencia" : "sem_preco"),
+            };
+          }));
+          setMaterialSuggestions({ idx, items: enriched });
+        });
     } else if (field === "description") {
       setMaterialSuggestions({ idx: -1, items: [] });
     }
@@ -566,10 +593,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
   const addItem = (listName: string = "opme_requested") => {
     const newItem = listName === "opme_used"
-      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false }
+      ? { description: "", quantity: "1", batch: "", expiry: "", label_fixed: "sim", photo_url: "", launched: false, unit_price: 0, product_id: null }
       : listName === "opme_returned"
       ? { description: "", quantity: "0", batch: "", reason: "", responsible: "" }
-      : { description: "", quantity: "1", size_model: "", sigtap: "" };
+      : { description: "", quantity: "1", size_model: "", sigtap: "", unit_price: 0, product_id: null, price_source: "sem_preco" };
 
     setForm((p: any) => ({ ...p, [listName]: [...(p[listName] || []), newItem] }));
   };
@@ -1909,23 +1936,57 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                         </div>
                         <div className="p-4 space-y-4">
                           <div className="space-y-2 relative">
-                            <Label className="text-xs font-semibold uppercase text-slate-500">Descrição / Especificação</Label>
-                            <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value)} placeholder="Ex: Prótese de quadril..." className="h-12 bg-white border-slate-200" />
+                            <Label className="text-xs font-semibold uppercase text-slate-500">Descrição / Especificação (selecionar do Catálogo)</Label>
+                            <Input
+                              value={item.description}
+                              onChange={e => updateItem(idx, "description", e.target.value)}
+                              placeholder="Digite para buscar no catálogo de OPME..."
+                              className="h-12 bg-white border-slate-200"
+                            />
+                            {item.product_id ? (
+                              <p className="text-[10px] text-emerald-600 font-bold uppercase">Vinculado ao catálogo • cód. {item.product_code || item.sigtap || "—"}</p>
+                            ) : item.description?.length > 2 ? (
+                              <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
+                            ) : null}
                             {materialSuggestions.idx === idx && materialSuggestions.items.length > 0 && (
                               <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-auto">
-                                {materialSuggestions.items.map((m) => (
-                                  <button key={m.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
-                                     const arr = [...toList(form.opme_requested)]; arr[idx] = { ...arr[idx], description: m.name, sigtap: m.code };
-                                    setForm((p: any) => ({ ...p, opme_requested: arr })); setMaterialSuggestions({ idx: -1, items: [] });
+                                {materialSuggestions.items.map((m: any) => (
+                                  <button key={m.product_id || m.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
+                                    const arr = [...toList(form.opme_requested)];
+                                    arr[idx] = {
+                                      ...arr[idx],
+                                      description: m.name,
+                                      sigtap: m.sigtap || arr[idx].sigtap || "",
+                                      product_id: m.product_id || null,
+                                      product_code: m.code || null,
+                                      unit_price: typeof m.unit_price === "number" ? m.unit_price : 0,
+                                      price_source: m.price_source || "sem_preco",
+                                    };
+                                    setForm((p: any) => ({ ...p, opme_requested: arr }));
+                                    setMaterialSuggestions({ idx: -1, items: [] });
                                   }}>
-                                    <p className="text-xs font-bold text-slate-800">{m.name}</p>
-                                    <p className="text-[10px] text-slate-500 uppercase">Cód: {m.code}</p>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-bold text-slate-800 truncate">{m.name}</p>
+                                        <p className="text-[10px] text-slate-500 uppercase">Cód: {m.code} {m.sigtap ? `• SIGTAP: ${m.sigtap}` : ""}</p>
+                                      </div>
+                                      <div className="text-right shrink-0">
+                                        <p className="text-xs font-black text-primary">
+                                          {typeof m.unit_price === "number" && m.unit_price > 0
+                                            ? m.unit_price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                                            : "Sem preço"}
+                                        </p>
+                                        <p className="text-[9px] text-slate-400 uppercase font-bold">
+                                          {m.price_source === "historico" ? "histórico" : m.price_source === "referencia" ? "referência" : "—"}
+                                        </p>
+                                      </div>
+                                    </div>
                                   </button>
                                 ))}
                               </div>
                             )}
                           </div>
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-4 gap-3">
                             <div className="space-y-2">
                               <Label className="text-xs font-semibold uppercase text-slate-500">Qtd</Label>
                               <Input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value)} className="h-12 bg-white border-slate-200" />
@@ -1938,6 +1999,23 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                               <Label className="text-xs font-semibold uppercase text-slate-500">SIGTAP</Label>
                               <Input value={item.sigtap} onChange={e => updateItem(idx, "sigtap", e.target.value)} placeholder="000..." className="h-12 bg-white border-slate-200" />
                             </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs font-semibold uppercase text-slate-500">Valor unit. (R$)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.unit_price ?? 0}
+                                onChange={e => updateItem(idx, "unit_price", e.target.value)}
+                                className="h-12 bg-white border-slate-200 font-mono"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-end items-center gap-3 pt-2 border-t border-slate-100">
+                            <span className="text-[10px] uppercase font-bold text-slate-400">Subtotal</span>
+                            <span className="text-sm font-black text-primary">
+                              {((Number(item.quantity) || 0) * (Number(item.unit_price) || 0)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            </span>
                           </div>
                         </div>
                       </CardContent>
@@ -1945,6 +2023,20 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                   ))}
                   {toList(form.opme_requested).length < 10 && (
                     <Button variant="outline" className="w-full border-dashed border-2 h-12 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors" onClick={() => addItem("opme_requested")}>+ Adicionar Material (Até 10)</Button>
+                  )}
+                  {/* Total geral da OPME solicitada */}
+                  {toList(form.opme_requested).length > 0 && (
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Valor estimado da OPME</p>
+                        <p className="text-[10px] text-slate-500">Calculado a partir do catálogo / banco de preços. Editável caso necessário.</p>
+                      </div>
+                      <p className="text-2xl font-black text-primary">
+                        {toList(form.opme_requested)
+                          .reduce((acc: number, it: any) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
+                          .toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -2222,11 +2314,25 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                               <div className="text-right shrink-0">
                                 <p className="text-[10px] font-black text-primary">QTD: {item.quantity}</p>
                                 <p className="text-[9px] text-slate-400 font-bold uppercase">{item.size_model || '---'}</p>
+                                <p className="text-[10px] font-black text-emerald-700 mt-0.5">
+                                  {((Number(item.quantity) || 0) * (Number(item.unit_price) || 0)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                </p>
+                                <p className="text-[8px] text-slate-400 uppercase">unit. {Number(item.unit_price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                               </div>
                             </div>
                           ))
                         ) : (
                           <p className="text-[10px] text-slate-400 italic">Nenhum material listado.</p>
+                        )}
+                        {toList(form.opme_requested).length > 0 && (
+                          <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase text-slate-500">Valor total da OPME</span>
+                            <span className="text-sm font-black text-primary">
+                              {toList(form.opme_requested)
+                                .reduce((acc: number, it: any) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
+                                .toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>

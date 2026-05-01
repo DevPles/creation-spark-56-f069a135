@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useContracts } from "@/contexts/ContractsContext";
+import { supabase } from "@/integrations/supabase/client";
+import { sumOpme, formatBRL } from "@/lib/opmeValue";
 
 interface FaturamentoWizardProps {
   step: number;
@@ -58,6 +60,29 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
   const { contracts } = useContracts();
   const unitContract = contracts.find(c => c.unit === form.facility_unit);
   const autoCnes = unitContract?.cnes || "";
+
+  // Threshold dinâmico (média + 1σ) do valor de OPME nos últimos casos
+  const [opmeThreshold, setOpmeThreshold] = useState<number | null>(null);
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("opme_requests")
+        .select("opme_used, opme_requested")
+        .eq("facility_unit", form.facility_unit)
+        .eq("status", "concluido")
+        .limit(200);
+      if (!active || !data) return;
+      const totals = data
+        .map((r: any) => sumOpme(Array.isArray(r.opme_used) && r.opme_used.length ? r.opme_used : r.opme_requested))
+        .filter((v: number) => v > 0);
+      if (totals.length < 3) { setOpmeThreshold(null); return; }
+      const mean = totals.reduce((a, b) => a + b, 0) / totals.length;
+      const variance = totals.reduce((a, b) => a + (b - mean) ** 2, 0) / totals.length;
+      setOpmeThreshold(mean + Math.sqrt(variance));
+    })();
+    return () => { active = false; };
+  }, [form.facility_unit]);
 
   // Auto-fill CNES from the unit's contract if missing
   useEffect(() => {
@@ -119,8 +144,14 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
       reasons.push(`${semRastreio.length}/${launched.length} item(ns) sem lote/etiqueta`);
     }
 
-    // 6) Volume de itens (proxy de valor — quanto mais alto, maior exposição)
-    if (launched.length >= 5) { score += 1; reasons.push(`Alto volume de itens (${launched.length})`); }
+    // 6) Valor da OPME — agora REAL (catálogo / banco de preços)
+    const opmeTotal = sumOpme(launched.length ? launched : (Array.isArray(form.opme_requested) ? form.opme_requested : []));
+    if (opmeThreshold && opmeTotal > 0) {
+      if (opmeTotal > opmeThreshold * 1.5) { score += 2; reasons.push(`Valor de OPME muito acima da média da unidade (${formatBRL(opmeTotal)})`); }
+      else if (opmeTotal > opmeThreshold) { score += 1; reasons.push(`Valor de OPME acima da média + 1σ (${formatBRL(opmeTotal)})`); }
+    } else if (launched.length >= 5) {
+      score += 1; reasons.push(`Alto volume de itens (${launched.length})`);
+    }
 
     // 7) Tempo de internação acima da média (>15 dias = alta exposição)
     if (form.billing_admission_date && form.billing_discharge_date) {
@@ -284,10 +315,22 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
             <div className="space-y-2">
               {requested.map((m: any, i: number) => (
                 <div key={i} className="bg-white border border-slate-200 rounded-md p-3 text-xs">
-                  <div className="font-bold text-slate-800">{m.description || "—"}</div>
-                  <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • SIGTAP: {m.sigtap || "—"} • Modelo: {m.size_model || "—"}</div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-800 truncate">{m.description || "—"}</div>
+                      <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • SIGTAP: {m.sigtap || "—"} • Modelo: {m.size_model || "—"}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[10px] text-slate-400 uppercase font-bold">unit. {formatBRL(Number(m.unit_price) || 0)}</div>
+                      <div className="text-sm font-black text-emerald-700">{formatBRL((Number(m.quantity) || 0) * (Number(m.unit_price) || 0))}</div>
+                    </div>
+                  </div>
                 </div>
               ))}
+              <div className="bg-primary/5 border border-primary/20 rounded-md px-3 py-2 flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-slate-500">Total estimado solicitado</span>
+                <span className="text-sm font-black text-primary">{formatBRL(sumOpme(requested))}</span>
+              </div>
             </div>
           )}
         </Accordion>
@@ -299,10 +342,22 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
             <div className="space-y-2">
               {launchedUsed.map((m: any, i: number) => (
                 <div key={i} className="bg-white border border-slate-200 rounded-md p-3 text-xs">
-                  <div className="font-bold text-slate-800">{m.description || "—"}</div>
-                  <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • Lote: {m.batch || <span className="text-rose-600">faltando</span>} • Validade: {m.expiry || <span className="text-rose-600">—</span>} • Etiqueta: {m.photo_url ? <a href={m.photo_url} target="_blank" rel="noreferrer" className="text-sky-600 underline">ver</a> : <span className="text-rose-600">faltando</span>}</div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-800 truncate">{m.description || "—"}</div>
+                      <div className="text-slate-500 mt-1">Qtd: {m.quantity || 0} • Lote: {m.batch || <span className="text-rose-600">faltando</span>} • Validade: {m.expiry || <span className="text-rose-600">—</span>} • Etiqueta: {m.photo_url ? <a href={m.photo_url} target="_blank" rel="noreferrer" className="text-sky-600 underline">ver</a> : <span className="text-rose-600">faltando</span>}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[10px] text-slate-400 uppercase font-bold">unit. {formatBRL(Number(m.unit_price) || 0)}</div>
+                      <div className="text-sm font-black text-emerald-700">{formatBRL((Number(m.quantity) || 0) * (Number(m.unit_price) || 0))}</div>
+                    </div>
+                  </div>
                 </div>
               ))}
+              <div className="bg-primary/5 border border-primary/20 rounded-md px-3 py-2 flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-slate-500">Total utilizado em cirurgia</span>
+                <span className="text-sm font-black text-primary">{formatBRL(sumOpme(launchedUsed))}</span>
+              </div>
             </div>
           )}
         </Accordion>
