@@ -562,7 +562,6 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         supabase
           .from("product_catalog")
           .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme")
-          .or(`tipo.eq.IMP,classificacao.eq.implante`)
           .or(`descricao.ilike.%${value}%,descricao_resumida.ilike.%${value}%,codigo.ilike.%${value}%`)
           .eq("ativo", true)
           .limit(6),
@@ -571,8 +570,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte")
           .ilike("descricao_produto", `%${value}%`)
           .order("data_referencia", { ascending: false })
-          .limit(10),
+          .limit(20),
       ]).then(async ([catRes, priceRes]) => {
+        if (catRes.error) console.warn("[OPME suggest] catalog error", catRes.error);
+        if (priceRes.error) console.warn("[OPME suggest] price_history error", priceRes.error);
         const catItems = catRes.data || [];
         const priceItems = priceRes.data || [];
 
