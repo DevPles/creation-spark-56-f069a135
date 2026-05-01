@@ -541,16 +541,33 @@ export type Database = {
           auditor_pre_name: string | null
           auditor_pre_opinion: string | null
           auditor_pre_sigtap_compat: string | null
+          billing_admission_date: string | null
           billing_aih_file_url: string | null
           billing_aih_generated: boolean | null
           billing_aih_number: string | null
+          billing_aih_type: string | null
+          billing_attendance_character: string | null
+          billing_cid_main: string | null
+          billing_cid_secondary: string | null
+          billing_closed_at: string | null
+          billing_cnes: string | null
+          billing_discharge_date: string | null
           billing_divergence: boolean | null
           billing_divergence_description: string | null
           billing_docs: Json
+          billing_exit_reason: string | null
+          billing_final_observations: string | null
+          billing_final_status: string | null
+          billing_glosa_observations: string | null
+          billing_glosa_reasons: Json
+          billing_glosa_risk: string | null
           billing_opme_compatibility: string | null
           billing_prior_authorization: string | null
           billing_procedure_name: string | null
+          billing_responsible_name: string | null
           billing_sigtap_code: string | null
+          billing_validation_checks: Json
+          billing_validation_result: string | null
           clinical_indication: string | null
           cme_processing_date: string | null
           cme_responsible: string | null
@@ -648,16 +665,33 @@ export type Database = {
           auditor_pre_name?: string | null
           auditor_pre_opinion?: string | null
           auditor_pre_sigtap_compat?: string | null
+          billing_admission_date?: string | null
           billing_aih_file_url?: string | null
           billing_aih_generated?: boolean | null
           billing_aih_number?: string | null
+          billing_aih_type?: string | null
+          billing_attendance_character?: string | null
+          billing_cid_main?: string | null
+          billing_cid_secondary?: string | null
+          billing_closed_at?: string | null
+          billing_cnes?: string | null
+          billing_discharge_date?: string | null
           billing_divergence?: boolean | null
           billing_divergence_description?: string | null
           billing_docs?: Json
+          billing_exit_reason?: string | null
+          billing_final_observations?: string | null
+          billing_final_status?: string | null
+          billing_glosa_observations?: string | null
+          billing_glosa_reasons?: Json
+          billing_glosa_risk?: string | null
           billing_opme_compatibility?: string | null
           billing_prior_authorization?: string | null
           billing_procedure_name?: string | null
+          billing_responsible_name?: string | null
           billing_sigtap_code?: string | null
+          billing_validation_checks?: Json
+          billing_validation_result?: string | null
           clinical_indication?: string | null
           cme_processing_date?: string | null
           cme_responsible?: string | null
@@ -755,16 +789,33 @@ export type Database = {
           auditor_pre_name?: string | null
           auditor_pre_opinion?: string | null
           auditor_pre_sigtap_compat?: string | null
+          billing_admission_date?: string | null
           billing_aih_file_url?: string | null
           billing_aih_generated?: boolean | null
           billing_aih_number?: string | null
+          billing_aih_type?: string | null
+          billing_attendance_character?: string | null
+          billing_cid_main?: string | null
+          billing_cid_secondary?: string | null
+          billing_closed_at?: string | null
+          billing_cnes?: string | null
+          billing_discharge_date?: string | null
           billing_divergence?: boolean | null
           billing_divergence_description?: string | null
           billing_docs?: Json
+          billing_exit_reason?: string | null
+          billing_final_observations?: string | null
+          billing_final_status?: string | null
+          billing_glosa_observations?: string | null
+          billing_glosa_reasons?: Json
+          billing_glosa_risk?: string | null
           billing_opme_compatibility?: string | null
           billing_prior_authorization?: string | null
           billing_procedure_name?: string | null
+          billing_responsible_name?: string | null
           billing_sigtap_code?: string | null
+          billing_validation_checks?: Json
+          billing_validation_result?: string | null
           clinical_indication?: string | null
           cme_processing_date?: string | null
           cme_responsible?: string | null
