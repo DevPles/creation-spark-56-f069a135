@@ -716,7 +716,19 @@ export default function OpmeApp() {
 
     autoTable(doc, { startY: y, head: [["Material solicitado", "Qtd", "Modelo", "SIGTAP"]], body: requested.map((item: any) => [item.description || "---", item.quantity || "0", item.size_model || "---", item.sigtap || "---"]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
     y = (doc as any).lastAutoTable.finalY + 6;
-    autoTable(doc, { startY: y, head: [["Material consumido", "Qtd", "Lote", "Validade", "Etiqueta"]], body: used.map((item: any) => [item.description || "---", item.quantity || "0", item.batch || "---", item.expiry || "---", item.label_fixed === "sim" ? "Sim" : "Não"]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
+     autoTable(doc, { 
+       startY: y, 
+       head: [["Material consumido", "Qtd", "Lote", "Lançado por", "Horário"]], 
+       body: used.map((item: any) => [
+         item.description || "---", 
+         item.quantity || "0", 
+         item.batch || "---", 
+         item.launched_by?.split('@')[0] || "---",
+         item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR') : "---"
+       ]), 
+       styles: { fontSize: 8 }, 
+       headStyles: { fillColor: [32, 120, 110] } 
+     });
     y = (doc as any).lastAutoTable.finalY + 6;
     autoTable(doc, { startY: y, head: [["Validações de consumo"]], body: (divergences.length ? divergences : ["Sem divergências automáticas identificadas."]).map((text: string) => [text]), styles: { fontSize: 8 }, headStyles: { fillColor: [32, 120, 110] } });
     y = (doc as any).lastAutoTable.finalY + 6;
