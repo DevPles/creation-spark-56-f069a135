@@ -1294,6 +1294,7 @@ export default function OpmeApp() {
   const sendSurgeonJustification = async () => {
     if (uploadingJustification || saving) return;
     if (!(form.surgeon_justification || "").trim()) { toast.error("Preencha a justificativa técnica."); return; }
+    if (!recordId) { toast.error("Salve o pedido antes de enviar a justificativa."); return; }
     setUploadingJustification(true);
     try {
       const uploaded: Array<{ name: string; url: string; mime: string; size: number; uploaded_at: string }> = [];
@@ -1313,19 +1314,41 @@ export default function OpmeApp() {
         });
       }
       const previousAttachments = Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [];
+      const allAttachments = [...previousAttachments, ...uploaded];
+      const sentAt = new Date().toISOString();
+      const sentBy = user?.email || user?.id || "Cirurgião";
+
+      // Atualiza diretamente no banco para evitar perder anexos por estado defasado.
+      setSaving(true);
+      const { error: updErr } = await supabase
+        .from("opme_requests")
+        .update({
+          surgeon_justification: form.surgeon_justification,
+          surgeon_justification_at: sentAt,
+          surgeon_justification_by: sentBy,
+          surgeon_justification_attachments: allAttachments,
+          status: "justificativa_respondida",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", recordId);
+      if (updErr) throw updErr;
+
       setForm((p: any) => ({
         ...p,
-        surgeon_justification_at: new Date().toISOString(),
-        surgeon_justification_by: user?.email || user?.id || "Cirurgião",
-        surgeon_justification_attachments: [...previousAttachments, ...uploaded],
+        surgeon_justification_at: sentAt,
+        surgeon_justification_by: sentBy,
+        surgeon_justification_attachments: allAttachments,
         status: "justificativa_respondida",
       }));
       setSurgeonJustificationFiles([]);
-      setTimeout(() => handleSave(true), 50);
+      toast.success("Justificativa enviada ao auditor.");
+      setPart(null);
+      setStep(0);
     } catch (err: any) {
       toast.error(err?.message || "Erro ao enviar justificativa.");
     } finally {
       setUploadingJustification(false);
+      setSaving(false);
     }
   };
 
