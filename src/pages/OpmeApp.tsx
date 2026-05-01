@@ -3327,28 +3327,63 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             {part === 4 && step === 1 && (
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase text-slate-400">Dados do Faturamento</h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                     <Label className="text-xs font-semibold uppercase text-slate-500">Número da AIH</Label>
-                     <Input value={form.billing_aih_number} onChange={e => updateForm("billing_aih_number", e.target.value)} placeholder="000.000.000-0" className="h-12 bg-white shadow-sm" />
-                   </div>
-                   <div className="space-y-2">
-                     <Label className="text-xs font-semibold uppercase text-slate-500">AIH Carregada no Cadastro</Label>
-                     {form.billing_aih_file_url ? (
-                       <Button 
-                         variant="outline" 
-                         className="w-full h-12 text-xs font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700 flex gap-2"
-                         onClick={() => window.open(form.billing_aih_file_url, "_blank")}
-                       >
-                         <FileText size={16} /> Ver AIH Anexada
-                       </Button>
-                     ) : (
-                       <div className="h-12 flex items-center justify-center border rounded-md border-slate-100 bg-slate-50 text-slate-400 text-xs font-medium uppercase">
-                         Nenhuma AIH anexada
-                       </div>
-                     )}
-                   </div>
-                 </div>
+                <div className="bg-sky-50 border border-sky-100 rounded-lg p-3 text-[10px] font-medium uppercase tracking-wide text-sky-700">
+                  Os dados abaixo vêm automaticamente do Cadastro. Para alterar, edite a Parte 1.
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Número da AIH</Label>
+                    <div className={`h-12 flex items-center px-3 rounded-md border text-sm font-medium ${form.billing_aih_number ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
+                      {form.billing_aih_number || "Pendente — preencher no Cadastro"}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">AIH Anexada</Label>
+                    {form.billing_aih_file_url ? (
+                      <Button
+                        variant="outline"
+                        className="w-full h-12 text-xs font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700 flex gap-2"
+                        onClick={() => window.open(form.billing_aih_file_url, "_blank")}
+                      >
+                        <FileText size={16} /> Ver AIH Anexada
+                      </Button>
+                    ) : (
+                      <div className="h-12 flex items-center justify-center border rounded-md border-rose-200 bg-rose-50 text-rose-600 text-xs font-medium uppercase">
+                        Nenhuma AIH anexada
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Procedimento</Label>
+                    <div className={`h-12 flex items-center px-3 rounded-md border text-sm font-medium uppercase ${form.procedure_type ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
+                      {form.procedure_type || "Pendente"}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Data do Procedimento</Label>
+                    <div className={`h-12 flex items-center px-3 rounded-md border text-sm font-medium ${form.procedure_date ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
+                      {form.procedure_date || "Pendente"}
+                    </div>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Nome do Procedimento (SIGTAP)</Label>
+                    <div className={`min-h-12 flex items-center px-3 py-2 rounded-md border text-sm font-medium ${form.procedure_name ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
+                      {form.procedure_name || "Pendente — preencher no Cadastro"}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Cód. SIGTAP</Label>
+                    <div className={`h-12 flex items-center px-3 rounded-md border text-sm font-medium ${form.procedure_sigtap_code ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
+                      {form.procedure_sigtap_code || "Pendente"}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Cirurgião Responsável</Label>
+                    <div className={`h-12 flex items-center px-3 rounded-md border text-sm font-medium ${form.responsible_name ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
+                      {form.responsible_name ? `${form.responsible_name}${form.responsible_register ? ' — ' + form.responsible_register : ''}` : "Pendente"}
+                    </div>
+                  </div>
+                </div>
                 <div className="space-y-4 bg-slate-50 p-4 rounded-xl border">
                   <Label className="text-[10px] font-bold uppercase text-slate-400">Documentação Anexada</Label>
                   <div className="grid grid-cols-1 gap-2">
