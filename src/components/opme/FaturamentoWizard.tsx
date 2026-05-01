@@ -61,10 +61,6 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
     const aihOk = !!(form.billing_aih_number && form.billing_aih_file_url);
     return (
       <div className="space-y-3">
-        <div className="bg-sky-50 border border-sky-100 rounded-lg p-3 text-[10px] font-medium uppercase tracking-wide text-sky-700">
-          Tela 1 de 5 — Conferência. Dados vêm automáticos das etapas anteriores. Para alterar, edite a etapa de origem.
-        </div>
-
         <Accordion title="Identificação do Paciente" defaultOpen status={cadastroOk ? "ok" : "pending"}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <ReadOnlyField label="Unidade de Saúde" value={form.facility_unit} />
