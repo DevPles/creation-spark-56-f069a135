@@ -3208,6 +3208,10 @@ export default function OpmeApp() {
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
             Próximo
           </Button>
+        ) : (part === 3 && step === 1 && form.status === "justificativa_respondida") ? (
+          <div className="flex-[2] h-12 flex items-center justify-center text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 text-center">
+            Use os botões "Liberar para Faturamento" ou "Reprovar e solicitar nova" no bloco amarelo acima
+          </div>
         ) : (
           <Button 
             className="flex-[2] h-12 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200" 
