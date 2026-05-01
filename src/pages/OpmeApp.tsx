@@ -3318,7 +3318,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                 <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
                               ) : null}
                               {materialSuggestions.idx === idx && materialSuggestions.listName === "opme_used" && materialSuggestions.items.length > 0 && (
-                                <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-[520px] overflow-auto">
+                                <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-[60vh] overflow-y-auto overscroll-contain pb-3 pr-1">
                                   {materialSuggestions.items.map((m: any) => {
                                     const opts: any[] = Array.isArray(m.price_options) && m.price_options.length > 0
                                       ? m.price_options
