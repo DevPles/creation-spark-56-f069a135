@@ -2559,6 +2559,7 @@ export default function OpmeApp() {
                        </div>
                      </div>
 
+                    {form.status !== "justificativa_respondida" && (
                     <div className="bg-muted/30 p-4 rounded-xl border border-border space-y-4">
                       <h3 className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-border pb-2">Validação Auditor Pós-OP</h3>
 
