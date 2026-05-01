@@ -27,6 +27,7 @@ const mapRowToContract = (row: any): ContractData => ({
   pdfName: row.pdf_name || undefined,
   pdfUrl: row.pdf_url || undefined,
   notificationEmail: row.notification_email || undefined,
+  cnes: row.cnes || undefined,
   rubricas: (row.rubricas as Rubrica[]) || [],
 });
 
@@ -66,6 +67,7 @@ export const ContractsProvider = ({ children }: { children: ReactNode }) => {
       pdf_name: contract.pdfName || null,
       pdf_url: contract.pdfUrl || null,
       notification_email: contract.notificationEmail || null,
+      cnes: contract.cnes || null,
       rubricas: contract.rubricas as any || [],
     }).eq("id", contract.id);
 
@@ -90,6 +92,7 @@ export const ContractsProvider = ({ children }: { children: ReactNode }) => {
       pdf_name: contract.pdfName || null,
       pdf_url: contract.pdfUrl || null,
       notification_email: contract.notificationEmail || null,
+      cnes: contract.cnes || null,
       rubricas: contract.rubricas as any || [],
     }).select().single();
 
