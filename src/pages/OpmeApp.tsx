@@ -1290,6 +1290,44 @@ export default function OpmeApp() {
     );
   }
 
+  const sendSurgeonJustification = async () => {
+    if (uploadingJustification || saving) return;
+    if (!(form.surgeon_justification || "").trim()) { toast.error("Preencha a justificativa técnica."); return; }
+    setUploadingJustification(true);
+    try {
+      const uploaded: Array<{ name: string; url: string; mime: string; size: number; uploaded_at: string }> = [];
+      for (const item of surgeonJustificationFiles) {
+        const url = await uploadFile(item.file);
+        if (!url) {
+          toast.error(`Falha no upload do anexo ${item.name}.`);
+          setUploadingJustification(false);
+          return;
+        }
+        uploaded.push({
+          name: item.name,
+          url,
+          mime: item.mime,
+          size: item.size,
+          uploaded_at: new Date().toISOString(),
+        });
+      }
+      const previousAttachments = Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [];
+      setForm((p: any) => ({
+        ...p,
+        surgeon_justification_at: new Date().toISOString(),
+        surgeon_justification_by: user?.email || user?.id || "Cirurgião",
+        surgeon_justification_attachments: [...previousAttachments, ...uploaded],
+        status: "justificativa_respondida",
+      }));
+      setSurgeonJustificationFiles([]);
+      setTimeout(() => handleSave(true), 50);
+    } catch (err: any) {
+      toast.error(err?.message || "Erro ao enviar justificativa.");
+    } finally {
+      setUploadingJustification(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
@@ -3175,10 +3213,10 @@ export default function OpmeApp() {
                 {/* === EVIDÊNCIAS OBRIGATÓRIAS === */}
                 <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">Evidências Anexadas <span className="text-rose-600">*</span></Label>
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Evidências Anexadas <span className="text-slate-400 normal-case font-normal">(opcional)</span></Label>
                     <span className="text-[9px] font-bold uppercase text-slate-400">{surgeonJustificationFiles.length} arquivo(s)</span>
                   </div>
-                  <p className="text-[10px] text-slate-500">Anexe exames, etiquetas de rastreabilidade, fotos do procedimento, laudos ou qualquer documento que comprove a justificativa. Pelo menos um anexo é obrigatório.</p>
+                  <p className="text-[10px] text-slate-500">Anexe exames, etiquetas de rastreabilidade, fotos do procedimento, laudos ou qualquer documento que comprove a justificativa, se necessário.</p>
 
                   <div className="relative">
                     <Button type="button" variant="outline" className="w-full h-10 text-xs font-bold uppercase border-dashed">
@@ -3233,56 +3271,17 @@ export default function OpmeApp() {
                     </div>
                   )}
 
-                  {(!((form.surgeon_justification || "").trim()) || surgeonJustificationFiles.length === 0) && (
+                  {!((form.surgeon_justification || "").trim()) && (
                     <p className="text-[10px] text-rose-600 font-medium">
-                      {!((form.surgeon_justification || "").trim()) ? "Preencha a justificativa técnica." : "Anexe ao menos uma evidência para enviar."}
+                      Preencha a justificativa técnica.
                     </p>
                   )}
                 </div>
 
                 <Button
                   className="w-full h-12 bg-primary"
-                  disabled={saving || uploadingJustification || !(form.surgeon_justification || "").trim() || surgeonJustificationFiles.length === 0}
-                  onClick={async () => {
-                    if (uploadingJustification || saving) return;
-                    if (!(form.surgeon_justification || "").trim()) { toast.error("Preencha a justificativa técnica."); return; }
-                    if (surgeonJustificationFiles.length === 0) { toast.error("Anexe ao menos uma evidência."); return; }
-
-                    setUploadingJustification(true);
-                    try {
-                      const uploaded: Array<{ name: string; url: string; mime: string; size: number; uploaded_at: string }> = [];
-                      for (const item of surgeonJustificationFiles) {
-                        const url = await uploadFile(item.file);
-                        if (!url) {
-                          toast.error(`Falha no upload do anexo ${item.name}.`);
-                          setUploadingJustification(false);
-                          return;
-                        }
-                        uploaded.push({
-                          name: item.name,
-                          url,
-                          mime: item.mime,
-                          size: item.size,
-                          uploaded_at: new Date().toISOString(),
-                        });
-                      }
-
-                      const previousAttachments = Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [];
-                      setForm((p: any) => ({
-                        ...p,
-                        surgeon_justification_at: new Date().toISOString(),
-                        surgeon_justification_by: user?.email || user?.id || "Cirurgião",
-                        surgeon_justification_attachments: [...previousAttachments, ...uploaded],
-                        status: "justificativa_respondida",
-                      }));
-                      setSurgeonJustificationFiles([]);
-                      setTimeout(() => handleSave(true), 50);
-                    } catch (err: any) {
-                      toast.error(err?.message || "Erro ao enviar justificativa.");
-                    } finally {
-                      setUploadingJustification(false);
-                    }
-                  }}
+                  disabled={saving || uploadingJustification || !(form.surgeon_justification || "").trim()}
+                  onClick={sendSurgeonJustification}
                 >
                   {uploadingJustification ? "Enviando anexos..." : (saving ? "Enviando..." : "Enviar Justificativa ao Auditor")}
                 </Button>
@@ -3363,9 +3362,13 @@ export default function OpmeApp() {
         )}
         
         {(part === 4 && step === 0) ? (
-          <div className="flex-[2] h-12 flex items-center justify-center text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 text-center">
-            Use o botão "Enviar Justificativa ao Auditor" acima
-          </div>
+          <Button
+            className="flex-[2] h-12 bg-primary shadow-lg shadow-primary/20"
+            disabled={saving || uploadingJustification || !(form.surgeon_justification || "").trim()}
+            onClick={sendSurgeonJustification}
+          >
+            {uploadingJustification ? "Enviando anexos..." : (saving ? "Enviando..." : "Enviar Justificativa ao Auditor")}
+          </Button>
         ) : (step < STEPS.length - 1 && part !== 3) ? (
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
             Próximo
