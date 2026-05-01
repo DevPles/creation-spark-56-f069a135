@@ -2071,8 +2071,12 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                             ? m.unit_price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                                             : "Sem preço"}
                                         </p>
-                                        <p className="text-[9px] text-slate-400 uppercase font-bold">
-                                          {m.price_source === "historico" ? "histórico" : m.price_source === "referencia" ? "referência" : "—"}
+                                        <p className={`text-[9px] uppercase font-bold ${
+                                          m.price_source === "historico" ? "text-emerald-600" :
+                                          m.price_source === "base_opme" ? "text-sky-600" :
+                                          m.price_source === "referencia" ? "text-amber-600" : "text-slate-400"
+                                        }`}>
+                                          {m.source_label || (m.price_source === "historico" ? "histórico" : m.price_source === "referencia" ? "referência" : "—")}
                                         </p>
                                       </div>
                                     </div>
