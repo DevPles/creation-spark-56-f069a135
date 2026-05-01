@@ -615,13 +615,13 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme, image_url, fabricante, fornecedor_padrao")
           .or(`descricao.ilike.%${value}%,descricao_resumida.ilike.%${value}%,codigo.ilike.%${value}%`)
           .eq("ativo", true)
-          .limit(6),
+          .limit(50),
         supabase
           .from("price_history")
           .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte, fornecedor_cnpj")
           .ilike("descricao_produto", `%${value}%`)
           .order("data_referencia", { ascending: false })
-          .limit(20),
+          .limit(50),
       ]).then(async ([catRes, priceRes]) => {
         if (catRes.error) console.warn("[OPME suggest] catalog error", catRes.error);
         if (priceRes.error) console.warn("[OPME suggest] price_history error", priceRes.error);
@@ -729,7 +729,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           });
         }
 
-        setMaterialSuggestions({ idx, items: [...fromCatalog, ...fromPrices].slice(0, 12), listName });
+        setMaterialSuggestions({ idx, items: [...fromCatalog, ...fromPrices].slice(0, 60), listName });
 
         // Auto-vincula preço/código quando há correspondência exata (sem precisar clicar na sugestão)
         const combined = [...fromCatalog, ...fromPrices];
