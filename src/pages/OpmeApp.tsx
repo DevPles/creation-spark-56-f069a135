@@ -562,13 +562,13 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       Promise.all([
         supabase
           .from("product_catalog")
-          .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme")
+          .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme, image_url, fabricante, fornecedor_padrao")
           .or(`descricao.ilike.%${value}%,descricao_resumida.ilike.%${value}%,codigo.ilike.%${value}%`)
           .eq("ativo", true)
           .limit(6),
         supabase
           .from("price_history")
-          .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte")
+          .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte, fornecedor_cnpj")
           .ilike("descricao_produto", `%${value}%`)
           .order("data_referencia", { ascending: false })
           .limit(20),
@@ -582,16 +582,67 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         const fromCatalog = await Promise.all(catItems.map(async (p: any) => {
           const { data: ph } = await supabase
             .from("price_history")
-            .select("valor_unitario, data_referencia, fornecedor_nome")
+            .select("valor_unitario, data_referencia, fornecedor_nome, fonte")
             .ilike("descricao_produto", `%${p.descricao}%`)
             .order("data_referencia", { ascending: false })
-            .limit(1);
-          const lastPrice = ph && ph.length > 0 ? Number(ph[0].valor_unitario) : null;
+            .limit(8);
+          // Constrói lista de opções de preço (1 por fornecedor, mais recentes)
+          const priceOptions: any[] = [];
+          const seenSup = new Set<string>();
+          for (const r of (ph || [])) {
+            const supKey = (r.fornecedor_nome || r.fonte || "—").toLowerCase();
+            if (seenSup.has(supKey)) continue;
+            seenSup.add(supKey);
+            priceOptions.push({
+              valor: Number(r.valor_unitario) || 0,
+              fornecedor: r.fornecedor_nome || (r.fonte === "base_opme" ? "Banco SUS" : "—"),
+              data: r.data_referencia,
+              fonte: r.fonte,
+            });
+          }
+          if (p.preco_referencia != null && !priceOptions.some((o) => Math.abs(o.valor - Number(p.preco_referencia)) < 0.01)) {
+            priceOptions.push({
+              valor: Number(p.preco_referencia),
+              fornecedor: p.fornecedor_padrao || "Referência catálogo",
+              data: null,
+              fonte: "referencia",
+            });
+          }
+          const lastPrice = priceOptions[0]?.valor ?? null;
+          // Lotes históricos para esse produto a partir de opme_requests
+          let lotes: string[] = [];
+          try {
+            const { data: orHist } = await supabase
+              .from("opme_requests")
+              .select("opme_used")
+              .not("opme_used", "is", null)
+              .limit(40)
+              .order("created_at", { ascending: false });
+            const setLotes = new Set<string>();
+            for (const r of (orHist || [])) {
+              const arr = Array.isArray(r.opme_used) ? r.opme_used : [];
+              for (const itAny of arr) {
+                const it: any = itAny;
+                if (!it?.batch) continue;
+                const desc = (it.description || "").toLowerCase().trim();
+                if (desc && (desc === p.descricao.toLowerCase().trim() || desc.includes(p.descricao.toLowerCase().slice(0, 12)))) {
+                  setLotes.add(String(it.batch));
+                }
+              }
+            }
+            lotes = Array.from(setLotes).slice(0, 8);
+          } catch {}
+
           return {
             code: p.codigo,
             name: p.descricao,
             product_id: p.id,
             sigtap: p.sigtap_code || "",
+            image_url: p.image_url || null,
+            fabricante: p.fabricante || null,
+            fornecedor_padrao: p.fornecedor_padrao || null,
+            price_options: priceOptions,
+            lotes_sugeridos: lotes,
             unit_price: lastPrice ?? (p.preco_referencia != null ? Number(p.preco_referencia) : 0),
             price_source: lastPrice != null ? "historico" : (p.preco_referencia != null ? "referencia" : "sem_preco"),
             source_label: lastPrice != null ? `Catálogo • último praticado` : "Catálogo • referência",
@@ -610,6 +661,16 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             name: ph.descricao_produto,
             product_id: null,
             sigtap: "",
+            image_url: null,
+            fabricante: null,
+            fornecedor_padrao: ph.fornecedor_nome || null,
+            price_options: [{
+              valor: Number(ph.valor_unitario) || 0,
+              fornecedor: ph.fornecedor_nome || (ph.fonte === "base_opme" ? "Banco SUS" : "—"),
+              data: ph.data_referencia,
+              fonte: ph.fonte,
+            }],
+            lotes_sugeridos: [],
             unit_price: Number(ph.valor_unitario) || 0,
             price_source: ph.fonte === "base_opme" ? "base_opme" : "historico",
             source_label: ph.fonte === "base_opme"
@@ -3190,53 +3251,111 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                 className="h-10 text-xs bg-white"
                               />
                               {item.product_id ? (
-                                <p className="text-[10px] text-emerald-600 font-bold uppercase">Vinculado ao catálogo • cód. {item.product_code || "—"} • unit. {Number(item.unit_price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                                <div className="flex items-center gap-2 bg-emerald-50/60 border border-emerald-200 rounded-md p-2">
+                                  {item.image_ref_url ? (
+                                    <img src={item.image_ref_url} alt="" className="h-10 w-10 rounded object-cover border border-emerald-200" />
+                                  ) : null}
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] text-emerald-700 font-bold uppercase truncate">
+                                      Vinculado • cód. {item.product_code || "—"} • unit. {Number(item.unit_price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                    </p>
+                                    <p className="text-[9px] text-slate-500 uppercase truncate">
+                                      {item.fabricante ? `Fabricante: ${item.fabricante}` : ""}{item.fornecedor ? ` • ${item.fornecedor}` : ""}
+                                    </p>
+                                  </div>
+                                </div>
                               ) : item.description?.length > 2 ? (
                                 <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
                               ) : null}
                               {materialSuggestions.idx === idx && materialSuggestions.listName === "opme_used" && materialSuggestions.items.length > 0 && (
-                                <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-auto">
-                                  {materialSuggestions.items.map((m: any) => (
-                                    <button
-                                      key={m.product_id || m.code}
-                                      type="button"
-                                      className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0"
-                                      onClick={() => {
-                                        const arr = [...toList(form.opme_used)];
-                                        arr[idx] = {
-                                          ...arr[idx],
-                                          description: m.name,
-                                          product_id: m.product_id || null,
-                                          product_code: m.code || null,
-                                          unit_price: typeof m.unit_price === "number" ? m.unit_price : 0,
-                                          price_source: m.price_source || "sem_preco",
-                                        };
-                                        setForm((p: any) => ({ ...p, opme_used: arr }));
-                                        setMaterialSuggestions({ idx: -1, items: [], listName: "opme_used" });
-                                      }}
-                                    >
-                                      <div className="flex items-center justify-between gap-2">
-                                        <div className="min-w-0">
-                                          <p className="text-xs font-bold text-slate-800 truncate">{m.name}</p>
-                                          <p className="text-[10px] text-slate-500 uppercase">Cód: {m.code} {m.sigtap ? `• SIGTAP: ${m.sigtap}` : ""}</p>
+                                <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-[420px] overflow-auto">
+                                  {materialSuggestions.items.map((m: any) => {
+                                    const opts: any[] = Array.isArray(m.price_options) && m.price_options.length > 0
+                                      ? m.price_options
+                                      : (m.unit_price > 0 ? [{ valor: m.unit_price, fornecedor: m.fornecedor_padrao || "—", data: null, fonte: m.price_source }] : []);
+                                    return (
+                                      <div key={m.product_id || m.code} className="border-b border-slate-100 last:border-0 p-3 hover:bg-slate-50/60">
+                                        <div className="flex gap-3">
+                                          {m.image_url ? (
+                                            <img src={m.image_url} alt={m.name} className="h-16 w-16 rounded-md object-cover border border-slate-200 shrink-0" />
+                                          ) : (
+                                            <div className="h-16 w-16 rounded-md bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-[8px] text-slate-400 uppercase font-bold">Sem foto</div>
+                                          )}
+                                          <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-bold text-slate-800">{m.name}</p>
+                                            <p className="text-[10px] text-slate-500 uppercase">
+                                              Cód: {m.code} {m.sigtap ? `• SIGTAP: ${m.sigtap}` : ""}
+                                            </p>
+                                            {m.fabricante && (
+                                              <p className="text-[10px] text-slate-600 uppercase font-semibold">Fabricante: {m.fabricante}</p>
+                                            )}
+                                          </div>
                                         </div>
-                                        <div className="text-right shrink-0">
-                                          <p className="text-xs font-black text-primary">
-                                            {typeof m.unit_price === "number" && m.unit_price > 0
-                                              ? m.unit_price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-                                              : "Sem preço"}
-                                          </p>
-                                          <p className={`text-[9px] uppercase font-bold ${
-                                            m.price_source === "historico" ? "text-emerald-600" :
-                                            m.price_source === "base_opme" ? "text-sky-600" :
-                                            m.price_source === "referencia" ? "text-amber-600" : "text-slate-400"
-                                          }`}>
-                                            {m.source_label || "—"}
-                                          </p>
-                                        </div>
+                                        {opts.length > 0 ? (
+                                          <div className="mt-2 space-y-1">
+                                            <p className="text-[9px] uppercase font-bold text-slate-400">Selecione preço/fornecedor</p>
+                                            {opts.map((opt: any, oi: number) => (
+                                              <button
+                                                key={oi}
+                                                type="button"
+                                                className="w-full text-left px-2 py-1.5 rounded border border-slate-200 hover:border-primary hover:bg-primary/5 flex items-center justify-between gap-2"
+                                                onClick={() => {
+                                                  const arr = [...toList(form.opme_used)];
+                                                  arr[idx] = {
+                                                    ...arr[idx],
+                                                    description: m.name,
+                                                    product_id: m.product_id || null,
+                                                    product_code: m.code || null,
+                                                    unit_price: Number(opt.valor) || 0,
+                                                    price_source: opt.fonte || m.price_source || "sem_preco",
+                                                    fornecedor: opt.fornecedor || null,
+                                                    fabricante: m.fabricante || null,
+                                                    image_ref_url: m.image_url || null,
+                                                    lotes_sugeridos: m.lotes_sugeridos || [],
+                                                  };
+                                                  setForm((p: any) => ({ ...p, opme_used: arr }));
+                                                  setMaterialSuggestions({ idx: -1, items: [], listName: "opme_used" });
+                                                }}
+                                              >
+                                                <div className="min-w-0">
+                                                  <p className="text-[10px] font-bold text-slate-700 truncate">{opt.fornecedor}</p>
+                                                  <p className="text-[9px] text-slate-400 uppercase">
+                                                    {opt.data ? new Date(opt.data).toLocaleDateString("pt-BR") : "Referência"} • {opt.fonte === "base_opme" ? "SUS" : (opt.fonte === "referencia" ? "Catálogo" : "Histórico")}
+                                                  </p>
+                                                </div>
+                                                <p className="text-xs font-black text-primary shrink-0">
+                                                  {Number(opt.valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                                </p>
+                                              </button>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            className="mt-2 w-full text-[10px] uppercase font-bold text-slate-500 border border-dashed border-slate-300 rounded px-2 py-1.5 hover:bg-slate-100"
+                                            onClick={() => {
+                                              const arr = [...toList(form.opme_used)];
+                                              arr[idx] = {
+                                                ...arr[idx],
+                                                description: m.name,
+                                                product_id: m.product_id || null,
+                                                product_code: m.code || null,
+                                                unit_price: 0,
+                                                price_source: "sem_preco",
+                                                fabricante: m.fabricante || null,
+                                                image_ref_url: m.image_url || null,
+                                                lotes_sugeridos: m.lotes_sugeridos || [],
+                                              };
+                                              setForm((p: any) => ({ ...p, opme_used: arr }));
+                                              setMaterialSuggestions({ idx: -1, items: [], listName: "opme_used" });
+                                            }}
+                                          >
+                                            Vincular sem preço
+                                          </button>
+                                        )}
                                       </div>
-                                    </button>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -3248,6 +3367,20 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                               <div className="space-y-1">
                                 <Label className="text-[10px] font-bold uppercase text-slate-500">Lote</Label>
                                 <Input value={item.batch} onChange={e => updateItem(idx, "batch", e.target.value, "opme_used")} className="h-10 text-xs" />
+                                {Array.isArray(item.lotes_sugeridos) && item.lotes_sugeridos.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 pt-1">
+                                    {item.lotes_sugeridos.slice(0, 5).map((l: string) => (
+                                      <button
+                                        key={l}
+                                        type="button"
+                                        className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-primary/10 hover:border-primary"
+                                        onClick={() => updateItem(idx, "batch", l, "opme_used")}
+                                      >
+                                        {l}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-[10px] font-bold uppercase text-slate-500">Valor unit. (R$)</Label>
