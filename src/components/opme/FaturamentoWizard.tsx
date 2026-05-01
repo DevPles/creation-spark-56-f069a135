@@ -227,14 +227,8 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
 
         <Accordion title="CID e CNES" status={form.billing_cid_main && form.billing_cnes ? "ok" : "pending"}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">CID Principal</Label>
-              <Input value={form.billing_cid_main || ""} onChange={e => updateForm("billing_cid_main", e.target.value)} placeholder="Ex: M17.1" className="h-12 bg-white" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">CID Secundário</Label>
-              <Input value={form.billing_cid_secondary || ""} onChange={e => updateForm("billing_cid_secondary", e.target.value)} placeholder="Opcional" className="h-12 bg-white" />
-            </div>
+            <ReadOnlyField label="CID Principal" value={form.billing_cid_main} placeholder="Pendente — preencher na Requisição" />
+            <ReadOnlyField label="CID Secundário" value={form.billing_cid_secondary} placeholder="Opcional — Requisição" />
             {autoCnes ? (
               <ReadOnlyField label="CNES da Unidade" value={form.billing_cnes || autoCnes} placeholder="Cadastre em Contratos" />
             ) : (
@@ -244,18 +238,13 @@ export default function FaturamentoWizard({ step, form, updateForm, user }: Fatu
               </div>
             )}
           </div>
+          <p className="text-[10px] text-slate-400 italic mt-1">CID definido pelo médico na Requisição (Parte 2). Para alterar, retorne àquela etapa.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">Caráter de Atendimento</Label>
-              <Select value={form.billing_attendance_character || ""} onValueChange={v => updateForm("billing_attendance_character", v)}>
-                <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="eletivo">Eletivo</SelectItem>
-                  <SelectItem value="urgencia">Urgência</SelectItem>
-                  <SelectItem value="emergencia">Emergência</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <ReadOnlyField
+              label="Caráter de Atendimento"
+              value={form.billing_attendance_character || form.procedure_type}
+              placeholder="Pendente — definir Tipo no Procedimento"
+            />
             <div className="space-y-2">
               <Label className="text-xs font-semibold uppercase text-slate-500">Motivo da Saída</Label>
               <Select value={form.billing_exit_reason || ""} onValueChange={v => updateForm("billing_exit_reason", v)}>
