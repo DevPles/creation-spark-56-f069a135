@@ -463,6 +463,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        else if (safeReq.status === "aguardando_justificativa") { setPart(4); setStep(0); }
        else if (safeReq.status === "justificativa_respondida") { setPart(3); setStep(1); }
        else if (safeReq.status === "pendente_faturamento") { setPart(4); setStep(1); }
+       else if (safeReq.status === "concluido") { setPart(4); setStep(1); }
       else { setPart(1); setStep(0); } // Fallback
      
      // Adicionar ID na URL sem recarregar para manter consistência
@@ -3632,6 +3633,13 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             onClick={sendSurgeonJustification}
           >
             {uploadingJustification ? "Enviando anexos..." : (saving ? "Enviando..." : "Enviar Justificativa ao Auditor")}
+          </Button>
+        ) : (part === 4 && step >= 1 && form.status === "concluido") ? (
+          <Button
+            className="flex-[2] h-12 bg-slate-100 text-slate-500 hover:bg-slate-100 cursor-default shadow-none"
+            disabled
+          >
+            Processo Concluído — Somente Consulta
           </Button>
         ) : (step < STEPS.length - 1 && part !== 3) ? (
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
