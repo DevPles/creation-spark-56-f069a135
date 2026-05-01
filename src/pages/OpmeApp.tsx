@@ -3634,6 +3634,13 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           >
             {uploadingJustification ? "Enviando anexos..." : (saving ? "Enviando..." : "Enviar Justificativa ao Auditor")}
           </Button>
+        ) : (part === 4 && step >= 1 && form.status === "concluido") ? (
+          <Button
+            className="flex-[2] h-12 bg-slate-100 text-slate-500 hover:bg-slate-100 cursor-default shadow-none"
+            disabled
+          >
+            Processo Concluído — Somente Consulta
+          </Button>
         ) : (step < STEPS.length - 1 && part !== 3) ? (
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
             Próximo
