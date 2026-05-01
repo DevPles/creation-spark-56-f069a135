@@ -94,6 +94,9 @@ export default function OpmeApp() {
     const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
     const [postopExams, setPostopExams] = useState<any[]>([]);
     const [aihFile, setAihFile] = useState<File | null>(null);
+    // Anexos da rodada atual de justificativa do cirurgião (somente em memória até o envio)
+    const [surgeonJustificationFiles, setSurgeonJustificationFiles] = useState<Array<{ id: string; file: File; name: string; size: number; mime: string; previewUrl: string }>>([]);
+    const [uploadingJustification, setUploadingJustification] = useState(false);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
