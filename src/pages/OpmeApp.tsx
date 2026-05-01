@@ -2349,7 +2349,7 @@ export default function OpmeApp() {
                                if (!lastLaunch || !lastLaunch.launched_by) return null;
                                return (
                                  <p className="text-[8px] text-slate-400 italic">
-                                   Último lançamento: {lastLaunch.launched_by && String(lastLaunch.launched_by).includes('@') ? String(lastLaunch.launched_by).split('@')[0] : (lastLaunch.launched_by || '---')}
+                                   Último lançamento: {shortActorName(lastLaunch.launched_by)}
                                  </p>
                                );
                              })()}
@@ -2707,7 +2707,7 @@ export default function OpmeApp() {
                                   </p>
                                    {item.launched_by && (
                                      <p className="text-[8px] text-slate-400 font-bold uppercase mt-1">
-                                       Lançado por: {item.launched_by && String(item.launched_by).includes('@') ? String(item.launched_by).split('@')[0] : (item.launched_by || '---')} @ {item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                       Lançado por: {shortActorName(item.launched_by)} @ {item.launched_at ? new Date(item.launched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
                                      </p>
                                    )}
                                 </div>
