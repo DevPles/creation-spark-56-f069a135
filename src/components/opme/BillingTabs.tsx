@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,12 +56,19 @@ interface Props {
   preopExams: any[];
   postopExams: any[];
   consumptionExams: any[];
-  history: any[];
-  attachments: any[];
+  recordId: string | null;
 }
 
-export default function BillingTabs({ form, updateForm, preopExams, postopExams, consumptionExams, history, attachments }: Props) {
+export default function BillingTabs({ form, updateForm, preopExams, postopExams, consumptionExams, recordId }: Props) {
   const [tab, setTab] = useState<string>("resumo");
+  const [history, setHistory] = useState<any[]>([]);
+  const [attachments, setAttachments] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!recordId) return;
+    supabase.from("opme_history").select("*").eq("opme_request_id", recordId).order("changed_at", { ascending: false }).then(({ data }) => setHistory(data || []));
+    supabase.from("opme_attachments").select("*").eq("opme_request_id", recordId).order("created_at", { ascending: false }).then(({ data }) => setAttachments(data || []));
+  }, [recordId, tab]);
 
   const requested = useMemo(() => Array.isArray(form.opme_requested) ? form.opme_requested.filter((i: any) => i?.description?.trim()) : [], [form.opme_requested]);
   const used = useMemo(() => Array.isArray(form.opme_used) ? form.opme_used.filter((i: any) => i?.description?.trim()) : [], [form.opme_used]);
