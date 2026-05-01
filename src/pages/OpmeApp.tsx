@@ -57,7 +57,11 @@ const STEPS_CONSUMO = [
 
 const STEPS_FATURAMENTO = [
   { id: "justificativa_cirurgiao", title: "Justificativa", description: "Responder Auditoria" },
-  { id: "faturamento", title: "Codificação", description: "Fechamento e AIH" },
+  { id: "fat_resumo", title: "Resumo do Caso", description: "Paciente e Procedimento" },
+  { id: "fat_opme", title: "OPME e Rastreabilidade", description: "Solicitado x Utilizado x Faturado" },
+  { id: "fat_validacao", title: "Validação Cruzada", description: "Auditoria, SIGTAP e Glosa" },
+  { id: "fat_docs", title: "Documentação", description: "Evidências e Anexos" },
+  { id: "fat_fechamento", title: "Fechamento", description: "Status Final e Dossiê" },
 ];
 
 const ANATOMY_DATA: Record<string, string[]> = {
