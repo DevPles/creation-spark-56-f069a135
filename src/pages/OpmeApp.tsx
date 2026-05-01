@@ -3344,7 +3344,11 @@ export default function OpmeApp() {
       </main>
 
       <footer className="bg-white border-t p-4 fixed bottom-0 w-full z-20 flex gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        {step > 0 ? (
+        {(part === 3 && step === 1 && form.status === "justificativa_respondida") ? (
+          <Button variant="ghost" className="flex-1 h-12 text-slate-400" onClick={() => navigate("/")}>
+            Sair
+          </Button>
+        ) : step > 0 ? (
           <Button variant="outline" className="flex-1 h-12" onClick={prev}>
             Anterior
           </Button>
@@ -3367,9 +3371,35 @@ export default function OpmeApp() {
             Próximo
           </Button>
         ) : (part === 3 && step === 1 && form.status === "justificativa_respondida") ? (
-          <div className="flex-[2] h-12 flex items-center justify-center text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 text-center">
-            Use os botões "Liberar para Faturamento" ou "Reprovar e solicitar nova" no bloco amarelo acima
-          </div>
+          <Button
+            className="flex-[2] h-12 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 text-[11px] font-bold uppercase"
+            disabled={saving}
+            onClick={() => {
+              const previousHistory = Array.isArray(form.justification_history) ? form.justification_history : [];
+              const newEntry = {
+                round: Number(form.justification_round || 0),
+                auditor_reason: form.auditor_post_justification_reason || "",
+                surgeon_justification: form.surgeon_justification || "",
+                surgeon_justification_at: form.surgeon_justification_at || null,
+                surgeon_justification_by: form.surgeon_justification_by || null,
+                attachments: Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [],
+                decision: "liberada",
+                decision_at: new Date().toISOString(),
+                decision_by: user?.email || user?.id || "Auditor",
+                decision_notes: form.auditor_post_justification_decision_notes || ""
+              };
+              setForm((p: any) => ({
+                ...p,
+                auditor_post_justification_decision: "liberada",
+                auditor_post_justification_decision_at: new Date().toISOString(),
+                justification_history: [...previousHistory, newEntry],
+                status: "justificativa_respondida"
+              }));
+              setTimeout(() => handleSave(false), 50);
+            }}
+          >
+            Liberar para Faturamento
+          </Button>
         ) : (
           <Button 
             className="flex-[2] h-12 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200" 
