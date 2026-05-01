@@ -1385,9 +1385,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       <main className="flex-1 p-4 pb-24">
         {embedded && (
           <div className="mb-3">
-            <Button variant="ghost" size="sm" onClick={() => { setPart(null); setStep(0); }}>
-              <ArrowLeft className="h-4 w-4" />
-              Voltar aos módulos
+            <Button variant="outline" size="sm" onClick={() => { setPart(null); setStep(0); }} className="rounded-full">
+              Voltar
             </Button>
             <div className="mt-2">
               <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Solicitação OPME</h2>
