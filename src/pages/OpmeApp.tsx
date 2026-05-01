@@ -450,7 +450,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
               batch: "",
               expiry: "",
               label_fixed: "sim",
-              launched: false
+              launched: false,
+              unit_price: item.unit_price ?? 0,
+              product_id: item.product_id ?? null,
+              product_code: item.product_code ?? null,
             }));
             setForm((p: any) => ({ ...p, opme_used: initialUsed }));
           }
