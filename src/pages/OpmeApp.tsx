@@ -973,8 +973,11 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         if (step === 0) {
           // Cirurgião enviando justificativa — nunca conclui.
           nextStatus = "justificativa_respondida";
-        } else if (step === 1 && form.status === "pendente_faturamento") {
-          // Faturamento só conclui se o auditor já tiver liberado.
+        } else if (step >= 1 && step < 5) {
+          // Sub-passos intermediários do faturamento — apenas salvar, sem concluir.
+          nextStatus = form.status || "pendente_faturamento";
+        } else if (step === 5 && (form.status === "pendente_faturamento" || form.status === "concluido")) {
+          // Faturamento só conclui no último sub-passo (Fechamento) e se o auditor já tiver liberado.
           nextStatus = "concluido";
         } else {
           setSaving(false);
