@@ -3251,7 +3251,19 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                 className="h-10 text-xs bg-white"
                               />
                               {item.product_id ? (
-                                <p className="text-[10px] text-emerald-600 font-bold uppercase">Vinculado ao catálogo • cód. {item.product_code || "—"} • unit. {Number(item.unit_price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                                <div className="flex items-center gap-2 bg-emerald-50/60 border border-emerald-200 rounded-md p-2">
+                                  {item.image_ref_url ? (
+                                    <img src={item.image_ref_url} alt="" className="h-10 w-10 rounded object-cover border border-emerald-200" />
+                                  ) : null}
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] text-emerald-700 font-bold uppercase truncate">
+                                      Vinculado • cód. {item.product_code || "—"} • unit. {Number(item.unit_price || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                    </p>
+                                    <p className="text-[9px] text-slate-500 uppercase truncate">
+                                      {item.fabricante ? `Fabricante: ${item.fabricante}` : ""}{item.fornecedor ? ` • ${item.fornecedor}` : ""}
+                                    </p>
+                                  </div>
+                                </div>
                               ) : item.description?.length > 2 ? (
                                 <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
                               ) : null}
