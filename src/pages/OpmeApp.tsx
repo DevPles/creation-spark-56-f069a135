@@ -3318,38 +3318,34 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                 <p className="text-[10px] text-amber-600 font-medium">Selecione um item da lista para vincular ao catálogo e ao preço.</p>
                               ) : null}
                               {materialSuggestions.idx === idx && materialSuggestions.listName === "opme_used" && materialSuggestions.items.length > 0 && (
-                                <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-[420px] overflow-auto">
+                                <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-[520px] overflow-auto">
                                   {materialSuggestions.items.map((m: any) => {
                                     const opts: any[] = Array.isArray(m.price_options) && m.price_options.length > 0
                                       ? m.price_options
                                       : (m.unit_price > 0 ? [{ valor: m.unit_price, fornecedor: m.fornecedor_padrao || "—", data: null, fonte: m.price_source }] : []);
                                     return (
-                                      <div key={m.product_id || m.code} className="border-b border-slate-100 last:border-0 p-3 hover:bg-slate-50/60">
-                                        <div className="flex gap-3">
+                                      <div key={m.product_id || m.code} className="border-b border-slate-100 last:border-0 p-2 hover:bg-slate-50/60">
+                                        <div className="flex gap-2">
                                           {m.image_url ? (
-                                            <img src={m.image_url} alt={m.name} className="h-16 w-16 rounded-md object-cover border border-slate-200 shrink-0" />
+                                            <img src={m.image_url} alt={m.name} className="h-14 w-14 rounded-md object-cover border border-slate-200 shrink-0" />
                                           ) : (
-                                            <div className="h-16 w-16 rounded-md bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-[8px] text-slate-400 uppercase font-bold">Sem foto</div>
+                                            <div className="h-14 w-14 rounded-md bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-[8px] text-slate-400 uppercase font-bold">Sem foto</div>
                                           )}
-                                          <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-bold text-slate-800">{m.name}</p>
-                                            <p className="text-[10px] text-slate-500 uppercase">
-                                              Cód: {m.code} {m.sigtap ? `• SIGTAP: ${m.sigtap}` : ""}
-                                            </p>
-                                            {m.fabricante && (
-                                              <p className="text-[10px] text-slate-600 uppercase font-semibold">Fabricante: {m.fabricante}</p>
-                                            )}
-                                          </div>
-                                        </div>
-                                        {opts.length > 0 ? (
-                                          <div className="mt-2 space-y-1">
-                                            <p className="text-[9px] uppercase font-bold text-slate-400">Selecione preço/fornecedor</p>
-                                            {opts.map((opt: any, oi: number) => (
-                                              <button
-                                                key={oi}
-                                                type="button"
-                                                className="w-full text-left px-2 py-1.5 rounded border border-slate-200 hover:border-primary hover:bg-primary/5 flex items-center justify-between gap-2"
-                                                onClick={() => {
+                                          <div className="min-w-0 flex-1 space-y-1">
+                                            <div className="min-w-0">
+                                              <p className="text-xs font-bold text-slate-800 leading-tight truncate">{m.name}</p>
+                                              <p className="text-[9px] text-slate-500 uppercase truncate">
+                                                Cód: {m.code}{m.sigtap ? ` • SIGTAP: ${m.sigtap}` : ""}{m.fabricante ? ` • ${m.fabricante}` : ""}
+                                              </p>
+                                            </div>
+                                            {opts.length > 0 ? (
+                                              <div className="grid grid-cols-2 gap-1">
+                                                {opts.map((opt: any, oi: number) => (
+                                                  <button
+                                                    key={oi}
+                                                    type="button"
+                                                    className="text-left px-1.5 py-1 rounded border border-slate-200 hover:border-primary hover:bg-primary/5 flex items-center justify-between gap-1 min-w-0"
+                                                    onClick={() => {
                                                   const arr = [...toList(form.opme_used)];
                                                   arr[idx] = {
                                                     ...arr[idx],
@@ -3367,23 +3363,23 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                                   setMaterialSuggestions({ idx: -1, items: [], listName: "opme_used" });
                                                 }}
                                               >
-                                                <div className="min-w-0">
-                                                  <p className="text-[10px] font-bold text-slate-700 truncate">{opt.fornecedor}</p>
-                                                  <p className="text-[9px] text-slate-400 uppercase">
-                                                    {opt.data ? new Date(opt.data).toLocaleDateString("pt-BR") : "Referência"} • {opt.fonte === "base_opme" ? "SUS" : (opt.fonte === "referencia" ? "Catálogo" : "Histórico")}
-                                                  </p>
-                                                </div>
-                                                <p className="text-xs font-black text-primary shrink-0">
-                                                  {Number(opt.valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                                                </p>
-                                              </button>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <button
-                                            type="button"
-                                            className="mt-2 w-full text-[10px] uppercase font-bold text-slate-500 border border-dashed border-slate-300 rounded px-2 py-1.5 hover:bg-slate-100"
-                                            onClick={() => {
+                                                    <div className="min-w-0">
+                                                      <p className="text-[9px] font-bold text-slate-700 truncate leading-tight">{opt.fornecedor}</p>
+                                                      <p className="text-[8px] text-slate-400 uppercase truncate leading-tight">
+                                                        {opt.data ? new Date(opt.data).toLocaleDateString("pt-BR") : "Ref."} • {opt.fonte === "base_opme" ? "SUS" : (opt.fonte === "referencia" ? "Cat." : "Hist.")}
+                                                      </p>
+                                                    </div>
+                                                    <p className="text-[10px] font-black text-primary shrink-0">
+                                                      {Number(opt.valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                                    </p>
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                className="w-full text-[9px] uppercase font-bold text-slate-500 border border-dashed border-slate-300 rounded px-2 py-1 hover:bg-slate-100"
+                                                onClick={() => {
                                               const arr = [...toList(form.opme_used)];
                                               arr[idx] = {
                                                 ...arr[idx],
@@ -3399,10 +3395,12 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                               setForm((p: any) => ({ ...p, opme_used: arr }));
                                               setMaterialSuggestions({ idx: -1, items: [], listName: "opme_used" });
                                             }}
-                                          >
-                                            Vincular sem preço
-                                          </button>
-                                        )}
+                                              >
+                                                Vincular sem preço
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
                                       </div>
                                     );
                                   })}
