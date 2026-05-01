@@ -3281,45 +3281,7 @@ export default function OpmeApp() {
                 <Button
                   className="w-full h-12 bg-primary"
                   disabled={saving || uploadingJustification || !(form.surgeon_justification || "").trim()}
-                  onClick={async () => {
-                    if (uploadingJustification || saving) return;
-                    if (!(form.surgeon_justification || "").trim()) { toast.error("Preencha a justificativa técnica."); return; }
-
-                    setUploadingJustification(true);
-                    try {
-                      const uploaded: Array<{ name: string; url: string; mime: string; size: number; uploaded_at: string }> = [];
-                      for (const item of surgeonJustificationFiles) {
-                        const url = await uploadFile(item.file);
-                        if (!url) {
-                          toast.error(`Falha no upload do anexo ${item.name}.`);
-                          setUploadingJustification(false);
-                          return;
-                        }
-                        uploaded.push({
-                          name: item.name,
-                          url,
-                          mime: item.mime,
-                          size: item.size,
-                          uploaded_at: new Date().toISOString(),
-                        });
-                      }
-
-                      const previousAttachments = Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [];
-                      setForm((p: any) => ({
-                        ...p,
-                        surgeon_justification_at: new Date().toISOString(),
-                        surgeon_justification_by: user?.email || user?.id || "Cirurgião",
-                        surgeon_justification_attachments: [...previousAttachments, ...uploaded],
-                        status: "justificativa_respondida",
-                      }));
-                      setSurgeonJustificationFiles([]);
-                      setTimeout(() => handleSave(true), 50);
-                    } catch (err: any) {
-                      toast.error(err?.message || "Erro ao enviar justificativa.");
-                    } finally {
-                      setUploadingJustification(false);
-                    }
-                  }}
+                  onClick={sendSurgeonJustification}
                 >
                   {uploadingJustification ? "Enviando anexos..." : (saving ? "Enviando..." : "Enviar Justificativa ao Auditor")}
                 </Button>
@@ -3400,9 +3362,13 @@ export default function OpmeApp() {
         )}
         
         {(part === 4 && step === 0) ? (
-          <div className="flex-[2] h-12 flex items-center justify-center text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 text-center">
-            Use o botão "Enviar Justificativa ao Auditor" acima
-          </div>
+          <Button
+            className="flex-[2] h-12 bg-primary shadow-lg shadow-primary/20"
+            disabled={saving || uploadingJustification || !(form.surgeon_justification || "").trim()}
+            onClick={sendSurgeonJustification}
+          >
+            {uploadingJustification ? "Enviando anexos..." : (saving ? "Enviando..." : "Enviar Justificativa ao Auditor")}
+          </Button>
         ) : (step < STEPS.length - 1 && part !== 3) ? (
           <Button className="flex-[2] h-12 shadow-lg shadow-primary/20" onClick={next}>
             Próximo
