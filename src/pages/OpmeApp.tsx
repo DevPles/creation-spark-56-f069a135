@@ -398,31 +398,26 @@ export default function OpmeApp() {
    };
  
    const loadRequest = (req: any) => {
-     setForm(req);
-      if (req.preop_exams_details && Array.isArray(req.preop_exams_details)) {
-        setPreopExams(req.preop_exams_details as any[]);
-      }
-      if (req.consumption_exams_details && Array.isArray(req.consumption_exams_details)) {
-        setConsumptionExams(req.consumption_exams_details as any[]);
-      }
-      if (req.postop_exams_details && Array.isArray(req.postop_exams_details)) {
-        setPostopExams(req.postop_exams_details as any[]);
-      }
+      const safeReq = sanitizeLoadedRequest(req);
+      setForm(safeReq);
+      setPreopExams(toList(safeReq.preop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+      setConsumptionExams(toList(safeReq.consumption_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+      setPostopExams(toList(safeReq.postop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
      
       // Determinar qual parte e passo abrir baseado no status
-      if (req.status === "rascunho") { setPart(1); setStep(0); }
-      else if (req.status === "pendente_requisicao") { setPart(2); setStep(0); }
-      else if (req.status === "pendente_auditoria") { setPart(3); setStep(0); }
-      else if (req.status === "pendente_auditoria_post") { setPart(3); setStep(1); }
-      else if (req.status === "pendente_controle") { setPart(5); setStep(0); }
-      else if (req.status === "pendente_consumo") { 
+       if (safeReq.status === "rascunho") { setPart(1); setStep(0); }
+       else if (safeReq.status === "pendente_requisicao") { setPart(2); setStep(0); }
+       else if (safeReq.status === "pendente_auditoria") { setPart(3); setStep(0); }
+       else if (safeReq.status === "pendente_auditoria_post") { setPart(3); setStep(1); }
+       else if (safeReq.status === "pendente_controle") { setPart(5); setStep(0); }
+       else if (safeReq.status === "pendente_consumo") { 
         setPart(6); 
         setStep(0); 
         
         // Sincronizar itens solicitados para o consumo se estiver vazio
-        if (!req.opme_used || req.opme_used.length === 0 || (req.opme_used.length === 1 && !req.opme_used[0].description)) {
-          if (req.opme_requested && req.opme_requested.length > 0) {
-            const initialUsed = req.opme_requested.map((item: any) => ({
+         if (!safeReq.opme_used || safeReq.opme_used.length === 0 || (safeReq.opme_used.length === 1 && !safeReq.opme_used[0].description)) {
+           if (safeReq.opme_requested && safeReq.opme_requested.length > 0) {
+             const initialUsed = safeReq.opme_requested.map((item: any) => ({
               description: item.description,
               quantity: item.quantity,
               batch: "",
@@ -434,12 +429,12 @@ export default function OpmeApp() {
           }
         }
       }
-      else if (req.status === "pendente_faturamento" || req.status === "aguardando_justificativa") { setPart(4); setStep(0); }
+       else if (safeReq.status === "pendente_faturamento" || safeReq.status === "aguardando_justificativa") { setPart(4); setStep(0); }
       else { setPart(1); setStep(0); } // Fallback
      
      // Adicionar ID na URL sem recarregar para manter consistência
      const newUrl = new URL(window.location.href);
-     newUrl.searchParams.set("id", req.id);
+      newUrl.searchParams.set("id", safeReq.id);
      window.history.pushState({}, '', newUrl);
    };
 
