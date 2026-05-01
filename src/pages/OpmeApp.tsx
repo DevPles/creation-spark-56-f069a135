@@ -1507,6 +1507,16 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                   </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Data de Internação</Label>
+                    <Input type="date" value={form.billing_admission_date || ""} onChange={e => updateForm("billing_admission_date", e.target.value)} className="h-12 bg-white shadow-sm border-slate-200" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Data de Alta (se houver)</Label>
+                    <Input type="date" value={form.billing_discharge_date || ""} onChange={e => updateForm("billing_discharge_date", e.target.value)} className="h-12 bg-white shadow-sm border-slate-200" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Responsável pelo Procedimento</Label>
                     <Input value={form.responsible_name} onChange={e => updateForm("responsible_name", e.target.value)} placeholder="Nome do profissional" className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
