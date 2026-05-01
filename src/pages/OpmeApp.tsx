@@ -1055,6 +1055,11 @@ export default function OpmeApp() {
   };
 
   const next = () => {
+    // GUARDA: cirurgião na tela de justificativa NUNCA pode pular para faturamento.
+    if (part === 4 && step === 0 && (form.status === "aguardando_justificativa" || form.status === "justificativa_respondida")) {
+      toast.error("Use o botão 'Enviar Justificativa ao Auditor'. Só o auditor pode liberar o faturamento.");
+      return;
+    }
     // Sincronizar dados do responsável ao avançar da Parte 1 para a Parte 2
     if (part === 1 && step === STEPS.length - 1) {
       setForm((p: any) => ({
