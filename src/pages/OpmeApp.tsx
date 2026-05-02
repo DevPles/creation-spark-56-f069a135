@@ -94,12 +94,52 @@ interface OpmeAppProps {
   embedded?: boolean;
 }
 
+// Hook: força UPPERCASE em todos os inputs/textareas de texto dentro do container.
+// Usa o native value setter para que o onChange do React receba o valor já em maiúsculas.
+function useUppercaseInputs(ref: React.RefObject<HTMLElement>) {
+  useEffect(() => {
+    // Anexa no document para cobrir também modais/portals (Radix Dialog, Popover).
+    // Só monta enquanto OpmeApp está ativo, então não vaza para outras telas.
+    const root: Document | HTMLElement = ref.current ?? document;
+    const isTextEl = (el: Element | null): el is HTMLInputElement | HTMLTextAreaElement => {
+      if (!el) return false;
+      if (el instanceof HTMLTextAreaElement) return true;
+      if (el instanceof HTMLInputElement) {
+        const t = (el.type || "text").toLowerCase();
+        return t === "text" || t === "search" || t === "tel" || t === "url" || t === "email" || t === "";
+      }
+      return false;
+    };
+    const handler = (e: Event) => {
+      const target = e.target as Element | null;
+      if (!isTextEl(target)) return;
+      const el = target as HTMLInputElement | HTMLTextAreaElement;
+      // Permite opt-out via atributo data-no-uppercase
+      if (el.closest('[data-no-uppercase="true"]')) return;
+      const val = el.value;
+      const upper = val.toUpperCase();
+      if (val === upper) return;
+      const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      setter?.call(el, upper);
+      try { if (start != null && end != null) el.setSelectionRange(start, end); } catch {}
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    document.addEventListener("input", handler, true);
+    return () => document.removeEventListener("input", handler, true);
+  }, [ref]);
+}
+
 export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [recordId, setRecordId] = useState<string | null>(searchParams.get("id"));
   const [part, setPart] = useState<number | null>(null);
+  const opmeRootRef = useRef<HTMLDivElement>(null);
+  useUppercaseInputs(opmeRootRef);
    const [preopExams, setPreopExams] = useState<any[]>([]);
     const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
     const [postopExams, setPostopExams] = useState<any[]>([]);
@@ -1402,7 +1442,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
   if (part === null) {
     return (
-      <div className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
+      <div ref={opmeRootRef} className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
         {!embedded && (
           <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-20">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
@@ -1641,7 +1681,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   };
 
   return (
-    <div className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
+    <div ref={opmeRootRef} className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
       {!embedded && (
         <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
           <Button variant="ghost" size="icon" onClick={() => setPart(null)}>
