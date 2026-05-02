@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,91 +29,131 @@ const fmtDate = (s?: string | null) => {
   try { return new Date(s).toLocaleDateString("pt-BR"); } catch { return s as string; }
 };
 const brl = (n: number) => (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const norm = (s: string) => String(s || "").trim().toLowerCase();
+
+async function callFn(body: any) {
+  const r = await fetch(FN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j?.error || "Falha");
+  return j;
+}
 
 export default function PublicRequisitionPage() {
   const { token } = useParams<{ token: string }>();
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [phase, setPhase] = useState<"loading" | "verify" | "form" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<any>(null);
+  const [inviteMeta, setInviteMeta] = useState<any>(null);
+
+  // Verificação
+  const [crmInput, setCrmInput] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
+  // Dados após verificação
   const [data, setData] = useState<any>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [submittedOk, setSubmittedOk] = useState(false);
   const [zoom, setZoom] = useState<string | null>(null);
 
-  // Identificação do médico
   const [doctorName, setDoctorName] = useState("");
   const [doctorCrm, setDoctorCrm] = useState("");
 
-  // 2. Localização Cirúrgica
   const [side, setSide] = useState("");
   const [region, setRegion] = useState("");
   const [segment, setSegment] = useState("");
   const [position, setPosition] = useState("");
 
-  // 4. OPME
   const [items, setItems] = useState<OpmeItem[]>([{ description: "", quantity: 1, size_model: "", sigtap: "", unit_price: 0, observation: "" }]);
 
-  // 5. Instrumentais
   const [instSpec, setInstSpec] = useState(false);
   const [instLoan, setInstLoan] = useState(false);
   const [instNa, setInstNa] = useState(false);
   const [instSpecify, setInstSpecify] = useState("");
 
-  // 6. Justificativa
   const [indicacao, setIndicacao] = useState("");
   const [cidMain, setCidMain] = useState("");
   const [cidSec, setCidSec] = useState("");
   const [parecer, setParecer] = useState("");
 
-  // 7. Achados / Validação
   const [findings, setFindings] = useState("");
   const [validationResp, setValidationResp] = useState("");
 
+  // Autocompletes
+  const [opmeSug, setOpmeSug] = useState<{ idx: number; items: any[] }>({ idx: -1, items: [] });
+  const [cidSug, setCidSug] = useState<{ field: "main" | "sec" | null; items: any[] }>({ field: null, items: [] });
+  const opmeTimer = useRef<any>(null);
+  const cidTimer = useRef<any>(null);
+
+  // GET inicial: só preview e meta
   useEffect(() => {
     (async () => {
       try {
         const r = await fetch(`${FN_URL}?token=${encodeURIComponent(token || "")}`);
         const j = await r.json();
-        if (!r.ok) throw new Error(j.error || "Falha ao carregar");
-        setData(j);
-        const c = j.cadastro || {};
-        const req = j.requisicao || {};
-        setSide(req.procedure_side_requisicao || c.procedure_side_cadastro || "");
-        setRegion(req.procedure_region_requisicao || c.procedure_region_cadastro || "");
-        setSegment(req.procedure_segment_requisicao || c.procedure_segment_cadastro || "");
-        setPosition(req.procedure_position_requisicao || c.procedure_position_cadastro || "");
-        setIndicacao(req.clinical_indication || c.clinical_indication || "");
-        setCidMain(req.billing_cid_main || "");
-        setCidSec(req.billing_cid_secondary || "");
-        setParecer(req.auditor_pre_analysis || "");
-        setInstSpec(!!req.instruments_specific);
-        setInstLoan(!!req.instruments_loan);
-        setInstNa(!!req.instruments_na);
-        setInstSpecify(req.instruments_specify || "");
-        setFindings(req.preop_finding_description || c.preop_finding_description || "");
-        setValidationResp(req.preop_validation_responsible || c.preop_validation_responsible || "");
-        if (Array.isArray(req.opme_requested) && req.opme_requested.length > 0) {
-          setItems(req.opme_requested.map((it: any) => ({
-            description: it.description || "",
-            quantity: Number(it.quantity || 1),
-            size_model: it.size_model || "",
-            sigtap: it.sigtap || "",
-            unit_price: Number(it.unit_price || 0),
-            observation: it.observation || "",
-          })));
-        }
-        setDoctorName(j.invite?.last_doctor_name || c.requester_name || "");
-        setDoctorCrm(j.invite?.last_doctor_crm || c.requester_register || "");
+        if (!r.ok) throw new Error(j?.error || "Falha ao carregar");
+        setPreview(j.preview || {});
+        setInviteMeta(j.invite || {});
+        setPhase("verify");
       } catch (e: any) {
         setError(e?.message || "Erro");
-      } finally {
-        setLoading(false);
+        setPhase("error");
       }
     })();
   }, [token]);
 
+  const verify = async () => {
+    if (!crmInput.trim()) { toast.error("Informe seu CRM"); return; }
+    setVerifying(true);
+    try {
+      const j = await callFn({ action: "verify", doctor_crm: crmInput.trim() });
+      setData(j);
+      setDoctorCrm(crmInput.trim());
+      // NÃO pré-preencher nome do médico — ele deve digitar
+      setDoctorName("");
+      const c = j.cadastro || {};
+      const req = j.requisicao || {};
+      setSide(req.procedure_side_requisicao || "");
+      setRegion(req.procedure_region_requisicao || "");
+      setSegment(req.procedure_segment_requisicao || "");
+      setPosition(req.procedure_position_requisicao || "");
+      setIndicacao(req.clinical_indication || c.clinical_indication || "");
+      setCidMain(req.billing_cid_main || "");
+      setCidSec(req.billing_cid_secondary || "");
+      setParecer(req.auditor_pre_analysis || "");
+      setInstSpec(!!req.instruments_specific);
+      setInstLoan(!!req.instruments_loan);
+      setInstNa(!!req.instruments_na);
+      setInstSpecify(req.instruments_specify || "");
+      setFindings(req.preop_finding_description || c.preop_finding_description || "");
+      setValidationResp(req.preop_validation_responsible || c.preop_validation_responsible || "");
+      if (Array.isArray(req.opme_requested) && req.opme_requested.length > 0) {
+        setItems(req.opme_requested.map((it: any) => ({
+          description: it.description || "",
+          quantity: Number(it.quantity || 1),
+          size_model: it.size_model || "",
+          sigtap: it.sigtap || "",
+          unit_price: Number(it.unit_price || 0),
+          observation: it.observation || "",
+        })));
+      }
+      setPhase("form");
+    } catch (e: any) {
+      toast.error(e?.message || "CRM inválido");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const cadastro = data?.cadastro || {};
   const attachments: any[] = data?.attachments || [];
-
+  const examPhotos: any[] = useMemo(() => {
+    const arr = (cadastro.preop_exams_details as any[]) || (data?.preop_exams_details as any[]) || [];
+    return Array.isArray(arr) ? arr.filter((x: any) => x?.url) : [];
+  }, [cadastro, data]);
   const photos = useMemo(() => attachments.filter(a => (a.file_type || "").startsWith("image/")), [attachments]);
   const docs = useMemo(() => attachments.filter(a => !(a.file_type || "").startsWith("image/")), [attachments]);
   const totalOpme = useMemo(
@@ -121,10 +161,56 @@ export default function PublicRequisitionPage() {
     [items]
   );
 
+  // Divergência de localização
+  const locDivergent = useMemo(() => {
+    if (phase !== "form") return null;
+    const diffs: string[] = [];
+    if (cadastro.procedure_side_cadastro && side && norm(cadastro.procedure_side_cadastro) !== norm(side)) diffs.push(`Lateralidade (cadastro: ${cadastro.procedure_side_cadastro})`);
+    if (cadastro.procedure_region_cadastro && region && norm(cadastro.procedure_region_cadastro) !== norm(region)) diffs.push(`Região (cadastro: ${cadastro.procedure_region_cadastro})`);
+    if (cadastro.procedure_segment_cadastro && segment && norm(cadastro.procedure_segment_cadastro) !== norm(segment)) diffs.push(`Segmento (cadastro: ${cadastro.procedure_segment_cadastro})`);
+    if (cadastro.procedure_position_cadastro && position && norm(cadastro.procedure_position_cadastro) !== norm(position)) diffs.push(`Posição (cadastro: ${cadastro.procedure_position_cadastro})`);
+    return diffs.length ? diffs : null;
+  }, [cadastro, side, region, segment, position, phase]);
+
   const addItem = () => setItems(prev => [...prev, { description: "", quantity: 1, size_model: "", sigtap: "", unit_price: 0, observation: "" }]);
   const removeItem = (i: number) => setItems(prev => prev.filter((_, idx) => idx !== i));
   const updItem = (i: number, k: keyof OpmeItem, v: any) =>
     setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [k]: v } : it));
+
+  const onOpmeDescChange = (i: number, v: string) => {
+    updItem(i, "description", v);
+    if (opmeTimer.current) clearTimeout(opmeTimer.current);
+    if (v.trim().length < 2) { setOpmeSug({ idx: -1, items: [] }); return; }
+    opmeTimer.current = setTimeout(async () => {
+      try {
+        const j = await callFn({ action: "search_opme", term: v.trim() });
+        setOpmeSug({ idx: i, items: j.items || [] });
+      } catch { /* ignore */ }
+    }, 250);
+  };
+
+  const pickOpme = (i: number, sug: any) => {
+    setItems(prev => prev.map((it, idx) => idx === i ? {
+      ...it,
+      description: sug.description,
+      sigtap: sug.sigtap || it.sigtap || "",
+      unit_price: Number(sug.unit_price) || it.unit_price || 0,
+    } : it));
+    setOpmeSug({ idx: -1, items: [] });
+  };
+
+  const onCidChange = (which: "main" | "sec", v: string) => {
+    const up = v.toUpperCase();
+    if (which === "main") setCidMain(up); else setCidSec(up);
+    if (cidTimer.current) clearTimeout(cidTimer.current);
+    if (up.trim().length < 2) { setCidSug({ field: null, items: [] }); return; }
+    cidTimer.current = setTimeout(async () => {
+      try {
+        const j = await callFn({ action: "search_cid", term: up.trim() });
+        setCidSug({ field: which, items: j.items || [] });
+      } catch { /* ignore */ }
+    }, 250);
+  };
 
   const submit = async () => {
     if (!doctorName.trim() || !doctorCrm.trim()) {
@@ -138,38 +224,31 @@ export default function PublicRequisitionPage() {
     }
     setSubmitting(true);
     try {
-      const r = await fetch(FN_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          doctor_name: doctorName.trim(),
-          doctor_crm: doctorCrm.trim(),
-          payload: {
-            requester_name: doctorName.trim(),
-            requester_register: doctorCrm.trim(),
-            procedure_side_requisicao: side,
-            procedure_region_requisicao: region,
-            procedure_segment_requisicao: segment,
-            procedure_position_requisicao: position,
-            opme_requested: cleanItems,
-            instruments_specific: instSpec,
-            instruments_loan: instLoan,
-            instruments_na: instNa,
-            instruments_specify: instSpecify,
-            clinical_indication: indicacao,
-            billing_cid_main: cidMain,
-            billing_cid_secondary: cidSec,
-            auditor_pre_analysis: parecer,
-            preop_finding_description: findings,
-            preop_validation_responsible: validationResp,
-            request_date: new Date().toISOString().slice(0, 10),
-            request_time: new Date().toTimeString().slice(0, 5),
-          },
-        }),
+      await callFn({
+        action: "submit",
+        token,
+        doctor_name: doctorName.trim(),
+        doctor_crm: doctorCrm.trim(),
+        payload: {
+          procedure_side_requisicao: side,
+          procedure_region_requisicao: region,
+          procedure_segment_requisicao: segment,
+          procedure_position_requisicao: position,
+          opme_requested: cleanItems,
+          instruments_specific: instSpec,
+          instruments_loan: instLoan,
+          instruments_na: instNa,
+          instruments_specify: instSpecify,
+          clinical_indication: indicacao,
+          billing_cid_main: cidMain,
+          billing_cid_secondary: cidSec,
+          auditor_pre_analysis: parecer,
+          preop_finding_description: findings,
+          preop_validation_responsible: validationResp,
+          request_date: new Date().toISOString().slice(0, 10),
+          request_time: new Date().toTimeString().slice(0, 5),
+        },
       });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error || "Falha ao enviar");
       setSubmittedOk(true);
       toast.success("Requisição enviada");
     } catch (e: any) {
@@ -179,8 +258,8 @@ export default function PublicRequisitionPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-slate-500">Carregando…</div>;
-  if (error) return (
+  if (phase === "loading") return <div className="min-h-screen flex items-center justify-center text-slate-500">Carregando…</div>;
+  if (phase === "error") return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <Card className="max-w-md w-full"><CardContent className="p-6 text-center space-y-2">
         <h1 className="text-lg font-bold text-rose-700">Não foi possível abrir o link</h1>
@@ -189,6 +268,46 @@ export default function PublicRequisitionPage() {
     </div>
   );
 
+  // ---------- TELA DE VERIFICAÇÃO DE CRM ----------
+  if (phase === "verify") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-teal-700">Requisição OPME</p>
+            <CardTitle className="text-base">Acesso restrito ao médico solicitante</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg bg-slate-50 border p-3 text-xs space-y-1">
+              <p><span className="text-slate-500">Paciente:</span> <strong>{preview?.patient_name || "—"}</strong></p>
+              <p><span className="text-slate-500">Unidade:</span> {preview?.facility_unit || "—"}</p>
+              <p><span className="text-slate-500">Procedimento:</span> {preview?.procedure_name || "—"}</p>
+              <p><span className="text-slate-500">Data prevista:</span> {fmtDate(preview?.procedure_date)}</p>
+              <p className="text-[10px] text-slate-400 pt-1">Link válido até {fmtDate(inviteMeta?.expires_at)}</p>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase text-slate-500">Informe seu CRM para acessar</Label>
+              <Input
+                autoFocus
+                value={crmInput}
+                onChange={e => setCrmInput(e.target.value)}
+                placeholder={preview?.requester_crm_hint ? `Dica: ${preview.requester_crm_hint}` : "CRM/UF"}
+                onKeyDown={e => { if (e.key === "Enter") verify(); }}
+              />
+              <p className="text-[10px] text-slate-400">
+                O CRM deve ser idêntico ao registrado no Cadastro do paciente. Após validar, você verá todos os exames, fotos e dados.
+              </p>
+            </div>
+            <Button onClick={verify} disabled={verifying} className="w-full rounded-full">
+              {verifying ? "Validando…" : "Acessar requisição"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ---------- FORMULÁRIO COMPLETO ----------
   return (
     <div className="min-h-screen bg-slate-50 py-6 px-3 md:px-6">
       <div className="mx-auto max-w-4xl space-y-4">
@@ -204,12 +323,11 @@ export default function PublicRequisitionPage() {
         {submittedOk && (
           <Card className="border-emerald-300 bg-emerald-50">
             <CardContent className="p-4 text-center text-sm text-emerald-800">
-              Requisição enviada com sucesso. Você pode editar e reenviar a qualquer momento dentro da validade do link.
+              Requisição enviada com sucesso. Você pode editar e reenviar dentro da validade do link.
             </CardContent>
           </Card>
         )}
 
-        {/* 1. Identificação do Paciente (read-only) */}
         <Card>
           <CardHeader><CardTitle className="text-sm">1. Identificação do Paciente</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
@@ -222,7 +340,6 @@ export default function PublicRequisitionPage() {
           </CardContent>
         </Card>
 
-        {/* 2. Dados do Procedimento (read-only) */}
         <Card>
           <CardHeader><CardTitle className="text-sm">2. Dados do Procedimento</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
@@ -231,7 +348,7 @@ export default function PublicRequisitionPage() {
             <Info label="Sala" value={cadastro.procedure_room} />
             <Info label="Procedimento" value={cadastro.procedure_name} />
             <Info label="SIGTAP" value={cadastro.procedure_sigtap_code} />
-            <Info label="Solicitante" value={cadastro.requester_name} />
+            <Info label="Solicitante (Cadastro)" value={cadastro.requester_name} />
             <Info label="CRM Solicitante" value={cadastro.requester_register} />
             <Info label="Segmento (Cadastro)" value={cadastro.procedure_segment_cadastro} />
             <Info label="Região (Cadastro)" value={cadastro.procedure_region_cadastro} />
@@ -240,14 +357,25 @@ export default function PublicRequisitionPage() {
           </CardContent>
         </Card>
 
-        {/* Anexos completos */}
-        {(photos.length > 0 || docs.length > 0 || cadastro.billing_aih_file_url) && (
+        {(photos.length > 0 || docs.length > 0 || examPhotos.length > 0 || cadastro.billing_aih_file_url) && (
           <Card>
             <CardHeader><CardTitle className="text-sm">Exames, Fotos e Documentos do Cadastro</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {cadastro.billing_aih_file_url && (
                 <a href={cadastro.billing_aih_file_url} target="_blank" rel="noreferrer"
                    className="text-xs text-teal-700 underline">Ver AIH anexada</a>
+              )}
+              {examPhotos.length > 0 && (
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">Imagens de Exames Pré-Op ({examPhotos.length})</p>
+                  <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+                    {examPhotos.map((p: any, i: number) => (
+                      <button key={p.id || i} type="button" onClick={() => setZoom(p.url)} className="aspect-square rounded-md overflow-hidden border bg-white" title={`${p.type || "Exame"} • ${p.date || ""}`}>
+                        <img src={p.url} alt={p.type || "Exame"} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
               {photos.length > 0 && (
                 <div>
@@ -269,7 +397,6 @@ export default function PublicRequisitionPage() {
                       <li key={d.id}>
                         <a href={d.file_url} target="_blank" rel="noreferrer" className="text-teal-700 underline">{d.file_name}</a>
                         {d.category && <span className="text-slate-400 ml-2">[{d.category}]</span>}
-                        {d.stage && <span className="text-slate-300 ml-1">({d.stage})</span>}
                       </li>
                     ))}
                   </ul>
@@ -279,9 +406,9 @@ export default function PublicRequisitionPage() {
           </Card>
         )}
 
-        {/* 3. Identificação do Médico */}
+        {/* 3. Identificação do Médico (NOME em branco — médico digita) */}
         <Card>
-          <CardHeader><CardTitle className="text-sm">3. Identificação do Médico</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm">3. Identificação do Médico Responsável</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -289,40 +416,47 @@ export default function PublicRequisitionPage() {
                 <Input value={doctorName} onChange={e => setDoctorName(e.target.value)} placeholder="Nome completo" />
               </div>
               <div className="space-y-1">
-                <Label className="text-[10px] uppercase text-slate-500">CRM (deve coincidir com o do Cadastro)</Label>
-                <Input value={doctorCrm} onChange={e => setDoctorCrm(e.target.value)} placeholder={cadastro.requester_register || "CRM/UF"} />
+                <Label className="text-[10px] uppercase text-slate-500">CRM (validado)</Label>
+                <Input value={doctorCrm} disabled />
               </div>
             </div>
-            {cadastro.requester_register && (
-              <p className="text-[11px] text-amber-700">
-                CRM esperado: <strong>{cadastro.requester_register}</strong>
-              </p>
-            )}
+            <p className="text-[10px] text-slate-400">O nome aqui informado será registrado como Médico Responsável pela Requisição.</p>
           </CardContent>
         </Card>
 
         {/* 4. Localização Cirúrgica */}
         <Card>
           <CardHeader><CardTitle className="text-sm">4. Localização Cirúrgica</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Field label="Lateralidade">
-              <Select value={side} onValueChange={setSide}>
-                <SelectTrigger><SelectValue placeholder="Lado" /></SelectTrigger>
-                <SelectContent>
-                  {SIDES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Região"><Input value={region} onChange={e => setRegion(e.target.value)} /></Field>
-            <Field label="Segmento"><Input value={segment} onChange={e => setSegment(e.target.value)} /></Field>
-            <Field label="Posição">
-              <Select value={position} onValueChange={setPosition}>
-                <SelectTrigger><SelectValue placeholder="Posição" /></SelectTrigger>
-                <SelectContent>
-                  {POSITIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Field label="Lateralidade">
+                <Select value={side} onValueChange={setSide}>
+                  <SelectTrigger><SelectValue placeholder="Lado" /></SelectTrigger>
+                  <SelectContent>
+                    {SIDES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Região"><Input value={region} onChange={e => setRegion(e.target.value)} /></Field>
+              <Field label="Segmento"><Input value={segment} onChange={e => setSegment(e.target.value)} /></Field>
+              <Field label="Posição">
+                <Select value={position} onValueChange={setPosition}>
+                  <SelectTrigger><SelectValue placeholder="Posição" /></SelectTrigger>
+                  <SelectContent>
+                    {POSITIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+            {locDivergent && locDivergent.length > 0 && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                <p className="font-bold uppercase text-[10px] mb-1">⚠ Divergência detectada com o Cadastro</p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  {locDivergent.map((d, i) => <li key={i}>{d}</li>)}
+                </ul>
+                <p className="mt-1 text-[10px]">Confirme se os dados informados estão corretos antes de enviar.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -338,9 +472,31 @@ export default function PublicRequisitionPage() {
                     <Button variant="ghost" size="sm" onClick={() => removeItem(i)} className="h-6 text-xs text-rose-600">Remover</Button>
                   )}
                 </div>
-                <Field label="Descrição / Especificação">
-                  <Input value={it.description} onChange={e => updItem(i, "description", e.target.value)} placeholder="Descrição do material" />
-                </Field>
+                <div className="space-y-1 relative">
+                  <Label className="text-[10px] uppercase text-slate-500">Descrição / Especificação</Label>
+                  <Input
+                    value={it.description}
+                    onChange={e => onOpmeDescChange(i, e.target.value)}
+                    onBlur={() => setTimeout(() => setOpmeSug({ idx: -1, items: [] }), 200)}
+                    placeholder="Digite ao menos 2 letras…"
+                  />
+                  {opmeSug.idx === i && opmeSug.items.length > 0 && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg max-h-[40vh] overflow-y-auto">
+                      {opmeSug.items.map((s, k) => (
+                        <button key={k} type="button"
+                          onMouseDown={ev => ev.preventDefault()}
+                          onClick={() => pickOpme(i, s)}
+                          className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b last:border-0">
+                          <p className="text-xs font-bold text-slate-800">{s.description}</p>
+                          <p className="text-[10px] text-slate-500 flex justify-between">
+                            <span>{s.sigtap ? `SIGTAP ${s.sigtap}` : (s.kind === "price" ? "Banco de preços" : "Catálogo")}</span>
+                            <span>{brl(Number(s.unit_price) || 0)} {s.supplier ? `· ${s.supplier}` : ""}</span>
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <Field label="Qtd"><Input type="number" min={1} value={it.quantity ?? 1} onChange={e => updItem(i, "quantity", Number(e.target.value))} /></Field>
                   <Field label="Tam/Mod"><Input value={it.size_model || ""} onChange={e => updItem(i, "size_model", e.target.value)} placeholder="G/P/42" /></Field>
@@ -379,7 +535,7 @@ export default function PublicRequisitionPage() {
           </CardContent>
         </Card>
 
-        {/* 7. Justificativa OPME */}
+        {/* 7. Justificativa */}
         <Card>
           <CardHeader><CardTitle className="text-sm">7. Justificativa OPME</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -387,8 +543,50 @@ export default function PublicRequisitionPage() {
               <Textarea value={indicacao} onChange={e => setIndicacao(e.target.value)} rows={3} />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="CID Principal"><Input value={cidMain} onChange={e => setCidMain(e.target.value.toUpperCase())} placeholder="Ex: M17.1" /></Field>
-              <Field label="CID Secundário"><Input value={cidSec} onChange={e => setCidSec(e.target.value.toUpperCase())} placeholder="Opcional" /></Field>
+              <div className="space-y-1 relative">
+                <Label className="text-[10px] uppercase text-slate-500">CID Principal</Label>
+                <Input
+                  value={cidMain}
+                  onChange={e => onCidChange("main", e.target.value)}
+                  onBlur={() => setTimeout(() => setCidSug({ field: null, items: [] }), 200)}
+                  placeholder="Ex: M17.1"
+                />
+                {cidSug.field === "main" && cidSug.items.length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg max-h-[40vh] overflow-y-auto">
+                    {cidSug.items.map((c: any) => (
+                      <button key={c.codigo} type="button"
+                        onMouseDown={ev => ev.preventDefault()}
+                        onClick={() => { setCidMain(c.codigo); setCidSug({ field: null, items: [] }); }}
+                        className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b last:border-0">
+                        <p className="text-xs font-bold text-slate-800">{c.codigo}</p>
+                        <p className="text-[10px] text-slate-500 uppercase">{c.descricao}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1 relative">
+                <Label className="text-[10px] uppercase text-slate-500">CID Secundário</Label>
+                <Input
+                  value={cidSec}
+                  onChange={e => onCidChange("sec", e.target.value)}
+                  onBlur={() => setTimeout(() => setCidSug({ field: null, items: [] }), 200)}
+                  placeholder="Opcional"
+                />
+                {cidSug.field === "sec" && cidSug.items.length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg max-h-[40vh] overflow-y-auto">
+                    {cidSug.items.map((c: any) => (
+                      <button key={c.codigo} type="button"
+                        onMouseDown={ev => ev.preventDefault()}
+                        onClick={() => { setCidSec(c.codigo); setCidSug({ field: null, items: [] }); }}
+                        className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b last:border-0">
+                        <p className="text-xs font-bold text-slate-800">{c.codigo}</p>
+                        <p className="text-[10px] text-slate-500 uppercase">{c.descricao}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <Field label="Parecer da Comissão">
               <Select value={parecer} onValueChange={setParecer}>
@@ -403,7 +601,6 @@ export default function PublicRequisitionPage() {
           </CardContent>
         </Card>
 
-        {/* 8. Achados / Validação */}
         <Card>
           <CardHeader><CardTitle className="text-sm">8. Achados Pré-Operatórios</CardTitle></CardHeader>
           <CardContent className="space-y-3">
