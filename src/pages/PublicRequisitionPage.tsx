@@ -354,6 +354,10 @@ export default function PublicRequisitionPage() {
           <CardHeader><CardTitle className="text-sm">2. Dados do Procedimento</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             <Info label="Data Prevista" value={fmtDate(cadastro.procedure_date)} />
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase text-slate-500">Horário do Procedimento</Label>
+              <Input type="time" value={procedureTime} onChange={e => setProcedureTime(e.target.value)} className="h-8 text-xs" />
+            </div>
             <Info label="Tipo" value={cadastro.procedure_type} />
             <Info label="Sala" value={cadastro.procedure_room} />
             <Info label="Procedimento" value={cadastro.procedure_name} />
