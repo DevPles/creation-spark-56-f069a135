@@ -26,6 +26,7 @@ import { toast } from "sonner";
  } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import DoctorInviteBlock from "@/components/opme/DoctorInviteBlock";
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { sumOpme, formatBRL, toNumber, itemSubtotal } from "@/lib/opmeValue";
