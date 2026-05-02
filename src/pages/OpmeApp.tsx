@@ -1325,7 +1325,15 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         else if (form.auditor_post_justification_requested) nextStatus = "aguardando_justificativa";
         else nextStatus = "pendente_faturamento";
       }
-      else if (part === 5) nextStatus = "pendente_consumo";
+      else if (part === 5) {
+        // Quando o pedido já foi concluído, permitir que CME / Centro Cirúrgico
+        // continuem editando os campos de Controle Administrativo sem regredir o status.
+        if (form.status === "concluido" || form.status === "pendente_faturamento" || form.status === "pendente_auditoria_post" || form.status === "pendente_consumo" || form.status === "aguardando_justificativa" || form.status === "justificativa_respondida") {
+          nextStatus = form.status;
+        } else {
+          nextStatus = "pendente_consumo";
+        }
+      }
       else if (part === 6) nextStatus = "pendente_auditoria_post";
       else if (part === 4) {
         if (step === 0) {
