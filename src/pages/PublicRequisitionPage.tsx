@@ -6,21 +6,29 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 const FN_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/requisition-invite`;
 
-type OpmeRequestedItem = {
+type OpmeItem = {
   description?: string;
   quantity?: number;
+  size_model?: string;
+  sigtap?: string;
+  unit_price?: number;
   observation?: string;
 };
+
+const SIDES = ["Direita", "Esquerda", "Bilateral", "Central", "N/A"];
+const POSITIONS = ["Proximal", "Médio", "Distal", "Anterior", "Posterior"];
 
 const fmtDate = (s?: string | null) => {
   if (!s) return "—";
   try { return new Date(s).toLocaleDateString("pt-BR"); } catch { return s as string; }
 };
+const brl = (n: number) => (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function PublicRequisitionPage() {
   const { token } = useParams<{ token: string }>();
@@ -35,18 +43,30 @@ export default function PublicRequisitionPage() {
   const [doctorName, setDoctorName] = useState("");
   const [doctorCrm, setDoctorCrm] = useState("");
 
-  // Campos da requisição
-  const [segmento, setSegmento] = useState("");
-  const [regiao, setRegiao] = useState("");
-  const [lado, setLado] = useState("");
-  const [posicao, setPosicao] = useState("");
-  const [indicacao, setIndicacao] = useState("");
-  const [parecer, setParecer] = useState("");
+  // 2. Localização Cirúrgica
+  const [side, setSide] = useState("");
+  const [region, setRegion] = useState("");
+  const [segment, setSegment] = useState("");
+  const [position, setPosition] = useState("");
+
+  // 4. OPME
+  const [items, setItems] = useState<OpmeItem[]>([{ description: "", quantity: 1, size_model: "", sigtap: "", unit_price: 0, observation: "" }]);
+
+  // 5. Instrumentais
   const [instSpec, setInstSpec] = useState(false);
   const [instLoan, setInstLoan] = useState(false);
   const [instNa, setInstNa] = useState(false);
   const [instSpecify, setInstSpecify] = useState("");
-  const [items, setItems] = useState<OpmeRequestedItem[]>([{ description: "", quantity: 1, observation: "" }]);
+
+  // 6. Justificativa
+  const [indicacao, setIndicacao] = useState("");
+  const [cidMain, setCidMain] = useState("");
+  const [cidSec, setCidSec] = useState("");
+  const [parecer, setParecer] = useState("");
+
+  // 7. Achados / Validação
+  const [findings, setFindings] = useState("");
+  const [validationResp, setValidationResp] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -55,26 +75,34 @@ export default function PublicRequisitionPage() {
         const j = await r.json();
         if (!r.ok) throw new Error(j.error || "Falha ao carregar");
         setData(j);
+        const c = j.cadastro || {};
         const req = j.requisicao || {};
-        setSegmento(req.procedure_segment_requisicao || j.cadastro?.procedure_segment_cadastro || "");
-        setRegiao(req.procedure_region_requisicao || j.cadastro?.procedure_region_cadastro || "");
-        setLado(req.procedure_side_requisicao || j.cadastro?.procedure_side_cadastro || "");
-        setPosicao(req.procedure_position_requisicao || j.cadastro?.procedure_position_cadastro || "");
-        setIndicacao(req.clinical_indication || j.cadastro?.clinical_indication || "");
-        setParecer(req.committee_opinion || "");
+        setSide(req.procedure_side_requisicao || c.procedure_side_cadastro || "");
+        setRegion(req.procedure_region_requisicao || c.procedure_region_cadastro || "");
+        setSegment(req.procedure_segment_requisicao || c.procedure_segment_cadastro || "");
+        setPosition(req.procedure_position_requisicao || c.procedure_position_cadastro || "");
+        setIndicacao(req.clinical_indication || c.clinical_indication || "");
+        setCidMain(req.billing_cid_main || "");
+        setCidSec(req.billing_cid_secondary || "");
+        setParecer(req.auditor_pre_analysis || "");
         setInstSpec(!!req.instruments_specific);
         setInstLoan(!!req.instruments_loan);
         setInstNa(!!req.instruments_na);
         setInstSpecify(req.instruments_specify || "");
+        setFindings(req.preop_finding_description || c.preop_finding_description || "");
+        setValidationResp(req.preop_validation_responsible || c.preop_validation_responsible || "");
         if (Array.isArray(req.opme_requested) && req.opme_requested.length > 0) {
           setItems(req.opme_requested.map((it: any) => ({
             description: it.description || "",
             quantity: Number(it.quantity || 1),
+            size_model: it.size_model || "",
+            sigtap: it.sigtap || "",
+            unit_price: Number(it.unit_price || 0),
             observation: it.observation || "",
           })));
         }
-        setDoctorName(j.invite?.last_doctor_name || "");
-        setDoctorCrm(j.invite?.last_doctor_crm || "");
+        setDoctorName(j.invite?.last_doctor_name || c.requester_name || "");
+        setDoctorCrm(j.invite?.last_doctor_crm || c.requester_register || "");
       } catch (e: any) {
         setError(e?.message || "Erro");
       } finally {
@@ -86,18 +114,16 @@ export default function PublicRequisitionPage() {
   const cadastro = data?.cadastro || {};
   const attachments: any[] = data?.attachments || [];
 
-  const photos = useMemo(
-    () => attachments.filter(a => (a.file_type || "").startsWith("image/")),
-    [attachments]
-  );
-  const docs = useMemo(
-    () => attachments.filter(a => !(a.file_type || "").startsWith("image/")),
-    [attachments]
+  const photos = useMemo(() => attachments.filter(a => (a.file_type || "").startsWith("image/")), [attachments]);
+  const docs = useMemo(() => attachments.filter(a => !(a.file_type || "").startsWith("image/")), [attachments]);
+  const totalOpme = useMemo(
+    () => items.reduce((acc, it) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0),
+    [items]
   );
 
-  const addItem = () => setItems(prev => [...prev, { description: "", quantity: 1, observation: "" }]);
+  const addItem = () => setItems(prev => [...prev, { description: "", quantity: 1, size_model: "", sigtap: "", unit_price: 0, observation: "" }]);
   const removeItem = (i: number) => setItems(prev => prev.filter((_, idx) => idx !== i));
-  const updItem = (i: number, k: keyof OpmeRequestedItem, v: any) =>
+  const updItem = (i: number, k: keyof OpmeItem, v: any) =>
     setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [k]: v } : it));
 
   const submit = async () => {
@@ -120,17 +146,23 @@ export default function PublicRequisitionPage() {
           doctor_name: doctorName.trim(),
           doctor_crm: doctorCrm.trim(),
           payload: {
-            procedure_segment_requisicao: segmento,
-            procedure_region_requisicao: regiao,
-            procedure_side_requisicao: lado,
-            procedure_position_requisicao: posicao,
-            clinical_indication: indicacao,
-            committee_opinion: parecer,
+            requester_name: doctorName.trim(),
+            requester_register: doctorCrm.trim(),
+            procedure_side_requisicao: side,
+            procedure_region_requisicao: region,
+            procedure_segment_requisicao: segment,
+            procedure_position_requisicao: position,
+            opme_requested: cleanItems,
             instruments_specific: instSpec,
             instruments_loan: instLoan,
             instruments_na: instNa,
             instruments_specify: instSpecify,
-            opme_requested: cleanItems,
+            clinical_indication: indicacao,
+            billing_cid_main: cidMain,
+            billing_cid_secondary: cidSec,
+            auditor_pre_analysis: parecer,
+            preop_finding_description: findings,
+            preop_validation_responsible: validationResp,
             request_date: new Date().toISOString().slice(0, 10),
             request_time: new Date().toTimeString().slice(0, 5),
           },
@@ -177,35 +209,41 @@ export default function PublicRequisitionPage() {
           </Card>
         )}
 
-        {/* Dados do Cadastro (read-only) */}
+        {/* 1. Identificação do Paciente (read-only) */}
         <Card>
-          <CardHeader><CardTitle className="text-sm">Dados do Cadastro</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm">1. Identificação do Paciente</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-            <Info label="AIH" value={cadastro.billing_aih_number} />
+            <Info label="Nome" value={cadastro.patient_name} />
+            <Info label="Prontuário" value={cadastro.patient_record} />
+            <Info label="Nascimento" value={fmtDate(cadastro.patient_birthdate)} />
             <Info label="Mãe" value={cadastro.patient_mother_name} />
             <Info label="Cartão SUS" value={cadastro.patient_sus} />
-            <Info label="Procedimento" value={cadastro.procedure_name} />
-            <Info label="SIGTAP" value={cadastro.procedure_sigtap_code} />
-            <Info label="Tipo" value={cadastro.procedure_type} />
-            <Info label="Sala" value={cadastro.procedure_room} />
-            <Info label="Data Prevista" value={fmtDate(cadastro.procedure_date)} />
-            <Info label="Solicitante" value={cadastro.requester_name} />
-            <Info label="Segmento (Cadastro)" value={cadastro.procedure_segment_cadastro} />
-            <Info label="Região (Cadastro)" value={cadastro.procedure_region_cadastro} />
-            <Info label="Lado (Cadastro)" value={cadastro.procedure_side_cadastro} />
-            {cadastro.preop_finding_description && (
-              <div className="col-span-2 md:col-span-3">
-                <Label className="text-[10px] uppercase text-slate-500">Achado pré-op</Label>
-                <p className="text-xs text-slate-800 whitespace-pre-wrap">{cadastro.preop_finding_description}</p>
-              </div>
-            )}
+            <Info label="AIH" value={cadastro.billing_aih_number} />
           </CardContent>
         </Card>
 
-        {/* Anexos */}
+        {/* 2. Dados do Procedimento (read-only) */}
+        <Card>
+          <CardHeader><CardTitle className="text-sm">2. Dados do Procedimento</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+            <Info label="Data Prevista" value={fmtDate(cadastro.procedure_date)} />
+            <Info label="Tipo" value={cadastro.procedure_type} />
+            <Info label="Sala" value={cadastro.procedure_room} />
+            <Info label="Procedimento" value={cadastro.procedure_name} />
+            <Info label="SIGTAP" value={cadastro.procedure_sigtap_code} />
+            <Info label="Solicitante" value={cadastro.requester_name} />
+            <Info label="CRM Solicitante" value={cadastro.requester_register} />
+            <Info label="Segmento (Cadastro)" value={cadastro.procedure_segment_cadastro} />
+            <Info label="Região (Cadastro)" value={cadastro.procedure_region_cadastro} />
+            <Info label="Lado (Cadastro)" value={cadastro.procedure_side_cadastro} />
+            <Info label="Posição (Cadastro)" value={cadastro.procedure_position_cadastro} />
+          </CardContent>
+        </Card>
+
+        {/* Anexos completos */}
         {(photos.length > 0 || docs.length > 0 || cadastro.billing_aih_file_url) && (
           <Card>
-            <CardHeader><CardTitle className="text-sm">Exames, Fotos e Documentos</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm">Exames, Fotos e Documentos do Cadastro</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {cadastro.billing_aih_file_url && (
                 <a href={cadastro.billing_aih_file_url} target="_blank" rel="noreferrer"
@@ -213,10 +251,10 @@ export default function PublicRequisitionPage() {
               )}
               {photos.length > 0 && (
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">Fotos</p>
+                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">Fotos / Imagens ({photos.length})</p>
                   <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                     {photos.map(p => (
-                      <button key={p.id} type="button" onClick={() => setZoom(p.file_url)} className="aspect-square rounded-md overflow-hidden border bg-white">
+                      <button key={p.id} type="button" onClick={() => setZoom(p.file_url)} className="aspect-square rounded-md overflow-hidden border bg-white" title={`${p.stage || ""} • ${p.category || ""} • ${p.file_name}`}>
                         <img src={p.file_url} alt={p.file_name} className="w-full h-full object-cover" />
                       </button>
                     ))}
@@ -225,12 +263,13 @@ export default function PublicRequisitionPage() {
               )}
               {docs.length > 0 && (
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">Documentos</p>
+                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">Documentos / Exames ({docs.length})</p>
                   <ul className="text-xs space-y-1">
                     {docs.map(d => (
                       <li key={d.id}>
                         <a href={d.file_url} target="_blank" rel="noreferrer" className="text-teal-700 underline">{d.file_name}</a>
-                        {d.stage && <span className="text-slate-400 ml-2">[{d.stage}]</span>}
+                        {d.category && <span className="text-slate-400 ml-2">[{d.category}]</span>}
+                        {d.stage && <span className="text-slate-300 ml-1">({d.stage})</span>}
                       </li>
                     ))}
                   </ul>
@@ -240,84 +279,144 @@ export default function PublicRequisitionPage() {
           </Card>
         )}
 
-        {/* Identificação do médico */}
+        {/* 3. Identificação do Médico */}
         <Card>
-          <CardHeader><CardTitle className="text-sm">Identificação do Médico</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-[10px] uppercase text-slate-500">Nome do Médico</Label>
-              <Input value={doctorName} onChange={e => setDoctorName(e.target.value)} placeholder="Nome completo" />
+          <CardHeader><CardTitle className="text-sm">3. Identificação do Médico</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[10px] uppercase text-slate-500">Nome do Médico</Label>
+                <Input value={doctorName} onChange={e => setDoctorName(e.target.value)} placeholder="Nome completo" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] uppercase text-slate-500">CRM (deve coincidir com o do Cadastro)</Label>
+                <Input value={doctorCrm} onChange={e => setDoctorCrm(e.target.value)} placeholder={cadastro.requester_register || "CRM/UF"} />
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] uppercase text-slate-500">CRM</Label>
-              <Input value={doctorCrm} onChange={e => setDoctorCrm(e.target.value)} placeholder="CRM/UF" />
-            </div>
+            {cadastro.requester_register && (
+              <p className="text-[11px] text-amber-700">
+                CRM esperado: <strong>{cadastro.requester_register}</strong>
+              </p>
+            )}
           </CardContent>
         </Card>
 
-        {/* Requisição (preenchimento) */}
+        {/* 4. Localização Cirúrgica */}
         <Card>
-          <CardHeader><CardTitle className="text-sm">Dados da Requisição</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm">4. Localização Cirúrgica</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Field label="Lateralidade">
+              <Select value={side} onValueChange={setSide}>
+                <SelectTrigger><SelectValue placeholder="Lado" /></SelectTrigger>
+                <SelectContent>
+                  {SIDES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Região"><Input value={region} onChange={e => setRegion(e.target.value)} /></Field>
+            <Field label="Segmento"><Input value={segment} onChange={e => setSegment(e.target.value)} /></Field>
+            <Field label="Posição">
+              <Select value={position} onValueChange={setPosition}>
+                <SelectTrigger><SelectValue placeholder="Posição" /></SelectTrigger>
+                <SelectContent>
+                  {POSITIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </Field>
+          </CardContent>
+        </Card>
+
+        {/* 5. OPME Solicitada */}
+        <Card>
+          <CardHeader><CardTitle className="text-sm">5. OPME Solicitada</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] uppercase text-slate-500">Segmento</Label>
-                <Input value={segmento} onChange={e => setSegmento(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] uppercase text-slate-500">Região</Label>
-                <Input value={regiao} onChange={e => setRegiao(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] uppercase text-slate-500">Lado</Label>
-                <Input value={lado} onChange={e => setLado(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] uppercase text-slate-500">Posição</Label>
-                <Input value={posicao} onChange={e => setPosicao(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] uppercase text-slate-500">Indicação Clínica</Label>
-              <Textarea value={indicacao} onChange={e => setIndicacao(e.target.value)} rows={3} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] uppercase text-slate-500">Parecer / Comitê</Label>
-              <Textarea value={parecer} onChange={e => setParecer(e.target.value)} rows={2} />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase text-slate-500">Instrumentais</Label>
-              <div className="flex flex-wrap gap-4 text-xs">
-                <label className="flex items-center gap-2"><Checkbox checked={instSpec} onCheckedChange={v => setInstSpec(!!v)} /> Específicos</label>
-                <label className="flex items-center gap-2"><Checkbox checked={instLoan} onCheckedChange={v => setInstLoan(!!v)} /> Em comodato</label>
-                <label className="flex items-center gap-2"><Checkbox checked={instNa} onCheckedChange={v => setInstNa(!!v)} /> Não se aplica</label>
-              </div>
-              <Input value={instSpecify} onChange={e => setInstSpecify(e.target.value)} placeholder="Especificar instrumentais" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-[10px] uppercase text-slate-500">Materiais OPME Solicitados</Label>
-                <Button type="button" size="sm" variant="outline" onClick={addItem}>+ Adicionar item</Button>
-              </div>
-              {items.map((it, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2 items-start">
-                  <Input className="col-span-7" placeholder="Descrição do material"
-                         value={it.description} onChange={e => updItem(i, "description", e.target.value)} />
-                  <Input className="col-span-2" type="number" min={1} placeholder="Qtd"
-                         value={it.quantity ?? 1} onChange={e => updItem(i, "quantity", Number(e.target.value))} />
-                  <Input className="col-span-2" placeholder="Obs."
-                         value={it.observation || ""} onChange={e => updItem(i, "observation", e.target.value)} />
-                  <Button className="col-span-1" type="button" variant="ghost" size="sm" onClick={() => removeItem(i)}>×</Button>
+            {items.map((it, i) => (
+              <div key={i} className="border rounded-lg p-3 space-y-2 bg-white">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase text-slate-500">Item #{String(i + 1).padStart(2, "0")}</span>
+                  {items.length > 1 && (
+                    <Button variant="ghost" size="sm" onClick={() => removeItem(i)} className="h-6 text-xs text-rose-600">Remover</Button>
+                  )}
                 </div>
-              ))}
+                <Field label="Descrição / Especificação">
+                  <Input value={it.description} onChange={e => updItem(i, "description", e.target.value)} placeholder="Descrição do material" />
+                </Field>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <Field label="Qtd"><Input type="number" min={1} value={it.quantity ?? 1} onChange={e => updItem(i, "quantity", Number(e.target.value))} /></Field>
+                  <Field label="Tam/Mod"><Input value={it.size_model || ""} onChange={e => updItem(i, "size_model", e.target.value)} placeholder="G/P/42" /></Field>
+                  <Field label="SIGTAP"><Input value={it.sigtap || ""} onChange={e => updItem(i, "sigtap", e.target.value)} /></Field>
+                  <Field label="Valor unit. (R$)"><Input type="number" step="0.01" min={0} value={it.unit_price ?? 0} onChange={e => updItem(i, "unit_price", Number(e.target.value))} /></Field>
+                </div>
+                <Field label="Observação"><Input value={it.observation || ""} onChange={e => updItem(i, "observation", e.target.value)} /></Field>
+                <div className="text-right text-xs">
+                  <span className="text-slate-400 mr-2">Subtotal</span>
+                  <strong className="text-teal-700">{brl((Number(it.quantity) || 0) * (Number(it.unit_price) || 0))}</strong>
+                </div>
+              </div>
+            ))}
+            {items.length < 10 && (
+              <Button variant="outline" onClick={addItem} className="w-full border-dashed">+ Adicionar Material</Button>
+            )}
+            <div className="flex items-center justify-between rounded-lg bg-teal-50 border border-teal-100 px-4 py-2">
+              <span className="text-[10px] uppercase font-bold text-slate-500">Valor estimado da OPME</span>
+              <span className="text-base font-black text-teal-700">{brl(totalOpme)}</span>
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
+        {/* 6. Instrumentais */}
+        <Card>
+          <CardHeader><CardTitle className="text-sm">6. Instrumentais / Acessórios</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap gap-4 text-xs">
+              <label className="flex items-center gap-2"><Checkbox checked={instSpec} onCheckedChange={v => setInstSpec(!!v)} /> Necessita instrumental específico</label>
+              <label className="flex items-center gap-2"><Checkbox checked={instLoan} onCheckedChange={v => setInstLoan(!!v)} /> Necessita comodato</label>
+              <label className="flex items-center gap-2"><Checkbox checked={instNa} onCheckedChange={v => setInstNa(!!v)} /> Não se aplica</label>
+            </div>
+            <Field label="Especificar instrumentais">
+              <Textarea value={instSpecify} onChange={e => setInstSpecify(e.target.value)} rows={2} />
+            </Field>
+          </CardContent>
+        </Card>
+
+        {/* 7. Justificativa OPME */}
+        <Card>
+          <CardHeader><CardTitle className="text-sm">7. Justificativa OPME</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <Field label="Indicação Clínica / Evidência">
+              <Textarea value={indicacao} onChange={e => setIndicacao(e.target.value)} rows={3} />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="CID Principal"><Input value={cidMain} onChange={e => setCidMain(e.target.value.toUpperCase())} placeholder="Ex: M17.1" /></Field>
+              <Field label="CID Secundário"><Input value={cidSec} onChange={e => setCidSec(e.target.value.toUpperCase())} placeholder="Opcional" /></Field>
+            </div>
+            <Field label="Parecer da Comissão">
+              <Select value={parecer} onValueChange={setParecer}>
+                <SelectTrigger><SelectValue placeholder="Status da análise" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="adequada">Aprovado</SelectItem>
+                  <SelectItem value="reprovada">Reprovado</SelectItem>
+                  <SelectItem value="em_analise">Em Análise</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          </CardContent>
+        </Card>
+
+        {/* 8. Achados / Validação */}
+        <Card>
+          <CardHeader><CardTitle className="text-sm">8. Achados Pré-Operatórios</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <Field label="Descrição dos Achados">
+              <Textarea value={findings} onChange={e => setFindings(e.target.value)} rows={3} />
+            </Field>
+            <Field label="Responsável pela Validação">
+              <Input value={validationResp} onChange={e => setValidationResp(e.target.value)} placeholder="Assinatura / Carimbo" />
+            </Field>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end pb-8">
           <Button onClick={submit} disabled={submitting} className="rounded-full">
             {submitting ? "Enviando…" : "Enviar Requisição"}
           </Button>
@@ -338,6 +437,15 @@ function Info({ label, value }: { label: string; value: any }) {
     <div>
       <Label className="text-[10px] uppercase text-slate-500">{label}</Label>
       <p className="text-xs font-medium text-slate-800 break-words">{value || "—"}</p>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[10px] uppercase text-slate-500">{label}</Label>
+      {children}
     </div>
   );
 }
