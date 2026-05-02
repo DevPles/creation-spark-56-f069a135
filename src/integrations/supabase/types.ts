@@ -578,6 +578,7 @@ export type Database = {
           billing_cid_secondary: string | null
           billing_closed_at: string | null
           billing_cnes: string | null
+          billing_complementary_files: Json
           billing_discharge_date: string | null
           billing_divergence: boolean | null
           billing_divergence_description: string | null
@@ -703,6 +704,7 @@ export type Database = {
           billing_cid_secondary?: string | null
           billing_closed_at?: string | null
           billing_cnes?: string | null
+          billing_complementary_files?: Json
           billing_discharge_date?: string | null
           billing_divergence?: boolean | null
           billing_divergence_description?: string | null
@@ -828,6 +830,7 @@ export type Database = {
           billing_cid_secondary?: string | null
           billing_closed_at?: string | null
           billing_cnes?: string | null
+          billing_complementary_files?: Json
           billing_discharge_date?: string | null
           billing_divergence?: boolean | null
           billing_divergence_description?: string | null
