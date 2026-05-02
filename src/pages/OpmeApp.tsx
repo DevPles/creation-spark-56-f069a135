@@ -1439,7 +1439,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
   if (part === null) {
     return (
-      <div className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
+      <div ref={opmeRootRef} className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
         {!embedded && (
           <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-20">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
@@ -1678,7 +1678,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   };
 
   return (
-    <div className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
+    <div ref={opmeRootRef} className={embedded ? "flex flex-col" : "min-h-screen bg-slate-50 flex flex-col"}>
       {!embedded && (
         <header className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-20">
           <Button variant="ghost" size="icon" onClick={() => setPart(null)}>
