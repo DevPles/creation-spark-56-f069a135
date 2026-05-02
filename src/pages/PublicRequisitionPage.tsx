@@ -31,8 +31,8 @@ const fmtDate = (s?: string | null) => {
 const brl = (n: number) => (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const norm = (s: string) => String(s || "").trim().toLowerCase();
 
-async function callFn(body: any) {
-  const r = await fetch(FN_URL, {
+async function callFn(token: string, body: any) {
+  const r = await fetch(`${FN_URL}?token=${encodeURIComponent(token)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -109,7 +109,7 @@ export default function PublicRequisitionPage() {
     if (!crmInput.trim()) { toast.error("Informe seu CRM"); return; }
     setVerifying(true);
     try {
-      const j = await callFn({ action: "verify", doctor_crm: crmInput.trim() });
+      const j = await callFn(token || "", { action: "verify", doctor_crm: crmInput.trim() });
       setData(j);
       setDoctorCrm(crmInput.trim());
       // NÃO pré-preencher nome do médico — ele deve digitar
@@ -183,7 +183,7 @@ export default function PublicRequisitionPage() {
     if (v.trim().length < 2) { setOpmeSug({ idx: -1, items: [] }); return; }
     opmeTimer.current = setTimeout(async () => {
       try {
-        const j = await callFn({ action: "search_opme", term: v.trim() });
+        const j = await callFn(token || "", { action: "search_opme", term: v.trim() });
         setOpmeSug({ idx: i, items: j.items || [] });
       } catch { /* ignore */ }
     }, 250);
@@ -206,7 +206,7 @@ export default function PublicRequisitionPage() {
     if (up.trim().length < 2) { setCidSug({ field: null, items: [] }); return; }
     cidTimer.current = setTimeout(async () => {
       try {
-        const j = await callFn({ action: "search_cid", term: up.trim() });
+        const j = await callFn(token || "", { action: "search_cid", term: up.trim() });
         setCidSug({ field: which, items: j.items || [] });
       } catch { /* ignore */ }
     }, 250);
@@ -224,7 +224,7 @@ export default function PublicRequisitionPage() {
     }
     setSubmitting(true);
     try {
-      await callFn({
+      await callFn(token || "", {
         action: "submit",
         token,
         doctor_name: doctorName.trim(),
