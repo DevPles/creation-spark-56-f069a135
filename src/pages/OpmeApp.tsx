@@ -2971,35 +2971,43 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mb-1">Exames Anexados ({preopExams.filter(e => e.url).length})</p>
                       
                        {preopExams.filter(e => e.url).length > 0 ? (
-                        <div className="grid grid-cols-2 gap-3">
-                           {preopExams.filter(e => e.url).map((exam, i) => {
-                             const isImg = isImageUrl(exam.url, exam.mime || exam.file_type);
-                             return isImg ? (
-                               <div key={i} className="bg-white p-1 rounded-lg border border-slate-100 space-y-2 relative group flex flex-col h-full">
-                                 <div className="flex-1">
-                                   <div className="relative aspect-video rounded-md overflow-hidden border border-slate-50">
-                                     <img src={exam.url} alt={exam.type} className="w-full h-full object-cover" />
-                                     <button
-                                       onClick={() => window.open(exam.url, "_blank")}
-                                       className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[8px] font-bold uppercase"
-                                     >
-                                       Ampliar
-                                     </button>
-                                   </div>
-                                 </div>
-                                 <p className="text-[9px] font-black text-slate-700 uppercase px-1 py-1 truncate bg-slate-50/50 rounded-b-md">{exam.type}</p>
-                               </div>
-                             ) : (
-                               <div key={i} className="col-span-2 flex items-center justify-between bg-white border border-slate-100 rounded-md px-3 py-2">
-                                 <div className="min-w-0">
-                                   <p className="text-[10px] font-black text-slate-700 uppercase truncate">{exam.type}</p>
-                                   {exam.date && <p className="text-[9px] text-slate-400">{formatDateBR(exam.date)}</p>}
-                                 </div>
-                                 <a href={exam.url} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase text-teal-700 underline shrink-0 ml-3">Abrir Link</a>
-                               </div>
-                             );
-                           })}
-                        </div>
+                        (() => {
+                          const items = preopExams.filter(e => e.url);
+                          const imgs = items.filter(e => isImageUrl(e.url, (e as any).mime || (e as any).file_type));
+                          const docs = items.filter(e => !isImageUrl(e.url, (e as any).mime || (e as any).file_type));
+                          return (
+                            <div className="space-y-3">
+                              {imgs.length > 0 && (
+                                <div className="grid grid-cols-2 gap-3">
+                                  {imgs.map((exam, i) => (
+                                    <div key={`img-${i}`} className="bg-white p-1 rounded-lg border border-slate-100 space-y-2 relative group flex flex-col h-full">
+                                      <div className="flex-1">
+                                        <div className="relative aspect-video rounded-md overflow-hidden border border-slate-50">
+                                          <img src={exam.url} alt={exam.type} className="w-full h-full object-cover" />
+                                          <button onClick={() => window.open(exam.url, "_blank")} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[8px] font-bold uppercase">Ampliar</button>
+                                        </div>
+                                      </div>
+                                      <p className="text-[9px] font-black text-slate-700 uppercase px-1 py-1 truncate bg-slate-50/50 rounded-b-md">{exam.type}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {docs.length > 0 && (
+                                <div className="grid grid-cols-2 gap-3">
+                                  {docs.map((exam, i) => (
+                                    <div key={`doc-${i}`} className="bg-white p-3 rounded-lg border border-slate-100 flex flex-col justify-between h-full">
+                                      <div className="min-w-0">
+                                        <p className="text-[10px] font-black text-slate-700 uppercase truncate">{exam.type}</p>
+                                        {exam.date && <p className="text-[9px] text-slate-400">{formatDateBR(exam.date)}</p>}
+                                      </div>
+                                      <a href={exam.url} target="_blank" rel="noreferrer" className="self-end text-[10px] font-bold uppercase text-teal-700 underline mt-2">Abrir Link</a>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()
                       ) : (
                       <p className="col-span-2 text-[9px] text-slate-400 italic bg-slate-50/50 p-2 rounded border border-dashed text-center">Nenhum exame pré-operatório anexado.</p>
                       )}
@@ -3309,10 +3317,14 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                            <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">1. Justificativa Clínica (Pré-OP)</h4>
                          </div>
                            <div className="grid grid-cols-2 gap-3">
-                             {getTimelineEvidence().filter(e => e.stage === "Pré-OP").length > 0 ? (
-                               getTimelineEvidence().filter(e => e.stage === "Pré-OP").map((exam, i) => (
-                                 isImageUrl(exam.url, (exam as any).mime || (exam as any).file_type) ? (
-                                   <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
+                             {(() => {
+                               const all = getTimelineEvidence().filter(e => e.stage === "Pré-OP");
+                               if (all.length === 0) return null;
+                               const imgs = all.filter(e => isImageUrl(e.url, (e as any).mime || (e as any).file_type));
+                               const docs = all.filter(e => !isImageUrl(e.url, (e as any).mime || (e as any).file_type));
+                               return [
+                                 ...imgs.map((exam, i) => (
+                                   <div key={`i-${i}`} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
                                      <img src={exam.url} alt="Pré-OP" className="w-full h-full object-cover" />
                                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
                                        <p className="text-[8px] text-white font-bold uppercase">{exam.type}</p>
@@ -3320,17 +3332,19 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                        <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Ver Original</Button>
                                      </div>
                                    </div>
-                                 ) : (
-                                   <div key={i} className="col-span-2 flex items-center justify-between bg-white border border-slate-100 rounded-md px-3 py-2">
+                                 )),
+                                 ...docs.map((exam, i) => (
+                                   <div key={`d-${i}`} className="bg-white p-3 rounded-lg border border-slate-100 flex flex-col justify-between">
                                      <div className="min-w-0">
                                        <p className="text-[10px] font-bold uppercase text-slate-700 truncate">{exam.type}</p>
                                        <p className="text-[9px] text-slate-400 uppercase">{formatDateBR(exam.date)}</p>
                                      </div>
-                                     <a href={exam.url} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase text-teal-700 underline shrink-0 ml-3">Abrir Link</a>
+                                     <a href={exam.url} target="_blank" rel="noreferrer" className="self-end text-[10px] font-bold uppercase text-teal-700 underline mt-2">Abrir Link</a>
                                    </div>
-                                 )
-                               ))
-                             ) : (
+                                 )),
+                               ];
+                             })()}
+                             {getTimelineEvidence().filter(e => e.stage === "Pré-OP").length === 0 && (
                              <p className="col-span-2 text-[9px] text-slate-400 italic bg-slate-50/50 p-2 rounded border border-dashed text-center">Nenhum exame pré-operatório anexado.</p>
                            )}
                          </div>
@@ -3345,32 +3359,34 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                            <div className="grid grid-cols-2 gap-3">
                               {(() => {
                                 const trackingEvidence = getTimelineEvidence().filter(e => e.category === "tracking");
-                                return trackingEvidence.length > 0 ? (
-                                  trackingEvidence.map((exam, i) => (
-                                    isImageUrl(exam.url, (exam as any).mime || (exam as any).file_type) ? (
-                                      <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-200 bg-slate-50/30">
-                                        <img src={exam.url} alt="Etiqueta" className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
-                                          <p className="text-[8px] text-white font-bold uppercase truncate">{exam.type}</p>
-                                          <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
-                                          <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Conferir Lote</Button>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div key={i} className="col-span-2 flex items-center justify-between bg-white border border-slate-100 rounded-md px-3 py-2">
-                                        <div className="min-w-0">
-                                          <p className="text-[10px] font-bold uppercase text-slate-700 truncate">{exam.type}</p>
-                                          <p className="text-[9px] text-slate-400 uppercase">{formatDateBR(exam.date)}</p>
-                                        </div>
-                                        <a href={exam.url} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase text-teal-700 underline shrink-0 ml-3">Abrir Link</a>
-                                      </div>
-                                    )
-                                  ))
-                                ) : (
+                                if (trackingEvidence.length === 0) return (
                                 <p className="col-span-2 text-[9px] text-slate-500 italic bg-slate-100/50 p-3 rounded-lg border border-dashed border-slate-200 text-center">
                                   Informação: Ausência de fotos das etiquetas para conferência técnica.
                                 </p>
                               );
+                                const imgs = trackingEvidence.filter(e => isImageUrl(e.url, (e as any).mime || (e as any).file_type));
+                                const docs = trackingEvidence.filter(e => !isImageUrl(e.url, (e as any).mime || (e as any).file_type));
+                                return [
+                                  ...imgs.map((exam, i) => (
+                                    <div key={`i-${i}`} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-200 bg-slate-50/30">
+                                      <img src={exam.url} alt="Etiqueta" className="w-full h-full object-cover" />
+                                      <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
+                                        <p className="text-[8px] text-white font-bold uppercase truncate">{exam.type}</p>
+                                        <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
+                                        <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Conferir Lote</Button>
+                                      </div>
+                                    </div>
+                                  )),
+                                  ...docs.map((exam, i) => (
+                                    <div key={`d-${i}`} className="bg-white p-3 rounded-lg border border-slate-100 flex flex-col justify-between">
+                                      <div className="min-w-0">
+                                        <p className="text-[10px] font-bold uppercase text-slate-700 truncate">{exam.type}</p>
+                                        <p className="text-[9px] text-slate-400 uppercase">{formatDateBR(exam.date)}</p>
+                                      </div>
+                                      <a href={exam.url} target="_blank" rel="noreferrer" className="self-end text-[10px] font-bold uppercase text-teal-700 underline mt-2">Abrir Link</a>
+                                    </div>
+                                  )),
+                                ];
                             })()}
                          </div>
                        </div>
@@ -3384,32 +3400,34 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                            <div className="grid grid-cols-2 gap-3">
                               {(() => {
                                 const technicalEvidence = getTimelineEvidence().filter(e => e.stage === "Pós-OP" || (e.stage === "Consumo" && e.category === "intra"));
-                                return technicalEvidence.length > 0 ? (
-                                  technicalEvidence.map((exam, i) => (
-                                    isImageUrl(exam.url, (exam as any).mime || (exam as any).file_type) ? (
-                                      <div key={i} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
-                                        <img src={exam.url} alt="Pós/Intra" className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
-                                          <p className="text-[8px] text-white font-bold uppercase">{exam.stage} - {exam.type}</p>
-                                          <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
-                                          <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Ver Detalhes</Button>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div key={i} className="col-span-2 flex items-center justify-between bg-white border border-slate-100 rounded-md px-3 py-2">
-                                        <div className="min-w-0">
-                                          <p className="text-[10px] font-bold uppercase text-slate-700 truncate">{exam.stage} — {exam.type}</p>
-                                          <p className="text-[9px] text-slate-400 uppercase">{formatDateBR(exam.date)}</p>
-                                        </div>
-                                        <a href={exam.url} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase text-teal-700 underline shrink-0 ml-3">Abrir Link</a>
-                                      </div>
-                                    )
-                                  ))
-                               ) : (
+                                if (technicalEvidence.length === 0) return (
                                 <p className="col-span-2 text-[9px] text-slate-400 italic bg-slate-50/50 p-3 rounded-lg border border-dashed border-slate-200 text-center">
                                   Nenhuma imagem intra ou pós-operatória identificada.
                                 </p>
                               );
+                                const imgs = technicalEvidence.filter(e => isImageUrl(e.url, (e as any).mime || (e as any).file_type));
+                                const docs = technicalEvidence.filter(e => !isImageUrl(e.url, (e as any).mime || (e as any).file_type));
+                                return [
+                                  ...imgs.map((exam, i) => (
+                                    <div key={`i-${i}`} className="group relative aspect-video rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
+                                      <img src={exam.url} alt="Pós/Intra" className="w-full h-full object-cover" />
+                                      <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all p-2 flex flex-col justify-end">
+                                        <p className="text-[8px] text-white font-bold uppercase">{exam.stage} - {exam.type}</p>
+                                        <p className="text-[7px] text-white/70 uppercase">{formatDateBR(exam.date)}</p>
+                                        <Button variant="secondary" size="sm" className="h-6 mt-2 text-[8px] font-bold uppercase" onClick={() => window.open(exam.url, "_blank")}>Ver Detalhes</Button>
+                                      </div>
+                                    </div>
+                                  )),
+                                  ...docs.map((exam, i) => (
+                                    <div key={`d-${i}`} className="bg-white p-3 rounded-lg border border-slate-100 flex flex-col justify-between">
+                                      <div className="min-w-0">
+                                        <p className="text-[10px] font-bold uppercase text-slate-700 truncate">{exam.stage} — {exam.type}</p>
+                                        <p className="text-[9px] text-slate-400 uppercase">{formatDateBR(exam.date)}</p>
+                                      </div>
+                                      <a href={exam.url} target="_blank" rel="noreferrer" className="self-end text-[10px] font-bold uppercase text-teal-700 underline mt-2">Abrir Link</a>
+                                    </div>
+                                  )),
+                                ];
                             })()}
                          </div>
                        </div>
