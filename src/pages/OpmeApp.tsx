@@ -1053,7 +1053,11 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      const autoTable = autoTableModule.default;
      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
      const requested = toList(form.opme_requested).filter((item: any) => item?.description?.trim());
-     const used = toList(form.opme_used).filter((item: any) => item?.description?.trim() && item?.launched);
+    // Inclui TODOS os itens com descrição (lançados ou pendentes) para evitar
+    // dossiê em branco quando o lançamento ainda não foi confirmado pelo botão final.
+    const usedAll = toList(form.opme_used).filter((item: any) => item?.description?.trim());
+    const used = usedAll.filter((item: any) => item?.launched);
+    const returnedItems = toList(form.opme_returned).filter((item: any) => item?.description?.trim());
      const divergences = getPostAuditDivergences();
      const evidence = getTimelineEvidence();
      const margin = 14;
