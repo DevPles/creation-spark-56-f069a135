@@ -23,6 +23,14 @@ type OpmeItem = {
 
 const SIDES = ["Direita", "Esquerda", "Bilateral", "Central", "N/A"];
 const POSITIONS = ["Proximal", "Médio", "Distal", "Anterior", "Posterior"];
+const ANATOMY_DATA: Record<string, string[]> = {
+  "Cabeça/Pescoço": ["Crânio", "Face", "Pescoço", "Mandíbula", "Órbita"],
+  "Tórax": ["Coração", "Pulmão", "Mama", "Arcabouço Costal", "Mediastino"],
+  "Abdome": ["Parede Abdominal", "Fígado/Vias Biliares", "Rim/Ureter", "Intestino", "Estômago"],
+  "Membro Superior": ["Ombro", "Braço", "Cotovelo", "Antebraço", "Punho", "Mão"],
+  "Membro Inferior": ["Quadril", "Coxa", "Joelho", "Perna", "Tornozelo", "Pé"],
+  "Coluna": ["Cervical", "Torácica", "Lombar", "Sacro-Coccígea"],
+};
 
 const fmtDate = (s?: string | null) => {
   if (!s) return "—";
@@ -81,6 +89,7 @@ export default function PublicRequisitionPage() {
 
   const [findings, setFindings] = useState("");
   const [validationResp, setValidationResp] = useState("");
+  const [procedureTime, setProcedureTime] = useState("");
 
   // Autocompletes
   const [opmeSug, setOpmeSug] = useState<{ idx: number; items: any[] }>({ idx: -1, items: [] });
@@ -130,6 +139,7 @@ export default function PublicRequisitionPage() {
       setInstSpecify(req.instruments_specify || "");
       setFindings(req.preop_finding_description || c.preop_finding_description || "");
       setValidationResp(req.preop_validation_responsible || c.preop_validation_responsible || "");
+      setProcedureTime(req.procedure_time || c.procedure_time || "");
       if (Array.isArray(req.opme_requested) && req.opme_requested.length > 0) {
         setItems(req.opme_requested.map((it: any) => ({
           description: it.description || "",
@@ -244,7 +254,7 @@ export default function PublicRequisitionPage() {
           billing_cid_secondary: cidSec,
           auditor_pre_analysis: parecer,
           preop_finding_description: findings,
-          preop_validation_responsible: validationResp,
+          procedure_time: procedureTime,
           request_date: new Date().toISOString().slice(0, 10),
           request_time: new Date().toTimeString().slice(0, 5),
         },
@@ -344,6 +354,10 @@ export default function PublicRequisitionPage() {
           <CardHeader><CardTitle className="text-sm">2. Dados do Procedimento</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             <Info label="Data Prevista" value={fmtDate(cadastro.procedure_date)} />
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase text-slate-500">Horário do Procedimento</Label>
+              <Input type="time" value={procedureTime} onChange={e => setProcedureTime(e.target.value)} className="h-8 text-xs" />
+            </div>
             <Info label="Tipo" value={cadastro.procedure_type} />
             <Info label="Sala" value={cadastro.procedure_room} />
             <Info label="Procedimento" value={cadastro.procedure_name} />
@@ -437,8 +451,22 @@ export default function PublicRequisitionPage() {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Região"><Input value={region} onChange={e => setRegion(e.target.value)} /></Field>
-              <Field label="Segmento"><Input value={segment} onChange={e => setSegment(e.target.value)} /></Field>
+              <Field label="Região">
+                <Select value={region} onValueChange={(v) => { setRegion(v); setSegment(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Região" /></SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(ANATOMY_DATA).map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Segmento">
+                <Select value={segment} onValueChange={setSegment} disabled={!region}>
+                  <SelectTrigger><SelectValue placeholder="Parte/Nível" /></SelectTrigger>
+                  <SelectContent>
+                    {region && (ANATOMY_DATA[region] || []).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
               <Field label="Posição">
                 <Select value={position} onValueChange={setPosition}>
                   <SelectTrigger><SelectValue placeholder="Posição" /></SelectTrigger>
@@ -606,9 +634,6 @@ export default function PublicRequisitionPage() {
           <CardContent className="space-y-3">
             <Field label="Descrição dos Achados">
               <Textarea value={findings} onChange={e => setFindings(e.target.value)} rows={3} />
-            </Field>
-            <Field label="Responsável pela Validação">
-              <Input value={validationResp} onChange={e => setValidationResp(e.target.value)} placeholder="Assinatura / Carimbo" />
             </Field>
           </CardContent>
         </Card>
