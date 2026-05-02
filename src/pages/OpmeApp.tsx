@@ -1104,7 +1104,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       if (form.billing_aih_file_url) {
         doc.setFontSize(8);
         doc.setTextColor(30, 58, 138);
-        doc.text("[VER AIH]", 180, y, { link: { url: form.billing_aih_file_url } });
+        doc.text("[VER AIH]", 180, y, { link: { url: form.billing_aih_file_url } } as any);
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(9);
       }
@@ -1245,11 +1245,11 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
              doc.setFontSize(8);
              doc.setFont("helvetica", "bold");
              doc.setTextColor(50, 50, 50);
-              doc.text(`Evidência #${i + 1}: ${img.stage} - ${img.type || "Imagem"}`, margin, y + 65, { link: { url: img.url } });
+              doc.text(`Evidência #${i + 1}: ${img.stage} - ${img.type || "Imagem"}`, margin, y + 65, { link: { url: img.url } } as any);
              doc.setFont("helvetica", "normal");
              doc.text(`Data: ${formatDateBR(img.date)}`, margin, y + 69);
               doc.setTextColor(30, 58, 138);
-              doc.text("Clique para abrir original", margin + 60, y + 69, { link: { url: img.url } });
+              doc.text("Clique para abrir original", margin + 60, y + 69, { link: { url: img.url } } as any);
               doc.setTextColor(50, 50, 50);
              
              // Alternar entre coluna esquerda e direita se quiser grid, mas para simplicidade faremos lista
