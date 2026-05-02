@@ -1324,7 +1324,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
    };
 
-  const handleSave = async (isAuthValidated = false, advanceStatus = true) => {
+  const handleSave = async (isAuthValidated = false, advanceStatus = true, closeAfterSave = true) => {
     if (!user) { toast.error("Não autenticado"); return; }
     if (!form.patient_name?.trim()) { toast.error("Informe o nome do paciente"); setStep(0); return; }
 
