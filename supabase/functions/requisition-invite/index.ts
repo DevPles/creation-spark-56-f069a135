@@ -35,6 +35,11 @@ const WRITABLE_FIELDS = new Set<string>([
   "instruments_specific", "instruments_loan", "instruments_na", "instruments_specify",
   "opme_requested",
   "request_date", "request_time",
+  "billing_cid_main", "billing_cid_secondary",
+  "auditor_pre_analysis",
+  "preop_finding_description", "preop_validation_responsible",
+  "preop_exams_details",
+  "requester_name", "requester_register",
 ]);
 
 Deno.serve(async (req) => {
@@ -108,6 +113,15 @@ Deno.serve(async (req) => {
         return json({ error: "Nome e CRM do médico são obrigatórios" }, 400);
       }
       if (!payload) return json({ error: "Dados da requisição ausentes" }, 400);
+
+      // Valida CRM contra o registro do solicitante (cadastro)
+      const expectedCrm = String(request.requester_register || "").trim();
+      const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+      if (expectedCrm && norm(expectedCrm) !== norm(doctor_crm)) {
+        return json({
+          error: `CRM informado (${doctor_crm}) não confere com o CRM do médico solicitante registrado no Cadastro (${expectedCrm}).`,
+        }, 403);
+      }
 
       // Filtra somente campos permitidos
       const safeUpdate: Record<string, unknown> = {};
