@@ -894,6 +894,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       responsible_name: "",
       responsible_register: "",
       procedure_date: todayISO(),
+      procedure_time: "",
       procedure_type: "eletivo",
       procedure_name: "",
       procedure_sigtap_code: "",
