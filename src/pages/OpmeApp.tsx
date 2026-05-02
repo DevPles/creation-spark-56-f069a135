@@ -1980,9 +1980,15 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
             {part === 1 && step === 1 && (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-slate-500">Data do Procedimento</Label>
-                  <Input type="date" value={form.procedure_date} onChange={e => updateForm("procedure_date", e.target.value)} className="h-12 bg-white shadow-sm border-slate-200" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Data do Procedimento</Label>
+                    <Input type="date" value={form.procedure_date} onChange={e => updateForm("procedure_date", e.target.value)} className="h-12 bg-white shadow-sm border-slate-200" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Horário do Procedimento</Label>
+                    <Input type="time" value={form.procedure_time || ""} onChange={e => updateForm("procedure_time", e.target.value)} className="h-12 bg-white shadow-sm border-slate-200" />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-slate-500">Tipo</Label>
