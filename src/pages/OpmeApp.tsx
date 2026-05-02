@@ -338,6 +338,23 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        setForm((p: any) => ({ ...p, preop_validation_responsible: p.requester_name }));
      }
    }, [part, step, form.requester_name]);
+
+   // Auto-preencher data e horário da solicitação no Controle Administrativo
+   // a partir de created_at do registro (data em que foi inserido no sistema).
+   useEffect(() => {
+     if (part === 5 && step === 0 && form.created_at) {
+       const autoDate = new Date(form.created_at).toISOString().slice(0, 10);
+       const autoTime = new Date(form.created_at).toTimeString().slice(0, 5);
+       setForm((p: any) => {
+         if (p.request_date && p.request_time) return p;
+         return {
+           ...p,
+           request_date: p.request_date || autoDate,
+           request_time: p.request_time || autoTime,
+         };
+       });
+     }
+   }, [part, step, form.created_at]);
  
    useEffect(() => {
      if (profile) {
