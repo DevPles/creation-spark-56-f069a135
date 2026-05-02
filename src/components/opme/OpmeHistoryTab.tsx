@@ -19,6 +19,10 @@ const FIELD_LABELS: Record<string, string> = {
   auditor_pre_opinion: "Parecer auditor pré",
   auditor_post_final_opinion: "Parecer final auditor pós",
   facility_unit: "Unidade",
+  cme_processing_date: "CME — Data de processamento",
+  cme_responsible: "CME — Responsável",
+  surgery_dispatch_date: "Centro Cirúrgico — Data de dispensação",
+  surgery_dispatch_responsible: "Centro Cirúrgico — Responsável dispensação",
 };
 
 interface Props {
