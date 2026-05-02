@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
+ import { FileText, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Upload, Trash2, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useContracts } from "@/contexts/ContractsContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,9 @@ interface FaturamentoWizardProps {
   updateForm: (field: string, value: any) => void;
   user: any;
   onGeneratePdf?: () => void;
+   timelineEvidence?: any[];
+   onUploadComplementary?: (files: FileList) => void;
+   onRemoveComplementary?: (id: string) => void;
 }
 
 const ReadOnlyField = ({ label, value, placeholder = "Pendente" }: { label: string; value: any; placeholder?: string }) => {
@@ -57,7 +60,16 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
   );
 };
 
- export default function FaturamentoWizard({ step, form, updateForm, user, onGeneratePdf }: FaturamentoWizardProps) {
+ export default function FaturamentoWizard({ 
+   step, 
+   form, 
+   updateForm, 
+   user, 
+   onGeneratePdf, 
+   timelineEvidence = [],
+   onUploadComplementary,
+   onRemoveComplementary
+ }: FaturamentoWizardProps) {
   const { contracts } = useContracts();
   const unitContract = contracts.find(c => c.unit === form.facility_unit);
   const autoCnes = unitContract?.cnes || "";
@@ -107,10 +119,25 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
     const reasons: string[] = [];
     let score = 0; // 0 = baixo, quanto maior pior
 
-    // 1) Checklist de documentação (peso alto)
+    // 1) Checklist de documentação (peso alto) - com auto-check
     const docs = form.billing_docs || {};
-    const requiredDocs = ["nf", "rastreabilidade", "laudo", "consumo", "exames", "aih_anexa", "termo_consentimento"];
-    const missingDocs = requiredDocs.filter(d => !docs[d]);
+    const requiredDocsKeys = ["nf", "rastreabilidade", "laudo", "consumo", "exames", "aih_anexa", "termo_consentimento"];
+    
+    // Auto-calculando documentos presentes
+    const hasAih = !!form.billing_aih_file_url;
+    const hasExams = (Array.isArray(form.preop_exams_details) && form.preop_exams_details.length > 0) || 
+                   (Array.isArray(form.postop_exams_details) && form.postop_exams_details.length > 0);
+    const hasTracking = Array.isArray(form.opme_used) && form.opme_used.some((u: any) => u?.launched && u?.photo_url);
+    const hasConsumo = Array.isArray(form.opme_used) && form.opme_used.some((u: any) => u?.launched);
+    
+    const missingDocs = requiredDocsKeys.filter(d => {
+      if (d === "aih_anexa" && hasAih) return false;
+      if (d === "exames" && hasExams) return false;
+      if (d === "rastreabilidade" && hasTracking) return false;
+      if (d === "consumo" && hasConsumo) return false;
+      return !docs[d];
+    });
+
     if (missingDocs.length >= 3) { score += 3; reasons.push(`${missingDocs.length} documentos obrigatórios faltando`); }
     else if (missingDocs.length > 0) { score += 1; reasons.push(`${missingDocs.length} documento(s) faltando`); }
 
@@ -242,7 +269,7 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
           </div>
         </Accordion>
 
-        <Accordion title="AIH — Autorização de Internação" defaultOpen status={aihOk ? "ok" : "pending"}>
+         <Accordion title="AIH — Internação e Alta" defaultOpen status={aihOk ? "ok" : "pending"}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <ReadOnlyField label="Número da AIH" value={form.billing_aih_number} />
             <div className="space-y-2">
@@ -263,20 +290,36 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-            <ReadOnlyField label="Data Internação" value={form.billing_admission_date} placeholder="Pendente — preencher no Cadastro" />
-            <ReadOnlyField label="Data Alta" value={form.billing_discharge_date} placeholder="Pendente — preencher no Cadastro" />
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de AIH (Faturista)</Label>
-              <Select value={form.billing_aih_type || ""} onValueChange={v => updateForm("billing_aih_type", v)}>
-                <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="inicial">Inicial</SelectItem>
-                  <SelectItem value="continuidade">Continuidade</SelectItem>
-                  <SelectItem value="longa_permanencia">Longa Permanência</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+             <div className="space-y-2">
+               <Label className="text-xs font-semibold uppercase text-slate-500">Data Internação</Label>
+               <Input type="date" value={form.billing_admission_date || ""} onChange={e => updateForm("billing_admission_date", e.target.value)} className="h-12 bg-white" />
+             </div>
+             <div className="space-y-2">
+               <Label className="text-xs font-semibold uppercase text-slate-500">Data Alta</Label>
+               <Input type="date" value={form.billing_discharge_date || ""} onChange={e => updateForm("billing_discharge_date", e.target.value)} className="h-12 bg-white" />
+             </div>
+             <div className="space-y-2">
+               <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Alta</Label>
+               <Select value={form.billing_discharge_type || "manual"} onValueChange={v => updateForm("billing_discharge_type", v)}>
+                 <SelectTrigger className="h-12 bg-white"><SelectValue /></SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="manual">Alta Manual</SelectItem>
+                   <SelectItem value="administrativa">Alta Administrativa</SelectItem>
+                 </SelectContent>
+               </Select>
+             </div>
           </div>
+           <div className="mt-3">
+             <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de AIH (Faturista)</Label>
+             <Select value={form.billing_aih_type || ""} onValueChange={v => updateForm("billing_aih_type", v)}>
+               <SelectTrigger className="h-12 bg-white mt-1"><SelectValue placeholder="Selecione o tipo de AIH" /></SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="inicial">Inicial</SelectItem>
+                 <SelectItem value="continuidade">Continuidade</SelectItem>
+                 <SelectItem value="longa_permanencia">Longa Permanência</SelectItem>
+               </SelectContent>
+             </Select>
+           </div>
         </Accordion>
 
         <Accordion title="Procedimento e Equipe" defaultOpen status={procedimentoOk ? "ok" : "pending"}>
@@ -543,18 +586,33 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
 
   // ====== TELA 4 — DOCUMENTAÇÃO E EVIDÊNCIAS ======
   if (step === 4) {
-    const docs = form.billing_docs || {};
+     const docs = form.billing_docs || {};
+     
+     // Auto-check logic
+     const hasAih = !!form.billing_aih_file_url;
+     const hasExams = (Array.isArray(form.preop_exams_details) && form.preop_exams_details.length > 0) || 
+                    (Array.isArray(form.postop_exams_details) && form.postop_exams_details.length > 0);
+     const hasTracking = Array.isArray(form.opme_used) && form.opme_used.some((u: any) => u?.launched && u?.photo_url);
+     const hasConsumo = Array.isArray(form.opme_used) && form.opme_used.some((u: any) => u?.launched);
+
     const requiredDocs = [
       { id: "nf", label: "Nota Fiscal da OPME" },
-      { id: "rastreabilidade", label: "Rastreabilidade (Lote/Etiqueta)" },
-      { id: "laudo", label: "Laudo Cirúrgico" },
-      { id: "consumo", label: "Registro de Consumo" },
-      { id: "exames", label: "Exames de Imagem (Pré/Pós)" },
-      { id: "aih_anexa", label: "AIH Assinada" },
+       { id: "rastreabilidade", label: "Rastreabilidade (Lote/Etiqueta)", auto: hasTracking },
+       { id: "laudo", label: "Laudo Cirúrgico", auto: hasConsumo },
+       { id: "consumo", label: "Registro de Consumo", auto: hasConsumo },
+       { id: "exames", label: "Exames de Imagem (Pré/Pós)", auto: hasExams },
+       { id: "aih_anexa", label: "AIH Assinada", auto: hasAih },
       { id: "termo_consentimento", label: "Termo de Consentimento" },
     ];
-    const completedCount = requiredDocs.filter(d => docs[d.id]).length;
+
+     const isDocPresent = (id: string) => {
+       const rd = requiredDocs.find(d => d.id === id);
+       return docs[id] || (rd && (rd as any).auto);
+     };
+
+     const completedCount = requiredDocs.filter(d => isDocPresent(d.id)).length;
     const allDocs = completedCount === requiredDocs.length;
+
     return (
       <div className="space-y-3">
         <div className="bg-sky-50 border border-sky-100 rounded-lg p-3 text-[10px] font-medium uppercase tracking-wide text-sky-700">
@@ -564,17 +622,111 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
         <Accordion title={`Checklist de Documentos (${completedCount}/${requiredDocs.length})`} defaultOpen status={allDocs ? "ok" : "pending"}>
           <div className="space-y-2">
             {requiredDocs.map(doc => (
-              <label key={doc.id} className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${docs[doc.id] ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200"}`}>
-                <Checkbox checked={!!docs[doc.id]} onCheckedChange={v => updateForm("billing_docs", { ...docs, [doc.id]: !!v })} />
-                <span className="text-xs font-medium text-slate-700">{doc.label}</span>
-              </label>
+                <div key={doc.id} className={`flex items-center justify-between p-3 rounded-md border transition-colors ${isDocPresent(doc.id) ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200"}`}>
+                 <div className="flex items-center gap-3">
+                   <Checkbox 
+                     checked={isDocPresent(doc.id)} 
+                     onCheckedChange={v => updateForm("billing_docs", { ...docs, [doc.id]: !!v })}
+                     disabled={(doc as any).auto}
+                      id={`check-${doc.id}`}
+                   />
+                    <label htmlFor={`check-${doc.id}`} className="text-xs font-medium text-slate-700 cursor-pointer">{doc.label}</label>
+                 </div>
+                  <div className="flex items-center gap-2">
+                    {(doc as any).auto && (
+                      <span className="text-[9px] font-bold uppercase text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Auto-vinculado</span>
+                    )}
+                    {!isDocPresent(doc.id) && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 text-[10px] uppercase font-bold text-slate-400 hover:text-primary"
+                        onClick={() => document.getElementById('billing-upload')?.click()}
+                      >
+                        <Upload size={12} className="mr-1" /> Anexar
+                      </Button>
+                    )}
+                  </div>
+                </div>
             ))}
+           </div>
+         </Accordion>
+
+         <Accordion title={`Evidências Consolidadas (${timelineEvidence.length})`} defaultOpen={timelineEvidence.length > 0}>
+           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+             {timelineEvidence.map((ev, i) => (
+               <div key={i} className="group relative aspect-square bg-slate-100 rounded-lg border border-slate-200 overflow-hidden">
+                 {ev.url && (
+                   <img src={ev.url} alt={ev.type} className="w-full h-full object-cover" />
+                 )}
+                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-center">
+                   <p className="text-[10px] font-bold text-white uppercase truncate w-full">{ev.type}</p>
+                   <p className="text-[9px] text-slate-300 mt-1">{ev.stage}</p>
+                   <a 
+                     href={ev.url} 
+                     target="_blank" 
+                     rel="noreferrer" 
+                     className="mt-2 p-1.5 bg-white rounded-full text-slate-900 hover:bg-slate-100"
+                     title="Ver em tela cheia"
+                   >
+                     <ExternalLink size={12} />
+                   </a>
+                 </div>
+                 {!ev.url && (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <FileText className="text-slate-400" size={24} />
+                    </div>
+                 )}
+               </div>
+             ))}
+             {timelineEvidence.length === 0 && (
+               <div className="col-span-full py-6 text-center text-xs text-slate-400 italic">Nenhuma evidência capturada nas etapas anteriores.</div>
+             )}
           </div>
         </Accordion>
 
         <Accordion title="Evidências Complementares" status={null}>
           <div className="space-y-2">
-            <Label className="text-xs font-semibold uppercase text-slate-500">Observações de Evidência</Label>
+             <Label className="text-xs font-semibold uppercase text-slate-500">Arquivos do Faturamento</Label>
+             <div className="flex gap-2 mb-3">
+                <Input 
+                  type="file" 
+                  multiple 
+                  className="hidden" 
+                  id="billing-upload" 
+                  onChange={(e) => onUploadComplementary?.(e.target.files!)} 
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full h-12 border-dashed border-slate-300 text-slate-500 hover:bg-slate-50 flex gap-2"
+                  onClick={() => document.getElementById('billing-upload')?.click()}
+                >
+                  <Upload size={16} /> Enviar Documentos Extras
+                </Button>
+             </div>
+             
+             {/* Lista de arquivos complementares */}
+             <div className="space-y-2 mb-4">
+                {Array.isArray(form.billing_complementary_files) && form.billing_complementary_files.map((file: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <FileText size={16} className="text-slate-400" />
+                      <span className="text-xs font-medium text-slate-700">{file.name}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => window.open(file.url, '_blank')}>
+                        <ExternalLink size={14} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-500" onClick={() => onRemoveComplementary?.(file.id)}>
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+             </div>
+
+             <Label className="text-xs font-semibold uppercase text-slate-500">Observações Adicionais</Label>
             <Textarea
               value={form.notes || ""}
               onChange={e => updateForm("notes", e.target.value)}

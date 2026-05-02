@@ -158,6 +158,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
    const [preopExams, setPreopExams] = useState<any[]>([]);
     const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
     const [postopExams, setPostopExams] = useState<any[]>([]);
+    const [billingExams, setBillingExams] = useState<any[]>([]);
     const [aihFile, setAihFile] = useState<File | null>(null);
     // Anexos da rodada atual de justificativa do cirurgião (somente em memória até o envio)
     const [surgeonJustificationFiles, setSurgeonJustificationFiles] = useState<Array<{ id: string; file: File; name: string; size: number; mime: string; previewUrl: string }>>([]);
@@ -379,8 +380,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           const safeData = sanitizeLoadedRequest(data);
           setForm(safeData);
           setPreopExams(toList(safeData.preop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
-          setPostopExams(toList(safeData.postop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
-          setConsumptionExams(toList(safeData.consumption_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+           setPostopExams(toList(safeData.postop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+           setConsumptionExams(toList(safeData.consumption_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+           setBillingExams(toList(safeData.billing_complementary_files).filter((exam: any) => isRemoteUrl(exam?.url)));
         }
         setLoading(false);
       })();
@@ -1032,6 +1034,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   const getTimelineEvidence = () => [
     ...preopExams.filter((exam: any) => exam?.url).map((exam: any) => ({ ...exam, stage: "Pré-OP", date: form.preop_exam_date || form.procedure_date })),
     ...consumptionExams.filter((exam: any) => exam?.url).map((exam: any) => ({ ...exam, stage: "Intra-OP", date: exam.date || form.procedure_date })),
+    ...billingExams.filter((exam: any) => exam?.url).map((exam: any) => ({ ...exam, stage: "Faturamento", date: form.billing_closed_at || form.updated_at })),
     ...toList(form.opme_used).filter((item: any) => item?.photo_url).map((item: any) => ({
       url: item.photo_url,
       type: item.description || "Material utilizado",
@@ -1097,7 +1100,14 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      doc.setFont("helvetica", "normal");
      doc.setFontSize(9);
      doc.text(`Paciente: ${form.patient_name?.toUpperCase() || "NÃO INFORMADO"}`, margin, y);
-     doc.text(`Prontuário: ${form.patient_record || "---"} | SUS: ${form.patient_sus || "---"}`, 120, y);
+      doc.text(`Prontuário: ${form.patient_record || "---"} | SUS: ${form.patient_sus || "---"}`, 120, y);
+      if (form.billing_aih_file_url) {
+        doc.setFontSize(8);
+        doc.setTextColor(30, 58, 138);
+        doc.text("[VER AIH]", 180, y, { link: { url: form.billing_aih_file_url } } as any);
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(9);
+      }
      y += 5;
      doc.text(`Data Nasc: ${formatDateBR(form.patient_birthdate)} | Nome da Mãe: ${form.patient_mother_name || "---"}`, margin, y);
      y += 8;
@@ -1112,7 +1122,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      y += 5;
      doc.text(`Data: ${formatDateBR(form.procedure_date)} | Unidade: ${form.facility_unit || "---"} | Sala: ${form.procedure_room || "---"}`, margin, y);
      y += 5;
-     doc.text(`Cirurgião: ${form.responsible_name || "---"} | SIGTAP: ${form.procedure_sigtap_code || "---"} | AIH: ${form.billing_aih_number || "---"}`, margin, y);
+      doc.text(`Cirurgião: ${form.responsible_name || "---"} | SIGTAP: ${form.procedure_sigtap_code || "---"} | AIH: ${form.billing_aih_number || "---"}`, margin, y);
+      if (form.billing_aih_file_url) {
+        doc.link(margin + 160, y - 4, 20, 5, { url: form.billing_aih_file_url });
+      }
      y += 8;
  
      doc.setFont("helvetica", "bold");
@@ -1232,9 +1245,12 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
              doc.setFontSize(8);
              doc.setFont("helvetica", "bold");
              doc.setTextColor(50, 50, 50);
-             doc.text(`Evidência #${i + 1}: ${img.stage} - ${img.type || "Imagem"}`, margin, y + 65);
+              doc.text(`Evidência #${i + 1}: ${img.stage} - ${img.type || "Imagem"}`, margin, y + 65, { link: { url: img.url } } as any);
              doc.setFont("helvetica", "normal");
              doc.text(`Data: ${formatDateBR(img.date)}`, margin, y + 69);
+              doc.setTextColor(30, 58, 138);
+              doc.text("Clique para abrir original", margin + 60, y + 69, { link: { url: img.url } } as any);
+              doc.setTextColor(50, 50, 50);
              
              // Alternar entre coluna esquerda e direita se quiser grid, mas para simplicidade faremos lista
              y += 80;
@@ -1395,10 +1411,11 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       const requester_register = form.requester_register || form.responsible_register;
 
       // Upload de arquivos se houver novos
-      const [uploadedPreop, uploadedConsumption, uploadedPostop] = await Promise.all([
+      const [uploadedPreop, uploadedConsumption, uploadedPostop, uploadedBilling] = await Promise.all([
         uploadExamFiles(preopExams),
         uploadExamFiles(consumptionExams),
-        uploadExamFiles(postopExams)
+        uploadExamFiles(postopExams),
+        uploadExamFiles(billingExams)
       ]);
 
       // Always use current state for exams to allow deletions
@@ -1449,6 +1466,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           postop_image_count,
           postop_image_attached,
           billing_aih_file_url,
+          billing_complementary_files: uploadedBilling,
          status: nextStatus,
         created_by: user.id, 
         updated_at: new Date().toISOString() 
@@ -1958,6 +1976,16 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Data de Alta (se houver)</Label>
                     <Input type="date" value={form.billing_discharge_date || ""} onChange={e => updateForm("billing_discharge_date", e.target.value)} className="h-12 bg-white shadow-sm border-slate-200" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Alta</Label>
+                    <Select value={form.billing_discharge_type || "manual"} onValueChange={v => updateForm("billing_discharge_type", v)}>
+                      <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">Alta Manual</SelectItem>
+                        <SelectItem value="administrativa">Alta Administrativa</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4133,6 +4161,21 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 updateForm={updateForm}
                 user={user}
                 onGeneratePdf={generateAuditDossierPdf}
+                timelineEvidence={getTimelineEvidence()}
+                onUploadComplementary={(files) => {
+                  const newFiles = Array.from(files).map(f => ({
+                    id: Math.random().toString(36).substr(2, 9),
+                    file: f,
+                    name: f.name,
+                    size: f.size,
+                    type: "Documento Complementar",
+                    previewUrl: URL.createObjectURL(f)
+                  }));
+                  setBillingExams(prev => [...prev, ...newFiles]);
+                }}
+                onRemoveComplementary={(id) => {
+                  setBillingExams(prev => prev.filter(f => (f.id || (f as any).url) !== id));
+                }}
               />
             )}
             </fieldset>
