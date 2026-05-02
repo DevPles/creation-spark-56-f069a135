@@ -89,6 +89,7 @@ export default function PublicRequisitionPage() {
 
   const [findings, setFindings] = useState("");
   const [validationResp, setValidationResp] = useState("");
+  const [procedureTime, setProcedureTime] = useState("");
 
   // Autocompletes
   const [opmeSug, setOpmeSug] = useState<{ idx: number; items: any[] }>({ idx: -1, items: [] });
