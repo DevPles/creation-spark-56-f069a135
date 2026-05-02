@@ -508,6 +508,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       setPreopExams(toList(safeReq.preop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
       setConsumptionExams(toList(safeReq.consumption_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
       setPostopExams(toList(safeReq.postop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+      // Após cadastro do paciente, dados ficam bloqueados para edição até o usuário
+      // digitar a AIH no Cadastro e pressionar Enter.
+      setEditingUnlocked(safeReq.status === "rascunho");
+      setAihUnlockInput("");
      
       // Determinar qual parte e passo abrir baseado no status
        if (safeReq.status === "rascunho") { setPart(1); setStep(0); }
