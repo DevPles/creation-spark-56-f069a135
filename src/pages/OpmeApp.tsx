@@ -1837,6 +1837,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             className="space-y-4"
           >
             <fieldset className="space-y-4 min-w-0 border-0 p-0 m-0">
+            {part === 1 && recordId && (
+              <DoctorInviteBlock recordId={recordId} />
+            )}
             {/* --- PARTE 1: CADASTRO --- */}
             {part === 1 && step === 0 && (
               <div className="space-y-4">
@@ -2165,11 +2168,6 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                   <Label className="text-xs font-semibold uppercase text-slate-500">Achados / Descrição Clínica</Label>
                   <Textarea value={form.preop_finding_description} onChange={e => updateForm("preop_finding_description", e.target.value)} placeholder="Descreva brevemente os achados..." className="min-h-[100px] bg-white border-slate-200" />
                 </div>
-                {recordId && (
-                  <div className="pt-4">
-                    <DoctorInviteBlock recordId={recordId} />
-                  </div>
-                )}
               </div>
             )}
 
