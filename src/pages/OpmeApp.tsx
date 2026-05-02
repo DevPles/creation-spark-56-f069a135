@@ -1441,12 +1441,15 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       
       let result;
       if (recordId) {
-        result = await supabase.from("opme_requests").update(payload).eq("id", recordId).select().single();
+        result = await supabase.from("opme_requests").update(payload).eq("id", recordId).select().maybeSingle();
       } else {
-        result = await supabase.from("opme_requests").insert(payload).select().single();
+        result = await supabase.from("opme_requests").insert(payload).select().maybeSingle();
       }
 
       if (result.error) throw result.error;
+      if (!result.data) {
+        throw new Error("Não foi possível salvar o pedido. Verifique suas permissões ou tente novamente.");
+      }
 
       // Se foi um novo registro, atualizar URL para permitir edições subsequentes
       if (!recordId && result.data) {
