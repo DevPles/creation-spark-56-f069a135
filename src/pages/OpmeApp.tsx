@@ -2279,17 +2279,17 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                       <SelectValue placeholder="Selecione o exame para anexar" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__group_imagem" disabled>— Exames de Imagem (Pré/Pós) — obrigatório p/ faturamento —</SelectItem>
-                      <SelectItem value="Radiografia"><span className="inline-flex items-center gap-1.5">Radiografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Tomografia"><span className="inline-flex items-center gap-1.5">Tomografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Ressonância"><span className="inline-flex items-center gap-1.5">Ressonância <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Ultrassonografia"><span className="inline-flex items-center gap-1.5">Ultrassonografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Ecocardiograma"><span className="inline-flex items-center gap-1.5">Ecocardiograma <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Cintilografia"><span className="inline-flex items-center gap-1.5">Cintilografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Mamografia"><span className="inline-flex items-center gap-1.5">Mamografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Densitometria"><span className="inline-flex items-center gap-1.5">Densitometria Óssea <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Endoscopia"><span className="inline-flex items-center gap-1.5">Endoscopia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Colonoscopia"><span className="inline-flex items-center gap-1.5">Colonoscopia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="__group_imagem" disabled>— Exames de Imagem —</SelectItem>
+                      <SelectItem value="Radiografia">Radiografia</SelectItem>
+                      <SelectItem value="Tomografia">Tomografia</SelectItem>
+                      <SelectItem value="Ressonância">Ressonância</SelectItem>
+                      <SelectItem value="Ultrassonografia">Ultrassonografia</SelectItem>
+                      <SelectItem value="Ecocardiograma">Ecocardiograma</SelectItem>
+                      <SelectItem value="Cintilografia">Cintilografia</SelectItem>
+                      <SelectItem value="Mamografia">Mamografia</SelectItem>
+                      <SelectItem value="Densitometria">Densitometria Óssea</SelectItem>
+                      <SelectItem value="Endoscopia">Endoscopia</SelectItem>
+                      <SelectItem value="Colonoscopia">Colonoscopia</SelectItem>
                       <SelectItem value="__group_lab" disabled>— Exames Laboratoriais —</SelectItem>
                       <SelectItem value="Hemograma">Hemograma</SelectItem>
                       <SelectItem value="Coagulograma">Coagulograma (TAP/TTPA/INR)</SelectItem>
@@ -2308,10 +2308,16 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                       <SelectItem value="Avaliação Pulmonar">Avaliação Pulmonar</SelectItem>
                       <SelectItem value="ECG">Eletrocardiograma (ECG)</SelectItem>
                       <SelectItem value="Raio-X de Tórax">Raio-X de Tórax</SelectItem>
-                      <SelectItem value="__group_doc" disabled>— Documentos / Checklist Faturamento —</SelectItem>
-                      <SelectItem value="AIH"><span className="inline-flex items-center gap-1.5">AIH <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Laudo Médico"><span className="inline-flex items-center gap-1.5">Laudo Médico <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="__group_doc" disabled>— Checklist de Faturamento (obrigatórios) —</SelectItem>
+                      <SelectItem value="Nota Fiscal da OPME"><span className="inline-flex items-center gap-1.5">Nota Fiscal da OPME <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="Rastreabilidade"><span className="inline-flex items-center gap-1.5">Rastreabilidade (Lote/Etiqueta) <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="Laudo Cirúrgico"><span className="inline-flex items-center gap-1.5">Laudo Cirúrgico <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="Registro de Consumo"><span className="inline-flex items-center gap-1.5">Registro de Consumo <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="Exames de Imagem"><span className="inline-flex items-center gap-1.5">Exames de Imagem (Pré/Pós) <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="AIH"><span className="inline-flex items-center gap-1.5">AIH Assinada <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
                       <SelectItem value="Termo de Consentimento"><span className="inline-flex items-center gap-1.5">Termo de Consentimento <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="__group_doc_extra" disabled>— Documentos Complementares —</SelectItem>
+                      <SelectItem value="Laudo Médico">Laudo Médico</SelectItem>
                       <SelectItem value="Solicitação Cirúrgica">Solicitação Cirúrgica</SelectItem>
                       <SelectItem value="Encaminhamento">Encaminhamento</SelectItem>
                       <SelectItem value="Relatório Médico">Relatório Médico</SelectItem>
@@ -2836,17 +2842,17 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                            <SelectValue placeholder="Selecione o exame para anexar" />
                          </SelectTrigger>
                          <SelectContent>
-                           <SelectItem value="__group_imagem2" disabled>— Exames de Imagem (Pré/Pós) — obrigatório p/ faturamento —</SelectItem>
-                           <SelectItem value="Radiografia"><span className="inline-flex items-center gap-1.5">Radiografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                           <SelectItem value="Tomografia"><span className="inline-flex items-center gap-1.5">Tomografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                           <SelectItem value="Ressonância"><span className="inline-flex items-center gap-1.5">Ressonância <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                           <SelectItem value="Ultrassonografia"><span className="inline-flex items-center gap-1.5">Ultrassonografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                           <SelectItem value="Ecocardiograma"><span className="inline-flex items-center gap-1.5">Ecocardiograma <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                           <SelectItem value="Cintilografia"><span className="inline-flex items-center gap-1.5">Cintilografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                           <SelectItem value="Mamografia"><span className="inline-flex items-center gap-1.5">Mamografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                           <SelectItem value="Densitometria"><span className="inline-flex items-center gap-1.5">Densitometria Óssea <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                           <SelectItem value="Endoscopia"><span className="inline-flex items-center gap-1.5">Endoscopia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                           <SelectItem value="Colonoscopia"><span className="inline-flex items-center gap-1.5">Colonoscopia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="__group_imagem2" disabled>— Exames de Imagem —</SelectItem>
+                           <SelectItem value="Radiografia">Radiografia</SelectItem>
+                           <SelectItem value="Tomografia">Tomografia</SelectItem>
+                           <SelectItem value="Ressonância">Ressonância</SelectItem>
+                           <SelectItem value="Ultrassonografia">Ultrassonografia</SelectItem>
+                           <SelectItem value="Ecocardiograma">Ecocardiograma</SelectItem>
+                           <SelectItem value="Cintilografia">Cintilografia</SelectItem>
+                           <SelectItem value="Mamografia">Mamografia</SelectItem>
+                           <SelectItem value="Densitometria">Densitometria Óssea</SelectItem>
+                           <SelectItem value="Endoscopia">Endoscopia</SelectItem>
+                           <SelectItem value="Colonoscopia">Colonoscopia</SelectItem>
                            <SelectItem value="__group_lab2" disabled>— Exames Laboratoriais —</SelectItem>
                            <SelectItem value="Hemograma">Hemograma</SelectItem>
                            <SelectItem value="Coagulograma">Coagulograma (TAP/TTPA/INR)</SelectItem>
@@ -2865,10 +2871,16 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                            <SelectItem value="Avaliação Pulmonar">Avaliação Pulmonar</SelectItem>
                            <SelectItem value="ECG">Eletrocardiograma (ECG)</SelectItem>
                            <SelectItem value="Raio-X de Tórax">Raio-X de Tórax</SelectItem>
-                           <SelectItem value="__group_doc2" disabled>— Documentos / Checklist Faturamento —</SelectItem>
-                           <SelectItem value="AIH"><span className="inline-flex items-center gap-1.5">AIH <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                           <SelectItem value="Laudo Médico"><span className="inline-flex items-center gap-1.5">Laudo Médico <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="__group_doc2" disabled>— Checklist de Faturamento (obrigatórios) —</SelectItem>
+                           <SelectItem value="Nota Fiscal da OPME"><span className="inline-flex items-center gap-1.5">Nota Fiscal da OPME <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="Rastreabilidade"><span className="inline-flex items-center gap-1.5">Rastreabilidade (Lote/Etiqueta) <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="Laudo Cirúrgico"><span className="inline-flex items-center gap-1.5">Laudo Cirúrgico <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="Registro de Consumo"><span className="inline-flex items-center gap-1.5">Registro de Consumo <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="Exames de Imagem"><span className="inline-flex items-center gap-1.5">Exames de Imagem (Pré/Pós) <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="AIH"><span className="inline-flex items-center gap-1.5">AIH Assinada <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
                            <SelectItem value="Termo de Consentimento"><span className="inline-flex items-center gap-1.5">Termo de Consentimento <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="__group_doc2_extra" disabled>— Documentos Complementares —</SelectItem>
+                           <SelectItem value="Laudo Médico">Laudo Médico</SelectItem>
                            <SelectItem value="Solicitação Cirúrgica">Solicitação Cirúrgica</SelectItem>
                            <SelectItem value="Encaminhamento">Encaminhamento</SelectItem>
                            <SelectItem value="Relatório Médico">Relatório Médico</SelectItem>
