@@ -964,7 +964,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     window.history.pushState({}, '', newUrl);
   };
 
-  const handleLaunchItem = (idx: number) => {
+  const handleLaunchItem = (idx: number, isFinal = false) => {
     setForm((p: any) => {
       const arr = [...(p.opme_used || [])];
       arr[idx] = { 
@@ -975,7 +975,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       };
       return { ...p, opme_used: arr };
     });
-    setTimeout(() => handleSave(false), 100);
+    // Só avança o status se for o lançamento final (pelo botão de rodapé), 
+    // senão salva apenas como rascunho
+    setTimeout(() => handleSave(false, isFinal), 100);
   };
 
   const toList = (value: any) => Array.isArray(value) ? value : [];
@@ -1311,7 +1313,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
    };
 
-  const handleSave = async (isAuthValidated = false) => {
+  const handleSave = async (isAuthValidated = false, advanceStatus = true) => {
     if (!user) { toast.error("Não autenticado"); return; }
     if (!form.patient_name?.trim()) { toast.error("Informe o nome do paciente"); setStep(0); return; }
 
@@ -1324,50 +1326,54 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     setSaving(true);
     try {
       let nextStatus = form.status;
-      if (part === 1) nextStatus = "pendente_requisicao";
-      else if (part === 2) nextStatus = "pendente_auditoria";
-      else if (part === 3) {
-        if (step === 0) nextStatus = "pendente_controle";
-        else if (form.status === "justificativa_respondida") {
-          // Re-análise da justificativa do cirurgião — decisão do auditor
-          if (form.auditor_post_justification_decision === "reprovada") {
-            nextStatus = "aguardando_justificativa";
-          } else if (form.auditor_post_justification_decision === "liberada") {
-            nextStatus = "pendente_faturamento";
+
+      if (advanceStatus) {
+        if (part === 1) nextStatus = "pendente_requisicao";
+        else if (part === 2) nextStatus = "pendente_auditoria";
+        else if (part === 3) {
+          if (step === 0) nextStatus = "pendente_controle";
+          else if (form.status === "justificativa_respondida") {
+            // Re-análise da justificativa do cirurgião — decisão do auditor
+            if (form.auditor_post_justification_decision === "reprovada") {
+              nextStatus = "aguardando_justificativa";
+            } else if (form.auditor_post_justification_decision === "liberada") {
+              nextStatus = "pendente_faturamento";
+            } else {
+              // Sem decisão definida → mantém em re-análise
+              nextStatus = "justificativa_respondida";
+            }
+          }
+          else if (form.auditor_post_justification_requested) nextStatus = "aguardando_justificativa";
+          else nextStatus = "pendente_faturamento";
+        }
+        else if (part === 5) {
+          // Quando o pedido já foi concluído, permitir que CME / Centro Cirúrgico
+          // continuem editando os campos de Controle Administrativo sem regredir o status.
+          if (form.status === "concluido" || form.status === "pendente_faturamento" || form.status === "pendente_auditoria_post" || form.status === "pendente_consumo" || form.status === "aguardando_justificativa" || form.status === "justificativa_respondida") {
+            nextStatus = form.status;
           } else {
-            // Sem decisão definida → mantém em re-análise
-            nextStatus = "justificativa_respondida";
+            nextStatus = "pendente_consumo";
           }
         }
-        else if (form.auditor_post_justification_requested) nextStatus = "aguardando_justificativa";
-        else nextStatus = "pendente_faturamento";
-      }
-      else if (part === 5) {
-        // Quando o pedido já foi concluído, permitir que CME / Centro Cirúrgico
-        // continuem editando os campos de Controle Administrativo sem regredir o status.
-        if (form.status === "concluido" || form.status === "pendente_faturamento" || form.status === "pendente_auditoria_post" || form.status === "pendente_consumo" || form.status === "aguardando_justificativa" || form.status === "justificativa_respondida") {
-          nextStatus = form.status;
-        } else {
-          nextStatus = "pendente_consumo";
+        else if (part === 6) nextStatus = "pendente_auditoria_post";
+        else if (part === 4) {
+          if (step === 0) {
+            // Cirurgião enviando justificativa — nunca conclui.
+            nextStatus = "justificativa_respondida";
+          } else if (step >= 1 && step < 5) {
+            // Sub-passos intermediários do faturamento — apenas salvar, sem concluir.
+            nextStatus = form.status || "pendente_faturamento";
+          } else if (step === 5 && (form.status === "pendente_faturamento" || form.status === "concluido")) {
+            // Faturamento só conclui no último sub-passo (Fechamento) e se o auditor já tiver liberado.
+            nextStatus = "concluido";
+          } else {
+            setSaving(false);
+            toast.error("Faturamento só fica disponível após o Médico Auditor liberar a justificativa.");
+            return;
+          }
         }
       }
-      else if (part === 6) nextStatus = "pendente_auditoria_post";
-      else if (part === 4) {
-        if (step === 0) {
-          // Cirurgião enviando justificativa — nunca conclui.
-          nextStatus = "justificativa_respondida";
-        } else if (step >= 1 && step < 5) {
-          // Sub-passos intermediários do faturamento — apenas salvar, sem concluir.
-          nextStatus = form.status || "pendente_faturamento";
-        } else if (step === 5 && (form.status === "pendente_faturamento" || form.status === "concluido")) {
-          // Faturamento só conclui no último sub-passo (Fechamento) e se o auditor já tiver liberado.
-          nextStatus = "concluido";
-        } else {
-          setSaving(false);
-          toast.error("Faturamento só fica disponível após o Médico Auditor liberar a justificativa.");
-          return;
-        }
-      }
+
 
       // Sincronizar dados do responsável e exames se necessário
       const requester_name = form.requester_name || form.responsible_name;
