@@ -3631,7 +3631,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                     <Button 
                       variant="secondary" 
                       className="w-full h-10 text-[10px] font-bold uppercase bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      onClick={() => handleSave(false)}
+                      onClick={() => handleSave(false, false)}
                       disabled={saving}
                     >
                       {saving ? "Salvando..." : "Salvar Rascunho / Pausar"}
