@@ -23,6 +23,14 @@ type OpmeItem = {
 
 const SIDES = ["Direita", "Esquerda", "Bilateral", "Central", "N/A"];
 const POSITIONS = ["Proximal", "Médio", "Distal", "Anterior", "Posterior"];
+const ANATOMY_DATA: Record<string, string[]> = {
+  "Cabeça/Pescoço": ["Crânio", "Face", "Pescoço", "Mandíbula", "Órbita"],
+  "Tórax": ["Coração", "Pulmão", "Mama", "Arcabouço Costal", "Mediastino"],
+  "Abdome": ["Parede Abdominal", "Fígado/Vias Biliares", "Rim/Ureter", "Intestino", "Estômago"],
+  "Membro Superior": ["Ombro", "Braço", "Cotovelo", "Antebraço", "Punho", "Mão"],
+  "Membro Inferior": ["Quadril", "Coxa", "Joelho", "Perna", "Tornozelo", "Pé"],
+  "Coluna": ["Cervical", "Torácica", "Lombar", "Sacro-Coccígea"],
+};
 
 const fmtDate = (s?: string | null) => {
   if (!s) return "—";
