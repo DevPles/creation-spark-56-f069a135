@@ -254,7 +254,7 @@ export default function PublicRequisitionPage() {
           billing_cid_secondary: cidSec,
           auditor_pre_analysis: parecer,
           preop_finding_description: findings,
-          preop_validation_responsible: validationResp,
+          procedure_time: procedureTime,
           request_date: new Date().toISOString().slice(0, 10),
           request_time: new Date().toTimeString().slice(0, 5),
         },
