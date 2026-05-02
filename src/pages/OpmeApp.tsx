@@ -2248,10 +2248,14 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                       <SelectItem value="Relatório Médico">Relatório Médico</SelectItem>
                       <SelectItem value="Prontuário">Prontuário / Evolução</SelectItem>
                       <SelectItem value="Documento Pessoal">Documento Pessoal (RG/CPF/CNS)</SelectItem>
-                      <SelectItem value="Outro Documento">Outro Documento</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                       <SelectItem value="Outro Documento">Outro Documento</SelectItem>
+                     </SelectContent>
+                   </Select>
+                   <p className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-1">
+                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" />
+                     Documento obrigatório para faturamento
+                   </p>
+                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
                   {preopExams.map((exam, idx) => (
@@ -2801,10 +2805,14 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                            <SelectItem value="Relatório Médico">Relatório Médico</SelectItem>
                            <SelectItem value="Prontuário">Prontuário / Evolução</SelectItem>
                            <SelectItem value="Documento Pessoal">Documento Pessoal (RG/CPF/CNS)</SelectItem>
-                           <SelectItem value="Outro Documento">Outro Documento</SelectItem>
-                         </SelectContent>
-                       </Select>
-                     </div>
+                            <SelectItem value="Outro Documento">Outro Documento</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-1">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          Documento obrigatório para faturamento
+                        </p>
+                      </div>
  
                      <div className="grid grid-cols-1 gap-4">
                        {preopExams.map((exam, idx) => (
