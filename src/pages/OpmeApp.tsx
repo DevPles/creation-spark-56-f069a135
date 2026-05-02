@@ -1176,15 +1176,15 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         startY: y, 
         head: [["Consumo Efetivo", "Qtd", "Lote", "Validade", "Vlr Unit.", "Subtotal"]], 
         body: [
-          ...used.map((item: any) => [
-            item.description || "---", 
+          ...usedAll.map((item: any) => [
+            `${item.description || "---"}${item.launched ? "" : "  (NÃO LANÇADO)"}`,
             item.quantity || "0", 
             item.batch || "---", 
             item.expiry || "---",
             formatBRL(toNumber(item.unit_price)),
             formatBRL(itemSubtotal(item))
           ]),
-          [{ content: `TOTAL EFETIVO UTILIZADO: ${formatBRL(sumOpme(used))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [219, 234, 254] } }]
+          [{ content: `TOTAL EFETIVO UTILIZADO (lançados): ${formatBRL(sumOpme(used))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [219, 234, 254] } }]
         ], 
         styles: { fontSize: 8 }, 
          headStyles: { fillColor: [30, 58, 138] } 
