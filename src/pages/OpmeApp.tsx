@@ -1687,6 +1687,41 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                             </div>
                          </div>
                             <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-3 text-[10px] font-bold uppercase rounded-full border-teal-200 text-teal-700 hover:bg-teal-50"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    const { data: u } = await supabase.auth.getUser();
+                                    const uid = u?.user?.id;
+                                    let { data: inv } = await supabase
+                                      .from("opme_requisition_invites")
+                                      .select("token")
+                                      .eq("opme_request_id", req.id)
+                                      .order("created_at", { ascending: false })
+                                      .limit(1)
+                                      .maybeSingle();
+                                    if (!inv?.token && uid) {
+                                      const { data: created } = await supabase
+                                        .from("opme_requisition_invites")
+                                        .insert({ opme_request_id: req.id, created_by: uid })
+                                        .select("token")
+                                        .maybeSingle();
+                                      inv = created as any;
+                                    }
+                                    if (!inv?.token) { toast.error("Não foi possível gerar o link"); return; }
+                                    const url = `${window.location.origin}/requisicao/${inv.token}`;
+                                    await navigator.clipboard.writeText(url);
+                                    toast.success("Link copiado");
+                                  } catch (err: any) {
+                                    toast.error(err?.message || "Erro ao copiar link");
+                                  }
+                                }}
+                              >
+                                Link
+                              </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button 
