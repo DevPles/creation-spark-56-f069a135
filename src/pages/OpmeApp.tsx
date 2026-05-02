@@ -135,6 +135,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   const [searchParams] = useSearchParams();
   const [recordId, setRecordId] = useState<string | null>(searchParams.get("id"));
   const [part, setPart] = useState<number | null>(null);
+  const opmeRootRef = useRef<HTMLDivElement>(null);
+  useUppercaseInputs(opmeRootRef);
    const [preopExams, setPreopExams] = useState<any[]>([]);
     const [consumptionExams, setConsumptionExams] = useState<any[]>([]);
     const [postopExams, setPostopExams] = useState<any[]>([]);
