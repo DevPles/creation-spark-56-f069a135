@@ -217,6 +217,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     const [filterDate, setFilterDate] = useState<string>("");
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[], listName?: string }>({ idx: -1, items: [], listName: "opme_requested" });
+  const [cidSuggestions, setCidSuggestions] = useState<{ field: "billing_cid_main" | "billing_cid_secondary" | null; items: any[] }>({ field: null, items: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const STEPS = part === 1 ? STEPS_CADASTRO : 
