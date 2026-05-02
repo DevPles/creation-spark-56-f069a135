@@ -2103,12 +2103,45 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                       <SelectValue placeholder="Selecione o exame para anexar" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="__group_imagem" disabled>— Exames de Imagem —</SelectItem>
                       <SelectItem value="Radiografia">Radiografia</SelectItem>
                       <SelectItem value="Tomografia">Tomografia</SelectItem>
                       <SelectItem value="Ressonância">Ressonância</SelectItem>
                       <SelectItem value="Ultrassonografia">Ultrassonografia</SelectItem>
                       <SelectItem value="Ecocardiograma">Ecocardiograma</SelectItem>
                       <SelectItem value="Cintilografia">Cintilografia</SelectItem>
+                      <SelectItem value="Mamografia">Mamografia</SelectItem>
+                      <SelectItem value="Densitometria">Densitometria Óssea</SelectItem>
+                      <SelectItem value="Endoscopia">Endoscopia</SelectItem>
+                      <SelectItem value="Colonoscopia">Colonoscopia</SelectItem>
+                      <SelectItem value="__group_lab" disabled>— Exames Laboratoriais —</SelectItem>
+                      <SelectItem value="Hemograma">Hemograma</SelectItem>
+                      <SelectItem value="Coagulograma">Coagulograma (TAP/TTPA/INR)</SelectItem>
+                      <SelectItem value="Bioquímica">Bioquímica (Glicemia/Ureia/Creatinina)</SelectItem>
+                      <SelectItem value="Eletrólitos">Eletrólitos (Na/K/Cl)</SelectItem>
+                      <SelectItem value="Função Hepática">Função Hepática (TGO/TGP)</SelectItem>
+                      <SelectItem value="Sorologias">Sorologias (HIV/HBV/HCV/VDRL)</SelectItem>
+                      <SelectItem value="Tipagem Sanguínea">Tipagem Sanguínea</SelectItem>
+                      <SelectItem value="Urina">Urina (EAS)</SelectItem>
+                      <SelectItem value="Beta-HCG">Beta-HCG</SelectItem>
+                      <SelectItem value="Outro Laboratorial">Outro Laboratorial</SelectItem>
+                      <SelectItem value="__group_risco" disabled>— Risco Cirúrgico / Avaliações —</SelectItem>
+                      <SelectItem value="Risco Cirúrgico">Risco Cirúrgico</SelectItem>
+                      <SelectItem value="Avaliação Cardiológica">Avaliação Cardiológica</SelectItem>
+                      <SelectItem value="Avaliação Anestésica">Avaliação Anestésica</SelectItem>
+                      <SelectItem value="Avaliação Pulmonar">Avaliação Pulmonar</SelectItem>
+                      <SelectItem value="ECG">Eletrocardiograma (ECG)</SelectItem>
+                      <SelectItem value="Raio-X de Tórax">Raio-X de Tórax</SelectItem>
+                      <SelectItem value="__group_doc" disabled>— Documentos / Checklist Faturamento —</SelectItem>
+                      <SelectItem value="AIH">AIH</SelectItem>
+                      <SelectItem value="Laudo Médico">Laudo Médico</SelectItem>
+                      <SelectItem value="Termo de Consentimento">Termo de Consentimento</SelectItem>
+                      <SelectItem value="Solicitação Cirúrgica">Solicitação Cirúrgica</SelectItem>
+                      <SelectItem value="Encaminhamento">Encaminhamento</SelectItem>
+                      <SelectItem value="Relatório Médico">Relatório Médico</SelectItem>
+                      <SelectItem value="Prontuário">Prontuário / Evolução</SelectItem>
+                      <SelectItem value="Documento Pessoal">Documento Pessoal (RG/CPF/CNS)</SelectItem>
+                      <SelectItem value="Outro Documento">Outro Documento</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -2141,7 +2174,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                               <Button variant="outline" className="w-full h-9 text-[10px] font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700" onClick={() => window.open(exam.url, "_blank")}>Ver Arquivo</Button>
                             ) : (
                               <div className="relative">
-                                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
+                                <input type="file" accept="image/*,application/pdf" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (file) {
                                     const url = URL.createObjectURL(file);
@@ -2612,12 +2645,45 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                            <SelectValue placeholder="Selecione o exame para anexar" />
                          </SelectTrigger>
                          <SelectContent>
+                           <SelectItem value="__group_imagem2" disabled>— Exames de Imagem —</SelectItem>
                            <SelectItem value="Radiografia">Radiografia</SelectItem>
                            <SelectItem value="Tomografia">Tomografia</SelectItem>
                            <SelectItem value="Ressonância">Ressonância</SelectItem>
                            <SelectItem value="Ultrassonografia">Ultrassonografia</SelectItem>
                            <SelectItem value="Ecocardiograma">Ecocardiograma</SelectItem>
                            <SelectItem value="Cintilografia">Cintilografia</SelectItem>
+                           <SelectItem value="Mamografia">Mamografia</SelectItem>
+                           <SelectItem value="Densitometria">Densitometria Óssea</SelectItem>
+                           <SelectItem value="Endoscopia">Endoscopia</SelectItem>
+                           <SelectItem value="Colonoscopia">Colonoscopia</SelectItem>
+                           <SelectItem value="__group_lab2" disabled>— Exames Laboratoriais —</SelectItem>
+                           <SelectItem value="Hemograma">Hemograma</SelectItem>
+                           <SelectItem value="Coagulograma">Coagulograma (TAP/TTPA/INR)</SelectItem>
+                           <SelectItem value="Bioquímica">Bioquímica (Glicemia/Ureia/Creatinina)</SelectItem>
+                           <SelectItem value="Eletrólitos">Eletrólitos (Na/K/Cl)</SelectItem>
+                           <SelectItem value="Função Hepática">Função Hepática (TGO/TGP)</SelectItem>
+                           <SelectItem value="Sorologias">Sorologias (HIV/HBV/HCV/VDRL)</SelectItem>
+                           <SelectItem value="Tipagem Sanguínea">Tipagem Sanguínea</SelectItem>
+                           <SelectItem value="Urina">Urina (EAS)</SelectItem>
+                           <SelectItem value="Beta-HCG">Beta-HCG</SelectItem>
+                           <SelectItem value="Outro Laboratorial">Outro Laboratorial</SelectItem>
+                           <SelectItem value="__group_risco2" disabled>— Risco Cirúrgico / Avaliações —</SelectItem>
+                           <SelectItem value="Risco Cirúrgico">Risco Cirúrgico</SelectItem>
+                           <SelectItem value="Avaliação Cardiológica">Avaliação Cardiológica</SelectItem>
+                           <SelectItem value="Avaliação Anestésica">Avaliação Anestésica</SelectItem>
+                           <SelectItem value="Avaliação Pulmonar">Avaliação Pulmonar</SelectItem>
+                           <SelectItem value="ECG">Eletrocardiograma (ECG)</SelectItem>
+                           <SelectItem value="Raio-X de Tórax">Raio-X de Tórax</SelectItem>
+                           <SelectItem value="__group_doc2" disabled>— Documentos / Checklist Faturamento —</SelectItem>
+                           <SelectItem value="AIH">AIH</SelectItem>
+                           <SelectItem value="Laudo Médico">Laudo Médico</SelectItem>
+                           <SelectItem value="Termo de Consentimento">Termo de Consentimento</SelectItem>
+                           <SelectItem value="Solicitação Cirúrgica">Solicitação Cirúrgica</SelectItem>
+                           <SelectItem value="Encaminhamento">Encaminhamento</SelectItem>
+                           <SelectItem value="Relatório Médico">Relatório Médico</SelectItem>
+                           <SelectItem value="Prontuário">Prontuário / Evolução</SelectItem>
+                           <SelectItem value="Documento Pessoal">Documento Pessoal (RG/CPF/CNS)</SelectItem>
+                           <SelectItem value="Outro Documento">Outro Documento</SelectItem>
                          </SelectContent>
                        </Select>
                      </div>
@@ -2650,7 +2716,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                    <Button variant="outline" className="w-full h-9 text-[10px] font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-700" onClick={() => window.open(exam.url, "_blank")}>Ver Arquivo</Button>
                                  ) : (
                                    <div className="relative">
-                                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
+                                     <input type="file" accept="image/*,application/pdf" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
                                        const file = e.target.files?.[0];
                                        if (file) {
                                          const url = URL.createObjectURL(file);
