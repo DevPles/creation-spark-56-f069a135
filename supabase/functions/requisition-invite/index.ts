@@ -101,7 +101,6 @@ Deno.serve(async (req) => {
           facility_unit: request.facility_unit,
           procedure_name: request.procedure_name,
           procedure_date: request.procedure_date,
-          requester_crm_hint: maskCrm(String(request.requester_register || "")),
         },
       });
     }
