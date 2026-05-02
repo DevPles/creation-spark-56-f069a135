@@ -985,9 +985,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       };
       return { ...p, opme_used: arr };
     });
-    // Só avança o status se for o lançamento final (pelo botão de rodapé), 
-    // senão salva apenas como rascunho
-    setTimeout(() => handleSave(false, isFinal), 100);
+    // Só avança o status se for o lançamento final (pelo botão de rodapé).
+    // Para o botão "Lançar Item" (isFinal=false): salva sem avançar status e
+    // sem fechar a tela, para o usuário continuar lançando outros itens.
+    setTimeout(() => handleSave(false, isFinal, isFinal), 100);
   };
 
   const toList = (value: any) => Array.isArray(value) ? value : [];
