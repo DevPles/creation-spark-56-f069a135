@@ -84,6 +84,11 @@ const getFileExtension = (file: any) => {
 };
 const isUploadableFile = (file: any): file is File => typeof File !== "undefined" && file instanceof File && typeof file.name === "string";
 const isRemoteUrl = (url: any) => typeof url === "string" && /^https?:\/\//i.test(url);
+const isImageUrl = (url: any, mime?: string) => {
+  if (typeof mime === "string" && mime.startsWith("image/")) return true;
+  if (typeof url !== "string") return false;
+  return /\.(png|jpe?g|webp|gif|bmp|heic|svg)(\?|#|$)/i.test(url);
+};
 const shortActorName = (value: any) => {
   const text = typeof value === "string" ? value : String(value ?? "");
   if (!text) return "---";
