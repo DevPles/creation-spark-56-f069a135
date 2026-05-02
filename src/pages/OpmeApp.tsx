@@ -2165,6 +2165,11 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                   <Label className="text-xs font-semibold uppercase text-slate-500">Achados / Descrição Clínica</Label>
                   <Textarea value={form.preop_finding_description} onChange={e => updateForm("preop_finding_description", e.target.value)} placeholder="Descreva brevemente os achados..." className="min-h-[100px] bg-white border-slate-200" />
                 </div>
+                {recordId && form.status && form.status !== "rascunho" && (
+                  <div className="pt-4">
+                    <DoctorInviteBlock recordId={recordId} />
+                  </div>
+                )}
               </div>
             )}
 
