@@ -98,8 +98,9 @@ interface OpmeAppProps {
 // Usa o native value setter para que o onChange do React receba o valor já em maiúsculas.
 function useUppercaseInputs(ref: React.RefObject<HTMLElement>) {
   useEffect(() => {
-    const root = ref.current;
-    if (!root) return;
+    // Anexa no document para cobrir também modais/portals (Radix Dialog, Popover).
+    // Só monta enquanto OpmeApp está ativo, então não vaza para outras telas.
+    const root: Document | HTMLElement = ref.current ?? document;
     const isTextEl = (el: Element | null): el is HTMLInputElement | HTMLTextAreaElement => {
       if (!el) return false;
       if (el instanceof HTMLTextAreaElement) return true;
@@ -113,6 +114,8 @@ function useUppercaseInputs(ref: React.RefObject<HTMLElement>) {
       const target = e.target as Element | null;
       if (!isTextEl(target)) return;
       const el = target as HTMLInputElement | HTMLTextAreaElement;
+      // Permite opt-out via atributo data-no-uppercase
+      if (el.closest('[data-no-uppercase="true"]')) return;
       const val = el.value;
       const upper = val.toUpperCase();
       if (val === upper) return;
@@ -124,8 +127,8 @@ function useUppercaseInputs(ref: React.RefObject<HTMLElement>) {
       try { if (start != null && end != null) el.setSelectionRange(start, end); } catch {}
       el.dispatchEvent(new Event("input", { bubbles: true }));
     };
-    root.addEventListener("input", handler, true);
-    return () => root.removeEventListener("input", handler, true);
+    document.addEventListener("input", handler, true);
+    return () => document.removeEventListener("input", handler, true);
   }, [ref]);
 }
 
