@@ -1474,9 +1474,13 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         setRecordId(result.data.id);
       }
       
-      toast.success("Pedido enviado com sucesso!");
-      setPart(null);
-      setStep(0);
+      if (closeAfterSave) {
+        toast.success("Pedido enviado com sucesso!");
+        setPart(null);
+        setStep(0);
+      } else {
+        toast.success("Item lançado");
+      }
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar");
     } finally {
