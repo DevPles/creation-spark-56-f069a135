@@ -1690,7 +1690,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-7 px-3 text-[10px] font-bold uppercase rounded-full border-teal-200 text-teal-700 hover:bg-teal-50"
+                                className="h-7 px-3 text-[10px] font-bold uppercase rounded-full border-teal-200 text-teal-700 bg-white hover:bg-teal-600 hover:text-white hover:border-teal-600"
                                 onClick={async (e) => {
                                   e.stopPropagation();
                                   try {
