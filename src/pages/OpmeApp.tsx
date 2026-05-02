@@ -3496,6 +3496,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                                     fabricante: m.fabricante || null,
                                                     image_ref_url: m.image_url || null,
                                                     lotes_sugeridos: m.lotes_sugeridos || [],
+                                                    batch: arr[idx].batch || (Array.isArray(m.lotes_sugeridos) && m.lotes_sugeridos[0]) || arr[idx].batch || "",
                                                   };
                                                   setForm((p: any) => ({ ...p, opme_used: arr }));
                                                   setMaterialSuggestions({ idx: -1, items: [], listName: "opme_used" });
@@ -3529,6 +3530,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                                 fabricante: m.fabricante || null,
                                                 image_ref_url: m.image_url || null,
                                                 lotes_sugeridos: m.lotes_sugeridos || [],
+                                                batch: arr[idx].batch || (Array.isArray(m.lotes_sugeridos) && m.lotes_sugeridos[0]) || arr[idx].batch || "",
                                               };
                                               setForm((p: any) => ({ ...p, opme_used: arr }));
                                               setMaterialSuggestions({ idx: -1, items: [], listName: "opme_used" });
