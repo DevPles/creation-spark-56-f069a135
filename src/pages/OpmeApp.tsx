@@ -1210,6 +1210,40 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         headStyles: { fillColor: [30, 58, 138] }
      });
      y = (doc as any).lastAutoTable.finalY + 8;
+
+     // 4B. TRILHA COMPLETA DE AUDITORIA (todos os logs de todos os usuários)
+     if (fullAuditLogs.length > 0) {
+       if (y > 230) { doc.addPage(); y = margin; }
+       doc.setFont("helvetica", "bold");
+       doc.setFontSize(10);
+       doc.text(`4B. TRILHA COMPLETA DE AUDITORIA (${fullAuditLogs.length} eventos)`, margin, y);
+       y += 4;
+       autoTable(doc, {
+         startY: y,
+         head: [["Data/Hora", "Ação", "Campo", "De → Para", "Usuário", "Motivo"]],
+         body: fullAuditLogs.map((h: any) => [
+           new Date(h.changed_at).toLocaleString("pt-BR"),
+           ACTION_LABELS_PDF[h.action] || h.action || "—",
+           h.field_changed ? (FIELD_LABELS_PDF[h.field_changed] || h.field_changed) : "—",
+           (h.old_value || h.new_value)
+             ? `${h.old_value ? String(h.old_value).slice(0, 40) : "∅"} → ${h.new_value ? String(h.new_value).slice(0, 40) : "∅"}`
+             : "—",
+           h.changed_by_name || "—",
+           h.reason || "—",
+         ]),
+         styles: { fontSize: 7, cellPadding: 1.5, overflow: "linebreak" },
+         headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
+         columnStyles: {
+           0: { cellWidth: 26 },
+           1: { cellWidth: 22 },
+           2: { cellWidth: 28 },
+           3: { cellWidth: 50 },
+           4: { cellWidth: 30 },
+           5: { cellWidth: 26 },
+         },
+       });
+       y = (doc as any).lastAutoTable.finalY + 8;
+     }
  
       // Materiais
       doc.setFont("helvetica", "bold");
