@@ -2263,7 +2263,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                     arr[idx] = {
                                       ...arr[idx],
                                       description: m.name,
-                                      sigtap: m.sigtap || arr[idx].sigtap || "",
+                                      sigtap: m.sigtap || arr[idx].sigtap || form.procedure_sigtap_code || "",
                                       product_id: m.product_id || null,
                                       product_code: m.code || null,
                                       unit_price: typeof m.unit_price === "number" ? m.unit_price : 0,
