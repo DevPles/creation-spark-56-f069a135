@@ -436,7 +436,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      }
    }, [part]);
  
-    const applyFilters = (status: string | null, date: string) => {
+     const applyFilters = (status: string | null, dates: string[]) => {
       let filtered = [...requests];
       
       if (status) {
@@ -453,8 +453,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         }
       }
       
-      if (date) {
-        filtered = filtered.filter((r: any) => r.procedure_date === date);
+      if (dates && dates.length > 0) {
+        const set = new Set(dates);
+        filtered = filtered.filter((r: any) => r.procedure_date && set.has(r.procedure_date));
       }
       
       setFilteredRequests(filtered);
@@ -463,18 +464,18 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     const handleStatusFilter = (status: string | null) => {
       const newStatus = filterStatus === status ? null : status;
       setFilterStatus(newStatus);
-      applyFilters(newStatus, filterDate);
+      applyFilters(newStatus, filterDates);
     };
 
-    const handleDateFilter = (date: Date | undefined) => {
-      const dateStr = date ? format(date, "yyyy-MM-dd") : "";
-      setFilterDate(dateStr);
-      applyFilters(filterStatus, dateStr);
+    const handleDateFilter = (dates: Date[] | undefined) => {
+      const arr = (dates || []).map(d => format(d, "yyyy-MM-dd"));
+      setFilterDates(arr);
+      applyFilters(filterStatus, arr);
     };
 
     const clearFilters = () => {
       setFilterStatus(null);
-      setFilterDate("");
+      setFilterDates([]);
       setFilteredRequests(requests);
     };
  
