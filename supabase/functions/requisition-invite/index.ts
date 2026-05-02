@@ -16,6 +16,7 @@ const json = (body: unknown, status = 200) =>
 const READ_FIELDS = [
   "id", "facility_unit", "status",
   "patient_name", "patient_record", "patient_birthdate", "patient_mother_name", "patient_sus",
+  "patient_blood_type", "patient_allergies", "patient_diseases",
   "billing_aih_number", "billing_aih_file_url",
   "procedure_date", "procedure_time", "procedure_type", "procedure_name", "procedure_sigtap_code", "procedure_room",
   "procedure_segment_cadastro", "procedure_region_cadastro", "procedure_side_cadastro", "procedure_position_cadastro",
