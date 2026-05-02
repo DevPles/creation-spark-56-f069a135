@@ -139,6 +139,7 @@ export default function PublicRequisitionPage() {
       setInstSpecify(req.instruments_specify || "");
       setFindings(req.preop_finding_description || c.preop_finding_description || "");
       setValidationResp(req.preop_validation_responsible || c.preop_validation_responsible || "");
+      setProcedureTime(req.procedure_time || c.procedure_time || "");
       if (Array.isArray(req.opme_requested) && req.opme_requested.length > 0) {
         setItems(req.opme_requested.map((it: any) => ({
           description: it.description || "",
