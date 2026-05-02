@@ -629,9 +629,6 @@ export default function PublicRequisitionPage() {
             <Field label="Descrição dos Achados">
               <Textarea value={findings} onChange={e => setFindings(e.target.value)} rows={3} />
             </Field>
-            <Field label="Responsável pela Validação">
-              <Input value={validationResp} onChange={e => setValidationResp(e.target.value)} placeholder="Assinatura / Carimbo" />
-            </Field>
           </CardContent>
         </Card>
 
