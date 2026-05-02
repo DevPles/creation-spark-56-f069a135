@@ -1837,6 +1837,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             className="space-y-4"
           >
             <fieldset className="space-y-4 min-w-0 border-0 p-0 m-0">
+            {part === 1 && recordId && (
+              <DoctorInviteBlock recordId={recordId} />
+            )}
             {/* --- PARTE 1: CADASTRO --- */}
             {part === 1 && step === 0 && (
               <div className="space-y-4">
