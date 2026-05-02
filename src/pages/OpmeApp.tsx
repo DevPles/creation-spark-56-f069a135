@@ -2418,12 +2418,23 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                               {materialSuggestions.idx === idx && (materialSuggestions.listName ?? "opme_requested") === "opme_requested" && materialSuggestions.items.length > 0 && (
                               <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-[55vh] overflow-y-auto overscroll-contain pb-2 pr-1">
                                 {materialSuggestions.items.map((m: any) => (
-                                  <button key={m.product_id || m.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={() => {
+                                  <button key={m.product_id || m.code} type="button" className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onClick={async () => {
                                     const arr = [...toList(form.opme_requested)];
+                                    let resolvedSigtap = m.sigtap || arr[idx].sigtap || form.procedure_sigtap_code || "";
+                                    if (!resolvedSigtap && m.name) {
+                                      try {
+                                        const { data: sp } = await supabase
+                                          .from("sigtap_procedures")
+                                          .select("code, name")
+                                          .ilike("name", `%${String(m.name).slice(0, 24)}%`)
+                                          .limit(1);
+                                        if (sp && sp[0]?.code) resolvedSigtap = sp[0].code;
+                                      } catch {}
+                                    }
                                     arr[idx] = {
                                       ...arr[idx],
                                       description: m.name,
-                                      sigtap: m.sigtap || arr[idx].sigtap || form.procedure_sigtap_code || "",
+                                      sigtap: resolvedSigtap,
                                       product_id: m.product_id || null,
                                       product_code: m.code || null,
                                       unit_price: typeof m.unit_price === "number" ? m.unit_price : 0,
