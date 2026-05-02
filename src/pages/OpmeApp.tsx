@@ -1441,7 +1441,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       
       let result;
       if (recordId) {
-        result = await supabase.from("opme_requests").update(payload).eq("id", recordId);
+        result = await supabase.from("opme_requests").update(payload, { count: "exact" }).eq("id", recordId);
+        if (!result.error && result.count === 0) {
+          result = await supabase.from("opme_requests").insert({ id: recordId, ...payload }).select().maybeSingle();
+        }
       } else {
         result = await supabase.from("opme_requests").insert(payload).select().maybeSingle();
       }
