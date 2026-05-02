@@ -622,19 +622,32 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
         <Accordion title={`Checklist de Documentos (${completedCount}/${requiredDocs.length})`} defaultOpen status={allDocs ? "ok" : "pending"}>
           <div className="space-y-2">
             {requiredDocs.map(doc => (
-               <label key={doc.id} className={`flex items-center justify-between p-3 rounded-md border cursor-pointer transition-colors ${isDocPresent(doc.id) ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200"}`}>
+                <div key={doc.id} className={`flex items-center justify-between p-3 rounded-md border transition-colors ${isDocPresent(doc.id) ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200"}`}>
                  <div className="flex items-center gap-3">
                    <Checkbox 
                      checked={isDocPresent(doc.id)} 
                      onCheckedChange={v => updateForm("billing_docs", { ...docs, [doc.id]: !!v })}
                      disabled={(doc as any).auto}
+                      id={`check-${doc.id}`}
                    />
-                   <span className="text-xs font-medium text-slate-700">{doc.label}</span>
+                    <label htmlFor={`check-${doc.id}`} className="text-xs font-medium text-slate-700 cursor-pointer">{doc.label}</label>
                  </div>
-                 {(doc as any).auto && (
-                   <span className="text-[9px] font-bold uppercase text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Auto-vinculado</span>
-                 )}
-              </label>
+                  <div className="flex items-center gap-2">
+                    {(doc as any).auto && (
+                      <span className="text-[9px] font-bold uppercase text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Auto-vinculado</span>
+                    )}
+                    {!isDocPresent(doc.id) && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 text-[10px] uppercase font-bold text-slate-400 hover:text-primary"
+                        onClick={() => document.getElementById('billing-upload')?.click()}
+                      >
+                        <Upload size={12} className="mr-1" /> Anexar
+                      </Button>
+                    )}
+                  </div>
+                </div>
             ))}
            </div>
          </Accordion>
