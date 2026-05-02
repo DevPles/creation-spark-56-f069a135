@@ -4093,6 +4093,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 onGeneratePdf={generateAuditDossierPdf}
               />
             )}
+            </fieldset>
           </motion.div>
         </AnimatePresence>
       </main>
