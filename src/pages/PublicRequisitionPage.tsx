@@ -344,9 +344,22 @@ export default function PublicRequisitionPage() {
             <Info label="Nome" value={cadastro.patient_name} />
             <Info label="Prontuário" value={cadastro.patient_record} />
             <Info label="Nascimento" value={fmtDate(cadastro.patient_birthdate)} />
+            {cadastro.patient_birthdate && (() => {
+              const b = new Date(String(cadastro.patient_birthdate) + 'T00:00:00');
+              const t = new Date();
+              let y = t.getFullYear() - b.getFullYear();
+              let m = t.getMonth() - b.getMonth();
+              let d = t.getDate() - b.getDate();
+              if (d < 0) { m -= 1; d += new Date(t.getFullYear(), t.getMonth(), 0).getDate(); }
+              if (m < 0) { y -= 1; m += 12; }
+              return <Info label="Idade" value={`${y}a · ${m}m · ${d}d`} />;
+            })()}
             <Info label="Mãe" value={cadastro.patient_mother_name} />
             <Info label="Cartão SUS" value={cadastro.patient_sus} />
             <Info label="AIH" value={cadastro.billing_aih_number} />
+            <Info label="Tipo Sanguíneo" value={cadastro.patient_blood_type} />
+            <Info label="Alergias" value={cadastro.patient_allergies} />
+            <Info label="Doenças / Comorbidades" value={Array.isArray(cadastro.patient_diseases) && cadastro.patient_diseases.length > 0 ? (cadastro.patient_diseases as string[]).join(", ") : "—"} />
           </CardContent>
         </Card>
 
