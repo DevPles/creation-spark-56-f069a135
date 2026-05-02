@@ -815,8 +815,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
         // Auto-vincula preço/código quando há correspondência exata (sem precisar clicar na sugestão)
         const combined = [...fromCatalog, ...fromPrices];
-        const norm = (s: string) => (s || "").toLowerCase().trim();
-        const exact = combined.find((m: any) => norm(m.name) === norm(value));
+        const norm = (s: string) => normalizeMaterialSearch(s);
+        const exact = combined.find((m: any) => norm(m.name) === norm(searchValue));
         const best = exact || (combined.length === 1 ? combined[0] : null);
         if (best && (best.unit_price > 0 || best.product_id)) {
           setForm((p: any) => {
