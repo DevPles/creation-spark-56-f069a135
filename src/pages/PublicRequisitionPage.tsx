@@ -291,7 +291,7 @@ export default function PublicRequisitionPage() {
                 autoFocus
                 value={crmInput}
                 onChange={e => setCrmInput(e.target.value)}
-                placeholder={preview?.requester_crm_hint ? `Dica: ${preview.requester_crm_hint}` : "CRM/UF"}
+                placeholder="CRM/UF"
                 onKeyDown={e => { if (e.key === "Enter") verify(); }}
               />
               <p className="text-[10px] text-slate-400">
