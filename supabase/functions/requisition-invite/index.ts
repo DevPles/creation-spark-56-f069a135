@@ -39,8 +39,15 @@ const WRITABLE_FIELDS = new Set<string>([
   "auditor_pre_analysis",
   "preop_finding_description", "preop_validation_responsible",
   "preop_exams_details",
-  "requester_name", "requester_register",
 ]);
+
+const norm = (s: string) => String(s || "").replace(/\s+/g, "").toLowerCase();
+const maskCrm = (s: string) => {
+  const v = String(s || "").trim();
+  if (!v) return "";
+  if (v.length <= 3) return "•".repeat(v.length);
+  return v.slice(0, 2) + "•".repeat(Math.max(1, v.length - 4)) + v.slice(-2);
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -82,29 +89,115 @@ Deno.serve(async (req) => {
       .eq("opme_request_id", invite.opme_request_id)
       .order("created_at", { ascending: false });
 
+    // GET: apenas dados mínimos para a tela de verificação (sem PII sensível)
     if (req.method === "GET") {
-      const cadastro: Record<string, unknown> = {};
-      for (const k of READ_FIELDS) cadastro[k] = (request as any)[k];
-      // Devolve também os campos editáveis já preenchidos para preservar progresso
-      const requisicao: Record<string, unknown> = {};
-      for (const k of WRITABLE_FIELDS) requisicao[k] = (request as any)[k];
-
       return json({
         invite: {
           id: invite.id,
           expires_at: invite.expires_at,
-          last_filled_at: invite.last_filled_at,
-          last_doctor_name: invite.last_doctor_name,
-          last_doctor_crm: invite.last_doctor_crm,
         },
-        cadastro,
-        requisicao,
-        attachments: attachments || [],
+        preview: {
+          patient_name: request.patient_name,
+          facility_unit: request.facility_unit,
+          procedure_name: request.procedure_name,
+          procedure_date: request.procedure_date,
+          requester_crm_hint: maskCrm(String(request.requester_register || "")),
+        },
       });
     }
 
     if (req.method === "POST") {
       const body = await req.json().catch(() => ({}));
+      const action = String(body?.action || "submit");
+      const expectedCrm = String(request.requester_register || "").trim();
+
+      // ---------- VERIFY: valida CRM e devolve o payload completo ----------
+      if (action === "verify") {
+        const doctor_crm = String(body?.doctor_crm || "").trim();
+        if (!doctor_crm) return json({ error: "Informe o CRM" }, 400);
+        if (!expectedCrm) {
+          return json({ error: "Cadastro sem CRM do solicitante. Contate o hospital." }, 400);
+        }
+        if (norm(expectedCrm) !== norm(doctor_crm)) {
+          return json({ error: "CRM não confere com o registrado no Cadastro." }, 403);
+        }
+        const cadastro: Record<string, unknown> = {};
+        for (const k of READ_FIELDS) cadastro[k] = (request as any)[k];
+        const requisicao: Record<string, unknown> = {};
+        for (const k of WRITABLE_FIELDS) requisicao[k] = (request as any)[k];
+        return json({
+          invite: {
+            id: invite.id,
+            expires_at: invite.expires_at,
+            last_filled_at: invite.last_filled_at,
+          },
+          cadastro,
+          requisicao,
+          attachments: attachments || [],
+          preop_exams_details: (request as any).preop_exams_details || [],
+        });
+      }
+
+      // ---------- SEARCH OPME (catálogo + banco de preços) ----------
+      if (action === "search_opme") {
+        const term = String(body?.term || "").trim();
+        if (term.length < 2) return json({ items: [] });
+        const like = `%${term}%`;
+        const [{ data: cat }, { data: ph }] = await Promise.all([
+          admin.from("product_catalog")
+            .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, image_url, fabricante, fornecedor_padrao")
+            .eq("ativo", true)
+            .or(`descricao.ilike.${like},descricao_resumida.ilike.${like},codigo.ilike.${like}`)
+            .limit(30),
+          admin.from("price_history")
+            .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte")
+            .ilike("descricao_produto", like)
+            .order("data_referencia", { ascending: false })
+            .limit(30),
+        ]);
+        const items: any[] = [];
+        for (const p of (cat || [])) {
+          items.push({
+            kind: "catalog",
+            description: p.descricao,
+            short: p.descricao_resumida,
+            sigtap: p.sigtap_code || "",
+            unit_price: Number(p.preco_referencia || 0),
+            supplier: p.fornecedor_padrao || "",
+            image_url: p.image_url || null,
+            code: p.codigo || "",
+          });
+        }
+        const seen = new Set(items.map(i => norm(i.description)));
+        for (const r of (ph || [])) {
+          const key = norm(r.descricao_produto);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          items.push({
+            kind: "price",
+            description: r.descricao_produto,
+            sigtap: "",
+            unit_price: Number(r.valor_unitario || 0),
+            supplier: r.fornecedor_nome || "",
+            unidade_medida: r.unidade_medida || "UN",
+          });
+        }
+        return json({ items: items.slice(0, 30) });
+      }
+
+      // ---------- SEARCH CID-10 ----------
+      if (action === "search_cid") {
+        const term = String(body?.term || "").trim();
+        if (term.length < 2) return json({ items: [] });
+        const { data } = await admin.from("cid10")
+          .select("codigo, descricao")
+          .or(`codigo.ilike.${term}%,descricao.ilike.%${term}%`)
+          .order("codigo")
+          .limit(20);
+        return json({ items: data || [] });
+      }
+
+      // ---------- SUBMIT (preenchimento final) ----------
       const doctor_name = String(body?.doctor_name || "").trim();
       const doctor_crm = String(body?.doctor_crm || "").trim();
       const payload = body?.payload && typeof body.payload === "object" ? body.payload : null;
@@ -114,12 +207,9 @@ Deno.serve(async (req) => {
       }
       if (!payload) return json({ error: "Dados da requisição ausentes" }, 400);
 
-      // Valida CRM contra o registro do solicitante (cadastro)
-      const expectedCrm = String(request.requester_register || "").trim();
-      const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
       if (expectedCrm && norm(expectedCrm) !== norm(doctor_crm)) {
         return json({
-          error: `CRM informado (${doctor_crm}) não confere com o CRM do médico solicitante registrado no Cadastro (${expectedCrm}).`,
+          error: `CRM informado (${doctor_crm}) não confere com o CRM registrado no Cadastro.`,
         }, 403);
       }
 
@@ -128,7 +218,7 @@ Deno.serve(async (req) => {
       for (const k of Object.keys(payload)) {
         if (WRITABLE_FIELDS.has(k)) safeUpdate[k] = (payload as any)[k];
       }
-      // Garante autoria
+      // Médico responsável = quem preencheu via link (NÃO sobrescreve quem cadastrou no sistema)
       safeUpdate["responsible_name"] = doctor_name;
       safeUpdate["responsible_register"] = doctor_crm;
       // Avança status apenas se ainda em rascunho
