@@ -3287,11 +3287,25 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <Label className="text-[10px] font-bold uppercase text-slate-500">Data da Solicitação</Label>
-                      <Input type="date" value={form.request_date} onChange={e => updateForm("request_date", e.target.value)} className="h-10 text-xs bg-white border-slate-200" />
+                      <Input
+                        type="date"
+                        value={form.request_date || (form.created_at ? new Date(form.created_at).toISOString().slice(0, 10) : "")}
+                        readOnly
+                        disabled
+                        className="h-10 text-xs bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed"
+                      />
+                      <p className="text-[9px] text-slate-400 italic">Preenchida automaticamente pelo sistema</p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[10px] font-bold uppercase text-slate-500">Horário da Solicitação</Label>
-                      <Input type="time" value={form.request_time} onChange={e => updateForm("request_time", e.target.value)} className="h-10 text-xs bg-white border-slate-200" />
+                      <Input
+                        type="time"
+                        value={form.request_time || (form.created_at ? new Date(form.created_at).toTimeString().slice(0, 5) : "")}
+                        readOnly
+                        disabled
+                        className="h-10 text-xs bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed"
+                      />
+                      <p className="text-[9px] text-slate-400 italic">Preenchido automaticamente pelo sistema</p>
                     </div>
                   </div>
 
