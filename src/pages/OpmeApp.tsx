@@ -1977,6 +1977,16 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                     <Label className="text-xs font-semibold uppercase text-slate-500">Data de Alta (se houver)</Label>
                     <Input type="date" value={form.billing_discharge_date || ""} onChange={e => updateForm("billing_discharge_date", e.target.value)} className="h-12 bg-white shadow-sm border-slate-200" />
                   </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Tipo de Alta</Label>
+                    <Select value={form.billing_discharge_type || "manual"} onValueChange={v => updateForm("billing_discharge_type", v)}>
+                      <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">Alta Manual</SelectItem>
+                        <SelectItem value="administrativa">Alta Administrativa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
