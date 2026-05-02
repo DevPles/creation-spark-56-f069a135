@@ -2176,7 +2176,6 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             {/* --- PARTE 2: REQUISIÇÃO --- */}
             {part === 2 && step === 0 && (
               <div className="space-y-6">
-                <DoctorInviteBlock recordId={recordId} />
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase text-primary tracking-widest border-b pb-1">1. Identificação do Paciente</h3>
                   <div className="grid grid-cols-1 gap-3">
