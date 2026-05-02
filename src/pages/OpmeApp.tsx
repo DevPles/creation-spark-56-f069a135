@@ -970,6 +970,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.delete("id");
     window.history.pushState({}, '', newUrl);
+    setEditingUnlocked(true);
+    setAihUnlockInput("");
   };
 
   const handleLaunchItem = (idx: number, isFinal = false) => {
