@@ -168,6 +168,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   const [authPassword, setAuthPassword] = useState("");
   const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  // Trava de edição: após o paciente ser cadastrado (status != rascunho), os campos
+  // ficam read-only até que o usuário digite a AIH no Cadastro e pressione Enter.
+  const [editingUnlocked, setEditingUnlocked] = useState(false);
+  const [aihUnlockInput, setAihUnlockInput] = useState("");
 
   const handleAuditAuth = async () => {
     if (!user?.email) return;
@@ -504,6 +508,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       setPreopExams(toList(safeReq.preop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
       setConsumptionExams(toList(safeReq.consumption_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
       setPostopExams(toList(safeReq.postop_exams_details).filter((exam: any) => isRemoteUrl(exam?.url)));
+      // Após cadastro do paciente, dados ficam bloqueados para edição até o usuário
+      // digitar a AIH no Cadastro e pressionar Enter.
+      setEditingUnlocked(safeReq.status === "rascunho");
+      setAihUnlockInput("");
      
       // Determinar qual parte e passo abrir baseado no status
        if (safeReq.status === "rascunho") { setPart(1); setStep(0); }
@@ -962,6 +970,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.delete("id");
     window.history.pushState({}, '', newUrl);
+    setEditingUnlocked(true);
+    setAihUnlockInput("");
   };
 
   const handleLaunchItem = (idx: number, isFinal = false) => {
@@ -975,9 +985,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       };
       return { ...p, opme_used: arr };
     });
-    // Só avança o status se for o lançamento final (pelo botão de rodapé), 
-    // senão salva apenas como rascunho
-    setTimeout(() => handleSave(false, isFinal), 100);
+    // Só avança o status se for o lançamento final (pelo botão de rodapé).
+    // Para o botão "Lançar Item" (isFinal=false): salva sem avançar status e
+    // sem fechar a tela, para o usuário continuar lançando outros itens.
+    setTimeout(() => handleSave(false, isFinal, isFinal), 100);
   };
 
   const toList = (value: any) => Array.isArray(value) ? value : [];
@@ -1042,7 +1053,11 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      const autoTable = autoTableModule.default;
      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
      const requested = toList(form.opme_requested).filter((item: any) => item?.description?.trim());
-     const used = toList(form.opme_used).filter((item: any) => item?.description?.trim() && item?.launched);
+    // Inclui TODOS os itens com descrição (lançados ou pendentes) para evitar
+    // dossiê em branco quando o lançamento ainda não foi confirmado pelo botão final.
+    const usedAll = toList(form.opme_used).filter((item: any) => item?.description?.trim());
+    const used = usedAll.filter((item: any) => item?.launched);
+    const returnedItems = toList(form.opme_returned).filter((item: any) => item?.description?.trim());
      const divergences = getPostAuditDivergences();
      const evidence = getTimelineEvidence();
      const margin = 14;
@@ -1161,15 +1176,15 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         startY: y, 
         head: [["Consumo Efetivo", "Qtd", "Lote", "Validade", "Vlr Unit.", "Subtotal"]], 
         body: [
-          ...used.map((item: any) => [
-            item.description || "---", 
+          ...usedAll.map((item: any) => [
+            `${item.description || "---"}${item.launched ? "" : "  (NÃO LANÇADO)"}`,
             item.quantity || "0", 
             item.batch || "---", 
             item.expiry || "---",
             formatBRL(toNumber(item.unit_price)),
             formatBRL(itemSubtotal(item))
           ]),
-          [{ content: `TOTAL EFETIVO UTILIZADO: ${formatBRL(sumOpme(used))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [219, 234, 254] } }]
+          [{ content: `TOTAL EFETIVO UTILIZADO (lançados): ${formatBRL(sumOpme(used))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [219, 234, 254] } }]
         ], 
         styles: { fontSize: 8 }, 
          headStyles: { fillColor: [30, 58, 138] } 
@@ -1313,7 +1328,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
    };
 
-  const handleSave = async (isAuthValidated = false, advanceStatus = true) => {
+  const handleSave = async (isAuthValidated = false, advanceStatus = true, closeAfterSave = true) => {
     if (!user) { toast.error("Não autenticado"); return; }
     if (!form.patient_name?.trim()) { toast.error("Informe o nome do paciente"); setStep(0); return; }
 
@@ -1463,9 +1478,13 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         setRecordId(result.data.id);
       }
       
-      toast.success("Pedido enviado com sucesso!");
-      setPart(null);
-      setStep(0);
+      if (closeAfterSave) {
+        toast.success("Pedido enviado com sucesso!");
+        setPart(null);
+        setStep(0);
+      } else {
+        toast.success("Item lançado");
+      }
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar");
     } finally {
@@ -1789,6 +1808,56 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             </div>
           </div>
         )}
+        {recordId && form.status && form.status !== "rascunho" && !editingUnlocked && (
+          <div className="mb-4 rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-3 space-y-2">
+            <div className="flex items-start gap-2">
+              <div className="text-amber-600 text-lg leading-none">🔒</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700">
+                  Edição bloqueada
+                </p>
+                <p className="text-[11px] text-amber-700/90 mt-0.5">
+                  Para alterar dados deste paciente, digite o número da AIH abaixo e pressione Enter.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={aihUnlockInput}
+                onChange={(e) => setAihUnlockInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const v = aihUnlockInput.trim();
+                    if (!v) {
+                      toast.error("Digite a AIH para liberar a edição");
+                      return;
+                    }
+                    // Persistimos a AIH digitada no formulário (campo já existente)
+                    updateForm("billing_aih_number", v);
+                    setEditingUnlocked(true);
+                    toast.success("Edição liberada");
+                  }
+                }}
+                placeholder="Digite a AIH e pressione Enter"
+                className="h-10 bg-white border-amber-200"
+              />
+              <Button
+                variant="outline"
+                className="h-10 rounded-md border-amber-300 text-amber-700 text-[11px] font-bold uppercase"
+                onClick={() => {
+                  const v = aihUnlockInput.trim();
+                  if (!v) { toast.error("Digite a AIH para liberar a edição"); return; }
+                  updateForm("billing_aih_number", v);
+                  setEditingUnlocked(true);
+                  toast.success("Edição liberada");
+                }}
+              >
+                Liberar
+              </Button>
+            </div>
+          </div>
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={`${part}-${step}`}
@@ -1797,6 +1866,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
+            <fieldset
+              disabled={!!recordId && form.status !== "rascunho" && !editingUnlocked}
+              className="space-y-4 disabled:opacity-70 min-w-0 border-0 p-0 m-0"
+            >
             {/* --- PARTE 1: CADASTRO --- */}
             {part === 1 && step === 0 && (
               <div className="space-y-4">
@@ -3690,8 +3763,46 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                             <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px] font-bold uppercase" onClick={() => setForm((p: any) => ({ ...p, opme_returned: p.opme_returned.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-[10px] font-bold uppercase text-slate-500">Descrição do Material</Label>
-                            <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value, "opme_returned")} className="h-10 text-xs bg-white" placeholder="Nome do item devolvido" />
+                            <Label className="text-[10px] font-bold uppercase text-slate-500">Material (somente itens autorizados)</Label>
+                            <Select
+                              value={item.description || ""}
+                              onValueChange={(v) => {
+                                updateItem(idx, "description", v, "opme_returned");
+                                // Auto-preencher lote a partir do item lançado correspondente
+                                const launched = toList(form.opme_used).find(
+                                  (u: any) => u?.launched && normalizeMaterial(u.description) === normalizeMaterial(v)
+                                );
+                                if (launched?.batch) updateItem(idx, "batch", launched.batch, "opme_returned");
+                              }}
+                            >
+                              <SelectTrigger className="h-10 text-xs bg-white">
+                                <SelectValue placeholder="Selecione o item para devolver" />
+                              </SelectTrigger>
+                              <SelectContent className="z-50 bg-white">
+                                {toList(form.opme_requested).filter((r: any) => r?.description?.trim()).length === 0 ? (
+                                  <div className="px-3 py-2 text-[11px] text-slate-400">Nenhum item autorizado.</div>
+                                ) : (
+                                  toList(form.opme_requested)
+                                    .filter((r: any) => r?.description?.trim())
+                                    .map((req: any, i: number) => {
+                                      const used = toList(form.opme_used).filter(
+                                        (u: any) => u?.launched && normalizeMaterial(u.description) === normalizeMaterial(req.description)
+                                      );
+                                      const status = used.length === 0
+                                        ? "Sobra (não usado)"
+                                        : `Lançado (${used.reduce((s: number, u: any) => s + Number(u.quantity || 0), 0)} un)`;
+                                      return (
+                                        <SelectItem key={i} value={req.description}>
+                                          <span className="text-xs">
+                                            {req.description}{" "}
+                                            <span className="text-[10px] text-slate-500">— {status}</span>
+                                          </span>
+                                        </SelectItem>
+                                      );
+                                    })
+                                )}
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
@@ -4024,6 +4135,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 onGeneratePdf={generateAuditDossierPdf}
               />
             )}
+            </fieldset>
           </motion.div>
         </AnimatePresence>
       </main>
