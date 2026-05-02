@@ -1080,6 +1080,41 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      const evidence = getTimelineEvidence();
      const margin = 14;
      let y = margin;
+
+     // Buscar TODOS os logs de auditoria (ações de qualquer usuário) para o dossiê
+     let fullAuditLogs: any[] = [];
+     if (form.id) {
+       try {
+         const { data: logs } = await supabase
+           .from("opme_history")
+           .select("*")
+           .eq("opme_request_id", form.id)
+           .order("changed_at", { ascending: true });
+         fullAuditLogs = logs || [];
+       } catch (e) {
+         console.error("Erro ao carregar logs de auditoria:", e);
+       }
+     }
+     const ACTION_LABELS_PDF: Record<string, string> = {
+       created: "Criação",
+       field_changed: "Alteração de campo",
+       status_changed: "Mudança de status",
+       attachment_added: "Anexo adicionado",
+       attachment_removed: "Anexo removido",
+       signed: "Assinatura",
+     };
+     const FIELD_LABELS_PDF: Record<string, string> = {
+       status: "Status",
+       patient_name: "Nome do paciente",
+       procedure_name: "Procedimento",
+       auditor_pre_opinion: "Parecer auditor pré",
+       auditor_post_final_opinion: "Parecer final auditor pós",
+       facility_unit: "Unidade",
+       cme_processing_date: "CME — Data de processamento",
+       cme_responsible: "CME — Responsável",
+       surgery_dispatch_date: "CC — Data de dispensação",
+       surgery_dispatch_responsible: "CC — Resp. dispensação",
+     };
  
      // Helper para converter imagem para base64
      const getBase64Image = async (url: string) => {
