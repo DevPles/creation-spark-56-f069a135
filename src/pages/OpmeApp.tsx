@@ -2888,7 +2888,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                     justification_history: [...previousHistory, newEntry],
                                     status: "justificativa_respondida" // handleSave decide próximo status
                                   }));
-                                  setTimeout(() => handleSave(false), 50);
+                                  setTimeout(() => handleSave(false, false), 50);
                                 }}
                               >
                                 Liberar para Faturamento
@@ -2925,7 +2925,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                     auditor_post_justification_decision_notes: "",
                                     status: "justificativa_respondida" // handleSave usa decision=reprovada para mandar de volta
                                   }));
-                                  setTimeout(() => handleSave(false), 50);
+                                  setTimeout(() => handleSave(false, false), 50);
                                 }}
                               >
                                 Reprovar e solicitar nova
