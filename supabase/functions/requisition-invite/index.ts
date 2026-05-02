@@ -156,11 +156,20 @@ Deno.serve(async (req) => {
         ]);
         const items: any[] = [];
         for (const p of (cat || [])) {
+          let sigtap = p.sigtap_code || "";
+          if (!sigtap && p.descricao) {
+            const { data: sp } = await admin
+              .from("sigtap_procedures")
+              .select("code")
+              .ilike("name", `%${String(p.descricao).slice(0, 24)}%`)
+              .limit(1);
+            if (sp?.[0]) sigtap = sp[0].code;
+          }
           items.push({
             kind: "catalog",
             description: p.descricao,
             short: p.descricao_resumida,
-            sigtap: p.sigtap_code || "",
+            sigtap,
             unit_price: Number(p.preco_referencia || 0),
             supplier: p.fornecedor_padrao || "",
             image_url: p.image_url || null,
@@ -172,10 +181,19 @@ Deno.serve(async (req) => {
           const key = norm(r.descricao_produto);
           if (seen.has(key)) continue;
           seen.add(key);
+          let sigtap = "";
+          if (r.descricao_produto) {
+            const { data: sp } = await admin
+              .from("sigtap_procedures")
+              .select("code")
+              .ilike("name", `%${String(r.descricao_produto).slice(0, 24)}%`)
+              .limit(1);
+            if (sp?.[0]) sigtap = sp[0].code;
+          }
           items.push({
             kind: "price",
             description: r.descricao_produto,
-            sigtap: "",
+            sigtap,
             unit_price: Number(r.valor_unitario || 0),
             supplier: r.fornecedor_nome || "",
             unidade_medida: r.unidade_medida || "UN",
