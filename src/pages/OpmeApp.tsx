@@ -2279,17 +2279,17 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                       <SelectValue placeholder="Selecione o exame para anexar" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__group_imagem" disabled>— Exames de Imagem (Pré/Pós) — obrigatório p/ faturamento —</SelectItem>
-                      <SelectItem value="Radiografia"><span className="inline-flex items-center gap-1.5">Radiografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Tomografia"><span className="inline-flex items-center gap-1.5">Tomografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Ressonância"><span className="inline-flex items-center gap-1.5">Ressonância <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Ultrassonografia"><span className="inline-flex items-center gap-1.5">Ultrassonografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Ecocardiograma"><span className="inline-flex items-center gap-1.5">Ecocardiograma <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Cintilografia"><span className="inline-flex items-center gap-1.5">Cintilografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Mamografia"><span className="inline-flex items-center gap-1.5">Mamografia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Densitometria"><span className="inline-flex items-center gap-1.5">Densitometria Óssea <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Endoscopia"><span className="inline-flex items-center gap-1.5">Endoscopia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
-                      <SelectItem value="Colonoscopia"><span className="inline-flex items-center gap-1.5">Colonoscopia <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="__group_imagem" disabled>— Exames de Imagem —</SelectItem>
+                      <SelectItem value="Radiografia">Radiografia</SelectItem>
+                      <SelectItem value="Tomografia">Tomografia</SelectItem>
+                      <SelectItem value="Ressonância">Ressonância</SelectItem>
+                      <SelectItem value="Ultrassonografia">Ultrassonografia</SelectItem>
+                      <SelectItem value="Ecocardiograma">Ecocardiograma</SelectItem>
+                      <SelectItem value="Cintilografia">Cintilografia</SelectItem>
+                      <SelectItem value="Mamografia">Mamografia</SelectItem>
+                      <SelectItem value="Densitometria">Densitometria Óssea</SelectItem>
+                      <SelectItem value="Endoscopia">Endoscopia</SelectItem>
+                      <SelectItem value="Colonoscopia">Colonoscopia</SelectItem>
                       <SelectItem value="__group_lab" disabled>— Exames Laboratoriais —</SelectItem>
                       <SelectItem value="Hemograma">Hemograma</SelectItem>
                       <SelectItem value="Coagulograma">Coagulograma (TAP/TTPA/INR)</SelectItem>
