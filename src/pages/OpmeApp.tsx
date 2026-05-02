@@ -1987,6 +1987,58 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                       </div>
                     </div>
                   </div>
+                {/* Idade calculada + dados clínicos básicos */}
+                {form.patient_birthdate && (() => {
+                  const b = new Date(form.patient_birthdate + 'T00:00:00');
+                  const t = new Date();
+                  let y = t.getFullYear() - b.getFullYear();
+                  let m = t.getMonth() - b.getMonth();
+                  let d = t.getDate() - b.getDate();
+                  if (d < 0) { m -= 1; d += new Date(t.getFullYear(), t.getMonth(), 0).getDate(); }
+                  if (m < 0) { y -= 1; m += 12; }
+                  return (
+                    <div className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200 rounded-md px-3 py-2">
+                      Idade: <span className="font-bold text-slate-900">{y} anos · {m} meses · {d} dias</span>
+                    </div>
+                  );
+                })()}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Tipo Sanguíneo</Label>
+                    <Select value={form.patient_blood_type || ""} onValueChange={v => updateForm("patient_blood_type", v)}>
+                      <SelectTrigger className="h-12 bg-white shadow-sm border-slate-200"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        {["A+","A-","B+","B-","AB+","AB-","O+","O-","Desconhecido"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-slate-500">Alergias</Label>
+                    <Input value={form.patient_allergies || ""} onChange={e => updateForm("patient_allergies", e.target.value)} placeholder="Ex.: Penicilina, Látex... (ou 'Nega')" className="h-12 bg-white shadow-sm border-slate-200" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase text-slate-500">Doenças / Comorbidades</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {["Hipertensão","Diabetes","Cardiopatia","DPOC","Asma","Insuficiência Renal","Insuficiência Hepática","Obesidade","Câncer","AVC prévio","Coagulopatia","HIV","Hepatite","Tabagismo","Etilismo","Nenhuma"].map(d => {
+                      const list: string[] = Array.isArray(form.patient_diseases) ? form.patient_diseases : [];
+                      const active = list.includes(d);
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => {
+                            const next = active ? list.filter(x => x !== d) : [...list, d];
+                            updateForm("patient_diseases", next);
+                          }}
+                          className={`text-[11px] px-3 py-1.5 rounded-full border transition-colors ${active ? "bg-teal-600 text-white border-teal-600" : "bg-white text-slate-600 border-slate-200 hover:border-teal-300"}`}
+                        >
+                          {d}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-slate-500">Data de Internação</Label>
