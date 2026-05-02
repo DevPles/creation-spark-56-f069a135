@@ -1,0 +1,1 @@
+ALTER TABLE public.opme_requests ADD COLUMN IF NOT EXISTS billing_complementary_files jsonb NOT NULL DEFAULT '[]'::jsonb;
