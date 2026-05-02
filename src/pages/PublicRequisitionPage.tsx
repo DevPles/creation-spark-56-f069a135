@@ -383,11 +383,27 @@ export default function PublicRequisitionPage() {
                 <div>
                   <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">Exames Pré-Op — Imagem, Laboratoriais, Risco Cirúrgico ({examPhotos.length})</p>
                   <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
-                    {examPhotos.map((p: any, i: number) => (
-                      <button key={p.id || i} type="button" onClick={() => setZoom(p.url)} className="aspect-square rounded-md overflow-hidden border bg-white" title={`${p.type || "Exame"} • ${p.date || ""}`}>
-                        <img src={p.url} alt={p.type || "Exame"} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
+                    {examPhotos.map((p: any, i: number) => {
+                      const url: string = p.url || "";
+                      const mime: string = p.mime || p.file_type || "";
+                      const isImage = mime.startsWith("image/") || /\.(png|jpe?g|webp|gif|bmp|heic)(\?|$)/i.test(url);
+                      const label = p.type || p.name || "Documento";
+                      if (isImage) {
+                        return (
+                          <button key={p.id || i} type="button" onClick={() => setZoom(url)} className="aspect-square rounded-md overflow-hidden border bg-white" title={`${label} • ${p.date || ""}`}>
+                            <img src={url} alt={label} className="w-full h-full object-cover" />
+                          </button>
+                        );
+                      }
+                      return (
+                        <a key={p.id || i} href={url} target="_blank" rel="noreferrer"
+                           className="aspect-square rounded-md border bg-white flex flex-col items-center justify-center p-2 text-center hover:bg-teal-50"
+                           title={`${label} • ${p.date || ""}`}>
+                          <span className="text-[10px] font-bold text-teal-700 uppercase">PDF</span>
+                          <span className="text-[10px] text-slate-700 mt-1 line-clamp-3 underline">{label}</span>
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
               )}
