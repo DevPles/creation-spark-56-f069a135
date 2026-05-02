@@ -31,8 +31,8 @@ const fmtDate = (s?: string | null) => {
 const brl = (n: number) => (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const norm = (s: string) => String(s || "").trim().toLowerCase();
 
-async function callFn(body: any) {
-  const r = await fetch(FN_URL, {
+async function callFn(token: string, body: any) {
+  const r = await fetch(`${FN_URL}?token=${encodeURIComponent(token)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
