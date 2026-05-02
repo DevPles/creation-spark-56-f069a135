@@ -3974,9 +3974,6 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                           <Card key={idx} className="border-emerald-100 bg-emerald-50/30 overflow-hidden">
                             <CardContent className="p-3 flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                                  <FileText size={14} />
-                                </div>
                                 <div>
                                   <p className="text-[10px] font-bold text-slate-700 uppercase leading-tight mb-0.5">{item.description}</p>
                                   <p className="text-[9px] text-slate-500 uppercase font-medium leading-none">
