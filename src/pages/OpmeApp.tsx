@@ -338,6 +338,23 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        setForm((p: any) => ({ ...p, preop_validation_responsible: p.requester_name }));
      }
    }, [part, step, form.requester_name]);
+
+   // Auto-preencher data e horário da solicitação no Controle Administrativo
+   // a partir de created_at do registro (data em que foi inserido no sistema).
+   useEffect(() => {
+     if (part === 5 && step === 0 && form.created_at) {
+       const autoDate = new Date(form.created_at).toISOString().slice(0, 10);
+       const autoTime = new Date(form.created_at).toTimeString().slice(0, 5);
+       setForm((p: any) => {
+         if (p.request_date && p.request_time) return p;
+         return {
+           ...p,
+           request_date: p.request_date || autoDate,
+           request_time: p.request_time || autoTime,
+         };
+       });
+     }
+   }, [part, step, form.created_at]);
  
    useEffect(() => {
      if (profile) {
@@ -1325,7 +1342,15 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         else if (form.auditor_post_justification_requested) nextStatus = "aguardando_justificativa";
         else nextStatus = "pendente_faturamento";
       }
-      else if (part === 5) nextStatus = "pendente_consumo";
+      else if (part === 5) {
+        // Quando o pedido já foi concluído, permitir que CME / Centro Cirúrgico
+        // continuem editando os campos de Controle Administrativo sem regredir o status.
+        if (form.status === "concluido" || form.status === "pendente_faturamento" || form.status === "pendente_auditoria_post" || form.status === "pendente_consumo" || form.status === "aguardando_justificativa" || form.status === "justificativa_respondida") {
+          nextStatus = form.status;
+        } else {
+          nextStatus = "pendente_consumo";
+        }
+      }
       else if (part === 6) nextStatus = "pendente_auditoria_post";
       else if (part === 4) {
         if (step === 0) {
@@ -3279,11 +3304,25 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <Label className="text-[10px] font-bold uppercase text-slate-500">Data da Solicitação</Label>
-                      <Input type="date" value={form.request_date} onChange={e => updateForm("request_date", e.target.value)} className="h-10 text-xs bg-white border-slate-200" />
+                      <Input
+                        type="date"
+                        value={form.request_date || (form.created_at ? new Date(form.created_at).toISOString().slice(0, 10) : "")}
+                        readOnly
+                        disabled
+                        className="h-10 text-xs bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed"
+                      />
+                      <p className="text-[9px] text-slate-400 italic">Preenchida automaticamente pelo sistema</p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[10px] font-bold uppercase text-slate-500">Horário da Solicitação</Label>
-                      <Input type="time" value={form.request_time} onChange={e => updateForm("request_time", e.target.value)} className="h-10 text-xs bg-white border-slate-200" />
+                      <Input
+                        type="time"
+                        value={form.request_time || (form.created_at ? new Date(form.created_at).toTimeString().slice(0, 5) : "")}
+                        readOnly
+                        disabled
+                        className="h-10 text-xs bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed"
+                      />
+                      <p className="text-[9px] text-slate-400 italic">Preenchido automaticamente pelo sistema</p>
                     </div>
                   </div>
 
