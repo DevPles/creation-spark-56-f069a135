@@ -359,7 +359,7 @@ export default function PublicRequisitionPage() {
 
         {(photos.length > 0 || docs.length > 0 || examPhotos.length > 0 || cadastro.billing_aih_file_url) && (
           <Card>
-            <CardHeader><CardTitle className="text-sm">Exames, Fotos e Documentos do Cadastro</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm">Exames (Imagem, Laboratoriais, Risco Cirúrgico), Fotos e Documentos do Cadastro</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {cadastro.billing_aih_file_url && (
                 <a href={cadastro.billing_aih_file_url} target="_blank" rel="noreferrer"
@@ -367,7 +367,7 @@ export default function PublicRequisitionPage() {
               )}
               {examPhotos.length > 0 && (
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">Imagens de Exames Pré-Op ({examPhotos.length})</p>
+                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">Exames Pré-Op — Imagem, Laboratoriais, Risco Cirúrgico ({examPhotos.length})</p>
                   <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                     {examPhotos.map((p: any, i: number) => (
                       <button key={p.id || i} type="button" onClick={() => setZoom(p.url)} className="aspect-square rounded-md overflow-hidden border bg-white" title={`${p.type || "Exame"} • ${p.date || ""}`}>
