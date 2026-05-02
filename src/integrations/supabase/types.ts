@@ -619,7 +619,10 @@ export type Database = {
           opme_requested: Json
           opme_returned: Json
           opme_used: Json
+          patient_allergies: string | null
           patient_birthdate: string | null
+          patient_blood_type: string | null
+          patient_diseases: Json
           patient_mother_name: string | null
           patient_name: string
           patient_record: string | null
@@ -746,7 +749,10 @@ export type Database = {
           opme_requested?: Json
           opme_returned?: Json
           opme_used?: Json
+          patient_allergies?: string | null
           patient_birthdate?: string | null
+          patient_blood_type?: string | null
+          patient_diseases?: Json
           patient_mother_name?: string | null
           patient_name?: string
           patient_record?: string | null
@@ -873,7 +879,10 @@ export type Database = {
           opme_requested?: Json
           opme_returned?: Json
           opme_used?: Json
+          patient_allergies?: string | null
           patient_birthdate?: string | null
+          patient_blood_type?: string | null
+          patient_diseases?: Json
           patient_mother_name?: string | null
           patient_name?: string
           patient_record?: string | null
