@@ -445,8 +445,22 @@ export default function PublicRequisitionPage() {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Região"><Input value={region} onChange={e => setRegion(e.target.value)} /></Field>
-              <Field label="Segmento"><Input value={segment} onChange={e => setSegment(e.target.value)} /></Field>
+              <Field label="Região">
+                <Select value={region} onValueChange={(v) => { setRegion(v); setSegment(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Região" /></SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(ANATOMY_DATA).map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Segmento">
+                <Select value={segment} onValueChange={setSegment} disabled={!region}>
+                  <SelectTrigger><SelectValue placeholder="Parte/Nível" /></SelectTrigger>
+                  <SelectContent>
+                    {region && (ANATOMY_DATA[region] || []).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
               <Field label="Posição">
                 <Select value={position} onValueChange={setPosition}>
                   <SelectTrigger><SelectValue placeholder="Posição" /></SelectTrigger>
