@@ -90,6 +90,21 @@ const shortActorName = (value: any) => {
   return at > 0 ? text.slice(0, at) : text;
 };
 
+const normalizeMaterialSearch = (value: any) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const matchesMaterialSearch = (value: any, search: string) => {
+  const text = normalizeMaterialSearch(value);
+  if (!text || !search) return false;
+  if (text.includes(search)) return true;
+  return search.split(" ").filter(Boolean).every((part) => text.includes(part));
+};
+
 interface OpmeAppProps {
   embedded?: boolean;
 }
@@ -641,32 +656,59 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   });
 
   const updateItem = (idx: number, field: string, value: any, listName: string = "opme_requested") => {
+    const searchValue = typeof value === "string" ? value.trim() : "";
     setForm((p: any) => {
       const arr = [...(p[listName] || [])];
-      arr[idx] = { ...arr[idx], [field]: value };
+      const current = arr[idx] || {};
+      arr[idx] = field === "description"
+        ? { ...current, [field]: value, product_id: null, product_code: null, unit_price: 0, price_source: "sem_preco", image_ref_url: null, fabricante: null, fornecedor: null, lotes_sugeridos: [] }
+        : { ...current, [field]: value };
       return { ...p, [listName]: arr };
     });
 
-    if (field === "description" && value.length > 2 && (listName === "opme_requested" || listName === "opme_used")) {
+    if (field === "description" && searchValue.length > 2 && (listName === "opme_requested" || listName === "opme_used")) {
+      const search = normalizeMaterialSearch(searchValue);
       // Busca combinada: 1) Catálogo do hospital  +  2) Banco de preços OPME (price_history)
       Promise.all([
         supabase
           .from("product_catalog")
           .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme, image_url, fabricante, fornecedor_padrao")
-          .or(`descricao.ilike.%${value}%,descricao_resumida.ilike.%${value}%,codigo.ilike.%${value}%`)
           .eq("ativo", true)
-          .limit(50),
+          .order("descricao", { ascending: true })
+          .limit(300),
         supabase
           .from("price_history")
           .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte, fornecedor_cnpj")
-          .ilike("descricao_produto", `%${value}%`)
           .order("data_referencia", { ascending: false })
-          .limit(50),
-      ]).then(async ([catRes, priceRes]) => {
+          .limit(300),
+        supabase
+          .from("product_catalog")
+          .select("id, codigo, descricao, descricao_resumida, sigtap_code, preco_referencia, categoria_opme, image_url, fabricante, fornecedor_padrao")
+          .or(`descricao.ilike.%${searchValue}%,descricao_resumida.ilike.%${searchValue}%,codigo.ilike.%${searchValue}%`)
+          .eq("ativo", true)
+          .limit(100),
+        supabase
+          .from("price_history")
+          .select("descricao_produto, valor_unitario, unidade_medida, fornecedor_nome, data_referencia, fonte, fornecedor_cnpj")
+          .ilike("descricao_produto", `%${searchValue}%`)
+          .order("data_referencia", { ascending: false })
+          .limit(100),
+      ]).then(async ([catAllRes, priceAllRes, catDirectRes, priceDirectRes]) => {
+        const catRes = catDirectRes.error ? catAllRes : catDirectRes;
+        const priceRes = priceDirectRes.error ? priceAllRes : priceDirectRes;
+        if (catAllRes.error) console.warn("[OPME suggest] catalog full error", catAllRes.error);
+        if (priceAllRes.error) console.warn("[OPME suggest] price_history full error", priceAllRes.error);
         if (catRes.error) console.warn("[OPME suggest] catalog error", catRes.error);
         if (priceRes.error) console.warn("[OPME suggest] price_history error", priceRes.error);
-        const catItems = catRes.data || [];
-        const priceItems = priceRes.data || [];
+        const catItems = [...((catDirectRes.data || []) as any[]), ...((catAllRes.data || []) as any[])]
+          .filter((p: any, pos: number, arr: any[]) => p?.id && arr.findIndex((x: any) => x.id === p.id) === pos)
+          .filter((p: any) => matchesMaterialSearch(`${p.codigo || ""} ${p.descricao || ""} ${p.descricao_resumida || ""}`, search));
+        const priceItems = [...((priceDirectRes.data || []) as any[]), ...((priceAllRes.data || []) as any[])]
+          .filter((p: any, pos: number, arr: any[]) => {
+            const key = `${normalizeMaterialSearch(p?.descricao_produto)}|${p?.valor_unitario}|${p?.fornecedor_nome || ""}|${p?.data_referencia || ""}`;
+            return arr.findIndex((x: any) => `${normalizeMaterialSearch(x?.descricao_produto)}|${x?.valor_unitario}|${x?.fornecedor_nome || ""}|${x?.data_referencia || ""}` === key) === pos;
+          })
+          .filter((p: any) => matchesMaterialSearch(p?.descricao_produto, search));
 
         // 1) Itens do catálogo (com preço enriquecido pelo histórico)
         const fromCatalog = await Promise.all(catItems.map(async (p: any) => {
@@ -773,8 +815,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
         // Auto-vincula preço/código quando há correspondência exata (sem precisar clicar na sugestão)
         const combined = [...fromCatalog, ...fromPrices];
-        const norm = (s: string) => (s || "").toLowerCase().trim();
-        const exact = combined.find((m: any) => norm(m.name) === norm(value));
+        const norm = (s: string) => normalizeMaterialSearch(s);
+        const exact = combined.find((m: any) => norm(m.name) === norm(searchValue));
         const best = exact || (combined.length === 1 ? combined[0] : null);
         if (best && (best.unit_price > 0 || best.product_id)) {
           setForm((p: any) => {
