@@ -220,7 +220,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
    const [requests, setRequests] = useState<any[]>([]);
    const [filteredRequests, setFilteredRequests] = useState<any[]>([]);
     const [filterStatus, setFilterStatus] = useState<string | null>(null);
-    const [filterDate, setFilterDate] = useState<string>("");
+    const [filterDates, setFilterDates] = useState<string[]>([]);
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[], listName?: string }>({ idx: -1, items: [], listName: "opme_requested" });
   const [cidSuggestions, setCidSuggestions] = useState<{ field: "billing_cid_main" | "billing_cid_secondary" | null; items: any[] }>({ field: null, items: [] });
@@ -436,7 +436,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      }
    }, [part]);
  
-    const applyFilters = (status: string | null, date: string) => {
+     const applyFilters = (status: string | null, dates: string[]) => {
       let filtered = [...requests];
       
       if (status) {
@@ -453,8 +453,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         }
       }
       
-      if (date) {
-        filtered = filtered.filter((r: any) => r.procedure_date === date);
+      if (dates && dates.length > 0) {
+        const set = new Set(dates);
+        filtered = filtered.filter((r: any) => r.procedure_date && set.has(r.procedure_date));
       }
       
       setFilteredRequests(filtered);
@@ -463,18 +464,18 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     const handleStatusFilter = (status: string | null) => {
       const newStatus = filterStatus === status ? null : status;
       setFilterStatus(newStatus);
-      applyFilters(newStatus, filterDate);
+      applyFilters(newStatus, filterDates);
     };
 
-    const handleDateFilter = (date: Date | undefined) => {
-      const dateStr = date ? format(date, "yyyy-MM-dd") : "";
-      setFilterDate(dateStr);
-      applyFilters(filterStatus, dateStr);
+    const handleDateFilter = (dates: Date[] | undefined) => {
+      const arr = (dates || []).map(d => format(d, "yyyy-MM-dd"));
+      setFilterDates(arr);
+      applyFilters(filterStatus, arr);
     };
 
     const clearFilters = () => {
       setFilterStatus(null);
-      setFilterDate("");
+      setFilterDates([]);
       setFilteredRequests(requests);
     };
  
@@ -1628,7 +1629,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 <PopoverTrigger asChild>
                   <button 
                      className={`flex items-center justify-center py-1.5 rounded-md border transition-all ${
-                      filterDate 
+                      filterDates.length > 0
                         ? "bg-primary text-white border-primary shadow-sm" 
                          : "bg-white text-slate-400 border-slate-100 hover:border-primary/20"
                     }`}
@@ -1638,9 +1639,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
                   <Calendar
-                    mode="single"
-                    selected={filterDate ? new Date(filterDate + 'T00:00:00') : undefined}
-                    onSelect={handleDateFilter}
+                    mode="multiple"
+                    selected={filterDates.map(d => new Date(d + 'T00:00:00'))}
+                    onSelect={handleDateFilter as any}
                     locale={ptBR}
                     initialFocus
                   />
@@ -1654,7 +1655,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                  {filterStatus ? `Filtrando por: ${filterStatus.replace('_', ' ').toUpperCase()}` : "Lista de Trabalho"}
                </h3>
-                {(filterStatus || filterDate) && (
+                {(filterStatus || filterDates.length > 0) && (
                   <Button variant="ghost" size="sm" className="h-6 text-[10px] uppercase font-bold text-primary" onClick={clearFilters}>Limpar Filtros</Button>
                 )}
              </div>
