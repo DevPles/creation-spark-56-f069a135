@@ -94,6 +94,41 @@ interface OpmeAppProps {
   embedded?: boolean;
 }
 
+// Hook: força UPPERCASE em todos os inputs/textareas de texto dentro do container.
+// Usa o native value setter para que o onChange do React receba o valor já em maiúsculas.
+function useUppercaseInputs(ref: React.RefObject<HTMLElement>) {
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    const isTextEl = (el: Element | null): el is HTMLInputElement | HTMLTextAreaElement => {
+      if (!el) return false;
+      if (el instanceof HTMLTextAreaElement) return true;
+      if (el instanceof HTMLInputElement) {
+        const t = (el.type || "text").toLowerCase();
+        return t === "text" || t === "search" || t === "tel" || t === "url" || t === "email" || t === "";
+      }
+      return false;
+    };
+    const handler = (e: Event) => {
+      const target = e.target as Element | null;
+      if (!isTextEl(target)) return;
+      const el = target as HTMLInputElement | HTMLTextAreaElement;
+      const val = el.value;
+      const upper = val.toUpperCase();
+      if (val === upper) return;
+      const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      setter?.call(el, upper);
+      try { if (start != null && end != null) el.setSelectionRange(start, end); } catch {}
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    root.addEventListener("input", handler, true);
+    return () => root.removeEventListener("input", handler, true);
+  }, [ref]);
+}
+
 export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
