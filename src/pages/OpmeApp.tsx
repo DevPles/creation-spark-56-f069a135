@@ -1875,7 +1875,33 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold uppercase text-slate-500">Nº AIH (Opcional)</Label>
-                      <Input value={form.billing_aih_number} onChange={e => updateForm("billing_aih_number", e.target.value)} placeholder="000.000.000-0" className="h-12 bg-white shadow-sm border-slate-200" />
+                      <Input
+                        value={form.billing_aih_number}
+                        onChange={e => updateForm("billing_aih_number", e.target.value)}
+                        onKeyDown={async (e) => {
+                          if (e.key !== "Enter") return;
+                          e.preventDefault();
+                          const aih = (form.billing_aih_number || "").trim();
+                          if (!aih) { toast.error("Digite a AIH"); return; }
+                          try {
+                            const { data, error } = await supabase
+                              .from("opme_requests")
+                              .select("*")
+                              .eq("billing_aih_number", aih)
+                              .order("created_at", { ascending: false })
+                              .limit(1)
+                              .maybeSingle();
+                            if (error) throw error;
+                            if (!data) { toast.error("Nenhum paciente encontrado com esta AIH"); return; }
+                            await loadRequest(data);
+                            toast.success("Paciente carregado para edição");
+                          } catch (err: any) {
+                            toast.error(err?.message || "Erro ao buscar AIH");
+                          }
+                        }}
+                        placeholder="Digite a AIH e pressione Enter para carregar"
+                        className="h-12 bg-white shadow-sm border-slate-200"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold uppercase text-slate-500">Anexar AIH</Label>
