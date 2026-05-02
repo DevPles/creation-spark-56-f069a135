@@ -3759,8 +3759,46 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                             <Button variant="ghost" size="sm" className="h-6 px-2 text-destructive text-[10px] font-bold uppercase" onClick={() => setForm((p: any) => ({ ...p, opme_returned: p.opme_returned.filter((_: any, i: number) => i !== idx) }))}>Remover</Button>
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-[10px] font-bold uppercase text-slate-500">Descrição do Material</Label>
-                            <Input value={item.description} onChange={e => updateItem(idx, "description", e.target.value, "opme_returned")} className="h-10 text-xs bg-white" placeholder="Nome do item devolvido" />
+                            <Label className="text-[10px] font-bold uppercase text-slate-500">Material (somente itens autorizados)</Label>
+                            <Select
+                              value={item.description || ""}
+                              onValueChange={(v) => {
+                                updateItem(idx, "description", v, "opme_returned");
+                                // Auto-preencher lote a partir do item lançado correspondente
+                                const launched = toList(form.opme_used).find(
+                                  (u: any) => u?.launched && normalizeMaterial(u.description) === normalizeMaterial(v)
+                                );
+                                if (launched?.batch) updateItem(idx, "batch", launched.batch, "opme_returned");
+                              }}
+                            >
+                              <SelectTrigger className="h-10 text-xs bg-white">
+                                <SelectValue placeholder="Selecione o item para devolver" />
+                              </SelectTrigger>
+                              <SelectContent className="z-50 bg-white">
+                                {toList(form.opme_requested).filter((r: any) => r?.description?.trim()).length === 0 ? (
+                                  <div className="px-3 py-2 text-[11px] text-slate-400">Nenhum item autorizado.</div>
+                                ) : (
+                                  toList(form.opme_requested)
+                                    .filter((r: any) => r?.description?.trim())
+                                    .map((req: any, i: number) => {
+                                      const used = toList(form.opme_used).filter(
+                                        (u: any) => u?.launched && normalizeMaterial(u.description) === normalizeMaterial(req.description)
+                                      );
+                                      const status = used.length === 0
+                                        ? "Sobra (não usado)"
+                                        : `Lançado (${used.reduce((s: number, u: any) => s + Number(u.quantity || 0), 0)} un)`;
+                                      return (
+                                        <SelectItem key={i} value={req.description}>
+                                          <span className="text-xs">
+                                            {req.description}{" "}
+                                            <span className="text-[10px] text-slate-500">— {status}</span>
+                                          </span>
+                                        </SelectItem>
+                                      );
+                                    })
+                                )}
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
