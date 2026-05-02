@@ -1629,7 +1629,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 <PopoverTrigger asChild>
                   <button 
                      className={`flex items-center justify-center py-1.5 rounded-md border transition-all ${
-                      filterDate 
+                      filterDates.length > 0
                         ? "bg-primary text-white border-primary shadow-sm" 
                          : "bg-white text-slate-400 border-slate-100 hover:border-primary/20"
                     }`}
@@ -1639,9 +1639,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
                   <Calendar
-                    mode="single"
-                    selected={filterDate ? new Date(filterDate + 'T00:00:00') : undefined}
-                    onSelect={handleDateFilter}
+                    mode="multiple"
+                    selected={filterDates.map(d => new Date(d + 'T00:00:00'))}
+                    onSelect={handleDateFilter as any}
                     locale={ptBR}
                     initialFocus
                   />
@@ -1655,7 +1655,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                  {filterStatus ? `Filtrando por: ${filterStatus.replace('_', ' ').toUpperCase()}` : "Lista de Trabalho"}
                </h3>
-                {(filterStatus || filterDate) && (
+                {(filterStatus || filterDates.length > 0) && (
                   <Button variant="ghost" size="sm" className="h-6 text-[10px] uppercase font-bold text-primary" onClick={clearFilters}>Limpar Filtros</Button>
                 )}
              </div>
