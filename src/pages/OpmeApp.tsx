@@ -90,6 +90,21 @@ const shortActorName = (value: any) => {
   return at > 0 ? text.slice(0, at) : text;
 };
 
+const normalizeMaterialSearch = (value: any) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const matchesMaterialSearch = (value: any, search: string) => {
+  const text = normalizeMaterialSearch(value);
+  if (!text || !search) return false;
+  if (text.includes(search)) return true;
+  return search.split(" ").filter(Boolean).every((part) => text.includes(part));
+};
+
 interface OpmeAppProps {
   embedded?: boolean;
 }
