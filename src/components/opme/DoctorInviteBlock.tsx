@@ -34,14 +34,19 @@ export default function DoctorInviteBlock({ recordId }: { recordId: string | nul
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    setInvite((data as any) || null);
+    if (data) {
+      setInvite(data as any);
+    } else {
+      // Auto-gera o link assim que o paciente é cadastrado
+      await generate(true);
+    }
   };
 
-  useEffect(() => { load(); }, [recordId]);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [recordId]);
 
-  const generate = async () => {
+  const generate = async (silent = false) => {
     if (!recordId) {
-      toast.error("Salve o cadastro do paciente antes de gerar o link");
+      if (!silent) toast.error("Salve o cadastro do paciente antes de gerar o link");
       return;
     }
     setLoading(true);
@@ -56,9 +61,9 @@ export default function DoctorInviteBlock({ recordId }: { recordId: string | nul
         .maybeSingle();
       if (error) throw error;
       setInvite(data as any);
-      toast.success("Link gerado");
+      if (!silent) toast.success("Link gerado");
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao gerar link");
+      if (!silent) toast.error(e?.message || "Erro ao gerar link");
     } finally {
       setLoading(false);
     }
@@ -86,7 +91,7 @@ export default function DoctorInviteBlock({ recordId }: { recordId: string | nul
           </p>
         </div>
         {!invite && (
-          <Button size="sm" onClick={generate} disabled={loading || !recordId}
+          <Button size="sm" onClick={() => generate(false)} disabled={loading || !recordId}
                   className="rounded-full">
             {loading ? "Gerando…" : "Gerar link"}
           </Button>
@@ -107,7 +112,7 @@ export default function DoctorInviteBlock({ recordId }: { recordId: string | nul
               href={`mailto:?subject=${encodeURIComponent("Requisição OPME")}&body=${encodeURIComponent(`Olá, doutor(a).\n\nPor favor, preencha a Requisição OPME deste paciente:\n${url}\n\nObrigado.`)}`}
               className="inline-flex items-center px-3 h-8 rounded-full text-xs font-semibold border bg-white hover:bg-slate-50"
             >E-mail</a>
-            <Button size="sm" variant="ghost" onClick={generate} className="rounded-full text-teal-700">
+            <Button size="sm" variant="ghost" onClick={() => generate(false)} className="rounded-full text-teal-700">
               Gerar novo
             </Button>
           </div>
