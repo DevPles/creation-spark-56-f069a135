@@ -395,41 +395,31 @@ export default function PublicRequisitionPage() {
               {examPhotos.length > 0 && (
                 <div>
                   <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">Exames Pré-Op — Imagem, Laboratoriais, Risco Cirúrgico ({examPhotos.length})</p>
-                  <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+                  <ul className="text-xs space-y-1">
                     {examPhotos.map((p: any, i: number) => {
                       const url: string = p.url || "";
-                      const mime: string = p.mime || p.file_type || "";
-                      const isImage = mime.startsWith("image/") || /\.(png|jpe?g|webp|gif|bmp|heic)(\?|$)/i.test(url);
                       const label = p.type || p.name || "Documento";
-                      if (isImage) {
-                        return (
-                          <button key={p.id || i} type="button" onClick={() => setZoom(url)} className="aspect-square rounded-md overflow-hidden border bg-white" title={`${label} • ${p.date || ""}`}>
-                            <img src={url} alt={label} className="w-full h-full object-cover" />
-                          </button>
-                        );
-                      }
                       return (
-                        <a key={p.id || i} href={url} target="_blank" rel="noreferrer"
-                           className="aspect-square rounded-md border bg-white flex flex-col items-center justify-center p-2 text-center hover:bg-teal-50"
-                           title={`${label} • ${p.date || ""}`}>
-                          <span className="text-[10px] font-bold text-teal-700 uppercase">PDF</span>
-                          <span className="text-[10px] text-slate-700 mt-1 line-clamp-3 underline">{label}</span>
-                        </a>
+                        <li key={p.id || i}>
+                          <a href={url} target="_blank" rel="noreferrer" className="text-teal-700 underline font-medium">{label}</a>
+                          {p.date && <span className="text-slate-400 ml-2">[{p.date}]</span>}
+                        </li>
                       );
                     })}
-                  </div>
+                  </ul>
                 </div>
               )}
               {photos.length > 0 && (
                 <div>
                   <p className="text-[10px] uppercase font-bold text-slate-500 mb-2">Fotos / Imagens ({photos.length})</p>
-                  <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+                  <ul className="text-xs space-y-1">
                     {photos.map(p => (
-                      <button key={p.id} type="button" onClick={() => setZoom(p.file_url)} className="aspect-square rounded-md overflow-hidden border bg-white" title={`${p.stage || ""} • ${p.category || ""} • ${p.file_name}`}>
-                        <img src={p.file_url} alt={p.file_name} className="w-full h-full object-cover" />
-                      </button>
+                      <li key={p.id}>
+                        <a href={p.file_url} target="_blank" rel="noreferrer" className="text-teal-700 underline font-medium">{p.file_name}</a>
+                        {(p.stage || p.category) && <span className="text-slate-400 ml-2">[{[p.stage, p.category].filter(Boolean).join(" · ")}]</span>}
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
               )}
               {docs.length > 0 && (
@@ -438,7 +428,7 @@ export default function PublicRequisitionPage() {
                   <ul className="text-xs space-y-1">
                     {docs.map(d => (
                       <li key={d.id}>
-                        <a href={d.file_url} target="_blank" rel="noreferrer" className="text-teal-700 underline">{d.file_name}</a>
+                        <a href={d.file_url} target="_blank" rel="noreferrer" className="text-teal-700 underline font-medium">{d.file_name}</a>
                         {d.category && <span className="text-slate-400 ml-2">[{d.category}]</span>}
                       </li>
                     ))}
