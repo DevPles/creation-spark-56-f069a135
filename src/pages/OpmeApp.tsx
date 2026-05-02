@@ -1826,56 +1826,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             </div>
           </div>
         )}
-        {recordId && form.status && form.status !== "rascunho" && !editingUnlocked && (
-          <div className="mb-4 rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-3 space-y-2">
-            <div className="flex items-start gap-2">
-              <div className="text-amber-600 text-lg leading-none">🔒</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700">
-                  Edição bloqueada
-                </p>
-                <p className="text-[11px] text-amber-700/90 mt-0.5">
-                  Para alterar dados deste paciente, digite o número da AIH abaixo e pressione Enter.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={aihUnlockInput}
-                onChange={(e) => setAihUnlockInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    const v = aihUnlockInput.trim();
-                    if (!v) {
-                      toast.error("Digite a AIH para liberar a edição");
-                      return;
-                    }
-                    // Persistimos a AIH digitada no formulário (campo já existente)
-                    updateForm("billing_aih_number", v);
-                    setEditingUnlocked(true);
-                    toast.success("Edição liberada");
-                  }
-                }}
-                placeholder="Digite a AIH e pressione Enter"
-                className="h-10 bg-white border-amber-200"
-              />
-              <Button
-                variant="outline"
-                className="h-10 rounded-md border-amber-300 text-amber-700 text-[11px] font-bold uppercase"
-                onClick={() => {
-                  const v = aihUnlockInput.trim();
-                  if (!v) { toast.error("Digite a AIH para liberar a edição"); return; }
-                  updateForm("billing_aih_number", v);
-                  setEditingUnlocked(true);
-                  toast.success("Edição liberada");
-                }}
-              >
-                Liberar
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Lock removido: edição é liberada digitando a AIH no campo do Cadastro e pressionando Enter. */}
         <AnimatePresence mode="wait">
           <motion.div
             key={`${part}-${step}`}
@@ -1884,10 +1835,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
-            <fieldset
-              disabled={!!recordId && form.status !== "rascunho" && !editingUnlocked}
-              className="space-y-4 disabled:opacity-70 min-w-0 border-0 p-0 m-0"
-            >
+            <fieldset className="space-y-4 min-w-0 border-0 p-0 m-0">
             {/* --- PARTE 1: CADASTRO --- */}
             {part === 1 && step === 0 && (
               <div className="space-y-4">
@@ -1927,7 +1875,33 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold uppercase text-slate-500">Nº AIH (Opcional)</Label>
-                      <Input value={form.billing_aih_number} onChange={e => updateForm("billing_aih_number", e.target.value)} placeholder="000.000.000-0" className="h-12 bg-white shadow-sm border-slate-200" />
+                      <Input
+                        value={form.billing_aih_number}
+                        onChange={e => updateForm("billing_aih_number", e.target.value)}
+                        onKeyDown={async (e) => {
+                          if (e.key !== "Enter") return;
+                          e.preventDefault();
+                          const aih = (form.billing_aih_number || "").trim();
+                          if (!aih) { toast.error("Digite a AIH"); return; }
+                          try {
+                            const { data, error } = await supabase
+                              .from("opme_requests")
+                              .select("*")
+                              .eq("billing_aih_number", aih)
+                              .order("created_at", { ascending: false })
+                              .limit(1)
+                              .maybeSingle();
+                            if (error) throw error;
+                            if (!data) { toast.error("Nenhum paciente encontrado com esta AIH"); return; }
+                            await loadRequest(data);
+                            toast.success("Paciente carregado para edição");
+                          } catch (err: any) {
+                            toast.error(err?.message || "Erro ao buscar AIH");
+                          }
+                        }}
+                        placeholder="Digite a AIH e pressione Enter para carregar"
+                        className="h-12 bg-white shadow-sm border-slate-200"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold uppercase text-slate-500">Anexar AIH</Label>
