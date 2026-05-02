@@ -238,8 +238,8 @@ Deno.serve(async (req) => {
       // Médico responsável = quem preencheu via link (NÃO sobrescreve quem cadastrou no sistema)
       safeUpdate["responsible_name"] = doctor_name;
       safeUpdate["responsible_register"] = doctor_crm;
-      // Avança status apenas se ainda em rascunho
-      if (request.status === "rascunho") {
+      // Avança status quando ainda aguardando preenchimento da requisição
+      if (request.status === "rascunho" || request.status === "pendente_requisicao") {
         safeUpdate["status"] = "pendente_auditoria";
       }
 
