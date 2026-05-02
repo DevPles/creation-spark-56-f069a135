@@ -168,6 +168,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
   const [authPassword, setAuthPassword] = useState("");
   const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  // Trava de edição: após o paciente ser cadastrado (status != rascunho), os campos
+  // ficam read-only até que o usuário digite a AIH no Cadastro e pressione Enter.
+  const [editingUnlocked, setEditingUnlocked] = useState(false);
+  const [aihUnlockInput, setAihUnlockInput] = useState("");
 
   const handleAuditAuth = async () => {
     if (!user?.email) return;
