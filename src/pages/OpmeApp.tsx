@@ -26,6 +26,7 @@ import { toast } from "sonner";
  } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import DoctorInviteBlock from "@/components/opme/DoctorInviteBlock";
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { sumOpme, formatBRL, toNumber, itemSubtotal } from "@/lib/opmeValue";
@@ -2170,6 +2171,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             {/* --- PARTE 2: REQUISIÇÃO --- */}
             {part === 2 && step === 0 && (
               <div className="space-y-6">
+                <DoctorInviteBlock recordId={recordId} />
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase text-primary tracking-widest border-b pb-1">1. Identificação do Paciente</h3>
                   <div className="grid grid-cols-1 gap-3">

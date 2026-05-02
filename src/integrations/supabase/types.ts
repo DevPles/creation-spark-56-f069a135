@@ -926,6 +926,45 @@ export type Database = {
         }
         Relationships: []
       }
+      opme_requisition_invites: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          fill_count: number
+          id: string
+          last_doctor_crm: string | null
+          last_doctor_name: string | null
+          last_filled_at: string | null
+          opme_request_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          fill_count?: number
+          id?: string
+          last_doctor_crm?: string | null
+          last_doctor_name?: string | null
+          last_filled_at?: string | null
+          opme_request_id: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          fill_count?: number
+          id?: string
+          last_doctor_crm?: string | null
+          last_doctor_name?: string | null
+          last_filled_at?: string | null
+          opme_request_id?: string
+          token?: string
+        }
+        Relationships: []
+      }
       price_history: {
         Row: {
           categoria: string | null
