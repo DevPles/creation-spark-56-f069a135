@@ -217,6 +217,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     const [filterDate, setFilterDate] = useState<string>("");
   const [sigtapSuggestions, setSigtapSuggestions] = useState<any[]>([]);
   const [materialSuggestions, setMaterialSuggestions] = useState<{ idx: number, items: any[], listName?: string }>({ idx: -1, items: [], listName: "opme_requested" });
+  const [cidSuggestions, setCidSuggestions] = useState<{ field: "billing_cid_main" | "billing_cid_secondary" | null; items: any[] }>({ field: null, items: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const STEPS = part === 1 ? STEPS_CADASTRO : 
@@ -2384,23 +2385,79 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                     <Textarea value={form.clinical_indication} onChange={e => updateForm("clinical_indication", e.target.value)} placeholder="Justificativa para uso de OPME..." className="min-h-[100px] text-sm bg-white border-slate-200 shadow-sm" />
                   </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <Label className="text-xs font-semibold uppercase text-slate-500">CID Principal</Label>
                     <Input
                       value={form.billing_cid_main || ""}
-                      onChange={e => updateForm("billing_cid_main", e.target.value.toUpperCase())}
+                      onChange={async e => {
+                        const v = e.target.value.toUpperCase();
+                        updateForm("billing_cid_main", v);
+                        const term = v.trim();
+                        if (term.length < 2) { setCidSuggestions({ field: null, items: [] }); return; }
+                        const { data } = await supabase
+                          .from("cid10")
+                          .select("codigo, descricao")
+                          .or(`codigo.ilike.${term}%,descricao.ilike.%${term}%`)
+                          .order("codigo")
+                          .limit(20);
+                        setCidSuggestions({ field: "billing_cid_main", items: data || [] });
+                      }}
+                      onBlur={() => setTimeout(() => setCidSuggestions({ field: null, items: [] }), 150)}
                       placeholder="Ex: M17.1"
                       className="h-12 text-sm bg-white border-slate-200 shadow-sm"
                     />
+                    {cidSuggestions.field === "billing_cid_main" && cidSuggestions.items.length > 0 && (
+                      <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-[40vh] overflow-y-auto">
+                        {cidSuggestions.items.map((c: any) => (
+                          <button key={c.codigo} type="button" className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                            onMouseDown={(ev) => ev.preventDefault()}
+                            onClick={() => {
+                              updateForm("billing_cid_main", c.codigo);
+                              setCidSuggestions({ field: null, items: [] });
+                            }}>
+                            <p className="text-xs font-bold text-slate-800">{c.codigo}</p>
+                            <p className="text-[10px] text-slate-500 uppercase">{c.descricao}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <Label className="text-xs font-semibold uppercase text-slate-500">CID Secundário</Label>
                     <Input
                       value={form.billing_cid_secondary || ""}
-                      onChange={e => updateForm("billing_cid_secondary", e.target.value.toUpperCase())}
+                      onChange={async e => {
+                        const v = e.target.value.toUpperCase();
+                        updateForm("billing_cid_secondary", v);
+                        const term = v.trim();
+                        if (term.length < 2) { setCidSuggestions({ field: null, items: [] }); return; }
+                        const { data } = await supabase
+                          .from("cid10")
+                          .select("codigo, descricao")
+                          .or(`codigo.ilike.${term}%,descricao.ilike.%${term}%`)
+                          .order("codigo")
+                          .limit(20);
+                        setCidSuggestions({ field: "billing_cid_secondary", items: data || [] });
+                      }}
+                      onBlur={() => setTimeout(() => setCidSuggestions({ field: null, items: [] }), 150)}
                       placeholder="Opcional"
                       className="h-12 text-sm bg-white border-slate-200 shadow-sm"
                     />
+                    {cidSuggestions.field === "billing_cid_secondary" && cidSuggestions.items.length > 0 && (
+                      <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-[40vh] overflow-y-auto">
+                        {cidSuggestions.items.map((c: any) => (
+                          <button key={c.codigo} type="button" className="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                            onMouseDown={(ev) => ev.preventDefault()}
+                            onClick={() => {
+                              updateForm("billing_cid_secondary", c.codigo);
+                              setCidSuggestions({ field: null, items: [] });
+                            }}>
+                            <p className="text-xs font-bold text-slate-800">{c.codigo}</p>
+                            <p className="text-[10px] text-slate-500 uppercase">{c.descricao}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <p className="text-[10px] text-slate-400 italic">CID definido pelo médico solicitante — será usado pelo Faturamento.</p>

@@ -248,6 +248,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cid10: {
+        Row: {
+          capitulo: string | null
+          categoria: string | null
+          codigo: string
+          created_at: string
+          descricao: string
+        }
+        Insert: {
+          capitulo?: string | null
+          categoria?: string | null
+          codigo: string
+          created_at?: string
+          descricao: string
+        }
+        Update: {
+          capitulo?: string | null
+          categoria?: string | null
+          codigo?: string
+          created_at?: string
+          descricao?: string
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           cnes: string | null
@@ -2369,6 +2393,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       submit_invite_response:
         | {
             Args: {
