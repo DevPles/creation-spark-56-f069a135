@@ -653,37 +653,108 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
          </Accordion>
 
          <Accordion title={`Evidências Consolidadas (${timelineEvidence.length})`} defaultOpen={timelineEvidence.length > 0}>
-           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-             {timelineEvidence.map((ev, i) => (
-               <div key={i} className="group relative aspect-square bg-slate-100 rounded-lg border border-slate-200 overflow-hidden">
-                 {ev.url && (
-                   <img src={ev.url} alt={ev.type} className="w-full h-full object-cover" />
+           {(() => {
+             const isImage = (ev: any) => {
+               const u = (ev?.url || "").toLowerCase();
+               const m = (ev?.mime || "").toLowerCase();
+               if (m.startsWith("image/")) return true;
+               return /\.(png|jpe?g|gif|webp|bmp|svg|heic)(\?|$)/.test(u);
+             };
+             const isPdf = (ev: any) => {
+               const u = (ev?.url || "").toLowerCase();
+               const m = (ev?.mime || "").toLowerCase();
+               return m.includes("pdf") || /\.pdf(\?|$)/.test(u);
+             };
+             const images = timelineEvidence.filter(isImage);
+             const pdfs = timelineEvidence.filter(isPdf);
+             const docs = timelineEvidence.filter((ev: any) => !isImage(ev) && !isPdf(ev));
+
+             if (timelineEvidence.length === 0) {
+               return <div className="py-6 text-center text-xs text-slate-400 italic">Nenhuma evidência capturada nas etapas anteriores.</div>;
+             }
+
+             return (
+               <div className="space-y-4">
+                 {images.length > 0 && (
+                   <div>
+                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Imagens ({images.length})</p>
+                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                       {images.map((ev: any, i: number) => (
+                         <a
+                           key={i}
+                           href={ev.url}
+                           target="_blank"
+                           rel="noreferrer"
+                           className="group relative aspect-square bg-slate-100 rounded-lg border border-slate-200 overflow-hidden block"
+                           title={`${ev.type}${ev.stage ? " — " + ev.stage : ""}`}
+                         >
+                           <img src={ev.url} alt={ev.type} className="w-full h-full object-cover" />
+                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-center">
+                             <p className="text-[10px] font-bold text-white uppercase truncate w-full">{ev.type}</p>
+                             <p className="text-[9px] text-slate-300 mt-1">{ev.stage}</p>
+                             <ExternalLink size={12} className="text-white mt-2" />
+                           </div>
+                         </a>
+                       ))}
+                     </div>
+                   </div>
                  )}
-                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-center">
-                   <p className="text-[10px] font-bold text-white uppercase truncate w-full">{ev.type}</p>
-                   <p className="text-[9px] text-slate-300 mt-1">{ev.stage}</p>
-                   <a 
-                     href={ev.url} 
-                     target="_blank" 
-                     rel="noreferrer" 
-                     className="mt-2 p-1.5 bg-white rounded-full text-slate-900 hover:bg-slate-100"
-                     title="Ver em tela cheia"
-                   >
-                     <ExternalLink size={12} />
-                   </a>
-                 </div>
-                 {!ev.url && (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <FileText className="text-slate-400" size={24} />
-                    </div>
+
+                 {pdfs.length > 0 && (
+                   <div>
+                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">PDFs ({pdfs.length})</p>
+                     <div className="space-y-1.5">
+                       {pdfs.map((ev: any, i: number) => (
+                         <a
+                           key={i}
+                           href={ev.url}
+                           target="_blank"
+                           rel="noreferrer"
+                           className="flex items-center justify-between gap-2 p-2.5 bg-white border border-slate-200 rounded-md hover:border-primary hover:bg-primary/5 transition-colors"
+                         >
+                           <div className="flex items-center gap-2 min-w-0">
+                             <FileText size={14} className="text-rose-500 shrink-0" />
+                             <div className="min-w-0">
+                               <p className="text-xs font-medium text-slate-700 truncate">{ev.type}</p>
+                               {ev.stage && <p className="text-[9px] uppercase text-slate-400">{ev.stage}</p>}
+                             </div>
+                           </div>
+                           <ExternalLink size={12} className="text-slate-400 shrink-0" />
+                         </a>
+                       ))}
+                     </div>
+                   </div>
+                 )}
+
+                 {docs.length > 0 && (
+                   <div>
+                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Documentos ({docs.length})</p>
+                     <div className="space-y-1.5">
+                       {docs.map((ev: any, i: number) => (
+                         <a
+                           key={i}
+                           href={ev.url || "#"}
+                           target="_blank"
+                           rel="noreferrer"
+                           className="flex items-center justify-between gap-2 p-2.5 bg-white border border-slate-200 rounded-md hover:border-primary hover:bg-primary/5 transition-colors"
+                         >
+                           <div className="flex items-center gap-2 min-w-0">
+                             <FileText size={14} className="text-slate-500 shrink-0" />
+                             <div className="min-w-0">
+                               <p className="text-xs font-medium text-slate-700 truncate">{ev.type}</p>
+                               {ev.stage && <p className="text-[9px] uppercase text-slate-400">{ev.stage}</p>}
+                             </div>
+                           </div>
+                           {ev.url && <ExternalLink size={12} className="text-slate-400 shrink-0" />}
+                         </a>
+                       ))}
+                     </div>
+                   </div>
                  )}
                </div>
-             ))}
-             {timelineEvidence.length === 0 && (
-               <div className="col-span-full py-6 text-center text-xs text-slate-400 italic">Nenhuma evidência capturada nas etapas anteriores.</div>
-             )}
-          </div>
-        </Accordion>
+             );
+           })()}
+         </Accordion>
 
         <Accordion title="Evidências Complementares" status={null}>
           <div className="space-y-2">
