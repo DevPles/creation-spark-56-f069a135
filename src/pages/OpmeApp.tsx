@@ -2240,9 +2240,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                       <SelectItem value="ECG">Eletrocardiograma (ECG)</SelectItem>
                       <SelectItem value="Raio-X de Tórax">Raio-X de Tórax</SelectItem>
                       <SelectItem value="__group_doc" disabled>— Documentos / Checklist Faturamento —</SelectItem>
-                      <SelectItem value="AIH">AIH</SelectItem>
-                      <SelectItem value="Laudo Médico">Laudo Médico</SelectItem>
-                      <SelectItem value="Termo de Consentimento">Termo de Consentimento</SelectItem>
+                      <SelectItem value="AIH"><span className="inline-flex items-center gap-1.5">AIH <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="Laudo Médico"><span className="inline-flex items-center gap-1.5">Laudo Médico <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="Termo de Consentimento"><span className="inline-flex items-center gap-1.5">Termo de Consentimento <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
                       <SelectItem value="Solicitação Cirúrgica">Solicitação Cirúrgica</SelectItem>
                       <SelectItem value="Encaminhamento">Encaminhamento</SelectItem>
                       <SelectItem value="Relatório Médico">Relatório Médico</SelectItem>
@@ -2793,9 +2793,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                            <SelectItem value="ECG">Eletrocardiograma (ECG)</SelectItem>
                            <SelectItem value="Raio-X de Tórax">Raio-X de Tórax</SelectItem>
                            <SelectItem value="__group_doc2" disabled>— Documentos / Checklist Faturamento —</SelectItem>
-                           <SelectItem value="AIH">AIH</SelectItem>
-                           <SelectItem value="Laudo Médico">Laudo Médico</SelectItem>
-                           <SelectItem value="Termo de Consentimento">Termo de Consentimento</SelectItem>
+                           <SelectItem value="AIH"><span className="inline-flex items-center gap-1.5">AIH <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="Laudo Médico"><span className="inline-flex items-center gap-1.5">Laudo Médico <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="Termo de Consentimento"><span className="inline-flex items-center gap-1.5">Termo de Consentimento <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
                            <SelectItem value="Solicitação Cirúrgica">Solicitação Cirúrgica</SelectItem>
                            <SelectItem value="Encaminhamento">Encaminhamento</SelectItem>
                            <SelectItem value="Relatório Médico">Relatório Médico</SelectItem>
