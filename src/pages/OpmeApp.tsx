@@ -1080,6 +1080,41 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      const evidence = getTimelineEvidence();
      const margin = 14;
      let y = margin;
+
+     // Buscar TODOS os logs de auditoria (ações de qualquer usuário) para o dossiê
+     let fullAuditLogs: any[] = [];
+     if (form.id) {
+       try {
+         const { data: logs } = await supabase
+           .from("opme_history")
+           .select("*")
+           .eq("opme_request_id", form.id)
+           .order("changed_at", { ascending: true });
+         fullAuditLogs = logs || [];
+       } catch (e) {
+         console.error("Erro ao carregar logs de auditoria:", e);
+       }
+     }
+     const ACTION_LABELS_PDF: Record<string, string> = {
+       created: "Criação",
+       field_changed: "Alteração de campo",
+       status_changed: "Mudança de status",
+       attachment_added: "Anexo adicionado",
+       attachment_removed: "Anexo removido",
+       signed: "Assinatura",
+     };
+     const FIELD_LABELS_PDF: Record<string, string> = {
+       status: "Status",
+       patient_name: "Nome do paciente",
+       procedure_name: "Procedimento",
+       auditor_pre_opinion: "Parecer auditor pré",
+       auditor_post_final_opinion: "Parecer final auditor pós",
+       facility_unit: "Unidade",
+       cme_processing_date: "CME — Data de processamento",
+       cme_responsible: "CME — Responsável",
+       surgery_dispatch_date: "CC — Data de dispensação",
+       surgery_dispatch_responsible: "CC — Resp. dispensação",
+     };
  
      // Helper para converter imagem para base64
      const getBase64Image = async (url: string) => {
@@ -1175,6 +1210,40 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         headStyles: { fillColor: [30, 58, 138] }
      });
      y = (doc as any).lastAutoTable.finalY + 8;
+
+     // 4B. TRILHA COMPLETA DE AUDITORIA (todos os logs de todos os usuários)
+     if (fullAuditLogs.length > 0) {
+       if (y > 230) { doc.addPage(); y = margin; }
+       doc.setFont("helvetica", "bold");
+       doc.setFontSize(10);
+       doc.text(`4B. TRILHA COMPLETA DE AUDITORIA (${fullAuditLogs.length} eventos)`, margin, y);
+       y += 4;
+       autoTable(doc, {
+         startY: y,
+         head: [["Data/Hora", "Ação", "Campo", "De → Para", "Usuário", "Motivo"]],
+         body: fullAuditLogs.map((h: any) => [
+           new Date(h.changed_at).toLocaleString("pt-BR"),
+           ACTION_LABELS_PDF[h.action] || h.action || "—",
+           h.field_changed ? (FIELD_LABELS_PDF[h.field_changed] || h.field_changed) : "—",
+           (h.old_value || h.new_value)
+             ? `${h.old_value ? String(h.old_value).slice(0, 40) : "∅"} → ${h.new_value ? String(h.new_value).slice(0, 40) : "∅"}`
+             : "—",
+           h.changed_by_name || "—",
+           h.reason || "—",
+         ]),
+         styles: { fontSize: 7, cellPadding: 1.5, overflow: "linebreak" },
+         headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
+         columnStyles: {
+           0: { cellWidth: 26 },
+           1: { cellWidth: 22 },
+           2: { cellWidth: 28 },
+           3: { cellWidth: 50 },
+           4: { cellWidth: 30 },
+           5: { cellWidth: 26 },
+         },
+       });
+       y = (doc as any).lastAutoTable.finalY + 8;
+     }
  
       // Materiais
       doc.setFont("helvetica", "bold");
@@ -2240,18 +2309,22 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                       <SelectItem value="ECG">Eletrocardiograma (ECG)</SelectItem>
                       <SelectItem value="Raio-X de Tórax">Raio-X de Tórax</SelectItem>
                       <SelectItem value="__group_doc" disabled>— Documentos / Checklist Faturamento —</SelectItem>
-                      <SelectItem value="AIH">AIH</SelectItem>
-                      <SelectItem value="Laudo Médico">Laudo Médico</SelectItem>
-                      <SelectItem value="Termo de Consentimento">Termo de Consentimento</SelectItem>
+                      <SelectItem value="AIH"><span className="inline-flex items-center gap-1.5">AIH <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="Laudo Médico"><span className="inline-flex items-center gap-1.5">Laudo Médico <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                      <SelectItem value="Termo de Consentimento"><span className="inline-flex items-center gap-1.5">Termo de Consentimento <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
                       <SelectItem value="Solicitação Cirúrgica">Solicitação Cirúrgica</SelectItem>
                       <SelectItem value="Encaminhamento">Encaminhamento</SelectItem>
                       <SelectItem value="Relatório Médico">Relatório Médico</SelectItem>
                       <SelectItem value="Prontuário">Prontuário / Evolução</SelectItem>
                       <SelectItem value="Documento Pessoal">Documento Pessoal (RG/CPF/CNS)</SelectItem>
-                      <SelectItem value="Outro Documento">Outro Documento</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                       <SelectItem value="Outro Documento">Outro Documento</SelectItem>
+                     </SelectContent>
+                   </Select>
+                   <p className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-1">
+                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" />
+                     Documento obrigatório para faturamento
+                   </p>
+                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
                   {preopExams.map((exam, idx) => (
@@ -2793,18 +2866,22 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                            <SelectItem value="ECG">Eletrocardiograma (ECG)</SelectItem>
                            <SelectItem value="Raio-X de Tórax">Raio-X de Tórax</SelectItem>
                            <SelectItem value="__group_doc2" disabled>— Documentos / Checklist Faturamento —</SelectItem>
-                           <SelectItem value="AIH">AIH</SelectItem>
-                           <SelectItem value="Laudo Médico">Laudo Médico</SelectItem>
-                           <SelectItem value="Termo de Consentimento">Termo de Consentimento</SelectItem>
+                           <SelectItem value="AIH"><span className="inline-flex items-center gap-1.5">AIH <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="Laudo Médico"><span className="inline-flex items-center gap-1.5">Laudo Médico <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
+                           <SelectItem value="Termo de Consentimento"><span className="inline-flex items-center gap-1.5">Termo de Consentimento <span title="Obrigatório para faturamento" className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" /></span></SelectItem>
                            <SelectItem value="Solicitação Cirúrgica">Solicitação Cirúrgica</SelectItem>
                            <SelectItem value="Encaminhamento">Encaminhamento</SelectItem>
                            <SelectItem value="Relatório Médico">Relatório Médico</SelectItem>
                            <SelectItem value="Prontuário">Prontuário / Evolução</SelectItem>
                            <SelectItem value="Documento Pessoal">Documento Pessoal (RG/CPF/CNS)</SelectItem>
-                           <SelectItem value="Outro Documento">Outro Documento</SelectItem>
-                         </SelectContent>
-                       </Select>
-                     </div>
+                            <SelectItem value="Outro Documento">Outro Documento</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-1">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          Documento obrigatório para faturamento
+                        </p>
+                      </div>
  
                      <div className="grid grid-cols-1 gap-4">
                        {preopExams.map((exam, idx) => (
