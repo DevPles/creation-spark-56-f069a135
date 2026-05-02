@@ -370,7 +370,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
     if (recordId) {
       (async () => {
         setLoading(true);
-        const { data, error } = await supabase.from("opme_requests").select("*").eq("id", recordId).single();
+        const { data, error } = await supabase.from("opme_requests").select("*").eq("id", recordId).maybeSingle();
         if (data && !error) {
           const safeData = sanitizeLoadedRequest(data);
           setForm(safeData);
@@ -1441,13 +1441,16 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       
       let result;
       if (recordId) {
-        result = await supabase.from("opme_requests").update(payload).eq("id", recordId).select().maybeSingle();
+        result = await supabase.from("opme_requests").update(payload, { count: "exact" }).eq("id", recordId);
+        if (!result.error && result.count === 0) {
+          result = await supabase.from("opme_requests").insert({ id: recordId, ...payload }).select().maybeSingle();
+        }
       } else {
         result = await supabase.from("opme_requests").insert(payload).select().maybeSingle();
       }
 
       if (result.error) throw result.error;
-      if (!result.data) {
+      if (!recordId && !result.data) {
         throw new Error("Não foi possível salvar o pedido. Verifique suas permissões ou tente novamente.");
       }
 
