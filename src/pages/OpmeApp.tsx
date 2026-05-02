@@ -3632,11 +3632,6 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             {part === 5 && step === 0 && (
               <div className="space-y-6 pb-6 font-display">
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 border-b pb-2">
-                    <div className="w-2 h-4 bg-primary rounded-full"></div>
-                    <h3 className="text-[10px] font-black uppercase text-primary tracking-widest">9. CONTROLE ADMINISTRATIVO</h3>
-                  </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <Label className="text-[10px] font-bold uppercase text-slate-500">Data da Solicitação</Label>
