@@ -1221,63 +1221,62 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      });
      y = (doc as any).lastAutoTable.finalY + 8;
 
-     // 4B. TRILHA COMPLETA DE AUDITORIA (todos os logs de todos os usuários)
-     if (fullAuditLogs.length > 0) {
-       if (y > 230) { doc.addPage(); y = margin; }
-       doc.setFont("helvetica", "bold");
-       doc.setFontSize(10);
-       doc.text(`4B. TRILHA COMPLETA DE AUDITORIA (${fullAuditLogs.length} eventos)`, margin, y);
-       y += 4;
-       autoTable(doc, {
-         startY: y,
-         head: [["Data/Hora", "Ação", "Campo", "De → Para", "Usuário", "Motivo"]],
-         body: fullAuditLogs.map((h: any) => [
-           new Date(h.changed_at).toLocaleString("pt-BR"),
-           ACTION_LABELS_PDF[h.action] || h.action || "—",
-           h.field_changed ? (FIELD_LABELS_PDF[h.field_changed] || h.field_changed) : "—",
-           (h.old_value || h.new_value)
-             ? `${h.old_value ? String(h.old_value).slice(0, 40) : "∅"} → ${h.new_value ? String(h.new_value).slice(0, 40) : "∅"}`
-             : "—",
-           h.changed_by_name || "—",
-           h.reason || "—",
-         ]),
-         styles: { fontSize: 7, cellPadding: 1.5, overflow: "linebreak" },
-         headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
-         columnStyles: {
-           0: { cellWidth: 26 },
-           1: { cellWidth: 22 },
-           2: { cellWidth: 28 },
-           3: { cellWidth: 50 },
-           4: { cellWidth: 30 },
-           5: { cellWidth: 26 },
-         },
-       });
-       y = (doc as any).lastAutoTable.finalY + 8;
-     }
- 
-      // Materiais
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text("5. CONTROLE DE MATERIAIS (SOLICITADO X CONSUMIDO)", margin, y);
-      y += 4;
-      autoTable(doc, { 
-        startY: y, 
-        head: [["Material Autorizado", "Qtd", "Modelo", "SIGTAP", "Vlr Unit.", "Subtotal"]], 
-        body: [
-          ...requested.map((item: any) => [
-            item.description || "---", 
-            item.quantity || "0", 
-            item.size_model || "---", 
-            item.sigtap || "---",
-            formatBRL(toNumber(item.unit_price)),
-            formatBRL(itemSubtotal(item))
+      // 4B. TRILHA COMPLETA DE AUDITORIA
+      if (fullAuditLogs.length > 0) {
+        if (y > 230) { doc.addPage(); y = margin; }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(30, 58, 138);
+        doc.text(`4B. TRILHA COMPLETA DE AUDITORIA (${fullAuditLogs.length} eventos)`, margin, y);
+        y += 4;
+        autoTable(doc, {
+          startY: y,
+          head: [["Data/Hora", "Ação", "Campo", "Alteração (De → Para)", "Usuário"]],
+          body: fullAuditLogs.map((h: any) => [
+            new Date(h.changed_at).toLocaleString("pt-BR"),
+            ACTION_LABELS_PDF[h.action] || h.action || "—",
+            h.field_changed ? (FIELD_LABELS_PDF[h.field_changed] || h.field_changed) : "—",
+            (h.old_value || h.new_value)
+              ? `${h.old_value ? String(h.old_value).slice(0, 30) : "∅"} → ${h.new_value ? String(h.new_value).slice(0, 30) : "∅"}`
+              : (h.reason || "—"),
+            h.changed_by_name || "—",
           ]),
-          [{ content: `TOTAL ESTIMADO SOLICITADO: ${formatBRL(sumOpme(requested))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } }]
-        ], 
-        styles: { fontSize: 8 }, 
-        headStyles: { fillColor: [70, 70, 70] } 
-      });
-      y = (doc as any).lastAutoTable.finalY + 6;
+          styles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" },
+          headStyles: { fillColor: [30, 58, 138], fontSize: 7, halign: 'center' },
+          columnStyles: {
+            0: { cellWidth: 28 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 30 },
+            3: { cellWidth: 65 },
+            4: { cellWidth: 35 },
+          },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+  
+       // 5. CONTROLE DE MATERIAIS
+       doc.setFontSize(11);
+       doc.setTextColor(30, 58, 138);
+       doc.text("5. CONTROLE DE MATERIAIS (SOLICITADO X CONSUMIDO)", margin, y);
+       y += 4;
+       autoTable(doc, { 
+         startY: y, 
+         head: [["Material Autorizado", "Qtd", "Modelo", "SIGTAP", "Vlr Unit.", "Subtotal"]], 
+         body: [
+           ...requested.map((item: any) => [
+             { content: item.description || "---", styles: { fontStyle: 'bold' } }, 
+             item.quantity || "0", 
+             item.size_model || "---", 
+             item.sigtap || "---",
+             formatBRL(toNumber(item.unit_price)),
+             formatBRL(itemSubtotal(item))
+           ]),
+           [{ content: `TOTAL ESTIMADO SOLICITADO: ${formatBRL(sumOpme(requested))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240], fontSize: 9 } }]
+         ], 
+         styles: { fontSize: 8, cellPadding: 3 }, 
+         headStyles: { fillColor: [71, 85, 105], halign: 'center' } 
+       });
+       y = (doc as any).lastAutoTable.finalY + 6;
   
       autoTable(doc, { 
         startY: y, 
