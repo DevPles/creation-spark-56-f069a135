@@ -1169,7 +1169,24 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       doc.text(`Emissão: ${new Date().toLocaleString("pt-BR")}`, 196, 31, { align: 'right' });
       doc.text(`Protocolo: ${(form.id || "—").slice(0, 8).toUpperCase()}`, 196, 35.5, { align: 'right' });
       doc.text(`AIH: ${form.billing_aih_number || "—"}`, 196, 40, { align: 'right' });
-      y = 50;
+      // Helper: detectar tipo do anexo
+      const getMimeFromUrl = async (url: string): Promise<{ kind: "pdf" | "image" | "other"; bytes: ArrayBuffer; contentType: string } | null> => {
+        try {
+          const r = await fetch(url);
+          const ct = (r.headers.get("content-type") || "").toLowerCase();
+          const ab = await r.arrayBuffer();
+          if (ct.includes("pdf") || url.toLowerCase().endsWith(".pdf")) return { kind: "pdf", bytes: ab, contentType: "application/pdf" };
+          if (ct.startsWith("image/") || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(url)) return { kind: "image", bytes: ab, contentType: ct || "image/jpeg" };
+          return { kind: "other", bytes: ab, contentType: ct };
+        } catch (e) { console.warn("fetch attachment failed", url, e); return null; }
+      };
+      const arrayBufferToDataUrl = (ab: ArrayBuffer, mime: string) => {
+        const bytes = new Uint8Array(ab);
+        let bin = ""; for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return `data:${mime};base64,${btoa(bin)}`;
+      };
+
+       y = 50;
   
       // 1. IDENTIFICAÇÃO DO PACIENTE (Grid com AutoTable para melhor organização)
       doc.setFontSize(11);
@@ -1185,7 +1202,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         body: [
           [{ content: "PACIENTE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold', cellWidth: 40 } }, { content: form.patient_name?.toUpperCase() || "NÃO INFORMADO" }],
           [{ content: "PRONTUÁRIO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_record || "---", { content: "SUS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold', cellWidth: 20 } }, form.patient_sus || "---"],
-          [{ content: "NASCIMENTO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.patient_birthdate), { content: "MÃE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_mother_name || "---"]
+          [{ content: "NASCIMENTO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.patient_birthdate), { content: "MÃE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_mother_name || "---"],
+          [{ content: "TIPO SANG.", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_blood_type || "---", { content: "ALERGIAS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_allergies || "Nenhuma registrada"],
+          [{ content: "COMORBIDADES", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, { content: form.patient_diseases || "Nenhuma registrada", colSpan: 3 }]
         ],
         styles: { fontSize: 9, cellPadding: 3 },
         columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
@@ -1205,6 +1224,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           [{ content: "CIRURGIA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, { content: form.procedure_name?.toUpperCase() || "NÃO INFORMADA", colSpan: 3 }],
           [{ content: "DATA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.procedure_date), { content: "UNIDADE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.facility_unit || "---"],
           [{ content: "CIRURGIÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.responsible_name || "---", { content: "SIGTAP", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_sigtap_code || "---"],
+          [{ content: "TIPO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_type || "---", { content: "SALA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_room || "---"],
+          [{ content: "REGIÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, [form.procedure_region_cadastro, form.procedure_segment_cadastro, form.procedure_side_cadastro].filter(Boolean).join(" / ") || "---", { content: "POSIÇÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_position_cadastro || "---"],
           [{ content: "AIH", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.billing_aih_number || "---", { content: "STATUS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, (form.status || "---").replace(/_/g, " ").toUpperCase()]
         ],
         styles: { fontSize: 9, cellPadding: 3 },
@@ -1502,7 +1523,104 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       doc.setFontSize(7);
       doc.text("Este documento é uma consolidação digital de evidências de auditoria hospitalar.", 105, y, { align: "center" });
  
-     doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
+     // ============= ANEXOS (mesclados ao volume do PDF) =============
+     // Reúne todos os documentos/imagens vinculados ao caso para anexar como páginas reais.
+     const attachmentList: { label: string; url: string; stage: string }[] = [];
+     if (form.billing_aih_file_url) attachmentList.push({ label: "AIH — Documento Original", url: form.billing_aih_file_url, stage: "Faturamento" });
+     preopExams.forEach((e: any, i: number) => e?.url && attachmentList.push({ label: `Exame Pré-OP #${i + 1} — ${e.type || e.name || "Documento"}`, url: e.url, stage: "Pré-OP" }));
+     consumptionExams.forEach((e: any, i: number) => e?.url && attachmentList.push({ label: `Intra-OP #${i + 1} — ${e.type || e.name || "Documento"}`, url: e.url, stage: "Intra-OP" }));
+     postopExams.forEach((e: any, i: number) => e?.url && attachmentList.push({ label: `Exame Pós-OP #${i + 1} — ${e.type || e.name || "Documento"}`, url: e.url, stage: "Pós-OP" }));
+     billingExams.forEach((e: any, i: number) => e?.url && attachmentList.push({ label: `Faturamento #${i + 1} — ${e.type || e.name || "Documento"}`, url: e.url, stage: "Faturamento" }));
+     toList(form.opme_used).forEach((it: any, i: number) => it?.photo_url && attachmentList.push({ label: `Etiqueta/Foto OPME #${i + 1} — ${it.description || "Material"}`, url: it.photo_url, stage: "Consumo" }));
+     const surgeonAtt = Array.isArray(form.surgeon_justification_attachments) ? form.surgeon_justification_attachments : [];
+     surgeonAtt.forEach((a: any, i: number) => {
+       const u = typeof a === "string" ? a : a?.url;
+       if (u) attachmentList.push({ label: `Justificativa Cirurgião #${i + 1}`, url: u, stage: "Justificativa" });
+     });
+
+     // Sumário de anexos (na própria página do dossiê base)
+     if (attachmentList.length > 0) {
+       doc.addPage();
+       y = margin;
+       doc.setFont("helvetica", "bold");
+       doc.setFontSize(13);
+       doc.setTextColor(30, 58, 138);
+       doc.text("10. SUMÁRIO DE ANEXOS DOCUMENTAIS", margin, y);
+       y += 4;
+       doc.setFont("helvetica", "normal");
+       doc.setFontSize(8);
+       doc.setTextColor(100, 100, 100);
+       doc.text(`${attachmentList.length} documento(s) anexado(s) na sequência deste dossiê.`, margin, y + 4);
+       y += 8;
+       autoTable(doc, {
+         startY: y,
+         head: [["#", "Etapa", "Documento"]],
+         body: attachmentList.map((a, i) => [String(i + 1).padStart(2, "0"), a.stage, a.label]),
+         styles: { fontSize: 9, cellPadding: 3 },
+         headStyles: { fillColor: [30, 58, 138], halign: "left" },
+         alternateRowStyles: { fillColor: [248, 250, 252] },
+         theme: "grid",
+         columnStyles: { 0: { cellWidth: 12, halign: "center" }, 1: { cellWidth: 35 } }
+       });
+     }
+
+     // Mescla os anexos como páginas reais usando pdf-lib
+     try {
+       const baseBytes = doc.output("arraybuffer");
+       const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+       const merged = await PDFDocument.load(baseBytes);
+       const helv = await merged.embedFont(StandardFonts.HelveticaBold);
+       const helvNorm = await merged.embedFont(StandardFonts.Helvetica);
+
+       for (let i = 0; i < attachmentList.length; i++) {
+         const att = attachmentList[i];
+         const fetched = await getMimeFromUrl(att.url);
+         if (!fetched) continue;
+
+         // Página separadora antes de cada anexo
+         const sep = merged.addPage([595.28, 841.89]); // A4
+         sep.drawRectangle({ x: 0, y: 791, width: 595.28, height: 50, color: rgb(30 / 255, 58 / 255, 138 / 255) });
+         sep.drawText(`ANEXO ${String(i + 1).padStart(2, "0")}`, { x: 40, y: 810, size: 18, font: helv, color: rgb(1, 1, 1) });
+         sep.drawText(att.stage.toUpperCase(), { x: 40, y: 795, size: 9, font: helvNorm, color: rgb(1, 1, 1) });
+         sep.drawText(att.label, { x: 40, y: 760, size: 12, font: helv, color: rgb(0.1, 0.1, 0.1) });
+         sep.drawText(`Origem: ${att.url}`, { x: 40, y: 745, size: 7, font: helvNorm, color: rgb(0.4, 0.4, 0.4), maxWidth: 515 });
+
+         try {
+           if (fetched.kind === "pdf") {
+             const ext = await PDFDocument.load(fetched.bytes, { ignoreEncryption: true });
+             const pages = await merged.copyPages(ext, ext.getPageIndices());
+             pages.forEach((p) => merged.addPage(p));
+           } else if (fetched.kind === "image") {
+             const img = fetched.contentType.includes("png")
+               ? await merged.embedPng(fetched.bytes)
+               : await merged.embedJpg(fetched.bytes);
+             const page = merged.addPage([595.28, 841.89]);
+             const maxW = 515, maxH = 720;
+             const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+             const w = img.width * scale, h = img.height * scale;
+             page.drawImage(img, { x: (595.28 - w) / 2, y: (770 - h), width: w, height: h });
+             page.drawText(att.label, { x: 40, y: 40, size: 9, font: helv, color: rgb(0.2, 0.2, 0.2) });
+           } else {
+             sep.drawText("(Formato não suportado para incorporação — consulte a URL acima.)", { x: 40, y: 720, size: 9, font: helvNorm, color: rgb(0.6, 0, 0) });
+           }
+         } catch (e) {
+           console.warn("Falha ao mesclar anexo", att, e);
+           sep.drawText("(Falha ao incorporar este anexo. URL preservada acima.)", { x: 40, y: 720, size: 9, font: helvNorm, color: rgb(0.6, 0, 0) });
+         }
+       }
+
+       const finalBytes = await merged.save();
+       const blob = new Blob([finalBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+       const url = URL.createObjectURL(blob);
+       const a = document.createElement("a");
+       a.href = url;
+       a.download = `dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`;
+       a.click();
+       setTimeout(() => URL.revokeObjectURL(url), 2000);
+     } catch (e) {
+       console.error("Falha ao mesclar anexos, salvando dossiê base:", e);
+       doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
+     }
    };
 
   const handleSave = async (isAuthValidated = false, advanceStatus = true, closeAfterSave = true) => {
