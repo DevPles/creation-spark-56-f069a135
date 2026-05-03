@@ -1317,20 +1317,22 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
               const action = ACTION_LABELS_PDF[h.action] || h.action || "—";
               const fieldLabel = h.field_changed ? (FIELD_LABELS_PDF[h.field_changed] || h.field_changed) : "";
               let detail = "";
+              const sanitize = (s: string) => s.replace(/[^\x00-\xFF]/g, "?");
               if (h.old_value || h.new_value) {
-                const oldV = h.old_value ? String(h.old_value).slice(0, 50) : "∅";
-                const newV = h.new_value ? String(h.new_value).slice(0, 50) : "∅";
-                detail = `${fieldLabel ? fieldLabel + ":  " : ""}${oldV}  →  ${newV}`;
+                const oldV = h.old_value ? String(h.old_value).slice(0, 50) : "-";
+                const newV = h.new_value ? String(h.new_value).slice(0, 50) : "-";
+                detail = `${fieldLabel ? fieldLabel + ": " : ""}${oldV} -> ${newV}`;
               } else if (h.reason) {
-                detail = `${fieldLabel ? fieldLabel + " — " : ""}${h.reason}`;
+                detail = `${fieldLabel ? fieldLabel + " - " : ""}${h.reason}`;
               } else {
-                detail = fieldLabel || "—";
+                detail = fieldLabel || "-";
               }
+              detail = sanitize(detail);
               return [
                 { content: time, styles: { fontStyle: 'bold', textColor: [30, 58, 138] } },
-                { content: action, styles: { fontStyle: 'bold' } },
+                { content: sanitize(action), styles: { fontStyle: 'bold' } },
                 { content: detail, styles: { textColor: [60, 60, 60] } },
-                { content: h.changed_by_name || "—", styles: { fontSize: 7, textColor: [100, 100, 100] } },
+                { content: sanitize(h.changed_by_name || "-"), styles: { fontSize: 7, textColor: [100, 100, 100] } },
               ];
             }),
             styles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", lineColor: [230, 230, 230] },
