@@ -4493,21 +4493,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
             Sair
           </Button>
         ) : step > 0 ? (
-          <div className="flex-1 flex gap-2">
-            <Button variant="outline" className="flex-1 h-12" onClick={prev}>
-              Anterior
-            </Button>
-            {part === 4 && (
-              <Button
-                variant="outline"
-                className="flex-1 h-12 border-primary/20 text-primary hover:bg-primary/5 gap-2 px-2"
-                onClick={generateAuditDossierPdf}
-              >
-                <FileText size={18} />
-                <span className="text-[10px] font-bold uppercase leading-tight">Gerar Dossiê (PDF)</span>
-              </Button>
-            )}
-          </div>
+          <Button variant="outline" className="flex-1 h-12" onClick={prev}>
+            Anterior
+          </Button>
         ) : (
           <Button variant="ghost" className="flex-1 h-12 text-slate-400" onClick={() => navigate("/")}>
             Sair
