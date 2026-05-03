@@ -1948,10 +1948,10 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 rounded-full font-display text-[10px] font-bold uppercase gap-2 shrink-0 border-primary/20 text-primary hover:bg-primary/5"
+                  className="h-8 rounded-full font-display text-[10px] font-bold uppercase shrink-0 border-primary/20 text-primary hover:bg-primary/5"
                   onClick={generateAuditDossierPdf}
                 >
-                  <FileText size={14} /> Gerar Dossiê (PDF)
+                  Gerar Dossiê (PDF)
                 </Button>
               )}
             </div>
