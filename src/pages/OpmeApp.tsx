@@ -1628,35 +1628,50 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
          const fetched = await getMimeFromUrl(att.url);
          if (!fetched) continue;
 
-         // Página separadora antes de cada anexo
-         const sep = merged.addPage([595.28, 841.89]); // A4
-         sep.drawRectangle({ x: 0, y: 791, width: 595.28, height: 50, color: rgb(30 / 255, 58 / 255, 138 / 255) });
-         sep.drawText(`ANEXO ${String(i + 1).padStart(2, "0")}`, { x: 40, y: 810, size: 18, font: helv, color: rgb(1, 1, 1) });
-         sep.drawText(att.stage.toUpperCase(), { x: 40, y: 795, size: 9, font: helvNorm, color: rgb(1, 1, 1) });
-         sep.drawText(att.label, { x: 40, y: 760, size: 12, font: helv, color: rgb(0.1, 0.1, 0.1) });
-         sep.drawText(`Origem: ${att.url}`, { x: 40, y: 745, size: 7, font: helvNorm, color: rgb(0.4, 0.4, 0.4), maxWidth: 515 });
-
          try {
            if (fetched.kind === "pdf") {
              const ext = await PDFDocument.load(fetched.bytes, { ignoreEncryption: true });
              const pages = await merged.copyPages(ext, ext.getPageIndices());
-             pages.forEach((p) => merged.addPage(p));
+              pages.forEach((p, idx) => {
+                const added = merged.addPage(p);
+                if (idx === 0) {
+                  const { width, height } = added.getSize();
+                  added.drawRectangle({ x: 0, y: height - 26, width, height: 26, color: rgb(30/255, 58/255, 138/255) });
+                  added.drawText(`ANEXO ${String(i + 1).padStart(2, "0")}  ·  ${att.stage.toUpperCase()}`, { x: 14, y: height - 11, size: 8, font: helv, color: rgb(1, 1, 1) });
+                  added.drawText(att.label, { x: 14, y: height - 21, size: 7, font: helvNorm, color: rgb(1, 1, 1), maxWidth: width - 28 });
+                }
+              });
            } else if (fetched.kind === "image") {
              const img = fetched.contentType.includes("png")
                ? await merged.embedPng(fetched.bytes)
                : await merged.embedJpg(fetched.bytes);
              const page = merged.addPage([595.28, 841.89]);
-             const maxW = 515, maxH = 720;
-             const scale = Math.min(maxW / img.width, maxH / img.height, 1);
-             const w = img.width * scale, h = img.height * scale;
-             page.drawImage(img, { x: (595.28 - w) / 2, y: (770 - h), width: w, height: h });
-             page.drawText(att.label, { x: 40, y: 40, size: 9, font: helv, color: rgb(0.2, 0.2, 0.2) });
+              const pageW = 595.28, pageH = 841.89;
+              const headerH = 32, footerH = 26, sideMargin = 18;
+              page.drawRectangle({ x: 0, y: pageH - headerH, width: pageW, height: headerH, color: rgb(30/255, 58/255, 138/255) });
+              page.drawText(`ANEXO ${String(i + 1).padStart(2, "0")}  ·  ${att.stage.toUpperCase()}`, { x: 14, y: pageH - 13, size: 9, font: helv, color: rgb(1, 1, 1) });
+              page.drawText(att.label, { x: 14, y: pageH - 24, size: 8, font: helvNorm, color: rgb(1, 1, 1), maxWidth: pageW - 28 });
+              const maxW = pageW - sideMargin * 2;
+              const maxH = pageH - headerH - footerH - 12;
+              const scale = Math.min(maxW / img.width, maxH / img.height);
+              const w = img.width * scale, h = img.height * scale;
+              const x = (pageW - w) / 2;
+              const yImg = footerH + (maxH - h) / 2;
+              page.drawImage(img, { x, y: yImg, width: w, height: h });
+              page.drawText(att.label, { x: sideMargin, y: 12, size: 7, font: helv, color: rgb(0.3, 0.3, 0.3), maxWidth: pageW - sideMargin * 2 });
            } else {
-             sep.drawText("(Formato não suportado para incorporação — consulte a URL acima.)", { x: 40, y: 720, size: 9, font: helvNorm, color: rgb(0.6, 0, 0) });
+              const page = merged.addPage([595.28, 841.89]);
+              page.drawRectangle({ x: 0, y: 815, width: 595.28, height: 26, color: rgb(30/255, 58/255, 138/255) });
+              page.drawText(`ANEXO ${String(i + 1).padStart(2, "0")}  ·  ${att.stage.toUpperCase()}`, { x: 14, y: 830, size: 9, font: helv, color: rgb(1, 1, 1) });
+              page.drawText(att.label, { x: 14, y: 820, size: 8, font: helvNorm, color: rgb(1, 1, 1), maxWidth: 567 });
+              page.drawText("Formato não suportado para incorporação. URL:", { x: 40, y: 770, size: 10, font: helv, color: rgb(0.6, 0, 0) });
+              page.drawText(att.url, { x: 40, y: 752, size: 8, font: helvNorm, color: rgb(0.2, 0.4, 0.8), maxWidth: 515 });
            }
          } catch (e) {
            console.warn("Falha ao mesclar anexo", att, e);
-           sep.drawText("(Falha ao incorporar este anexo. URL preservada acima.)", { x: 40, y: 720, size: 9, font: helvNorm, color: rgb(0.6, 0, 0) });
+            const page = merged.addPage([595.28, 841.89]);
+            page.drawText(`ANEXO ${String(i + 1).padStart(2, "0")} — Falha ao incorporar`, { x: 40, y: 800, size: 12, font: helv, color: rgb(0.6, 0, 0) });
+            page.drawText(att.url, { x: 40, y: 780, size: 8, font: helvNorm, color: rgb(0.2, 0.4, 0.8), maxWidth: 515 });
          }
        }
 
