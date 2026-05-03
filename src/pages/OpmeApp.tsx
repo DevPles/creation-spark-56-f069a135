@@ -1464,40 +1464,46 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        doc.text("7. GALERIA DE EVIDÊNCIAS (IMAGENS E RASTREABILIDADE)", margin, y);
        y += 8;
  
-       for (let i = 0; i < evidence.length; i++) {
-         const img = evidence[i];
-         if (!img.url) continue;
- 
-         if (y > 240) {
-           doc.addPage();
-           y = margin;
-         }
- 
-         const base64 = await getBase64Image(img.url);
-         if (base64) {
-           try {
-             // Tentar renderizar a imagem (ajustando proporção básica)
-             doc.addImage(base64, 'JPEG', margin, y, 90, 60);
-             doc.setFontSize(8);
-             doc.setFont("helvetica", "bold");
-             doc.setTextColor(50, 50, 50);
-              doc.text(`Evidência #${i + 1}: ${img.stage} - ${img.type || "Imagem"}`, margin, y + 65, { link: { url: img.url } } as any);
-             doc.setFont("helvetica", "normal");
-             doc.text(`Data: ${formatDateBR(img.date)}`, margin, y + 69);
-              doc.setTextColor(30, 58, 138);
-              doc.text("Clique para abrir original", margin + 60, y + 69, { link: { url: img.url } } as any);
-              doc.setTextColor(50, 50, 50);
-             
-             // Alternar entre coluna esquerda e direita se quiser grid, mas para simplicidade faremos lista
-             y += 80;
-           } catch (e) {
-             doc.setFontSize(8);
-             doc.setTextColor(200, 0, 0);
-             doc.text(`[Erro ao carregar imagem: ${img.type}]`, margin, y);
-             y += 10;
-           }
-         }
-       }
+        // Grid 2 colunas
+        const pageW = doc.internal.pageSize.getWidth();
+        const colGap = 6;
+        const colW = (pageW - margin * 2 - colGap) / 2;
+        const imgH = 55;
+        const blockH = imgH + 18;
+        let col = 0;
+        let rowY = y;
+        const validEvidence = evidence.filter((e: any) => e.url);
+        const bases = await Promise.all(validEvidence.map((img: any) => getBase64Image(img.url)));
+        for (let i = 0; i < validEvidence.length; i++) {
+          const img = validEvidence[i];
+          const base64 = bases[i];
+          if (!base64) continue;
+          if (col === 0 && rowY + blockH > 280) {
+            doc.addPage();
+            rowY = margin;
+          }
+          const x = margin + col * (colW + colGap);
+          try {
+            doc.addImage(base64, 'JPEG', x, rowY, colW, imgH);
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text(`Evidência #${i + 1}: ${img.stage} - ${img.type || "Imagem"}`, x, rowY + imgH + 5, { link: { url: img.url } } as any);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Data: ${formatDateBR(img.date)}`, x, rowY + imgH + 10);
+            doc.setTextColor(30, 58, 138);
+            doc.text("Abrir original", x + colW - 2, rowY + imgH + 10, { align: 'right', link: { url: img.url } } as any);
+            doc.setTextColor(50, 50, 50);
+          } catch (e) {
+            doc.setFontSize(8);
+            doc.setTextColor(200, 0, 0);
+            doc.text(`[Erro: ${img.type}]`, x, rowY + 8);
+          }
+          col++;
+          if (col >= 2) { col = 0; rowY += blockH; }
+        }
+        if (col !== 0) rowY += blockH;
+        y = rowY;
      }
  
      // Parecer Final
