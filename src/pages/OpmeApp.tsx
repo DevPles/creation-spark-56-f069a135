@@ -1610,7 +1610,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        }
 
        const finalBytes = await merged.save();
-       const blob = new Blob([finalBytes], { type: "application/pdf" });
+       const blob = new Blob([finalBytes.buffer as ArrayBuffer], { type: "application/pdf" });
        const url = URL.createObjectURL(blob);
        const a = document.createElement("a");
        a.href = url;
