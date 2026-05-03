@@ -233,18 +233,6 @@ const Accordion = ({ title, defaultOpen = false, children, status }: { title: st
       "bg-emerald-50 border-emerald-200 text-emerald-700";
     return (
       <div className="space-y-3">
-        {onGeneratePdf && (
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 rounded-full font-display text-[10px] font-bold uppercase gap-2"
-              onClick={onGeneratePdf}
-            >
-              <FileText size={14} /> Gerar Dossiê (PDF)
-            </Button>
-          </div>
-        )}
         {/* Risco e Valor de Glosa — destaque no topo do Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <div className={`rounded-xl border p-3 ${riskColor}`}>
