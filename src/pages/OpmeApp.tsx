@@ -30,6 +30,10 @@ import DoctorInviteBlock from "@/components/opme/DoctorInviteBlock";
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { sumOpme, formatBRL, toNumber, itemSubtotal } from "@/lib/opmeValue";
+import dossieCebasLogo from "@/assets/dossie-cebas.png";
+import dossieHospitalLogo from "@/assets/dossie-hospital-pimentas.png";
+import dossieGuarulhosLogo from "@/assets/dossie-guarulhos.png";
+import dossieUnividaLogo from "@/assets/dossie-univida.png";
 
 const STEPS_CADASTRO = [
   { id: "paciente", title: "Paciente", description: "Identificação do Paciente" },
