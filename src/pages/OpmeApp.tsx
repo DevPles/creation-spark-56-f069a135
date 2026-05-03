@@ -30,6 +30,10 @@ import DoctorInviteBlock from "@/components/opme/DoctorInviteBlock";
  import { format } from "date-fns";
  import { ptBR } from "date-fns/locale";
  import { sumOpme, formatBRL, toNumber, itemSubtotal } from "@/lib/opmeValue";
+import dossieCebasLogo from "@/assets/dossie-cebas.png";
+import dossieHospitalLogo from "@/assets/dossie-hospital-pimentas.png";
+import dossieGuarulhosLogo from "@/assets/dossie-guarulhos.png";
+import dossieUnividaLogo from "@/assets/dossie-univida.png";
 
 const STEPS_CADASTRO = [
   { id: "paciente", title: "Paciente", description: "Identificação do Paciente" },
@@ -1133,16 +1137,39 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      };
  
       // Capa institucional e Cabeçalho
+      // ----- Faixa branca superior com logotipos institucionais -----
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, 210, 22, 'F');
+      try {
+        // Logos: Hospital | Guarulhos | Univida | Cebas (distribuídos uniformemente)
+        doc.addImage(dossieHospitalLogo, 'PNG', margin, 4, 18, 14);
+        doc.addImage(dossieGuarulhosLogo, 'PNG', 70, 6, 30, 10);
+        doc.addImage(dossieUnividaLogo, 'PNG', 110, 5, 30, 12);
+        doc.addImage(dossieCebasLogo, 'PNG', 178, 4, 14, 14);
+      } catch (e) {
+        console.warn("Erro ao carregar logos institucionais:", e);
+      }
+      // Linha divisória sob os logos
+      doc.setDrawColor(30, 58, 138);
+      doc.setLineWidth(0.4);
+      doc.line(margin, 23, 196, 23);
+
+      // Faixa título
       doc.setFillColor(30, 58, 138);
-      doc.rect(0, 0, 210, 35, 'F');
+      doc.rect(0, 24, 210, 18, 'F');
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
+      doc.setFontSize(15);
       doc.setTextColor(255, 255, 255);
-      doc.text("DOSSIÊ CONSOLIDADO OPME", margin, 18);
-      doc.setFontSize(9);
+      doc.text("DOSSIÊ CONSOLIDADO OPME", margin, 33);
+      doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
-      doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, margin, 26);
-      y = 45;
+      doc.text(`Hospital Pimentas — Guarulhos · Instituto Univida`, margin, 38.5);
+      // Caixa lateral direita com data e código
+      doc.setFontSize(7);
+      doc.text(`Emissão: ${new Date().toLocaleString("pt-BR")}`, 196, 31, { align: 'right' });
+      doc.text(`Protocolo: ${(form.id || "—").slice(0, 8).toUpperCase()}`, 196, 35.5, { align: 'right' });
+      doc.text(`AIH: ${form.billing_aih_number || "—"}`, 196, 40, { align: 'right' });
+      y = 50;
   
       // 1. IDENTIFICAÇÃO DO PACIENTE (Grid com AutoTable para melhor organização)
       doc.setFontSize(11);
@@ -1223,35 +1250,82 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
       // 4B. TRILHA COMPLETA DE AUDITORIA
       if (fullAuditLogs.length > 0) {
-        if (y > 230) { doc.addPage(); y = margin; }
+        doc.addPage();
+        y = margin;
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
+        doc.setFontSize(13);
         doc.setTextColor(30, 58, 138);
-        doc.text(`4B. TRILHA COMPLETA DE AUDITORIA (${fullAuditLogs.length} eventos)`, margin, y);
-        y += 4;
-        autoTable(doc, {
-          startY: y,
-          head: [["Data/Hora", "Ação", "Campo", "Alteração (De → Para)", "Usuário"]],
-          body: fullAuditLogs.map((h: any) => [
-            new Date(h.changed_at).toLocaleString("pt-BR"),
-            ACTION_LABELS_PDF[h.action] || h.action || "—",
-            h.field_changed ? (FIELD_LABELS_PDF[h.field_changed] || h.field_changed) : "—",
-            (h.old_value || h.new_value)
-              ? `${h.old_value ? String(h.old_value).slice(0, 30) : "∅"} → ${h.new_value ? String(h.new_value).slice(0, 30) : "∅"}`
-              : (h.reason || "—"),
-            h.changed_by_name || "—",
-          ]),
-          styles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" },
-          headStyles: { fillColor: [30, 58, 138], fontSize: 7, halign: 'center' },
-          columnStyles: {
-            0: { cellWidth: 28 },
-            1: { cellWidth: 25 },
-            2: { cellWidth: 30 },
-            3: { cellWidth: 65 },
-            4: { cellWidth: 35 },
-          },
+        doc.text(`4B. TRILHA COMPLETA DE AUDITORIA`, margin, y);
+        doc.setFontSize(9);
+        doc.setTextColor(120, 120, 120);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${fullAuditLogs.length} eventos registrados — ordem cronológica`, margin, y + 5);
+        y += 10;
+
+        // Agrupar logs por dia para melhor legibilidade
+        const groupedByDay: Record<string, any[]> = {};
+        fullAuditLogs.forEach((h: any) => {
+          const dayKey = new Date(h.changed_at).toLocaleDateString("pt-BR");
+          if (!groupedByDay[dayKey]) groupedByDay[dayKey] = [];
+          groupedByDay[dayKey].push(h);
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
+
+        const sortedDays = Object.keys(groupedByDay).sort((a, b) => {
+          const [da, ma, ya] = a.split("/").map(Number);
+          const [db, mb, yb] = b.split("/").map(Number);
+          return new Date(ya, ma - 1, da).getTime() - new Date(yb, mb - 1, db).getTime();
+        });
+
+        for (const day of sortedDays) {
+          if (y > 265) { doc.addPage(); y = margin; }
+          // Cabeçalho do dia
+          doc.setFillColor(30, 58, 138);
+          doc.rect(margin, y, 182, 6, 'F');
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(9);
+          doc.setTextColor(255, 255, 255);
+          doc.text(`${day}  ·  ${groupedByDay[day].length} evento(s)`, margin + 2, y + 4.2);
+          y += 8;
+
+          // Tabela limpa por dia
+          autoTable(doc, {
+            startY: y,
+            head: [["Hora", "Ação", "Campo / Detalhe", "Usuário"]],
+            body: groupedByDay[day].map((h: any) => {
+              const time = new Date(h.changed_at).toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+              const action = ACTION_LABELS_PDF[h.action] || h.action || "—";
+              const fieldLabel = h.field_changed ? (FIELD_LABELS_PDF[h.field_changed] || h.field_changed) : "";
+              let detail = "";
+              if (h.old_value || h.new_value) {
+                const oldV = h.old_value ? String(h.old_value).slice(0, 50) : "∅";
+                const newV = h.new_value ? String(h.new_value).slice(0, 50) : "∅";
+                detail = `${fieldLabel ? fieldLabel + ":  " : ""}${oldV}  →  ${newV}`;
+              } else if (h.reason) {
+                detail = `${fieldLabel ? fieldLabel + " — " : ""}${h.reason}`;
+              } else {
+                detail = fieldLabel || "—";
+              }
+              return [
+                { content: time, styles: { fontStyle: 'bold', textColor: [30, 58, 138] } },
+                { content: action, styles: { fontStyle: 'bold' } },
+                { content: detail, styles: { textColor: [60, 60, 60] } },
+                { content: h.changed_by_name || "—", styles: { fontSize: 7, textColor: [100, 100, 100] } },
+              ];
+            }),
+            styles: { fontSize: 8, cellPadding: 2.5, overflow: "linebreak", lineColor: [230, 230, 230] },
+            headStyles: { fillColor: [241, 245, 249], textColor: [30, 41, 59], fontSize: 7, halign: 'left' },
+            alternateRowStyles: { fillColor: [250, 251, 253] },
+            theme: 'grid',
+            columnStyles: {
+              0: { cellWidth: 18 },
+              1: { cellWidth: 32 },
+              2: { cellWidth: 95 },
+              3: { cellWidth: 37 },
+            },
+          });
+          y = (doc as any).lastAutoTable.finalY + 4;
+        }
+        y += 6;
       }
   
        // 5. CONTROLE DE MATERIAIS
