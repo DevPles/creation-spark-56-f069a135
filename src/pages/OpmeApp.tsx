@@ -1368,57 +1368,41 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        y += 10;
      }
  
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(10);
-     doc.setTextColor(0, 0, 0);
-     doc.text("8. CONCLUSÃO DA AUDITORIA", margin, y);
-     y += 6;
-     doc.setFont("helvetica", "normal");
-     doc.setFontSize(9);
-     const opinionLines = doc.splitTextToSize(form.auditor_post_final_opinion || "Auditoria concluída sem parecer textual específico.", 182);
-     doc.text(opinionLines, margin, y);
-     y += Math.max(20, opinionLines.length * 5 + 10);
- 
-      // Informações de Faturamento (Se disponível)
+      doc.setFontSize(11);
+      doc.setTextColor(30, 58, 138);
+      doc.setFont("helvetica", "bold");
+      doc.text("8. PARECER FINAL DO AUDITOR", margin, y);
+      y += 4;
+      autoTable(doc, {
+        startY: y,
+        body: [[form.auditor_post_final_opinion || "Auditoria concluída sem parecer textual específico."]],
+        styles: { fontSize: 9, cellPadding: 5, fontStyle: 'italic', fillColor: [250, 250, 250] },
+        theme: 'grid'
+      });
+      y = (doc as any).lastAutoTable.finalY + 12;
+  
+      // Informações de Faturamento
       if (form.billing_final_status || form.billing_aih_number) {
-        if (y > 230) {
-          doc.addPage();
-          y = margin;
-        } else {
-          y += 10;
-        }
+        if (y > 220) { doc.addPage(); y = margin + 10; }
+        doc.setFontSize(11);
+        doc.setTextColor(5, 150, 105); // Emerald-600
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
         doc.text("9. INFORMAÇÕES DE FATURAMENTO E FECHAMENTO", margin, y);
         y += 4;
 
         autoTable(doc, {
           startY: y,
-          head: [["Campo", "Valor"]],
+          theme: 'grid',
+          head: [],
           body: [
-            ["Número da AIH", form.billing_aih_number || "---"],
-            ["Tipo de AIH", form.billing_aih_type || "---"],
-            ["Data Internação", formatDateBR(form.billing_admission_date)],
-            ["Data Alta", formatDateBR(form.billing_discharge_date)],
-            ["Motivo da Saída", form.billing_exit_reason || "---"],
-            ["Risco de Glosa", (form.billing_glosa_risk || "---").toUpperCase()],
-            ["Responsável", form.billing_responsible_name || "---"],
-            ["Status Final", (form.billing_final_status || "---").toUpperCase()]
+            [{ content: "Nº AIH", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, form.billing_aih_number || "---", { content: "TIPO AIH", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, form.billing_aih_type || "---"],
+            [{ content: "INTERNAÇÃO", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, formatDateBR(form.billing_admission_date), { content: "ALTA", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, formatDateBR(form.billing_discharge_date)],
+            [{ content: "RISCO GLOSA", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, (form.billing_glosa_risk || "---").toUpperCase(), { content: "STATUS FINAL", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, (form.billing_final_status || "---").toUpperCase()]
           ],
-          styles: { fontSize: 8 },
-          headStyles: { fillColor: [5, 150, 105] } // Emerald-600
+          styles: { fontSize: 9, cellPadding: 3 },
+          columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
         });
-        y = (doc as any).lastAutoTable.finalY + 8;
-        
-        if (form.billing_final_observations) {
-          doc.setFont("helvetica", "bold");
-          doc.text("Observações de Fechamento:", margin, y);
-          y += 5;
-          doc.setFont("helvetica", "normal");
-          const obsLines = doc.splitTextToSize(form.billing_final_observations, 182);
-          doc.text(obsLines, margin, y);
-          y += obsLines.length * 5 + 8;
-        }
+        y = (doc as any).lastAutoTable.finalY + 10;
       }
 
       // Assinatura
