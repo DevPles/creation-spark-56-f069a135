@@ -1745,11 +1745,11 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                  filteredRequests.map((req) => (
                    <Card key={req.id} className="border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden" onClick={() => loadRequest(req)}>
                      <CardContent className="p-0">
-                       <div className="p-4 flex items-center justify-between">
-                         <div className="flex-1 min-w-0">
-                           <div className="flex items-center gap-2 mb-1">
-                             <h4 className="font-bold text-slate-900 truncate uppercase text-sm">{req.patient_name}</h4>
-                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${
+                        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="font-bold text-slate-900 truncate uppercase text-sm flex-1 sm:flex-none">{req.patient_name}</h4>
+                              <span className={`text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border whitespace-nowrap ${
                                req.status === 'rascunho' ? 'bg-slate-100 text-slate-600 border-slate-200' :
                                req.status === 'pendente_requisicao' ? 'bg-blue-50 text-blue-600 border-blue-100' :
                                req.status === 'pendente_auditoria' ? 'bg-amber-50 text-amber-600 border-amber-100' :
@@ -1761,17 +1761,17 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                                {req.status?.replace('_', ' ')}
                              </span>
                            </div>
-                            <div className="flex items-center gap-4 text-[11px] text-slate-500 font-medium">
-                              <span>{req.procedure_date ? new Date(req.procedure_date).toLocaleDateString('pt-BR') : '---'}</span>
-                              <span className="truncate">{req.requester_name || req.responsible_name || 'Não inf.'}</span>
-                              {req.billing_aih_number && <span className="text-[10px] bg-slate-100 px-1 rounded border border-slate-200">AIH: {req.billing_aih_number}</span>}
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500 font-medium">
+                              <span className="flex items-center gap-1 shrink-0">{req.procedure_date ? new Date(req.procedure_date).toLocaleDateString('pt-BR') : '---'}</span>
+                              <span className="truncate flex-1 sm:flex-none">{req.requester_name || req.responsible_name || 'Não inf.'}</span>
+                              {req.billing_aih_number && <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 font-bold text-slate-600 whitespace-nowrap">AIH: {req.billing_aih_number}</span>}
                             </div>
                          </div>
-                            <div className="flex items-center gap-2">
+                             <div className="flex items-center justify-end gap-2 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-7 px-3 text-[10px] font-bold uppercase rounded-full border-teal-200 text-teal-700 bg-white hover:bg-teal-600 hover:text-white hover:border-teal-600"
+                                 className="h-8 px-4 text-[10px] font-bold uppercase rounded-full border-teal-200 text-teal-700 bg-white hover:bg-teal-600 hover:text-white hover:border-teal-600 flex-1 sm:flex-none shadow-sm"
                                 onClick={async (e) => {
                                   e.stopPropagation();
                                   try {
