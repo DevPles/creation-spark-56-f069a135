@@ -1188,26 +1188,42 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
 
        y = 50;
   
-      // 1. IDENTIFICAÇÃO DO PACIENTE (Grid com AutoTable para melhor organização)
+      // 1. IDENTIFICAÇÃO DO PACIENTE (Grid 4 colunas para aproveitar largura)
       doc.setFontSize(11);
       doc.setTextColor(30, 58, 138);
       doc.setFont("helvetica", "bold");
       doc.text("1. IDENTIFICAÇÃO DO PACIENTE", margin, y);
       y += 4;
-      
+
+      const idade = (() => {
+        if (!form.patient_birthdate) return "---";
+        try {
+          const b = new Date(form.patient_birthdate);
+          const d = new Date();
+          let a = d.getFullYear() - b.getFullYear();
+          const m = d.getMonth() - b.getMonth();
+          if (m < 0 || (m === 0 && d.getDate() < b.getDate())) a--;
+          return `${a} anos`;
+        } catch { return "---"; }
+      })();
+      const comorbidades = Array.isArray(form.patient_diseases)
+        ? form.patient_diseases.join(", ") : (form.patient_diseases || "");
+
+      const labelStyle = { fillColor: [245, 247, 250] as [number,number,number], fontStyle: 'bold' as const, cellWidth: 30 };
       autoTable(doc, {
         startY: y,
         theme: 'grid',
-        head: [],
         body: [
-          [{ content: "PACIENTE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold', cellWidth: 40 } }, { content: form.patient_name?.toUpperCase() || "NÃO INFORMADO" }],
-          [{ content: "PRONTUÁRIO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_record || "---", { content: "SUS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold', cellWidth: 20 } }, form.patient_sus || "---"],
-          [{ content: "NASCIMENTO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.patient_birthdate), { content: "MÃE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_mother_name || "---"],
-          [{ content: "TIPO SANG.", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_blood_type || "---", { content: "ALERGIAS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_allergies || "Nenhuma registrada"],
-          [{ content: "COMORBIDADES", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, { content: form.patient_diseases || "Nenhuma registrada", colSpan: 3 }]
+          [{ content: "PACIENTE", styles: labelStyle }, { content: form.patient_name?.toUpperCase() || "NÃO INFORMADO", colSpan: 3, styles: { fontStyle: 'bold' } }],
+          [{ content: "NASCIMENTO", styles: labelStyle }, `${formatDateBR(form.patient_birthdate)}  (${idade})`, { content: "TIPO SANG.", styles: labelStyle }, form.patient_blood_type || "---"],
+          [{ content: "PRONTUÁRIO", styles: labelStyle }, form.patient_record || "---", { content: "CNS / SUS", styles: labelStyle }, form.patient_sus || "---"],
+          [{ content: "MÃE", styles: labelStyle }, { content: form.patient_mother_name || "---", colSpan: 3 }],
+          [{ content: "ALERGIAS", styles: labelStyle }, { content: form.patient_allergies || "Nenhuma registrada", colSpan: 3 }],
+          [{ content: "COMORBIDADES", styles: labelStyle }, { content: comorbidades || "Nenhuma registrada", colSpan: 3 }],
+          [{ content: "INDICAÇÃO CLÍNICA", styles: labelStyle }, { content: form.clinical_indication || "---", colSpan: 3, styles: { fontStyle: 'italic', textColor: [60,60,60] as [number,number,number] } }]
         ],
         styles: { fontSize: 9, cellPadding: 3 },
-        columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
+        columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 60 }, 2: { cellWidth: 30 }, 3: { cellWidth: 'auto' } }
       });
       y = (doc as any).lastAutoTable.finalY + 8;
   
@@ -1221,28 +1237,55 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         startY: y,
         theme: 'grid',
         body: [
-          [{ content: "CIRURGIA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, { content: form.procedure_name?.toUpperCase() || "NÃO INFORMADA", colSpan: 3 }],
-          [{ content: "DATA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.procedure_date), { content: "UNIDADE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.facility_unit || "---"],
-          [{ content: "CIRURGIÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.responsible_name || "---", { content: "SIGTAP", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_sigtap_code || "---"],
-          [{ content: "TIPO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_type || "---", { content: "SALA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_room || "---"],
-          [{ content: "REGIÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, [form.procedure_region_cadastro, form.procedure_segment_cadastro, form.procedure_side_cadastro].filter(Boolean).join(" / ") || "---", { content: "POSIÇÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_position_cadastro || "---"],
-          [{ content: "AIH", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.billing_aih_number || "---", { content: "STATUS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, (form.status || "---").replace(/_/g, " ").toUpperCase()]
+          [{ content: "CIRURGIA", styles: labelStyle }, { content: form.procedure_name?.toUpperCase() || "NÃO INFORMADA", colSpan: 3, styles: { fontStyle: 'bold' } }],
+          [{ content: "DATA / HORA", styles: labelStyle }, `${formatDateBR(form.procedure_date)} ${form.procedure_time || ""}`.trim(), { content: "UNIDADE", styles: labelStyle }, form.facility_unit || "---"],
+          [{ content: "CIRURGIÃO", styles: labelStyle }, `${form.responsible_name || "---"}${form.responsible_register ? "  (" + form.responsible_register + ")" : ""}`, { content: "SOLICITANTE", styles: labelStyle }, `${form.requester_name || "---"}${form.requester_register ? "  (" + form.requester_register + ")" : ""}`],
+          [{ content: "SIGTAP", styles: labelStyle }, form.procedure_sigtap_code || "---", { content: "TIPO", styles: labelStyle }, (form.procedure_type || "---").toUpperCase()],
+          [{ content: "REGIÃO", styles: labelStyle }, [form.procedure_region_cadastro, form.procedure_segment_cadastro, form.procedure_side_cadastro].filter(Boolean).join(" / ") || "---", { content: "POSIÇÃO", styles: labelStyle }, form.procedure_position_cadastro || "---"],
+          [{ content: "SALA", styles: labelStyle }, form.procedure_room || "---", { content: "STATUS", styles: labelStyle }, (form.status || "---").replace(/_/g, " ").toUpperCase()],
+          [{ content: "AIH", styles: labelStyle }, form.billing_aih_number || "---", { content: "AUT. PRÉVIA", styles: labelStyle }, (form.billing_prior_authorization || "---").replace(/_/g, " ").toUpperCase()]
         ],
         styles: { fontSize: 9, cellPadding: 3 },
-        columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
+        columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 60 }, 2: { cellWidth: 30 }, 3: { cellWidth: 'auto' } }
       });
       y = (doc as any).lastAutoTable.finalY + 8;
   
-      // 3. INDICAÇÃO CLÍNICA
+      // 3. INDICAÇÃO CLÍNICA E ACHADOS DE IMAGEM (em duas colunas)
       doc.setFontSize(11);
       doc.setTextColor(30, 58, 138);
-      doc.text("3. INDICAÇÃO CLÍNICA E JUSTIFICATIVA", margin, y);
+      doc.text("3. INDICAÇÃO CLÍNICA, EXAMES E INSTRUMENTAIS", margin, y);
       y += 4;
+      const instrumentos = [
+        form.instruments_specific && "Específicos",
+        form.instruments_loan && "Em comodato",
+        form.instruments_na && !form.instruments_specific && !form.instruments_loan && "Não se aplica",
+        form.instruments_specify && `(${form.instruments_specify})`
+      ].filter(Boolean).join(" ");
       autoTable(doc, {
         startY: y,
-        body: [[form.clinical_indication || "Nenhuma indicação clínica registrada."]],
-        styles: { fontSize: 9, cellPadding: 4, fontStyle: 'italic', textColor: [60, 60, 60] },
-        theme: 'plain'
+        theme: 'grid',
+        body: [
+          [
+            { content: "JUSTIFICATIVA CLÍNICA", styles: { ...labelStyle, valign: 'top' } },
+            { content: form.clinical_indication || "Nenhuma indicação registrada.", styles: { fontStyle: 'italic', textColor: [60,60,60] as [number,number,number] } },
+            { content: "INSTRUMENTAIS", styles: { ...labelStyle, valign: 'top' } },
+            { content: instrumentos || "Não informado" }
+          ],
+          [
+            { content: "EXAME PRÉ-OP", styles: labelStyle },
+            `${formatDateBR(form.preop_exam_date)}${form.preop_exam_number ? "  Nº " + form.preop_exam_number : ""}`,
+            { content: "ACHADOS", styles: labelStyle },
+            form.preop_finding_description || "---"
+          ],
+          [
+            { content: "EXAME PÓS-OP", styles: labelStyle },
+            `${formatDateBR(form.postop_exam_date)}${form.postop_exam_number ? "  Nº " + form.postop_exam_number : ""}`,
+            { content: "RESULTADO", styles: labelStyle },
+            form.postop_result_description || "---"
+          ]
+        ],
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 60 }, 2: { cellWidth: 30 }, 3: { cellWidth: 'auto' } }
       });
       y = (doc as any).lastAutoTable.finalY + 8;
  
@@ -1421,40 +1464,46 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        doc.text("7. GALERIA DE EVIDÊNCIAS (IMAGENS E RASTREABILIDADE)", margin, y);
        y += 8;
  
-       for (let i = 0; i < evidence.length; i++) {
-         const img = evidence[i];
-         if (!img.url) continue;
- 
-         if (y > 240) {
-           doc.addPage();
-           y = margin;
-         }
- 
-         const base64 = await getBase64Image(img.url);
-         if (base64) {
-           try {
-             // Tentar renderizar a imagem (ajustando proporção básica)
-             doc.addImage(base64, 'JPEG', margin, y, 90, 60);
-             doc.setFontSize(8);
-             doc.setFont("helvetica", "bold");
-             doc.setTextColor(50, 50, 50);
-              doc.text(`Evidência #${i + 1}: ${img.stage} - ${img.type || "Imagem"}`, margin, y + 65, { link: { url: img.url } } as any);
-             doc.setFont("helvetica", "normal");
-             doc.text(`Data: ${formatDateBR(img.date)}`, margin, y + 69);
-              doc.setTextColor(30, 58, 138);
-              doc.text("Clique para abrir original", margin + 60, y + 69, { link: { url: img.url } } as any);
-              doc.setTextColor(50, 50, 50);
-             
-             // Alternar entre coluna esquerda e direita se quiser grid, mas para simplicidade faremos lista
-             y += 80;
-           } catch (e) {
-             doc.setFontSize(8);
-             doc.setTextColor(200, 0, 0);
-             doc.text(`[Erro ao carregar imagem: ${img.type}]`, margin, y);
-             y += 10;
-           }
-         }
-       }
+        // Grid 2 colunas
+        const pageW = doc.internal.pageSize.getWidth();
+        const colGap = 6;
+        const colW = (pageW - margin * 2 - colGap) / 2;
+        const imgH = 55;
+        const blockH = imgH + 18;
+        let col = 0;
+        let rowY = y;
+        const validEvidence = evidence.filter((e: any) => e.url);
+        const bases = await Promise.all(validEvidence.map((img: any) => getBase64Image(img.url)));
+        for (let i = 0; i < validEvidence.length; i++) {
+          const img = validEvidence[i];
+          const base64 = bases[i];
+          if (!base64) continue;
+          if (col === 0 && rowY + blockH > 280) {
+            doc.addPage();
+            rowY = margin;
+          }
+          const x = margin + col * (colW + colGap);
+          try {
+            doc.addImage(base64, 'JPEG', x, rowY, colW, imgH);
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text(`Evidência #${i + 1}: ${img.stage} - ${img.type || "Imagem"}`, x, rowY + imgH + 5, { link: { url: img.url } } as any);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Data: ${formatDateBR(img.date)}`, x, rowY + imgH + 10);
+            doc.setTextColor(30, 58, 138);
+            doc.text("Abrir original", x + colW - 2, rowY + imgH + 10, { align: 'right', link: { url: img.url } } as any);
+            doc.setTextColor(50, 50, 50);
+          } catch (e) {
+            doc.setFontSize(8);
+            doc.setTextColor(200, 0, 0);
+            doc.text(`[Erro: ${img.type}]`, x, rowY + 8);
+          }
+          col++;
+          if (col >= 2) { col = 0; rowY += blockH; }
+        }
+        if (col !== 0) rowY += blockH;
+        y = rowY;
      }
  
      // Parecer Final
