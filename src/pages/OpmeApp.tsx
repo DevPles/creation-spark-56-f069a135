@@ -1934,14 +1934,26 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       <main className="flex-1 p-4 pb-24">
         {embedded && (
           <div className="mb-3">
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={() => { setPart(null); setStep(0); }} className="rounded-full shrink-0">
-                Voltar
-              </Button>
-              <div className="min-w-0">
-                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider truncate">{currentStepTitle}</h2>
-                <p className="text-[11px] text-slate-500 uppercase truncate">{headerSubtitle}</p>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <Button variant="outline" size="sm" onClick={() => { setPart(null); setStep(0); }} className="rounded-full shrink-0">
+                  Voltar
+                </Button>
+                <div className="min-w-0">
+                  <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider truncate">{currentStepTitle}</h2>
+                  <p className="text-[11px] text-slate-500 uppercase truncate">{headerSubtitle}</p>
+                </div>
               </div>
+              {part === 4 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-full font-display text-[10px] font-bold uppercase gap-2 shrink-0 border-primary/20 text-primary hover:bg-primary/5"
+                  onClick={generateAuditDossierPdf}
+                >
+                  <FileText size={14} /> Gerar Dossiê (PDF)
+                </Button>
+              )}
             </div>
           </div>
         )}
