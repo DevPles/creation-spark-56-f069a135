@@ -1169,7 +1169,24 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
       doc.text(`Emissão: ${new Date().toLocaleString("pt-BR")}`, 196, 31, { align: 'right' });
       doc.text(`Protocolo: ${(form.id || "—").slice(0, 8).toUpperCase()}`, 196, 35.5, { align: 'right' });
       doc.text(`AIH: ${form.billing_aih_number || "—"}`, 196, 40, { align: 'right' });
-      y = 50;
+      // Helper: detectar tipo do anexo
+      const getMimeFromUrl = async (url: string): Promise<{ kind: "pdf" | "image" | "other"; bytes: ArrayBuffer; contentType: string } | null> => {
+        try {
+          const r = await fetch(url);
+          const ct = (r.headers.get("content-type") || "").toLowerCase();
+          const ab = await r.arrayBuffer();
+          if (ct.includes("pdf") || url.toLowerCase().endsWith(".pdf")) return { kind: "pdf", bytes: ab, contentType: "application/pdf" };
+          if (ct.startsWith("image/") || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(url)) return { kind: "image", bytes: ab, contentType: ct || "image/jpeg" };
+          return { kind: "other", bytes: ab, contentType: ct };
+        } catch (e) { console.warn("fetch attachment failed", url, e); return null; }
+      };
+      const arrayBufferToDataUrl = (ab: ArrayBuffer, mime: string) => {
+        const bytes = new Uint8Array(ab);
+        let bin = ""; for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return `data:${mime};base64,${btoa(bin)}`;
+      };
+
+       y = 50;
   
       // 1. IDENTIFICAÇÃO DO PACIENTE (Grid com AutoTable para melhor organização)
       doc.setFontSize(11);
@@ -1185,7 +1202,9 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         body: [
           [{ content: "PACIENTE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold', cellWidth: 40 } }, { content: form.patient_name?.toUpperCase() || "NÃO INFORMADO" }],
           [{ content: "PRONTUÁRIO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_record || "---", { content: "SUS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold', cellWidth: 20 } }, form.patient_sus || "---"],
-          [{ content: "NASCIMENTO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.patient_birthdate), { content: "MÃE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_mother_name || "---"]
+          [{ content: "NASCIMENTO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.patient_birthdate), { content: "MÃE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_mother_name || "---"],
+          [{ content: "TIPO SANG.", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_blood_type || "---", { content: "ALERGIAS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_allergies || "Nenhuma registrada"],
+          [{ content: "COMORBIDADES", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, { content: form.patient_diseases || "Nenhuma registrada", colSpan: 3 }]
         ],
         styles: { fontSize: 9, cellPadding: 3 },
         columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
@@ -1205,6 +1224,8 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           [{ content: "CIRURGIA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, { content: form.procedure_name?.toUpperCase() || "NÃO INFORMADA", colSpan: 3 }],
           [{ content: "DATA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.procedure_date), { content: "UNIDADE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.facility_unit || "---"],
           [{ content: "CIRURGIÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.responsible_name || "---", { content: "SIGTAP", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_sigtap_code || "---"],
+          [{ content: "TIPO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_type || "---", { content: "SALA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_room || "---"],
+          [{ content: "REGIÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, [form.procedure_region_cadastro, form.procedure_segment_cadastro, form.procedure_side_cadastro].filter(Boolean).join(" / ") || "---", { content: "POSIÇÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_position_cadastro || "---"],
           [{ content: "AIH", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.billing_aih_number || "---", { content: "STATUS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, (form.status || "---").replace(/_/g, " ").toUpperCase()]
         ],
         styles: { fontSize: 9, cellPadding: 3 },
