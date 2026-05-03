@@ -1283,33 +1283,36 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         head: [["Consumo Efetivo", "Qtd", "Lote", "Validade", "Vlr Unit.", "Subtotal"]], 
         body: [
           ...usedAll.map((item: any) => [
-            `${item.description || "---"}${item.launched ? "" : "  (NÃO LANÇADO)"}`,
+            { content: `${item.description || "---"}${item.launched ? "" : "  (NÃO LANÇADO)"}`, styles: { fontStyle: 'bold' } },
             item.quantity || "0", 
             item.batch || "---", 
             item.expiry || "---",
             formatBRL(toNumber(item.unit_price)),
             formatBRL(itemSubtotal(item))
           ]),
-          [{ content: `TOTAL EFETIVO UTILIZADO (lançados): ${formatBRL(sumOpme(used))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [219, 234, 254] } }]
+          [{ content: `TOTAL EFETIVO UTILIZADO (lançados): ${formatBRL(sumOpme(used))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [219, 234, 254], fontSize: 9 } }]
         ], 
-        styles: { fontSize: 8 }, 
-         headStyles: { fillColor: [30, 58, 138] } 
+        styles: { fontSize: 8, cellPadding: 3 }, 
+        headStyles: { fillColor: [30, 58, 138], halign: 'center' } 
       });
-      y = (doc as any).lastAutoTable.finalY + 8;
- 
-     // Validações
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(10);
-     doc.text("6. PARECER TÉCNICO E CONFORMIDADE", margin, y);
-     y += 4;
-     autoTable(doc, { 
-       startY: y, 
-       head: [["Análise de Divergências e Inconsistências"]], 
-       body: (divergences.length ? divergences : ["Nenhuma divergência detectada no fluxo de consumo."]).map((text: string) => [text]), 
-       styles: { fontSize: 8 }, 
-        headStyles: { fillColor: [75, 85, 99] } 
-     });
-     y = (doc as any).lastAutoTable.finalY + 8;
+      y = (doc as any).lastAutoTable.finalY + 10;
+  
+      // 6. PARECER TÉCNICO
+      doc.setFontSize(11);
+      doc.setTextColor(30, 58, 138);
+      doc.text("6. PARECER TÉCNICO E CONFORMIDADE", margin, y);
+      y += 4;
+      autoTable(doc, { 
+        startY: y, 
+        head: [["ANÁLISE DE DIVERGÊNCIAS E PARECER DO AUDITOR"]], 
+        body: (divergences.length ? divergences : ["Nenhuma divergência detectada no fluxo de consumo."]).map((text: string) => [
+          { content: text, styles: { cellPadding: 5 } }
+        ]), 
+        styles: { fontSize: 9, fontStyle: 'italic' }, 
+        headStyles: { fillColor: [75, 85, 99], halign: 'left' },
+        theme: 'striped'
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
  
      // Galeria de Imagens (Nova página se necessário)
      if (evidence.length > 0) {
