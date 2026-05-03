@@ -1413,13 +1413,20 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         y += 15;
       }
 
+      doc.setDrawColor(200, 200, 200);
+      doc.line(60, y, 150, y);
+      y += 6;
       doc.setFont("helvetica", "bold");
-      doc.line(margin + 50, y, 146, y);
-      y += 5;
+      doc.setFontSize(10);
+      doc.setTextColor(30, 58, 138);
       doc.text(form.auditor_post_name || "MÉDICO AUDITOR", 105, y, { align: "center" });
       y += 4;
       doc.setFontSize(8);
-      doc.text(`CRM: ${form.auditor_post_crm || "---"} | Data: ${formatDateBR(form.auditor_post_date)}`, 105, y, { align: "center" });
+      doc.setTextColor(100, 100, 100);
+      doc.text(`REGISTRO: ${form.auditor_post_crm || "---"} | DATA: ${formatDateBR(form.auditor_post_date)}`, 105, y, { align: "center" });
+      y += 10;
+      doc.setFontSize(7);
+      doc.text("Este documento é uma consolidação digital de evidências de auditoria hospitalar.", 105, y, { align: "center" });
  
      doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
    };
