@@ -1132,61 +1132,71 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        }
      };
  
-     // Capa institucional
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(16);
+      // Capa institucional e Cabeçalho
+      doc.setFillColor(30, 58, 138);
+      doc.rect(0, 0, 210, 35, 'F');
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(255, 255, 255);
+      doc.text("DOSSIÊ CONSOLIDADO OPME", margin, 18);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, margin, 26);
+      y = 45;
+  
+      // 1. IDENTIFICAÇÃO DO PACIENTE (Grid com AutoTable para melhor organização)
+      doc.setFontSize(11);
       doc.setTextColor(30, 58, 138);
-     doc.text("DOSSIÊ DE AUDITORIA PÓS-OPERATÓRIA", margin, y);
-      doc.setDrawColor(30, 58, 138);
-     doc.setLineWidth(0.5);
-     doc.line(margin, y + 2, 196, y + 2);
-     y += 12;
- 
-     doc.setFontSize(10);
-     doc.setTextColor(0, 0, 0);
-     doc.setFont("helvetica", "bold");
-     doc.text("1. IDENTIFICAÇÃO DO PACIENTE", margin, y);
-     y += 6;
-     doc.setFont("helvetica", "normal");
-     doc.setFontSize(9);
-     doc.text(`Paciente: ${form.patient_name?.toUpperCase() || "NÃO INFORMADO"}`, margin, y);
-      doc.text(`Prontuário: ${form.patient_record || "---"} | SUS: ${form.patient_sus || "---"}`, 120, y);
-      if (form.billing_aih_file_url) {
-        doc.setFontSize(8);
-        doc.setTextColor(30, 58, 138);
-        doc.text("[VER AIH]", 180, y, { link: { url: form.billing_aih_file_url } } as any);
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(9);
-      }
-     y += 5;
-     doc.text(`Data Nasc: ${formatDateBR(form.patient_birthdate)} | Nome da Mãe: ${form.patient_mother_name || "---"}`, margin, y);
-     y += 8;
- 
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(10);
-     doc.text("2. DADOS DO PROCEDIMENTO", margin, y);
-     y += 6;
-     doc.setFont("helvetica", "normal");
-     doc.setFontSize(9);
-     doc.text(`Cirurgia: ${form.procedure_name?.toUpperCase() || "NÃO INFORMADA"}`, margin, y);
-     y += 5;
-     doc.text(`Data: ${formatDateBR(form.procedure_date)} | Unidade: ${form.facility_unit || "---"} | Sala: ${form.procedure_room || "---"}`, margin, y);
-     y += 5;
-      doc.text(`Cirurgião: ${form.responsible_name || "---"} | SIGTAP: ${form.procedure_sigtap_code || "---"} | AIH: ${form.billing_aih_number || "---"}`, margin, y);
-      if (form.billing_aih_file_url) {
-        doc.link(margin + 160, y - 4, 20, 5, { url: form.billing_aih_file_url });
-      }
-     y += 8;
- 
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(10);
-     doc.text("3. INDICAÇÃO CLÍNICA", margin, y);
-     y += 6;
-     doc.setFont("helvetica", "normal");
-     doc.setFontSize(9);
-     const indicationLines = doc.splitTextToSize(form.clinical_indication || "Nenhuma indicação clínica registrada.", 182);
-     doc.text(indicationLines, margin, y);
-     y += Math.max(8, indicationLines.length * 5 + 4);
+      doc.setFont("helvetica", "bold");
+      doc.text("1. IDENTIFICAÇÃO DO PACIENTE", margin, y);
+      y += 4;
+      
+      autoTable(doc, {
+        startY: y,
+        theme: 'grid',
+        head: [],
+        body: [
+          [{ content: "PACIENTE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold', cellWidth: 40 } }, { content: form.patient_name?.toUpperCase() || "NÃO INFORMADO" }],
+          [{ content: "PRONTUÁRIO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_record || "---", { content: "SUS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold', cellWidth: 20 } }, form.patient_sus || "---"],
+          [{ content: "NASCIMENTO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.patient_birthdate), { content: "MÃE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_mother_name || "---"]
+        ],
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+  
+      // 2. DADOS DO PROCEDIMENTO
+      doc.setFontSize(11);
+      doc.setTextColor(30, 58, 138);
+      doc.text("2. DADOS DO PROCEDIMENTO", margin, y);
+      y += 4;
+
+      autoTable(doc, {
+        startY: y,
+        theme: 'grid',
+        body: [
+          [{ content: "CIRURGIA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, { content: form.procedure_name?.toUpperCase() || "NÃO INFORMADA", colSpan: 3 }],
+          [{ content: "DATA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.procedure_date), { content: "UNIDADE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.facility_unit || "---"],
+          [{ content: "CIRURGIÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.responsible_name || "---", { content: "SIGTAP", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_sigtap_code || "---"],
+          [{ content: "AIH", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.billing_aih_number || "---", { content: "STATUS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, (form.status || "---").replace(/_/g, " ").toUpperCase()]
+        ],
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+  
+      // 3. INDICAÇÃO CLÍNICA
+      doc.setFontSize(11);
+      doc.setTextColor(30, 58, 138);
+      doc.text("3. INDICAÇÃO CLÍNICA E JUSTIFICATIVA", margin, y);
+      y += 4;
+      autoTable(doc, {
+        startY: y,
+        body: [[form.clinical_indication || "Nenhuma indicação clínica registrada."]],
+        styles: { fontSize: 9, cellPadding: 4, fontStyle: 'italic', textColor: [60, 60, 60] },
+        theme: 'plain'
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
  
      // Timeline de Movimentações
      doc.setFont("helvetica", "bold");
@@ -1211,96 +1221,98 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      });
      y = (doc as any).lastAutoTable.finalY + 8;
 
-     // 4B. TRILHA COMPLETA DE AUDITORIA (todos os logs de todos os usuários)
-     if (fullAuditLogs.length > 0) {
-       if (y > 230) { doc.addPage(); y = margin; }
-       doc.setFont("helvetica", "bold");
-       doc.setFontSize(10);
-       doc.text(`4B. TRILHA COMPLETA DE AUDITORIA (${fullAuditLogs.length} eventos)`, margin, y);
-       y += 4;
-       autoTable(doc, {
-         startY: y,
-         head: [["Data/Hora", "Ação", "Campo", "De → Para", "Usuário", "Motivo"]],
-         body: fullAuditLogs.map((h: any) => [
-           new Date(h.changed_at).toLocaleString("pt-BR"),
-           ACTION_LABELS_PDF[h.action] || h.action || "—",
-           h.field_changed ? (FIELD_LABELS_PDF[h.field_changed] || h.field_changed) : "—",
-           (h.old_value || h.new_value)
-             ? `${h.old_value ? String(h.old_value).slice(0, 40) : "∅"} → ${h.new_value ? String(h.new_value).slice(0, 40) : "∅"}`
-             : "—",
-           h.changed_by_name || "—",
-           h.reason || "—",
-         ]),
-         styles: { fontSize: 7, cellPadding: 1.5, overflow: "linebreak" },
-         headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
-         columnStyles: {
-           0: { cellWidth: 26 },
-           1: { cellWidth: 22 },
-           2: { cellWidth: 28 },
-           3: { cellWidth: 50 },
-           4: { cellWidth: 30 },
-           5: { cellWidth: 26 },
-         },
-       });
-       y = (doc as any).lastAutoTable.finalY + 8;
-     }
- 
-      // Materiais
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text("5. CONTROLE DE MATERIAIS (SOLICITADO X CONSUMIDO)", margin, y);
-      y += 4;
-      autoTable(doc, { 
-        startY: y, 
-        head: [["Material Autorizado", "Qtd", "Modelo", "SIGTAP", "Vlr Unit.", "Subtotal"]], 
-        body: [
-          ...requested.map((item: any) => [
-            item.description || "---", 
-            item.quantity || "0", 
-            item.size_model || "---", 
-            item.sigtap || "---",
-            formatBRL(toNumber(item.unit_price)),
-            formatBRL(itemSubtotal(item))
+      // 4B. TRILHA COMPLETA DE AUDITORIA
+      if (fullAuditLogs.length > 0) {
+        if (y > 230) { doc.addPage(); y = margin; }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(30, 58, 138);
+        doc.text(`4B. TRILHA COMPLETA DE AUDITORIA (${fullAuditLogs.length} eventos)`, margin, y);
+        y += 4;
+        autoTable(doc, {
+          startY: y,
+          head: [["Data/Hora", "Ação", "Campo", "Alteração (De → Para)", "Usuário"]],
+          body: fullAuditLogs.map((h: any) => [
+            new Date(h.changed_at).toLocaleString("pt-BR"),
+            ACTION_LABELS_PDF[h.action] || h.action || "—",
+            h.field_changed ? (FIELD_LABELS_PDF[h.field_changed] || h.field_changed) : "—",
+            (h.old_value || h.new_value)
+              ? `${h.old_value ? String(h.old_value).slice(0, 30) : "∅"} → ${h.new_value ? String(h.new_value).slice(0, 30) : "∅"}`
+              : (h.reason || "—"),
+            h.changed_by_name || "—",
           ]),
-          [{ content: `TOTAL ESTIMADO SOLICITADO: ${formatBRL(sumOpme(requested))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } }]
-        ], 
-        styles: { fontSize: 8 }, 
-        headStyles: { fillColor: [70, 70, 70] } 
-      });
-      y = (doc as any).lastAutoTable.finalY + 6;
+          styles: { fontSize: 7, cellPadding: 2, overflow: "linebreak" },
+          headStyles: { fillColor: [30, 58, 138], fontSize: 7, halign: 'center' },
+          columnStyles: {
+            0: { cellWidth: 28 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 30 },
+            3: { cellWidth: 65 },
+            4: { cellWidth: 35 },
+          },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+  
+       // 5. CONTROLE DE MATERIAIS
+       doc.setFontSize(11);
+       doc.setTextColor(30, 58, 138);
+       doc.text("5. CONTROLE DE MATERIAIS (SOLICITADO X CONSUMIDO)", margin, y);
+       y += 4;
+       autoTable(doc, { 
+         startY: y, 
+         head: [["Material Autorizado", "Qtd", "Modelo", "SIGTAP", "Vlr Unit.", "Subtotal"]], 
+         body: [
+           ...requested.map((item: any) => [
+             { content: item.description || "---", styles: { fontStyle: 'bold' } }, 
+             item.quantity || "0", 
+             item.size_model || "---", 
+             item.sigtap || "---",
+             formatBRL(toNumber(item.unit_price)),
+             formatBRL(itemSubtotal(item))
+           ]),
+           [{ content: `TOTAL ESTIMADO SOLICITADO: ${formatBRL(sumOpme(requested))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240], fontSize: 9 } }]
+         ], 
+         styles: { fontSize: 8, cellPadding: 3 }, 
+         headStyles: { fillColor: [71, 85, 105], halign: 'center' } 
+       });
+       y = (doc as any).lastAutoTable.finalY + 6;
   
       autoTable(doc, { 
         startY: y, 
         head: [["Consumo Efetivo", "Qtd", "Lote", "Validade", "Vlr Unit.", "Subtotal"]], 
         body: [
           ...usedAll.map((item: any) => [
-            `${item.description || "---"}${item.launched ? "" : "  (NÃO LANÇADO)"}`,
+            { content: `${item.description || "---"}${item.launched ? "" : "  (NÃO LANÇADO)"}`, styles: { fontStyle: 'bold' } },
             item.quantity || "0", 
             item.batch || "---", 
             item.expiry || "---",
             formatBRL(toNumber(item.unit_price)),
             formatBRL(itemSubtotal(item))
           ]),
-          [{ content: `TOTAL EFETIVO UTILIZADO (lançados): ${formatBRL(sumOpme(used))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [219, 234, 254] } }]
+          [{ content: `TOTAL EFETIVO UTILIZADO (lançados): ${formatBRL(sumOpme(used))}`, colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fillColor: [219, 234, 254], fontSize: 9 } }]
         ], 
-        styles: { fontSize: 8 }, 
-         headStyles: { fillColor: [30, 58, 138] } 
+        styles: { fontSize: 8, cellPadding: 3 }, 
+        headStyles: { fillColor: [30, 58, 138], halign: 'center' } 
       });
-      y = (doc as any).lastAutoTable.finalY + 8;
- 
-     // Validações
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(10);
-     doc.text("6. PARECER TÉCNICO E CONFORMIDADE", margin, y);
-     y += 4;
-     autoTable(doc, { 
-       startY: y, 
-       head: [["Análise de Divergências e Inconsistências"]], 
-       body: (divergences.length ? divergences : ["Nenhuma divergência detectada no fluxo de consumo."]).map((text: string) => [text]), 
-       styles: { fontSize: 8 }, 
-        headStyles: { fillColor: [75, 85, 99] } 
-     });
-     y = (doc as any).lastAutoTable.finalY + 8;
+      y = (doc as any).lastAutoTable.finalY + 10;
+  
+      // 6. PARECER TÉCNICO
+      doc.setFontSize(11);
+      doc.setTextColor(30, 58, 138);
+      doc.text("6. PARECER TÉCNICO E CONFORMIDADE", margin, y);
+      y += 4;
+      autoTable(doc, { 
+        startY: y, 
+        head: [["ANÁLISE DE DIVERGÊNCIAS E PARECER DO AUDITOR"]], 
+        body: (divergences.length ? divergences : ["Nenhuma divergência detectada no fluxo de consumo."]).map((text: string) => [
+          { content: text, styles: { cellPadding: 5 } }
+        ]), 
+        styles: { fontSize: 9, fontStyle: 'italic' }, 
+        headStyles: { fillColor: [75, 85, 99], halign: 'left' },
+        theme: 'striped'
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
  
      // Galeria de Imagens (Nova página se necessário)
      if (evidence.length > 0) {
@@ -1356,57 +1368,41 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        y += 10;
      }
  
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(10);
-     doc.setTextColor(0, 0, 0);
-     doc.text("8. CONCLUSÃO DA AUDITORIA", margin, y);
-     y += 6;
-     doc.setFont("helvetica", "normal");
-     doc.setFontSize(9);
-     const opinionLines = doc.splitTextToSize(form.auditor_post_final_opinion || "Auditoria concluída sem parecer textual específico.", 182);
-     doc.text(opinionLines, margin, y);
-     y += Math.max(20, opinionLines.length * 5 + 10);
- 
-      // Informações de Faturamento (Se disponível)
+      doc.setFontSize(11);
+      doc.setTextColor(30, 58, 138);
+      doc.setFont("helvetica", "bold");
+      doc.text("8. PARECER FINAL DO AUDITOR", margin, y);
+      y += 4;
+      autoTable(doc, {
+        startY: y,
+        body: [[form.auditor_post_final_opinion || "Auditoria concluída sem parecer textual específico."]],
+        styles: { fontSize: 9, cellPadding: 5, fontStyle: 'italic', fillColor: [250, 250, 250] },
+        theme: 'grid'
+      });
+      y = (doc as any).lastAutoTable.finalY + 12;
+  
+      // Informações de Faturamento
       if (form.billing_final_status || form.billing_aih_number) {
-        if (y > 230) {
-          doc.addPage();
-          y = margin;
-        } else {
-          y += 10;
-        }
+        if (y > 220) { doc.addPage(); y = margin + 10; }
+        doc.setFontSize(11);
+        doc.setTextColor(5, 150, 105); // Emerald-600
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
         doc.text("9. INFORMAÇÕES DE FATURAMENTO E FECHAMENTO", margin, y);
         y += 4;
 
         autoTable(doc, {
           startY: y,
-          head: [["Campo", "Valor"]],
+          theme: 'grid',
+          head: [],
           body: [
-            ["Número da AIH", form.billing_aih_number || "---"],
-            ["Tipo de AIH", form.billing_aih_type || "---"],
-            ["Data Internação", formatDateBR(form.billing_admission_date)],
-            ["Data Alta", formatDateBR(form.billing_discharge_date)],
-            ["Motivo da Saída", form.billing_exit_reason || "---"],
-            ["Risco de Glosa", (form.billing_glosa_risk || "---").toUpperCase()],
-            ["Responsável", form.billing_responsible_name || "---"],
-            ["Status Final", (form.billing_final_status || "---").toUpperCase()]
+            [{ content: "Nº AIH", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, form.billing_aih_number || "---", { content: "TIPO AIH", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, form.billing_aih_type || "---"],
+            [{ content: "INTERNAÇÃO", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, formatDateBR(form.billing_admission_date), { content: "ALTA", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, formatDateBR(form.billing_discharge_date)],
+            [{ content: "RISCO GLOSA", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, (form.billing_glosa_risk || "---").toUpperCase(), { content: "STATUS FINAL", styles: { fillColor: [236, 253, 245], fontStyle: 'bold' } }, (form.billing_final_status || "---").toUpperCase()]
           ],
-          styles: { fontSize: 8 },
-          headStyles: { fillColor: [5, 150, 105] } // Emerald-600
+          styles: { fontSize: 9, cellPadding: 3 },
+          columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
         });
-        y = (doc as any).lastAutoTable.finalY + 8;
-        
-        if (form.billing_final_observations) {
-          doc.setFont("helvetica", "bold");
-          doc.text("Observações de Fechamento:", margin, y);
-          y += 5;
-          doc.setFont("helvetica", "normal");
-          const obsLines = doc.splitTextToSize(form.billing_final_observations, 182);
-          doc.text(obsLines, margin, y);
-          y += obsLines.length * 5 + 8;
-        }
+        y = (doc as any).lastAutoTable.finalY + 10;
       }
 
       // Assinatura
@@ -1417,13 +1413,20 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
         y += 15;
       }
 
+      doc.setDrawColor(200, 200, 200);
+      doc.line(60, y, 150, y);
+      y += 6;
       doc.setFont("helvetica", "bold");
-      doc.line(margin + 50, y, 146, y);
-      y += 5;
+      doc.setFontSize(10);
+      doc.setTextColor(30, 58, 138);
       doc.text(form.auditor_post_name || "MÉDICO AUDITOR", 105, y, { align: "center" });
       y += 4;
       doc.setFontSize(8);
-      doc.text(`CRM: ${form.auditor_post_crm || "---"} | Data: ${formatDateBR(form.auditor_post_date)}`, 105, y, { align: "center" });
+      doc.setTextColor(100, 100, 100);
+      doc.text(`REGISTRO: ${form.auditor_post_crm || "---"} | DATA: ${formatDateBR(form.auditor_post_date)}`, 105, y, { align: "center" });
+      y += 10;
+      doc.setFontSize(7);
+      doc.text("Este documento é uma consolidação digital de evidências de auditoria hospitalar.", 105, y, { align: "center" });
  
      doc.save(`dossie-auditoria-pos-${(form.patient_name || "paciente").replace(/\s+/g, "-").toLowerCase()}.pdf`);
    };
