@@ -1137,16 +1137,39 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
      };
  
       // Capa institucional e Cabeçalho
+      // ----- Faixa branca superior com logotipos institucionais -----
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, 210, 22, 'F');
+      try {
+        // Logos: Hospital | Guarulhos | Univida | Cebas (distribuídos uniformemente)
+        doc.addImage(dossieHospitalLogo, 'PNG', margin, 4, 18, 14);
+        doc.addImage(dossieGuarulhosLogo, 'PNG', 70, 6, 30, 10);
+        doc.addImage(dossieUnividaLogo, 'PNG', 110, 5, 30, 12);
+        doc.addImage(dossieCebasLogo, 'PNG', 178, 4, 14, 14);
+      } catch (e) {
+        console.warn("Erro ao carregar logos institucionais:", e);
+      }
+      // Linha divisória sob os logos
+      doc.setDrawColor(30, 58, 138);
+      doc.setLineWidth(0.4);
+      doc.line(margin, 23, 196, 23);
+
+      // Faixa título
       doc.setFillColor(30, 58, 138);
-      doc.rect(0, 0, 210, 35, 'F');
+      doc.rect(0, 24, 210, 18, 'F');
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
+      doc.setFontSize(15);
       doc.setTextColor(255, 255, 255);
-      doc.text("DOSSIÊ CONSOLIDADO OPME", margin, 18);
-      doc.setFontSize(9);
+      doc.text("DOSSIÊ CONSOLIDADO OPME", margin, 33);
+      doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
-      doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, margin, 26);
-      y = 45;
+      doc.text(`Hospital Pimentas — Guarulhos · Instituto Univida`, margin, 38.5);
+      // Caixa lateral direita com data e código
+      doc.setFontSize(7);
+      doc.text(`Emissão: ${new Date().toLocaleString("pt-BR")}`, 196, 31, { align: 'right' });
+      doc.text(`Protocolo: ${(form.id || "—").slice(0, 8).toUpperCase()}`, 196, 35.5, { align: 'right' });
+      doc.text(`AIH: ${form.billing_aih_number || "—"}`, 196, 40, { align: 'right' });
+      y = 50;
   
       // 1. IDENTIFICAÇÃO DO PACIENTE (Grid com AutoTable para melhor organização)
       doc.setFontSize(11);
