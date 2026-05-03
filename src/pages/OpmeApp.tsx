@@ -1132,61 +1132,71 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
        }
      };
  
-     // Capa institucional
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(16);
+      // Capa institucional e Cabeçalho
+      doc.setFillColor(30, 58, 138);
+      doc.rect(0, 0, 210, 35, 'F');
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(255, 255, 255);
+      doc.text("DOSSIÊ CONSOLIDADO OPME", margin, 18);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, margin, 26);
+      y = 45;
+  
+      // 1. IDENTIFICAÇÃO DO PACIENTE (Grid com AutoTable para melhor organização)
+      doc.setFontSize(11);
       doc.setTextColor(30, 58, 138);
-     doc.text("DOSSIÊ DE AUDITORIA PÓS-OPERATÓRIA", margin, y);
-      doc.setDrawColor(30, 58, 138);
-     doc.setLineWidth(0.5);
-     doc.line(margin, y + 2, 196, y + 2);
-     y += 12;
- 
-     doc.setFontSize(10);
-     doc.setTextColor(0, 0, 0);
-     doc.setFont("helvetica", "bold");
-     doc.text("1. IDENTIFICAÇÃO DO PACIENTE", margin, y);
-     y += 6;
-     doc.setFont("helvetica", "normal");
-     doc.setFontSize(9);
-     doc.text(`Paciente: ${form.patient_name?.toUpperCase() || "NÃO INFORMADO"}`, margin, y);
-      doc.text(`Prontuário: ${form.patient_record || "---"} | SUS: ${form.patient_sus || "---"}`, 120, y);
-      if (form.billing_aih_file_url) {
-        doc.setFontSize(8);
-        doc.setTextColor(30, 58, 138);
-        doc.text("[VER AIH]", 180, y, { link: { url: form.billing_aih_file_url } } as any);
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(9);
-      }
-     y += 5;
-     doc.text(`Data Nasc: ${formatDateBR(form.patient_birthdate)} | Nome da Mãe: ${form.patient_mother_name || "---"}`, margin, y);
-     y += 8;
- 
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(10);
-     doc.text("2. DADOS DO PROCEDIMENTO", margin, y);
-     y += 6;
-     doc.setFont("helvetica", "normal");
-     doc.setFontSize(9);
-     doc.text(`Cirurgia: ${form.procedure_name?.toUpperCase() || "NÃO INFORMADA"}`, margin, y);
-     y += 5;
-     doc.text(`Data: ${formatDateBR(form.procedure_date)} | Unidade: ${form.facility_unit || "---"} | Sala: ${form.procedure_room || "---"}`, margin, y);
-     y += 5;
-      doc.text(`Cirurgião: ${form.responsible_name || "---"} | SIGTAP: ${form.procedure_sigtap_code || "---"} | AIH: ${form.billing_aih_number || "---"}`, margin, y);
-      if (form.billing_aih_file_url) {
-        doc.link(margin + 160, y - 4, 20, 5, { url: form.billing_aih_file_url });
-      }
-     y += 8;
- 
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(10);
-     doc.text("3. INDICAÇÃO CLÍNICA", margin, y);
-     y += 6;
-     doc.setFont("helvetica", "normal");
-     doc.setFontSize(9);
-     const indicationLines = doc.splitTextToSize(form.clinical_indication || "Nenhuma indicação clínica registrada.", 182);
-     doc.text(indicationLines, margin, y);
-     y += Math.max(8, indicationLines.length * 5 + 4);
+      doc.setFont("helvetica", "bold");
+      doc.text("1. IDENTIFICAÇÃO DO PACIENTE", margin, y);
+      y += 4;
+      
+      autoTable(doc, {
+        startY: y,
+        theme: 'grid',
+        head: [],
+        body: [
+          [{ content: "PACIENTE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold', cellWidth: 40 } }, { content: form.patient_name?.toUpperCase() || "NÃO INFORMADO" }],
+          [{ content: "PRONTUÁRIO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_record || "---", { content: "SUS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold', cellWidth: 20 } }, form.patient_sus || "---"],
+          [{ content: "NASCIMENTO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.patient_birthdate), { content: "MÃE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.patient_mother_name || "---"]
+        ],
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+  
+      // 2. DADOS DO PROCEDIMENTO
+      doc.setFontSize(11);
+      doc.setTextColor(30, 58, 138);
+      doc.text("2. DADOS DO PROCEDIMENTO", margin, y);
+      y += 4;
+
+      autoTable(doc, {
+        startY: y,
+        theme: 'grid',
+        body: [
+          [{ content: "CIRURGIA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, { content: form.procedure_name?.toUpperCase() || "NÃO INFORMADA", colSpan: 3 }],
+          [{ content: "DATA", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, formatDateBR(form.procedure_date), { content: "UNIDADE", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.facility_unit || "---"],
+          [{ content: "CIRURGIÃO", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.responsible_name || "---", { content: "SIGTAP", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.procedure_sigtap_code || "---"],
+          [{ content: "AIH", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, form.billing_aih_number || "---", { content: "STATUS", styles: { fillColor: [245, 247, 250], fontStyle: 'bold' } }, (form.status || "---").replace(/_/g, " ").toUpperCase()]
+        ],
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+  
+      // 3. INDICAÇÃO CLÍNICA
+      doc.setFontSize(11);
+      doc.setTextColor(30, 58, 138);
+      doc.text("3. INDICAÇÃO CLÍNICA E JUSTIFICATIVA", margin, y);
+      y += 4;
+      autoTable(doc, {
+        startY: y,
+        body: [[form.clinical_indication || "Nenhuma indicação clínica registrada."]],
+        styles: { fontSize: 9, cellPadding: 4, fontStyle: 'italic', textColor: [60, 60, 60] },
+        theme: 'plain'
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
  
      // Timeline de Movimentações
      doc.setFont("helvetica", "bold");
