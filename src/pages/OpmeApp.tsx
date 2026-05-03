@@ -1693,6 +1693,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
                 { status: "pendente_controle", label: "Adm" },
                 { status: "pendente_consumo", label: "Uso" },
                 { status: "pendente_auditoria_post", label: "Pós" },
+                { status: "concluido", label: "Con" },
                 { status: "pendente_faturamento", label: "Fat" },
               ].map((item, i) => (
                 <button 
