@@ -2198,7 +2198,7 @@ export default function OpmeApp({ embedded = false }: OpmeAppProps = {}) {
           <div className="mb-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <Button variant="outline" size="sm" onClick={() => { setPart(null); setStep(0); }} className="rounded-full shrink-0">
+                <Button variant="outline" size="sm" onClick={() => { resetForm(); setPart(null); setStep(0); }} className="rounded-full shrink-0">
                   Voltar
                 </Button>
                 <div className="min-w-0">
