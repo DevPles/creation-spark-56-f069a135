@@ -10,13 +10,13 @@ Documento `.docx` único, profissional, em PT-BR, que funciona como **manual ope
   - Backend: **PostgreSQL** como banco de dados principal, com Row-Level Security nativo
   - Funções de servidor em **TypeScript/Deno** (edge functions) e rotinas agendadas em **SQL/pg_cron**
   - Geração de PDF server-side com **pdf-lib**, exportações com **Python** (analytics e relatórios)
-  - Camada de IA via gateway próprio com modelos Gemini para NLP, sugestões e ranking
+  - Camada de IA proprietária **Health Script IA**, desenvolvida pela PRS Sistemas, para NLP, sugestões, ranking e apoio textual
   - Autenticação JWT, criptografia em trânsito (TLS) e em repouso, conformidade LGPD
 - **Tom**: técnico onde precisa, comercial onde vende. Cada módulo abre com um *pitch* curto antes do detalhe operacional.
 
 ## Estrutura do documento
 
-1. **Capa institucional** — MetricOss, subtítulo "Plataforma de Gestão de Contratos de Saúde — Manual do Usuário e Visão de Produto", data, versão.
+1. **Capa institucional** — MetricOss, subtítulo "Plataforma de Gestão e Mensuração de Métricas para Organizações de Saúde — Manual do Usuário e Visão de Produto", data, versão.
 2. **Carta de apresentação** (1 página) — proposta de valor, dores que resolve, ROI esperado (redução de glosa, ciclo de faturamento, padronização entre unidades).
 3. **Sumário executivo comercial** — 6 bullets de impacto: rastreabilidade total, defesa em auditoria, IA aplicada, multi-unidade, controle financeiro fracionado, mobile-ready.
 4. **Sumário automático** (TOC).
@@ -50,12 +50,12 @@ Para cada um, "Ganho operacional" + "Inteligência lógica" são parágrafos den
 - **Compras** — Pitch: "Da requisição ao dossiê auditável em um único fluxo." Backend: tabelas `purchase_requisitions`, `quotations`, `orders` em PostgreSQL com RLS por unidade; edge functions em TypeScript/Deno (`price-search`, `requisition-invite`); banco histórico de preços; geração de PDF temático.
 - **Contratos** — Rubricas com soma 100% validada por trigger SQL; rotina semanal `pg_cron` (`check-goals-notify`) dispara e-mail quando atingimento proporcional <80%.
 - **Metas/Indicadores** — 4 visões; projeção linear calculada a partir do histórico; normalização "própria meta" vs "global".
-- **Plano de Ação** — Pareto + Ishikawa, IA Gemini para insights, "Cenário de Risco" derivado de `risk_calculation` (TypeScript determinístico).
+- **Plano de Ação** — Pareto + Ishikawa, Health Script IA para insights, "Cenário de Risco" derivado de `risk_calculation` (TypeScript determinístico).
 - **Relatórios** — agregadores SQL, modo fullscreen rotativo 5s, exportação PDF e dados brutos para análise em Python.
 - **Administração** — `user_roles` separada com enum `app_role`, função `has_role` SECURITY DEFINER (anti-recursão RLS), hierarquia via `supervisor_id`.
 - **Lançamentos** — entrada unificada com filtros encadeados; validação por `period` (dd/MM/yyyy como fonte única de verdade).
 - **SAU** — ouvidoria categorizada por unidade com RLS.
-- **Relatório Assistencial** — compilador mensal híbrido, snapshot JSON em storage, IA gera 3 sugestões positivas anti-glosa.
+- **Relatório Assistencial** — compilador mensal híbrido, snapshot JSON em storage, Health Script IA gera 3 sugestões positivas anti-glosa.
 - **Controle de Rubrica** — projeção de risco com Percentual Variável real.
 - **Gestão de OPME** — dossiê auditável ponta-a-ponta, duplo check de localização cirúrgica, anexos versionados, convite ao médico via edge function, log de auditoria persistente com motivo obrigatório (PDF unificado via pdf-lib).
 
