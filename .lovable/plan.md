@@ -1,83 +1,82 @@
-## Problemas a corrigir
+# Plano final: Manual do Usuário + Peça de Vendas (Word)
 
-A tela de "Justificativa do Cirurgião" (Parte 4 / Step 0) hoje:
+Documento `.docx` único, profissional, em PT-BR, que funciona como **manual operacional** e ao mesmo tempo como **material comercial** para apresentação a contratantes.
 
-1. Aceita só texto — sem anexar exames, etiquetas, fotos ou laudos. O auditor não tem evidência para reanalisar.
-2. Mostra o botão "Próximo" do rodapé, permitindo que o cirurgião pule direto para a tela de Faturamento (Step 1) — exatamente o que não pode acontecer.
-3. Mesmo após enviar a justificativa, o status `aguardando_justificativa`/`justificativa_respondida` poderia avançar para `concluido` se alguém forçasse um save da Parte 4. O fluxo correto exige que **só o auditor** decida liberar para Faturamento.
+## Diretrizes obrigatórias
 
-## Fluxo correto reforçado
+- **Marca**: MetricOss / Moss. **Nunca** mencionar Lovable, Supabase, Vite, "low-code" ou qualquer ferramenta de geração. O produto é apresentado como software proprietário.
+- **Stack descrita ao cliente** (linguagem comercial):
+  - Frontend: React 18 + TypeScript, Tailwind CSS, arquitetura componentizada
+  - Backend: **PostgreSQL** como banco de dados principal, com Row-Level Security nativo
+  - Funções de servidor em **TypeScript/Deno** (edge functions) e rotinas agendadas em **SQL/pg_cron**
+  - Geração de PDF server-side com **pdf-lib**, exportações com **Python** (analytics e relatórios)
+  - Camada de IA via gateway próprio com modelos Gemini para NLP, sugestões e ranking
+  - Autenticação JWT, criptografia em trânsito (TLS) e em repouso, conformidade LGPD
+- **Tom**: técnico onde precisa, comercial onde vende. Cada módulo abre com um *pitch* curto antes do detalhe operacional.
 
-```text
-Auditor pede justificativa
-        │
-        ▼  Parte 4 / Step 0 — APENAS o cirurgião
-Cirurgião:
-  • lê a solicitação
-  • escreve justificativa técnica
-  • ANEXA evidências (1+ arquivo obrigatório: exames, etiqueta, foto, laudo, PDF…)
-  • clica "Enviar Justificativa ao Auditor"
-        │
-        ▼ status = justificativa_respondida
-Auditor (Parte 3 / Step 1) reanalisa → Liberar OU Reprovar/pedir nova
-        │
-        ▼ (só após "Liberar") status = pendente_faturamento
-Faturamento conclui
-```
+## Estrutura do documento
 
-A Parte 4 / Step 1 (Faturamento) **nunca** pode ser acessada enquanto o status for `aguardando_justificativa` ou `justificativa_respondida`.
+1. **Capa institucional** — MetricOss, subtítulo "Plataforma de Gestão de Contratos de Saúde — Manual do Usuário e Visão de Produto", data, versão.
+2. **Carta de apresentação** (1 página) — proposta de valor, dores que resolve, ROI esperado (redução de glosa, ciclo de faturamento, padronização entre unidades).
+3. **Sumário executivo comercial** — 6 bullets de impacto: rastreabilidade total, defesa em auditoria, IA aplicada, multi-unidade, controle financeiro fracionado, mobile-ready.
+4. **Sumário automático** (TOC).
+5. **Arquitetura e Tecnologia** (1–2 páginas) — descrita conforme a stack acima, com tabela "Camada / Tecnologia / Benefício ao cliente".
+6. **Papéis e Acessos** — Admin, Gestor, Analista, Clínico, Funcionário; matriz Papéis × Módulos.
+7. **Como navegar** — TopBar, dashboard com cards arrastáveis, modais, padrão de filtros.
+8. **Módulos** (11 seções, mesma estrutura cada uma):
+   - **Pitch comercial** (3–5 linhas)
+   - **Objetivo operacional**
+   - **Quem acessa**
+   - **Telas, abas, formulários e campos**
+   - **Fluxos passo-a-passo**
+   - **Regras de negócio**
+   - **Ganho operacional** (KPIs: redução de glosa, tempo, padronização, defesa em auditoria)
+   - **Inteligência lógica aplicada (backend)** — tabelas PostgreSQL, RLS, triggers/funções SQL, jobs `pg_cron`, edge functions, scripts Python, fórmulas, IA
+   - **Saídas** (PDFs, dossiês, notificações)
+9. **Anexos**:
+   - Glossário
+   - Matriz Papéis × Módulos
+   - Mapa técnico: Tabela / Função / Job agendado / Edge function / Script Python por módulo
+   - Política de segurança (LGPD, RLS, auditoria)
+   - Roadmap e diferenciais competitivos (página final de venda)
+10. **Contracapa** — contato comercial e selo "MetricOss — Tecnologia em Gestão de Saúde".
 
-## Mudanças
+## Cobertura por módulo (11)
 
-### 1. Tela do Cirurgião (Parte 4 / Step 0) — `src/pages/OpmeApp.tsx`
+Compras · Contratos · Metas e Indicadores · Plano de Ação · Relatórios · Administração · Lançamentos · SAU · Relatório Assistencial · Controle de Rubrica · Gestão de OPME
 
-**Adicionar bloco "Evidências Anexadas":**
-- Lista de anexos da rodada atual (estado `surgeonJustificationFiles`).
-- Botão "Adicionar Evidência" abrindo `<input type="file">` com `accept="image/*,application/pdf"` e `multiple`.
-- Cada item mostra nome, tamanho, miniatura (se imagem) e botão remover.
-- Texto auxiliar: "Anexe exames, etiquetas de rastreabilidade, fotos do procedimento, laudos ou qualquer documento que comprove a justificativa."
+Para cada um, "Ganho operacional" + "Inteligência lógica" são parágrafos densos. Exemplos:
 
-**Validação para enviar:**
-- Botão "Enviar Justificativa ao Auditor" só é habilitado quando:
-  - `surgeon_justification.trim().length > 0` **E**
-  - há pelo menos **1 anexo** com URL válida (após upload).
-- Se faltar algum, exibir hint vermelho explicando o que falta.
+- **Compras** — Pitch: "Da requisição ao dossiê auditável em um único fluxo." Backend: tabelas `purchase_requisitions`, `quotations`, `orders` em PostgreSQL com RLS por unidade; edge functions em TypeScript/Deno (`price-search`, `requisition-invite`); banco histórico de preços; geração de PDF temático.
+- **Contratos** — Rubricas com soma 100% validada por trigger SQL; rotina semanal `pg_cron` (`check-goals-notify`) dispara e-mail quando atingimento proporcional <80%.
+- **Metas/Indicadores** — 4 visões; projeção linear calculada a partir do histórico; normalização "própria meta" vs "global".
+- **Plano de Ação** — Pareto + Ishikawa, IA Gemini para insights, "Cenário de Risco" derivado de `risk_calculation` (TypeScript determinístico).
+- **Relatórios** — agregadores SQL, modo fullscreen rotativo 5s, exportação PDF e dados brutos para análise em Python.
+- **Administração** — `user_roles` separada com enum `app_role`, função `has_role` SECURITY DEFINER (anti-recursão RLS), hierarquia via `supervisor_id`.
+- **Lançamentos** — entrada unificada com filtros encadeados; validação por `period` (dd/MM/yyyy como fonte única de verdade).
+- **SAU** — ouvidoria categorizada por unidade com RLS.
+- **Relatório Assistencial** — compilador mensal híbrido, snapshot JSON em storage, IA gera 3 sugestões positivas anti-glosa.
+- **Controle de Rubrica** — projeção de risco com Percentual Variável real.
+- **Gestão de OPME** — dossiê auditável ponta-a-ponta, duplo check de localização cirúrgica, anexos versionados, convite ao médico via edge function, log de auditoria persistente com motivo obrigatório (PDF unificado via pdf-lib).
 
-**Persistência ao enviar:**
-- Fazer upload de cada arquivo via `uploadFile` para o bucket `opme-attachments`.
-- Gravar em `surgeon_justification_attachments` (jsonb já existente) array `[{ name, url, mime, size, uploaded_at }]`.
-- Setar `surgeon_justification_at`, `surgeon_justification_by`, `status = "justificativa_respondida"` e chamar `handleSave(true)`.
-- Limpar `surgeonJustificationFiles` após sucesso.
+## Geração
 
-### 2. Render dos anexos no painel do Auditor (Parte 3 / Step 1)
+- skill `docx` (docx-js): A4, 1" margens, Calibri/Cambria nos títulos, Arial corpo 11pt
+- TOC automática com `outlineLevel`
+- Tabelas com `WidthType.DXA`, `ShadingType.CLEAR`, paleta teal MetricOss (#0D9488 / #115E59)
+- Cabeçalho "MetricOss — Manual do Usuário" e rodapé com paginação
+- Conteúdo extraído de `src/pages/*`, modais e edge functions reais (sem inventar funcionalidades)
 
-No bloco amarelo "Reanálise — Justificativa do Cirurgião", abaixo de "Resposta enviada pelo cirurgião":
-- Listar anexos clicáveis (abrir em nova aba). Imagens com thumbnail; PDFs com ícone.
-- No histórico de rodadas anteriores também listar os anexos daquela rodada (preservar `attachments` em `justification_history` ao gerar `newEntry` nos botões "Liberar" e "Reprovar").
+## QA
 
-### 3. Bloquear atalhos do Cirurgião
+- `validate_document.py`
+- Converter para PDF com LibreOffice e inspecionar capa, meio e últimas páginas
+- Conferir que **nenhuma menção** a Lovable/Supabase/Vite aparece no texto
+- Re-gerar até estar limpo
 
-No rodapé global (`<footer>`):
-- Quando `part === 4 && step === 0` (justificativa), **esconder o botão "Próximo"** e o botão verde "Concluir Faturamento". Mostrar apenas "Sair" e a instrução "Use o botão 'Enviar Justificativa ao Auditor' acima". Isso impede que o cirurgião pule para o Step 1 (Faturamento).
-- Em `loadRequest`, manter o roteamento atual: `aguardando_justificativa → Parte 4/Step 0`. Adicionar guarda em `next()`: se `part === 4 && step === 0 && status in ("aguardando_justificativa","justificativa_respondida")`, não avançar.
+## Entrega
 
-### 4. handleSave — proteção extra
+- `/mnt/documents/Manual_MetricOss.docx`
+- Apresentado via `<lov-artifact>` para download
 
-Em `handleSave`, no ramo `part === 4`:
-- Se `step === 0` e `status === "aguardando_justificativa"` → manter status como `justificativa_respondida` (cirurgião só envia, nunca conclui).
-- Só permitir `nextStatus = "concluido"` quando `step === 1` **E** `status === "pendente_faturamento"`. Caso contrário, abortar com toast.
-
-### 5. Banco
-
-Nenhuma migração necessária — `surgeon_justification_attachments jsonb default '[]'` já existe. Reaproveitar bucket `opme-attachments`.
-
-## Arquivos afetados
-
-- `src/pages/OpmeApp.tsx` — bloco de upload no Step 0 do Part 4, render dos anexos no painel do auditor, persistência em `surgeon_justification_attachments`, ajuste do footer e guardas em `next()`/`handleSave`.
-
-## Resultado para o usuário
-
-1. Cirurgião abre a justificativa: vê o pedido do auditor, escreve a resposta e **é obrigado a anexar evidências** antes de poder enviar.
-2. O botão "Próximo"/"Concluir Faturamento" desaparece nessa tela — não dá mais para pular para o faturamento.
-3. Auditor recebe a resposta com todos os anexos visíveis e clicáveis, decide Liberar ou Reprovar.
-4. Faturamento só fica acessível após o auditor liberar.
+Estimativa: 60–90 páginas. Após sua aprovação eu gero em uma única passada.
